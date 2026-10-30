@@ -1,0 +1,56 @@
+name: macOS native clients with verified server artifact
+on:
+  push:
+    branches: [codex/pre-m8-acceptance]
+    paths: ['scripts/run_macos_clients.py', 'tests/mac_guest_fixture.py', '.github/workflows/native-macos.yml']
+  workflow_dispatch:
+    inputs:
+      server_run_id:
+        description: Successful Linux server artifact run in this repository
+        required: false
+        type: string
+permissions:
+  contents: read
+  actions: read
+jobs:
+  native-macos:
+    runs-on: macos-15-intel
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify reused server sources match this checkout
+        id: source
+        env:
+          SOURCE_RUN: ${{ inputs.server_run_id }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ -z "$SOURCE_RUN" ]]; then
+            candidates="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/backend.yml/runs?branch=codex/pre-m8-acceptance&per_page=20" --jq '.workflow_runs[].id')"
+            for candidate in $candidates; do
+              count="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$candidate/artifacts" --jq '[.artifacts[] | select(.name=="linux-server" and .expired==false)] | length')"
+              if [[ "$count" -gt 0 ]]; then SOURCE_RUN="$candidate"; break; fi
+            done
+          fi
+          [[ "$SOURCE_RUN" =~ ^[0-9]+$ ]] || exit 1
+          server_sha="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN" --jq .head_sha)"
+          git fetch --no-tags --depth=1 origin "$server_sha"
+          git diff --exit-code "$server_sha" HEAD -- src include apps xmake.lua dependencies.lock.json
+          printf 'TC_SERVER_COMMIT=%s\n' "$server_sha" >> "$GITHUB_ENV"
+          printf 'run_id=%s\n' "$SOURCE_RUN" >> "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-server
+          path: build
+          run-id: ${{ steps.source.outputs.run_id }}
+          github-token: ${{ github.token }}
+      - run: brew install qemu
+      - name: Native SMB and NFSv3 mounts
+        run: |
+          python3 -m venv build/mac-tools
+          build/mac-tools/bin/pip install argon2-cffi
+          build/mac-tools/bin/python scripts/run_macos_clients.py --archive build/linux-server.tgz --output build/acceptance/macos-native.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: macos-native
+          path: build/acceptance/*
