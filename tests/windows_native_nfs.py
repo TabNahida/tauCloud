@@ -219,7 +219,7 @@ if (Test-Path -LiteralPath $env:TC_NATIVE_CONFIG) {
             relay.close()
         f.log.flush()
         report['server_log'] = (f.base / 'supervisor.log').read_text()[-65536:]
-        report['worker_logs'] = {role: path.read_text()[-16384:] for role in ('nfs', 'file', 'identity')
+        report['worker_logs'] = {role: path.read_text()[-16384:] for role in ('nfs', 'file', 'identity', 'native')
             if (path := f.state / 'logs' / (role + '.jsonl')).exists()}
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(report, indent=2) + '\n')

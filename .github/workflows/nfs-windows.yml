@@ -1,0 +1,32 @@
+name: Windows NFS native acceptance
+on:
+  workflow_dispatch:
+  push:
+    paths: ['src/native_files.cpp', 'tests/windows_native_nfs.py', '.github/workflows/nfs-windows.yml']
+permissions:
+  contents: read
+jobs:
+  native-nfs:
+    runs-on: windows-2025
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: '3.1.1'
+      - run: python scripts/fetch_pace.py
+      - run: python scripts/fetch_pace.py --dependency recipes
+      - run: python -m pip install -r tests/nfs-requirements.txt
+      - run: python scripts/fetch_nfs_client.py
+      - run: xmake f -y -c -p windows -a x64 -m release --m0=n --m1=y --toolchain=msvc --sanitizers=n
+      - run: xmake -y -j 8
+      - name: NFS creation attributes
+        run: python tests/nfs_create_integration.py --bin build/windows/x64/release --output build/acceptance/nfs-create.json
+      - name: Native Client for NFS
+        if: always()
+        run: python tests/windows_native_nfs.py --bin build/windows/x64/release --output build/acceptance/windows-native-nfs.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-native-nfs
+          path: build/acceptance/

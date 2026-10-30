@@ -287,6 +287,7 @@ native_file native_file::root(const fs::path &path) {
       auto convert = reinterpret_cast<ULONG(WINAPI *)(NTSTATUS)>(
           GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "RtlNtStatusToDosError"));
       SetLastError(convert(code));
+      log("native", "open_failed", std::to_string(GetLastError()));
       native_error();
     }
     next.info();
@@ -591,8 +592,11 @@ void native_file::truncate(uint64_t size) {
 void native_file::flush() const {
 #ifdef _WIN32
   if (!FlushFileBuffers(impl_->file->handle)) {
-    if (info().at("directory") && GetLastError() == ERROR_ACCESS_DENIED)
+    auto saved = GetLastError();
+    if (info().at("directory") && saved == ERROR_ACCESS_DENIED)
       return;
+    SetLastError(saved);
+    log("native", "flush_failed", std::to_string(saved));
     native_error();
   }
 #else
@@ -609,7 +613,12 @@ void native_file::set_times(std::optional<uint64_t> accessed, std::optional<uint
   auto handle = ReOpenFile(impl_->file->handle, FILE_WRITE_ATTRIBUTES,
                            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                            FILE_FLAG_BACKUP_SEMANTICS);
-  if (handle == INVALID_HANDLE_VALUE) native_error();
+  if (handle == INVALID_HANDLE_VALUE) {
+    auto saved = GetLastError();
+    log("native", "reopen_attributes_failed", std::to_string(saved));
+    SetLastError(saved);
+    native_error();
+  }
   auto convert = [](uint64_t ns) {
     auto ticks = ns / 100 + uint64_t(116444736000000000);
     return FILETIME{DWORD(ticks), DWORD(ticks >> 32)};
@@ -619,7 +628,11 @@ void native_file::set_times(std::optional<uint64_t> accessed, std::optional<uint
   auto saved = GetLastError();
   CloseHandle(handle);
   SetLastError(saved);
-  if (!ok) native_error();
+  if (!ok) {
+    log("native", "set_times_failed", std::to_string(saved));
+    SetLastError(saved);
+    native_error();
+  }
 #else
   timespec values[2]{};
   size_t i = 0;
