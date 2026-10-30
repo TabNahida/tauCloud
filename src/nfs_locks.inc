@@ -78,13 +78,6 @@ void lock_operation(const identity &who, const json &a, const std::string &sid,
                     const std::string &current, std::string &current_state, writer &body) {
   auto op = a.at("op").get<uint32_t>();
   auto client = sessions.at(sid).client;
-  if (op == 39) {
-    auto owner = a.at("owner").get<std::string>();
-    for (const auto &[key, l] : byte_locks)
-      check(l.client != client || l.owner != owner || l.principal != who.key || l.ranges.empty(), 10037);
-    std::erase_if(byte_locks, [&](const auto &l) { return l.second.client == client && l.second.owner == owner && l.second.principal == who.key; });
-    return;
-  }
   if (op == 45) {
     auto id = a.at("state").get<std::string>();
     for (const auto &[key, o] : opens)

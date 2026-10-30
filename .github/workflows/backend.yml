@@ -63,9 +63,9 @@ jobs:
       - name: NFS native attributes and aliases
         if: always() && matrix.compiler == 'gcc'
         run: python3 tests/nfs_attributes_integration.py --bin build/linux/x86_64/release --output build/acceptance/nfs-attributes.json
-      - name: Upstream NFS replacement of open files and multiple sessions
+      - name: Upstream NFS regular-file/directory profile including lease expiry
         if: always() && matrix.compiler == 'gcc'
-        run: python3 tests/pynfs_acceptance.py --bin build/linux/x86_64/release --output build/acceptance/pynfs-unlink.json RNM21 TRUNK1 TRUNK2
+        run: python3 tests/pynfs_acceptance.py --bin build/linux/x86_64/release --output build/acceptance/pynfs-regular.json all nodeleg noblock nochar nofifo nosocket nosymlink noRNM20
       - name: NFS creation attributes and safe truncation
         if: always() && matrix.compiler == 'gcc'
         run: python3 tests/nfs_create_integration.py --bin build/linux/x86_64/release --output build/acceptance/nfs-create.json

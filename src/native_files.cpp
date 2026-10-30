@@ -163,6 +163,7 @@ struct native_file::impl {
   std::shared_ptr<resource> file = std::make_shared<resource>();
   std::vector<std::shared_ptr<resource>> parents;
   bool allow_unlinked = false;
+  bool private_pin = false;
 };
 native_file::native_file() : impl_(std::make_unique<impl>()) {}
 native_file::~native_file() = default;
@@ -204,6 +205,7 @@ json native_file::info(bool change_stamp) const {
   require(!(meta.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT), "unsafe_path");
   bool directory = (meta.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
   require(directory || meta.nNumberOfLinks == 1 ||
+              (impl_->private_pin && meta.nNumberOfLinks == 2) ||
               (impl_->allow_unlinked && meta.nNumberOfLinks == 0), "hardlink_denied");
   json result = {{"object",
            std::to_string(id.VolumeSerialNumber) + ":" +
@@ -233,6 +235,7 @@ json native_file::info(bool change_stamp) const {
     native_error();
   require(S_ISDIR(s.st_mode) || S_ISREG(s.st_mode), "unsafe_path");
   require(S_ISDIR(s.st_mode) || s.st_nlink == 1 ||
+              (impl_->private_pin && s.st_nlink == 2) ||
               (impl_->allow_unlinked && s.st_nlink == 0), "hardlink_denied");
   struct statx sx {};
   require(statx(impl_->file->handle, "", AT_EMPTY_PATH, STATX_BTIME, &sx) == 0 &&
@@ -312,8 +315,13 @@ native_file native_file::root(const fs::path &path) {
 }
 native_file native_file::open(const std::string &path, bool directory, bool create,
                               bool write_access) const {
+  return open_impl(path, directory, create, write_access, false);
+}
+native_file native_file::open_impl(const std::string &path, bool directory, bool create,
+                                   bool write_access, bool pin) const {
   portable_path(path, true);
   native_file result;
+  result.impl_->private_pin = pin;
 #ifdef _WIN32
   auto parent = impl_->file;
   result.impl_->parents = impl_->parents;
@@ -391,6 +399,63 @@ native_file native_file::open(const std::string &path, bool directory, bool crea
   auto value = result.info();
   require(value.at("directory") == directory && value.at("volume") == info().at("volume"),
           "unsafe_path");
+  return result;
+}
+static void pin_name(const std::string &name) {
+  require(name.size() == 40 && name.starts_with(".tc-nfs-") &&
+      std::all_of(name.begin() + 8, name.end(), [](char c) {
+        return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
+      }), "invalid_path");
+}
+native_file native_file::open_pin(const std::string &name, const std::string &object) const {
+  pin_name(name);
+  auto result = open_impl(name, false, false, true, true);
+  require(result.info().at("object") == object, "object_replaced");
+  return result;
+}
+bool native_file::matches_pin(const std::string &path, const std::string &object) const {
+  try { return open_impl(path, false, false, false, true).info().at("object") == object; }
+  catch (const error &e) {
+    auto code = std::string_view(e.what());
+    if (code == "not_found" || code == "unsafe_path" || code == "hardlink_denied" ||
+        code == "is_directory") return false;
+    throw;
+  }
+}
+native_file native_file::pin(const native_file &directory, const std::string &name) const {
+  pin_name(name);
+  auto before = info();
+  require(!before.at("directory").get<bool>() && directory.info().at("directory") &&
+      directory.info().at("volume") == before.at("volume"), "unsafe_path");
+#ifdef _WIN32
+  auto wide = wide_name(name);
+  // FILE_LINK_INFORMATION has the same layout as FILE_RENAME_INFORMATION.
+  std::vector<char> buffer(sizeof(FILE_RENAME_INFO) + wide.size() * sizeof(wchar_t));
+  auto *link = reinterpret_cast<FILE_RENAME_INFO *>(buffer.data());
+  link->ReplaceIfExists = FALSE;
+  link->RootDirectory = directory.impl_->file->handle;
+  link->FileNameLength = static_cast<DWORD>(wide.size() * 2);
+  memcpy(link->FileName, wide.data(), wide.size() * 2);
+  using nt_set = NTSTATUS(NTAPI *)(HANDLE, PIO_STATUS_BLOCK, PVOID, ULONG, FILE_INFORMATION_CLASS);
+  auto set = reinterpret_cast<nt_set>(GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtSetInformationFile"));
+  require(set, "not_supported");
+  IO_STATUS_BLOCK io{};
+  auto code = set(impl_->file->handle, &io, link, static_cast<ULONG>(buffer.size()),
+                  static_cast<FILE_INFORMATION_CLASS>(11));
+  if (code < 0) {
+    auto convert = reinterpret_cast<ULONG(WINAPI *)(NTSTATUS)>(
+        GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "RtlNtStatusToDosError"));
+    SetLastError(convert(code)); native_error();
+  }
+#else
+  // Follow only this process's pinned descriptor, never the old pathname.
+  auto source = "/proc/self/fd/" + std::to_string(impl_->file->handle);
+  if (linkat(AT_FDCWD, source.c_str(), directory.impl_->file->handle, name.c_str(),
+              AT_SYMLINK_FOLLOW) != 0) native_error();
+#endif
+  auto result = directory.open_pin(name, before.at("object"));
+  result.flush();
+  directory.flush();
   return result;
 }
 std::vector<json> native_file::list() const {
@@ -594,7 +659,10 @@ void native_file::rename(const std::string &from, const std::string &to, bool re
   std::wstring wide = wide_name(toname);
   std::vector<char> buffer(sizeof(FILE_RENAME_INFO) + wide.size() * sizeof(wchar_t));
   auto *rename = reinterpret_cast<FILE_RENAME_INFO *>(buffer.data());
-  rename->ReplaceIfExists = replace;
+  // Preserve outstanding descriptors to a replaced file (NFS OPEN). Legacy
+  // FileRenameInformation rejects this even when every handle shares DELETE.
+  uint32_t flags = replace ? 3u : 0u; // REPLACE_IF_EXISTS | POSIX_SEMANTICS
+  memcpy(buffer.data(), &flags, sizeof(flags));
   rename->RootDirectory = b->handle;
   rename->FileNameLength = static_cast<DWORD>(wide.size() * 2);
   memcpy(rename->FileName, wide.data(), wide.size() * 2);
@@ -605,7 +673,7 @@ void native_file::rename(const std::string &from, const std::string &to, bool re
   IO_STATUS_BLOCK io{};
   auto code =
       set(source.impl_->file->handle, &io, rename, static_cast<ULONG>(buffer.size()),
-          static_cast<FILE_INFORMATION_CLASS>(10)); // FileRenameInformation supports RootDirectory.
+          static_cast<FILE_INFORMATION_CLASS>(65)); // FileRenameInformationEx, confined RootDirectory.
   if (code < 0) {
     auto convert = reinterpret_cast<ULONG(WINAPI *)(NTSTATUS)>(
         GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "RtlNtStatusToDosError"));
@@ -620,15 +688,22 @@ void native_file::rename(const std::string &from, const std::string &to, bool re
     native_error();
 #endif
 }
-void native_file::remove(const std::string &path, bool directory) const {
+void native_file::remove(const std::string &path, bool directory,
+                         const std::string &pinned_object) const {
   portable_path(path, true);
 #ifdef _WIN32
-  auto file = open(path, directory, false, true);
+  auto file = open_impl(path, directory, false, true, !pinned_object.empty());
+  require(pinned_object.empty() || (!directory && file.info().at("object") == pinned_object),
+          "object_replaced");
   FILE_DISPOSITION_INFO value{TRUE};
   if (!SetFileInformationByHandle(file.impl_->file->handle, FileDispositionInfo, &value,
                                   sizeof(value)))
     native_error();
 #else
+  if (!pinned_object.empty()) {
+    auto file = open_impl(path, false, false, false, true);
+    require(!directory && file.info().at("object") == pinned_object, "object_replaced");
+  }
   auto slash = path.rfind('/');
   native_file parent;
   int dir = impl_->file->handle;

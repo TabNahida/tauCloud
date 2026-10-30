@@ -16,6 +16,7 @@ void nfs_init() {
       "CREATE TABLE IF NOT EXISTS change_clock(id INTEGER PRIMARY KEY,value INTEGER NOT NULL);"
       "INSERT OR IGNORE INTO change_clock VALUES(1,0);"
       "CREATE TABLE IF NOT EXISTS changes(token TEXT PRIMARY KEY,signature TEXT NOT NULL,value INTEGER NOT NULL);");
+  sql(*nfs_db, "CREATE TABLE IF NOT EXISTS retained(token TEXT PRIMARY KEY,body TEXT NOT NULL);");
   // Earlier previews keyed projections by export handles. Metadata belongs to
   // the native incarnation, so aliases must observe the same attributes.
   {
@@ -37,6 +38,79 @@ void nfs_init() {
     statement add(*nfs_db, "INSERT INTO secret VALUES(?)");
     add.bind(1, nfs_key);
     add.row();
+  }
+}
+void nfs_forget_pin(const std::string &token) {
+  statement q(*nfs_db, "DELETE FROM retained WHERE token=?");
+  q.bind(1, token); q.row();
+  nfs_retained.erase(token);
+}
+void nfs_restore_pins(space_state &s) {
+  nfs_init();
+  auto space = s.data.at("space").at("id").get<std::string>();
+  std::vector<std::pair<std::string, json>> records;
+  {
+    statement q(*nfs_db, "SELECT token,body FROM retained");
+    while (q.row()) {
+      auto body = json::parse(q.text(1));
+      if (body.at("space") == space) records.emplace_back(q.text(0), std::move(body));
+    }
+  }
+  for (const auto &[token, record] : records) {
+    require(record.at("root") == s.data.at("root") &&
+        record.at("space_object") == s.data.at("space").at("object"), "space_replaced");
+    auto path = record.at("path").get<std::string>();
+    auto pin = record.at("pin").get<std::string>();
+    auto object = record.at("object").get<std::string>();
+    if (record.value("reaping", false)) {
+      try { s.directory.remove(pin, false, object); }
+      catch (const error &e) { if (std::string_view(e.what()) != "not_found") throw; }
+      s.directory.flush();
+      statement dead(*nfs_db, "UPDATE objects SET dead=1 WHERE token=?");
+      dead.bind(1, token); dead.row();
+      nfs_forget_pin(token);
+      continue;
+    }
+    bool original = s.directory.matches_pin(path, object);
+    try {
+      auto file = s.directory.open_pin(pin, object);
+      require(file.stable_identity() == token, "object_replaced");
+      if (original) {
+        // Crash before the unlink/atomic replacement: discard only our private
+        // link. The original name and its old NFS handle remain valid.
+        file = native_file();
+        s.directory.remove(pin, false, object);
+        s.directory.flush();
+        nfs_forget_pin(token);
+      } else {
+        require(nfs_retained.size() < 128 || nfs_retained.contains(token), "handle_limit");
+        nfs_retained.insert_or_assign(token, retained_nfs_file{space, path,
+            s.data.at("root").dump(), pin, object, std::move(file)});
+      }
+    } catch (const error &e) {
+      if (std::string_view(e.what()) != "not_found" || !original) throw;
+      // The durable journal precedes link creation. No user data was removed.
+      nfs_forget_pin(token);
+    }
+  }
+}
+void nfs_pin(space_state &s, const json &grant, const std::string &path,
+             native_file &file, const std::string &token) {
+  require(nfs_retained.size() < 128 && !nfs_retained.contains(token), "handle_limit");
+  auto space = grant.at("space").at("id").get<std::string>();
+  auto object = file.info().at("object").get<std::string>();
+  auto pin = ".tc-nfs-" + random_hex(16);
+  json record = {{"space", space}, {"path", path}, {"root", grant.at("root")},
+      {"space_object", grant.at("space").at("object")}, {"pin", pin}, {"object", object}};
+  statement q(*nfs_db, "INSERT INTO retained VALUES(?,?)");
+  q.bind(1, token); q.bind(2, record.dump()); q.row();
+  try {
+    auto held = file.pin(s.directory, pin);
+    nfs_retained.emplace(token, retained_nfs_file{space, path, grant.at("root").dump(),
+        pin, object, std::move(held)});
+  } catch (...) {
+    nfs_restore_pins(s);
+    throw;
   }
 }
 native_file nfs_open(space_state &s, const std::string &path, bool dir, bool write = false) {
@@ -171,8 +245,19 @@ json nfs_reap(const json &body, const call_context &ctx) {
   require(ctx.caller == "nfs", "forbidden");
   const auto &live = body.at("handles");
   require(live.is_array() && live.size() <= 4096, "invalid_request");
-  if (nfs_retained.empty()) return {{"retained", 0}};
   nfs_init();
+  // File-domain restart loses descriptors but not the private links/journal.
+  // Reattach every affected registered space before applying the live set.
+  std::set<std::string> affected;
+  {
+    statement q(*nfs_db, "SELECT body FROM retained");
+    while (q.row()) affected.insert(json::parse(q.text(0)).at("space"));
+  }
+  for (const auto &space : affected) {
+    statement q(db, "SELECT body FROM spaces WHERE id=?");
+    q.bind(1, space); require(q.row(), "space_unavailable");
+    attach(json::parse(q.text(0)), ctx);
+  }
   std::set<std::string> tokens;
   for (const auto &encoded : live) {
     auto h = decode_bytes(encoded.get<std::string>());
@@ -184,8 +269,28 @@ json nfs_reap(const json &body, const call_context &ctx) {
   }
   for (auto it = nfs_retained.begin(); it != nfs_retained.end();)
     if (!tokens.contains(it->first)) {
+      auto &held = it->second;
+      auto &s = *spaces.at(held.space);
+      {
+        statement q(*nfs_db, "SELECT body FROM retained WHERE token=?");
+        q.bind(1, it->first); require(q.row(), "internal_error");
+        auto record = json::parse(q.text(0)); record["reaping"] = true;
+        statement mark(*nfs_db, "UPDATE retained SET body=? WHERE token=?");
+        mark.bind(1, record.dump()); mark.bind(2, it->first); mark.row();
+      }
+      held.file = native_file();
+      try { s.directory.remove(held.pin, false, held.object); }
+      catch (const error &e) {
+        if (std::string_view(e.what()) != "not_found") {
+          held.file = s.directory.open_pin(held.pin, held.object);
+          throw;
+        }
+      }
+      s.directory.flush();
       statement q(*nfs_db, "UPDATE objects SET dead=1 WHERE token=?");
       q.bind(1, it->first); q.row();
+      statement drop(*nfs_db, "DELETE FROM retained WHERE token=?");
+      drop.bind(1, it->first); drop.row();
       it = nfs_retained.erase(it);
     } else ++it;
   return {{"retained", nfs_retained.size()}};
@@ -251,7 +356,7 @@ nfs_object nfs_resolve(space_state &s, const json &g, const std::string &encoded
     for (const auto &entry : d.list()) {
       require(++visited <= 4096, "directory_limit");
       auto name = entry.at("name").get<std::string>();
-      if (name == ".tc-stages")
+      if (name.starts_with(".tc-"))
         continue;
       auto child = p.empty() ? name : p + "/" + name;
       auto isdir = entry.at("directory").get<bool>();
@@ -356,7 +461,7 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     for (const auto &e : o.file.list()) {
       ctx.check();
       auto n = e.at("name").get<std::string>();
-      if (n == ".tc-stages")
+      if (n.starts_with(".tc-"))
         continue;
       auto child = p.empty() ? n : p + "/" + n;
       auto f = nfs_open(s, child, e.at("directory"));
@@ -473,12 +578,16 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     require(!retain || nfs_retained.size() < 128, "handle_limit");
     auto f = nfs_open(s, child, meta->at("directory"), retain);
     auto token = f.stable_identity();
-    auto pinned = retain ? f.retain() : native_file();
-    f = native_file();
+    auto native_object = f.info().at("object").get<std::string>();
     pending(request, hash);
-    s.directory.remove(child, meta->at("directory"));
-    if (retain)
-      nfs_retained.emplace(token, retained_nfs_file{space, child, g.at("root").dump(), std::move(pinned)});
+    if (retain) nfs_pin(s, g, child, f, token);
+    f = native_file();
+    try {
+      s.directory.remove(child, meta->at("directory"), retain ? native_object : "");
+    } catch (...) {
+      if (retain) nfs_restore_pins(s);
+      throw;
+    }
     o.file.flush();
     erase(space, child);
     if (!retain) {
@@ -505,7 +614,7 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     case_check(s.directory, to);
     auto destination = dav_exists(s, to);
     std::string replaced;
-    native_file pinned;
+    native_file pin_source;
     bool retain = false;
     if (destination) {
       require(destination->at("directory") == meta->at("directory"),
@@ -515,7 +624,7 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
       auto f = nfs_open(s, to, destination->at("directory"), retain);
       if (destination->at("directory")) require(f.list().empty(), "directory_not_empty");
       replaced = f.stable_identity();
-      if (retain) pinned = f.retain();
+      if (retain) pin_source = std::move(f);
       unlocked(space, to);
       smb_sharing(space, to, 0x10000, 7);
     }
@@ -524,9 +633,14 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     dav_guard(s, from, actor, body, meta->at("directory"), true);
     dav_guard(s, to, actor, body);
     pending(request, hash);
-    s.directory.rename(from, to, bool(destination), meta->at("directory"));
-    if (retain)
-      nfs_retained.emplace(replaced, retained_nfs_file{space, to, g.at("root").dump(), std::move(pinned)});
+    if (retain) nfs_pin(s, g, to, pin_source, replaced);
+    pin_source = native_file();
+    try {
+      s.directory.rename(from, to, bool(destination), meta->at("directory"));
+    } catch (...) {
+      if (retain) nfs_restore_pins(s);
+      throw;
+    }
     o.file.flush();
     target.file.flush();
     if (!replaced.empty() && !retain) {

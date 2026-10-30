@@ -90,6 +90,10 @@ def main():
         expect(a, [op.putfh(root), op.remove(b'unlinked')])
         assert not (f.root / 'nfsdata/unlinked').exists()
         assert read(a, handle, state) == b'survives worker restart'
+        durable_state, durable_handle = a.open(root, b'durable-unlink', True, owner=b'durable')
+        durable_data = b'survives storage owner restart'
+        write(a, durable_handle, durable_state, durable_data)
+        expect(a, [op.putfh(root), op.remove(b'durable-unlink')])
         before_free = free(a, root)
         before = f.ctl('status')
         pid, owner = before['nfs']['identity']['pid'], a.owner
@@ -102,12 +106,43 @@ def main():
         assert f.ctl('status')['file']['identity']['pid'] == before['file']['identity']['pid']
         recovered = connect(owner, reclaim=True)
         state, handle = recovered.open(handle, b'', claim=1, owner=b'unlinked')
+        durable_state, durable_handle = recovered.open(durable_handle, b'', claim=1, owner=b'durable')
         expect(recovered, [op.reclaim_complete(False)])
         assert read(recovered, handle, state) == b'survives worker restart'
         assert free(recovered, root) == before_free
         expect(recovered, [op.putfh(handle), op.close(0, state)])
-        assert free(recovered, root) == original_free - 3
+        assert free(recovered, root) == original_free - 3 - len(durable_data)
         checks.append('unlink retains descriptor and quota across NFS worker crash; matching OPEN reclaim and last CLOSE release it')
+
+        state, handle = durable_state, durable_handle
+        before_free = free(recovered, root)
+        pins = list((f.root / 'nfsdata').glob('.tc-nfs-*'))
+        assert len(pins) == 1
+        before = f.ctl('status')
+        pid = before['file']['identity']['pid']
+        if os.name == 'nt':
+            subprocess.run(['taskkill', '/F', '/PID', str(pid)], capture_output=True, check=True)
+        else:
+            os.kill(pid, signal.SIGKILL)
+        wait(lambda: (entry := f.ctl('status')['file'])['status'] == 'running'
+             and entry['identity']['pid'] != pid)
+        assert f.ctl('status')['nfs']['identity']['pid'] == before['nfs']['identity']['pid']
+        assert read(recovered, handle, state) == b'survives storage owner restart'
+        assert free(recovered, root) == before_free
+        write(recovered, handle, state, b'! ', 0)
+        owner = recovered.owner
+        for c in clients: c.close()
+        f.stop(); f.start()
+        recovered = connect(owner, reclaim=True)
+        state, handle = recovered.open(handle, b'', claim=1, owner=b'durable')
+        expect(recovered, [op.reclaim_complete(False)])
+        assert read(recovered, handle, state) == b'! rvives storage owner restart'
+        assert free(recovered, root) == before_free
+        expect(recovered, [op.putfh(handle), op.close(0, state)])
+        assert free(recovered, root) == original_free - 3
+        assert not list((f.root / 'nfsdata').glob('.tc-nfs-*'))
+        expect(recovered, [op.putfh(handle), op.getattr([2])], 70)
+        checks.append('private links preserve data, identity and quota through file-domain kill and all-service restart; reclaim/CLOSE removes durable storage')
         report = dict(status='passed', checks=checks)
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(report, indent=2) + '\n')

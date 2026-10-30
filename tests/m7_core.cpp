@@ -80,6 +80,23 @@ int main() {
       pinned.flush();
       ok(pinned.info().at("size") == 8);
       ok(pinned.retain().read(0, 8) == "Retained");
+      auto durable = dir.open("durable", false, true, true);
+      durable.write(0, "durable data");
+      auto object = durable.info().at("object").get<std::string>();
+      auto token = durable.stable_identity();
+      auto name = ".tc-nfs-" + random_hex(16);
+      auto link = durable.pin(dir, name);
+      rejected([&] { dir.open("durable"); }, "hardlink_denied");
+      rejected([&] { dir.open_pin(name, "wrong object"); }, "object_replaced");
+      ok(dir.matches_pin("durable", object));
+      durable = native_file();
+      dir.remove("durable", false, object);
+      ok(!dir.matches_pin("durable", object));
+      link = native_file();
+      auto reopened = dir.open_pin(name, object);
+      ok(reopened.stable_identity() == token && reopened.read(0, 64) == "durable data");
+      reopened = native_file();
+      dir.remove(name, false, object);
     }
     initialize(root / "state", 38443);
     auto cfg = config::load(root / "state");

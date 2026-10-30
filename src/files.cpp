@@ -73,7 +73,7 @@ struct file_store::impl {
   std::map<std::string, opened> handles;
   std::vector<byte_lock> locks;
   struct retained_nfs_file {
-    std::string space, path, root;
+    std::string space, path, root, pin, object;
     native_file file;
   };
   std::map<std::string, retained_nfs_file> nfs_retained;
@@ -249,6 +249,12 @@ struct file_store::impl {
       }
       for (auto entry : dir->list()) {
         auto name = entry.at("name").get<std::string>();
+        if (path.empty() && name.starts_with(".tc-nfs-")) {
+          require(std::any_of(nfs_retained.begin(), nfs_retained.end(), [&](const auto &item) {
+            return item.second.space == id && item.second.pin == name;
+          }), "orphan_nfs_pin");
+          continue;
+        }
         if (path.empty() && name.starts_with(".tc-stage-")) {
           require(stages.contains(name), "orphan_stage");
           continue;
@@ -384,6 +390,7 @@ struct file_store::impl {
           }
         }
       }
+      nfs_restore_pins(*state);
       scan(*state, ctx);
       spaces[id] = std::move(state);
     }

@@ -120,6 +120,25 @@ def main():
             assert result.status == 10007 and len(result.resarray) == 3, result
         checks.append('recognized unsupported file types return per-operation errors after successful SEQUENCE/PUTFH')
 
+        sys_auth = t4.callback_sec_parms4(1, t4.authsys_parms(0, b'client', 1000, 1000, []))
+        for auth in ([], [t4.callback_sec_parms4(0)], [sys_auth]):
+            result = alice.compound([op.backchannel_ctl(0x40000000, auth), op.putrootfh(), op.getfh()])
+            assert result.status == 0 and len(result.resarray) == 4, result
+        gss = t4.callback_sec_parms4(6, cbsp_gss_handles=t4.gss_cb_handles4(1, b'unknown', b'client'))
+        result = alice.compound([op.backchannel_ctl(0x40000000, [gss])])
+        assert result.status == 2 and len(result.resarray) == 2, result
+        result = alice.compound([op.set_ssv(b'ssv', b'digest')])
+        assert result.status == 22 and len(result.resarray) == 2, result
+        obsolete = [op.renew(alice.cid), op.open_confirm(t4.stateid4(0, b'\0' * 12), 0),
+                    op.release_lockowner(t4.lock_owner4(alice.cid, b'obsolete')),
+                    op.setclientid(t4.nfs_client_id4(b'12345678', b'obsolete'),
+                        t4.cb_client4(0, t4.clientaddr4(b'tcp', b'127.0.0.1.1.1')), 0),
+                    op.setclientid_confirm(alice.cid, b'12345678')]
+        for operation in obsolete:
+            result = alice.compound([operation])
+            assert result.status == 10004 and len(result.resarray) == 2, result
+        checks.append('BACKCHANNEL_CTL updates bounded callback configuration; unknown GSS, SP4_NONE SET_SSV and obsolete v4.0 operations return defined per-operation errors')
+
         assert alice.mount()[0] == 0
         f.api('nfs-exports', f.admin, dict(id='nfs', trust='loopback-auth-sys',
               anonymous='bob', uids={'1000': 'alice'}, gids={'1000': 'unix'},

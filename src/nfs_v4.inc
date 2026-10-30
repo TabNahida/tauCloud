@@ -20,6 +20,8 @@ struct session {
   std::vector<slot> slots;
   std::vector<uint32_t> channel;
   std::set<std::string> connections;
+  uint32_t callback_program = 0;
+  std::vector<uint32_t> callback_flavors;
 };
 struct open_state {
   std::string session, fh, owner, recovery;
@@ -345,6 +347,24 @@ void put_channel(writer &w, const std::vector<uint32_t> &a) {
     w.u32(v);
   w.u32(0);
 }
+std::vector<uint32_t> callback_security(reader &r) {
+  auto n = r.u32();
+  if (n > 16) throw xdr_error();
+  std::vector<uint32_t> flavors;
+  for (uint32_t i = 0; i < n; ++i) {
+    auto auth = r.u32();
+    flavors.push_back(auth);
+    if (auth == 1) {
+      r.u32(); r.opaque(255); r.u32(); r.u32();
+      auto groups = r.u32();
+      if (groups > 16) throw xdr_error();
+      for (uint32_t j = 0; j < groups; ++j) r.u32();
+    } else if (auth == 6) {
+      r.u32(); r.opaque(1024); r.opaque(1024);
+    } else if (auth != 0) throw xdr_error();
+  }
+  return flavors;
+}
 json parse4(reader &r) {
   auto op = r.u32();
   json a = {{"op", op}};
@@ -372,29 +392,37 @@ json parse4(reader &r) {
     a["flags"] = r.u32();
     a["fore"] = channel(r);
     a["back"] = channel(r);
-    r.u32();
-    auto n = r.u32();
-    if (n > 16)
-      throw xdr_error();
-    for (uint32_t i = 0; i < n; ++i) {
-      auto auth = r.u32();
-      if (auth == 1) {
-        r.u32();
-        r.opaque(255);
-        r.u32();
-        r.u32();
-        auto groups = r.u32();
-        if (groups > 16)
-          throw xdr_error();
-        for (uint32_t j = 0; j < groups; ++j)
-          r.u32();
-      } else if (auth == 6) {
-        r.u32(); r.opaque(1024); r.opaque(1024); // Callback GSS offers; no backchannel granted.
-      } else if (auth != 0)
-        throw xdr_error();
-    }
+    a["callback_program"] = r.u32();
+    a["callback_flavors"] = callback_security(r);
     break;
   }
+  case 40:
+    a["callback_program"] = r.u32();
+    a["callback_flavors"] = callback_security(r);
+    break;
+  case 54:
+    r.opaque(1024); r.opaque(1024);
+    break;
+  case 7: // Optional delegation purge, no delegations are issued.
+  case 30: // NFSv4.0 RENEW is obsolete in v4.1.
+    r.u64();
+    break;
+  case 8:
+    r.fixed(16);
+    break;
+  case 19:
+    r.boolean();
+    break;
+  case 20:
+    r.fixed(16); r.u32();
+    break;
+  case 35:
+    r.fixed(8); r.opaque(1024); r.u32();
+    r.opaque(256); r.opaque(1024); r.u32();
+    break;
+  case 36:
+    r.u64(); r.fixed(8);
+    break;
   case 41:
     a["session"] = encode_bytes(r.fixed(16));
     a["dir"] = r.u32();
@@ -767,6 +795,8 @@ std::string v4(const identity &who, reader &r) {
             c.replaces = 0;
           }
           sessions.emplace(idstr, session{id, who.key, now() + 60000, std::vector<slot>(fore[5]), fore, {connection}});
+          sessions.at(idstr).callback_program = a.at("callback_program");
+          sessions.at(idstr).callback_flavors = a.at("callback_flavors").get<std::vector<uint32_t>>();
           body.fixed(decode_bytes(idstr)).u32(seq).u32(0);
           put_channel(body, fore);
           put_channel(body, back);
@@ -860,7 +890,15 @@ std::string v4(const identity &who, reader &r) {
           check(!current_state.empty(), 10025);
           a["state"] = current_state;
         }
-        if (op == 24 || op == 23) {
+        if (op == 40) {
+          auto flavors = a.at("callback_flavors").get<std::vector<uint32_t>>();
+          check(std::find(flavors.begin(), flavors.end(), 6u) == flavors.end(), 2);
+          auto &s = sessions.at(sid);
+          s.callback_program = a.at("callback_program");
+          s.callback_flavors = std::move(flavors);
+        } else if (op == 54) {
+          check(false, 22); // SET_SSV is invalid for the negotiated SP4_NONE.
+        } else if (op == 24 || op == 23) {
           current = pseudo;
           current_state.clear();
         } else if (op == 22) {
@@ -1083,7 +1121,7 @@ std::string v4(const identity &who, reader &r) {
           node.key() = current_state;
           opens.insert(std::move(node));
           body.fixed(decode_bytes(current_state));
-        } else if (op == 12 || op == 13 || op == 14 || op == 39 || op == 45) {
+        } else if (op == 12 || op == 13 || op == 14 || op == 45) {
           lock_operation(who, a, sid, current, current_state, body);
         } else if (op == 25 || op == 38 || op == 34) {
           check(current != pseudo, 21);

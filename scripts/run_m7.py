@@ -73,6 +73,9 @@ def main():
     commands += [[sys.executable, 'tests/nfs_unlink_integration.py', '--bin', str(binary),
                   '--output', str(output.with_suffix('.unlink.json'))]
                  + (['--sanitizers'] if args.sanitizers else [])]
+    commands += [[sys.executable, 'tests/nfs_pin_recovery_integration.py', '--bin', str(binary),
+                  '--output', str(output.with_suffix('.pin-recovery.json'))]
+                 + (['--sanitizers'] if args.sanitizers else [])]
     digest = hashlib.sha256()
     sources = [ROOT / 'xmake.lua', ROOT / 'dependencies.lock.json']
     for directory in ('src', 'include', 'apps', 'tests', 'scripts', 'packaging'):

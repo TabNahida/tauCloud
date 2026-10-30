@@ -13,6 +13,7 @@ const std::vector<std::string> &file_roles();
 class native_file {
   struct impl;
   std::unique_ptr<impl> impl_;
+  native_file open_impl(const std::string &, bool, bool, bool, bool) const;
 
 public:
   native_file();
@@ -21,6 +22,11 @@ public:
   native_file &operator=(native_file &&) noexcept;
   // Share an already-confined descriptor, retaining access after unlink.
   native_file retain() const;
+  // Private namespace links preserve an open incarnation across process death.
+  // Ordinary opens continue to reject all hard links.
+  native_file pin(const native_file &directory, const std::string &name) const;
+  native_file open_pin(const std::string &name, const std::string &object) const;
+  bool matches_pin(const std::string &path, const std::string &object) const;
   static native_file root(const fs::path &path);
   native_file open(const std::string &path, bool directory = false, bool create = false,
                    bool write = false) const;
@@ -35,7 +41,8 @@ public:
   void flush() const;
   void rename(const std::string &from, const std::string &to, bool replace = false,
               bool directory = false) const;
-  void remove(const std::string &path, bool directory = false) const;
+  void remove(const std::string &path, bool directory = false,
+              const std::string &pinned_object = "") const;
 };
 json inspect_root(const fs::path &path);
 #ifdef TAUCLOUD_TEST_IO
