@@ -283,6 +283,7 @@ struct client {
   smb_state &s;
   pace::tcp::stream socket;
   bool negotiated = false, authenticated = false, ending = false, raw_ntlm = false;
+  bool multiprotocol = false;
   uint64_t session = 0, low = 0, high = 1;
   std::set<uint64_t> consumed;
   std::string exchange, token;
@@ -524,8 +525,10 @@ struct client {
           auto item = std::string_view(contexts).substr(pos, limit);
           auto tag = slice(item, get(item, 4, 2), get(item, 6, 2), 16);
           slice(item, get(item, 10, 2), get(item, 12, 4), 16);
-          check(tag != "DHnC" && tag != "DH2C" && tag != "TWrp" && tag != "SecD" && tag != "ExtA",
-                0xc00000bb);
+          if (tag == "DHnC" || tag == "DH2C" || tag == "TWrp" || tag == "SecD" || tag == "ExtA") {
+            log("smb", "unsupported_create_context", std::string(tag));
+            throw status_error(0xc00000bb);
+          }
           if (!next)
             break;
           pos += next;
@@ -545,10 +548,18 @@ struct client {
       if (maximum)
         access = (access & ~0x02000000) | (trees.at(tid).writable ? 0x1301bf : 0x1200a9);
       auto disposition = get(p, 100, 4), options = get(p, 104, 4);
-      check(!(options & ~uint64_t(0x1 | 0x2 | 0x4 | 0x8 | 0x10 | 0x20 | 0x40 | 0x800 | 0x1000 |
-                                  0x2000 | 0x4000 | 0x10000 | 0x200000)),
-            0xc00000bb);
-      check(!(get(p, 92, 4) & ~uint64_t(0x10 | 0x20 | 0x80)), 0xc00000bb);
+      // MUST-ignore compatibility flags; NO_RECALL is a hint for HSM, which
+      // this confined local-file profile does not implement.
+      if (options & ~uint64_t(0x1 | 0x2 | 0x4 | 0x8 | 0x10 | 0x20 | 0x40 | 0x800 | 0x1000 |
+                              0x400 | 0x2000 | 0x4000 | 0x10000 | 0x20000 | 0x200000 |
+                              0x400000 | 0x800000)) {
+        log("smb", "unsupported_create_options", std::to_string(options));
+        throw status_error(0xc00000bb);
+      }
+      if (get(p, 92, 4) & ~uint64_t(0x10 | 0x20 | 0x80)) {
+        log("smb", "unsupported_create_attributes", std::to_string(get(p, 92, 4)));
+        throw status_error(0xc00000bb);
+      }
       bool writing = (access & (0x10000 | 0x116)) || disposition != 1;
       auto grant = co_await authorize(tid, name, writing);
       json request = {
@@ -832,11 +843,53 @@ struct client {
         }
         check(prefix[0] == 0);
         size_t length = (get(prefix, 1, 1) << 16) | (get(prefix, 2, 1) << 8) | get(prefix, 3, 1);
-        check(length >= 64 && length <= 1024 * 1024 + 52);
+        check(length >= 35 && length <= 1024 * 1024 + 52);
         bytes packet;
         {
           auto timer = s.io->call_after(5s, [this] { close(); });
           packet = co_await socket.read_exact(length, 1024 * 1024 + 52);
+        }
+        if (packet.starts_with(std::string_view("\xffSMB", 4))) {
+          // MS-SMB2 3.3.5.3: this is only the bootstrap into SMB2 negotiation,
+          // never an SMB1 session or an SMB1 file operation.
+          check(!negotiated && !multiprotocol && low == 0 && packet.size() <= 4096 &&
+                get(packet, 4, 1) == 0x72 && !(get(packet, 9, 1) & 0x80) &&
+                get(packet, 32, 1) == 0 && get(packet, 33, 2) == packet.size() - 35);
+          bool wildcard = false;
+          size_t at = 35, count = 0;
+          while (at < packet.size()) {
+            check(++count <= 64 && get(packet, at++, 1) == 2);
+            auto end = packet.find('\0', at);
+            check(end != bytes::npos && end - at <= 255);
+            wildcard |= std::string_view(packet).substr(at, end - at) == "SMB 2.???";
+            at = end + 1;
+          }
+          check(wildcard, 0xc00000bb);
+          multiprotocol = true;
+          low = 1;
+          high = 2;
+          bytes response(128, '\0');
+          response.replace(0, 4, "\xfeSMB", 4);
+          put(response, 4, 64, 2);
+          put(response, 14, 1, 2);
+          put(response, 16, 1, 4);
+          put(response, 64, 65, 2);
+          put(response, 66, 3, 2);
+          put(response, 68, 0x2ff, 2);
+          response.replace(72, 16, s.guid);
+          for (size_t off : {92, 96, 100})
+            put(response, off, 65536, 4);
+          put(response, 104, (now() + 11644473600000ll) * 10000ull, 8);
+          auto security = mechanisms();
+          put(response, 120, 128, 2);
+          put(response, 122, security.size(), 2);
+          response += security;
+          bytes frame(4, '\0');
+          frame[2] = char(response.size() >> 8);
+          frame[3] = char(response.size());
+          auto timer = s.io->call_after(5s, [this] { close(); });
+          co_await socket.write_all(frame + response);
+          continue;
         }
         bool encrypted = packet.starts_with(std::string_view("\xfdSMB", 4));
         if (encrypted) {

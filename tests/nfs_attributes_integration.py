@@ -48,6 +48,8 @@ def main():
         r=c.compound([op.putfh(h),op.close(0,state)]);assert r.status==0,r
         for i in range(24): (f.root/'nfsdata'/('entry-%02d'%i)).write_bytes(b'x')
         cookie=0;verifier=b'\0'*8;names=[];pages=0
+        r=c.compound([op.putfh(root),op.get_dir_delegation(False,[],t4.nfstime4(0,0),t4.nfstime4(0,0),[],[])])
+        assert r.status==0 and r.resarray[-1].opget_dir_delegation.gddr_res_non_fatal4.gddrnf_status==1,r
         while True:
             r=c.compound([op.putfh(root),op.readdir(cookie,verifier,512,512,[2])]);assert r.status==0,r
             page=r.resarray[-1].opreaddir.resok4;verifier=page.cookieverf;entries=page.reply.entries

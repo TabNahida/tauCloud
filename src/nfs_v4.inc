@@ -393,6 +393,11 @@ json parse4(reader &r) {
   case 52:
     a["style"] = r.u32();
     break;
+  case 46:
+    r.boolean(); bitmap(r);
+    r.u64(); r.u32(); r.u64(); r.u32();
+    bitmap(r); bitmap(r);
+    break;
   case 9:
     a["bits"] = bitmap(r);
     break;
@@ -869,6 +874,11 @@ std::string v4(const identity &who, reader &r) {
             }
           }
           body.u32(asked & 0x3f).u32(allowed);
+        } else if (op == 46) {
+          check(meta4(who, current).at("directory"), 20);
+          // Directory delegation is optional: decline without granting state
+          // or promising a callback. Modern clients can then use READDIR.
+          body.u32(1).boolean(false); // GDD4_UNAVAIL, will_signal=false.
         } else if (op == 33 || op == 52) {
           meta4(who, current);
           if (op == 52) {

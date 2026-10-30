@@ -8,6 +8,7 @@ import platform
 import subprocess
 import traceback
 from m5_integration import Fixture
+from smb_trace_proxy import HeaderProxy
 
 SCRIPT = r'''
 $ErrorActionPreference = 'Stop'
@@ -15,7 +16,7 @@ $remote = '\\127.0.0.1\smb'
 if (Get-SmbMapping | Where-Object RemotePath -eq $remote) { throw 'Fixture remote is already mapped' }
 $drive = $null
 foreach ($candidate in @('Z:','Y:','X:','W:','V:')) {
-    if (-not (Get-PSDrive -Name $candidate.TrimEnd(':') -ErrorAction SilentlyContinue) -and -not (Get-SmbMapping | Where-Object { $_.LocalPath -eq $candidate })) { $drive=$candidate; break }
+    if (-not (Get-PSDrive -Name $candidate.TrimEnd(':') -ErrorAction SilentlyContinue) -and -not (Get-SmbMapping | Where-Object { $_.LocalPath -eq $candidate }) -and -not (Test-Path ('HKCU:\Network\'+$candidate.TrimEnd(':')))) { $drive=$candidate; break }
 }
 if (-not $drive) { throw 'No unused test drive' }
 $drive | Set-Content -LiteralPath $env:TC_NATIVE_MAPPING
@@ -50,7 +51,8 @@ def main():
     f=Fixture(args.bin);report=dict(status='failed',host=platform.platform())
     script=f.base/'native-smb.ps1';script.write_text(SCRIPT)
     mapping=f.base/'mapping.txt'
-    env=os.environ.copy();env.update(TC_NATIVE_PORT=str(f.smbport),TC_NATIVE_PASSWORD=f.password,TC_NATIVE_MAPPING=str(mapping))
+    proxy=HeaderProxy(f.smbport)
+    env=os.environ.copy();env.update(TC_NATIVE_PORT=str(proxy.port),TC_NATIVE_PASSWORD=f.password,TC_NATIVE_MAPPING=str(mapping))
     try:
         result=subprocess.run(['pwsh','-NoProfile','-NonInteractive','-File',str(script)],env=env,capture_output=True,text=True,timeout=120)
         report.update(returncode=result.returncode,stdout=result.stdout,stderr=result.stderr)
@@ -62,6 +64,7 @@ def main():
             cleanup=r"$d=(Get-Content -LiteralPath $env:TC_NATIVE_MAPPING).Trim(); Get-SmbMapping | Where-Object { $_.LocalPath -eq $d -and $_.RemotePath -eq '\\127.0.0.1\smb' } | Remove-SmbMapping -Force -Confirm:$false"
             result=subprocess.run(['pwsh','-NoProfile','-NonInteractive','-Command',cleanup],env=env,capture_output=True,text=True,timeout=30)
             if result.returncode:report.update(status='failed',cleanup_error=result.stderr)
+        proxy.close();report['smb_headers']=proxy.trace
         f.log.flush();report['server_log']=(f.base/'supervisor.log').read_text()[-65536:]
         args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(report,indent=2)+'\n')
         f.close()

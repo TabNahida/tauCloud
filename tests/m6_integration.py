@@ -36,18 +36,27 @@ def sign(packet, key):
     return packet[:48]+c.finalize()+packet[64:]
 
 
-def wire_auth(port,password,user,dialect=0x311,alter_transcript=False):
+def multiprotocol_packet(dialects=('NT LM 0.12','SMB 2.002','SMB 2.???')):
+    body=b''.join(b'\x02'+d.encode('ascii')+b'\0' for d in dialects)
+    return b'\xffSMB\x72'+bytes(27)+b'\0'+struct.pack('<H',len(body))+body
+
+
+def wire_auth(port,password,user,dialect=0x311,alter_transcript=False,bootstrap=False):
     sock=socket.create_connection(('127.0.0.1',port),timeout=10)
     try:
-        req=negotiate_packet(dialect);resp=exchange(sock,req);assert status(resp)==0
+        if bootstrap:
+            resp=exchange(sock,multiprotocol_packet());assert status(resp)==0
+            assert struct.unpack_from('<H',resp,68)[0]==0x2ff
+        req=bytearray(negotiate_packet(dialect));struct.pack_into('<Q',req,24,int(bootstrap));req=bytes(req)
+        resp=exchange(sock,req);assert status(resp)==0
         transcript=hashlib.sha512(bytes(64)+req).digest();transcript=hashlib.sha512(transcript+resp).digest()
         if alter_transcript:transcript=bytes(64)
         ctx=spnego.client(username='TAUCLOUD\\'+user,password=password,protocol='ntlm',hostname='127.0.0.1',service='cifs')
         def setup(token,mid,sid):return header(1,mid,sid,flags=0x10 if dialect==0x311 else 0)+struct.pack('<HBBIIHHQ',25,0,1,0,0,88,len(token),0)+token
-        req=setup(ctx.step(),1,0);resp=exchange(sock,req);assert status(resp)==0xc0000016
+        req=setup(ctx.step(),1+int(bootstrap),0);resp=exchange(sock,req);assert status(resp)==0xc0000016
         transcript=hashlib.sha512(transcript+req).digest();transcript=hashlib.sha512(transcript+resp).digest()
         sid=struct.unpack_from('<Q',resp,40)[0];off,n=struct.unpack_from('<HH',resp,68)
-        req=setup(ctx.step(resp[off:off+n]),2,sid);resp=exchange(sock,req);assert status(resp)==0
+        req=setup(ctx.step(resp[off:off+n]),2+int(bootstrap),sid);resp=exchange(sock,req);assert status(resp)==0
         transcript=hashlib.sha512(transcript+req).digest()
         derive=lambda label,context:Session._smb3kdf(None,ctx.session_key,label+b'\0',context)
         if dialect==0x311:
@@ -110,10 +119,22 @@ def run(args):
         t=TreeConnect(s,r'\\127.0.0.1\smb');t.connect()
         return c,s,t
     try:
+        sock,sid,key,_,_,_=wire_auth(f.smbport,f.password,'alice',bootstrap=True)
+        assert status(exchange(sock,sign(header(13,4,sid,flags=8)+struct.pack('<HH',4,0),key)))==0
+        sock.close()
+        for probe in (multiprotocol_packet(('NT LM 0.12',)),multiprotocol_packet()[:-1],
+                      multiprotocol_packet().replace(b'\xffSMB\x72',b'\xffSMB\x73')):
+            rejected_connection(socket.create_connection(('127.0.0.1',f.smbport),timeout=10),probe)
+        sock=socket.create_connection(('127.0.0.1',f.smbport),timeout=10)
+        assert status(exchange(sock,multiprotocol_packet()))==0
+        rejected_connection(sock,multiprotocol_packet())
+        passed('SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected')
         for dialect in (0x300,0x302,0x311):
             c,s,t=connect(dialect)
             assert c.dialect==dialect and c.supports_encryption and not c.supports_file_leasing and not c.supports_multi_channel
             h=create(t,'signed-'+hex(dialect));h.write(b'signed');assert h.read(0,6)==b'signed';h.close()
+            h=create(t,'native-options-'+hex(dialect),options=0x400060|0x400|0x20000|0x800000)
+            h.write(b'local');assert h.read(0,5)==b'local';h.close()
             passed(f'{hex(dialect)} AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2')
             s.encrypt_data=True
             name='加密-'+hex(dialect);h=create(t,name);h.write(bytes(range(256))*256);h.flush();assert h.read(0,65536)==bytes(range(256))*256
