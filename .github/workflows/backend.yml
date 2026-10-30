@@ -129,6 +129,13 @@ jobs:
       - name: Windows native SMB redirector (signed and encrypted)
         if: always()
         run: python tests/windows_native_smb.py --bin build/windows/x64/release --output build/acceptance/windows-native-smb.json
+      - name: Windows native Client for NFS v3 (TCP, nolock)
+        if: always()
+        run: |
+          $feature = Install-WindowsFeature -Name NFS-Client -IncludeManagementTools
+          $feature | Format-List
+          if (-not $feature.Success -or $feature.RestartNeeded -eq 'Yes') { throw 'NFS-Client is unavailable without reboot' }
+          python tests/windows_native_nfs.py --bin build/windows/x64/release --output build/acceptance/windows-native-nfs.json
       - name: Unmodified FileZilla GUI FTPS upload and download
         if: always()
         run: |
