@@ -1,0 +1,52 @@
+{
+  "status": "passed",
+  "client_host": "macOS-15.7.9-x86_64-i386-64bit-Mach-O",
+  "server_host": "Ubuntu 24.04 QEMU guest",
+  "source_commit": "c4f0f794cce307f5b689bfc0c781f4266a239abf",
+  "harness_commit": "c4f0f794cce307f5b689bfc0c781f4266a239abf",
+  "server_archive_sha256": "bf00fdf4d25c2f01fdb1b84f59ed719dbc770338fb175dc3dfac0891c580b457",
+  "accelerator": "hvf",
+  "guest_kernel": "Linux taucloud-acceptance 6.8.0-137-generic #137-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul 17 20:28:23 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+  "identity_setup": "offline disposable identity seed, native Argon2id 64 MiB/3/1; management login excluded; SMB authentication unchanged",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41008665113",
+  "profiles": [
+    {
+      "name": "macos-native-smb",
+      "status": "passed",
+      "payload_bytes": 1028096,
+      "payload_sha256": "08e33aedf25337c87eb15e08c32a58f6f4caa21fe073d00b53014c57f8d148e0",
+      "checks": [
+        "mkdir",
+        "write",
+        "fsync",
+        "read verification",
+        "rename",
+        "truncate",
+        "enumerate",
+        "delete"
+      ]
+    },
+    {
+      "name": "macos-native-nfs3",
+      "status": "passed",
+      "payload_bytes": 1028096,
+      "payload_sha256": "08e33aedf25337c87eb15e08c32a58f6f4caa21fe073d00b53014c57f8d148e0",
+      "checks": [
+        "mkdir",
+        "write",
+        "fsync",
+        "read verification",
+        "rename",
+        "truncate",
+        "enumerate",
+        "delete"
+      ]
+    }
+  ],
+  "smb_share_requested": "SMB",
+  "limitations": [
+    "NFSv3 uses nolocks; NLM/NSM is absent.",
+    "Native mounts do not validate Finder GUI or full conformance.",
+    "Management bootstrap/login is excluded from the offline disposable guest fixture."
+  ]
+}

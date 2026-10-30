@@ -102,7 +102,7 @@ Implementation and recorded scope: [M4 guide](docs/m4.md), [M4 evidence](docs/ev
 - [x] Evaluate and implement the minimal authenticated share-enumeration RPC surface required by clients.
 - [x] Pass the signed SMB 2.1 profile; add 2.0.2 only as explicit compatibility mode.
 - [x] Keep optional leases/oplocks/durable handles disabled until individually verified.
-- [ ] Complete the full Windows/Linux/macOS client and applicable Samba torture matrix. Linux/Windows smbprotocol, Windows SSPI and hostile packet coverage are recorded; Windows native encrypted redirector and Samba smbclient roundtrips now pass. Kernel CIFS is rejected for missing NTLM MIC; macOS and broader Samba torture gates remain open.
+- [ ] Complete the full Windows/Linux/macOS client and applicable Samba torture matrix. Linux/Windows smbprotocol, Windows SSPI and hostile packet coverage are recorded; Windows native encrypted redirector, macOS 15.7.9 native SMB and Samba smbclient roundtrips now pass. Kernel CIFS is rejected for missing NTLM MIC; broader Samba torture gates remain open.
 - [x] Document deployment conflicts, dialect limits and revocation/recovery behavior.
 
 Implementation scope and exclusions: [M5 guide](docs/m5.md), [ADR 0008](docs/decisions/0008-smb-profile.md), [evidence](docs/evidence/m5/README.md). Signed SMB 2.1 only; basic metadata is a conservative projection, persistent ACL/attribute writes are explicitly unsupported. The checked implementation items do not close the full client-matrix release gate.

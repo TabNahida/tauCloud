@@ -1,8 +1,54 @@
-# Pre-M8 acceptance work — 2026-10-30
+# Pre-M8 acceptance — 2026-10-30
 
-This work is in progress. M8 has not started, and the M4 client gate is now closed; full M5/M7 release gates remain open. A successful selected-profile run is not full protocol conformance. All public pushes use the explicitly authorized `codex/pre-m8-acceptance` branch.
+M8 has not started. The M4 client gate is closed; full M5 and M7 conformance gates remain open. A passing selected-profile workflow does not establish complete SMB/NFS compatibility. All public pushes use the explicitly authorized `codex/pre-m8-acceptance` branch.
 
-## Recorded remote runs
+## Current verification
+
+Commit `b64bd47` passes all four jobs in [run 41009694197](https://github.com/TabNahida/tauCloud/actions/runs/41009694197). The downloaded reports confirm 11 SMB2 and 18 SMB3 regression groups on GCC, Clang and MSVC, including the credit/session-error corrections. See the [fixed-commit matrix](verified-matrix-b64bd47.json) and [macOS client report](macos-native-b64bd47.json).
+
+| Environment | Verified scope at `b64bd47` |
+| --- | --- |
+| Ubuntu / GCC | M1–M7 regression, Samba SMB 2.1/3.1.1, kernel NFSv3/v4.1, FileZilla GUI FTPS, selected upstream NFS and state/attribute/creation tests |
+| Ubuntu / Clang | M1–M7 regression with ASan/UBSan |
+| Windows Server 2025 / MSVC | M1–M7 regression, NFS server state/attribute/creation tests, native encrypted SMB redirector, FileZilla GUI FTPS |
+| macOS 15.7.9 Intel client | Native signed SMB and NFSv3 file roundtrips against the same Linux server source in an isolated Ubuntu guest |
+
+Native roundtrips cover mkdir, write, fsync, read verification, rename, truncate, enumerate and delete. macOS uses alternate ports and NFSv3 `nolocks`; its 1,028,096-byte payload SHA-256 is `08e33aedf25337c87eb15e08c32a58f6f4caa21fe073d00b53014c57f8d148e0`. The client requested uppercase `SMB`, confirming the share-name mismatch fixed by `c4f0f79`.
+
+## Corrections and evidence
+
+- Fixed Windows LF dependency export and repeatable clean-checkout builds; matrix fail-fast is disabled so one failure does not cancel another platform's evidence.
+- Corrected login accounting: verified logins neither consume the failed-attempt budget nor erase earlier failures.
+- Added NFS share reservations, competing-principal byte locks, split unlock ranges and durable reclaim; corrected lifecycle/channel/session handling and principal-isolated replay.
+- Added native timestamps, alias-stable mode/owner projection, persistent change counters and actual non-atomic namespace change_info. Counter tests include equal-size writes with restored mtime, reads and restart. WebDAV ETags exclude atime.
+- Corrected NFS namespace replacement, directory cookies, optional directory-delegation refusal, EXCLUSIVE4_1 attributes and safe UNCHECKED truncation after share checks.
+- Corrected SMB wildcard bootstrap, native CREATE flags, partial information replies, dialect-specific normalized names, LOGOFF/reauthentication, authenticated session replacement, bounded credits and allocation shrink.
+- Corrected NTLM response-clock validation: five-minute skew bound, exact echoed target information, ten-second one-use challenge, valid proof and MIC. macOS authentication previously failed with only -378 ms of clock difference. [Local clock regression](ntlm-clock.json) and [the subsequent authenticated macOS run](macos-native-ca51016.json) preserve the evidence.
+- Corrected SMB share lookup without case sensitivity, with canonical authorization IDs, rejected ambiguous publications and no shadowing by non-SMB exposures. [Native macOS SMB/NFS evidence](macos-native-b64bd47.json) records successful complete roundtrips.
+- Further corrected unsolicited 32-credit negotiation grants and unknown-session errors. The minimum-one/maximum-64 policy remains bounded. An unknown-session LOGOFF cannot terminate the real session; known-session signatures remain validated before compound side effects. Local and remote GCC/Clang/MSVC SMB2/SMB3 regressions pass; native client checks also pass on that same source.
+- Unmodified FileZilla GUI upload/download passes on Linux and Windows with a pinned disposable certificate and source/server/download hash comparison. [Linux report](filezilla-linux.json), [Windows report](filezilla-windows.json), and [local Windows redirector evidence](windows-native-local.json) supplement Actions artifacts.
+
+The `ca51016` [verified matrix](verified-matrix-ca51016.json) records independently passing GCC/Clang/MSVC jobs despite that run's macOS TREE_CONNECT failure. The earlier `edbcbe3` [matrix](verified-matrix.json) is historical. Selected upstream NFS groups contain 37, 34 and 30 passing cases; they are not the full upstream suite.
+
+Expanded upstream control-plane diagnostics: **71 passed / 6 failed of 77 selected** ([report](pynfs-control-expanded.json)). Five failures require delegations/callbacks not granted by this profile; EID50 requires SSV and receives SERVERFAULT. RPCSEC_GSS/SSV remains outside this AUTH_SYS preview; those failures are not counted as passes.
+
+[Unmodified Samba session/credit diagnostics](samba-session-diagnostics.json) retain all failures/skips. After the credit correction, the single-credit assertion passes, but the full case fails on unsupported CREATE rights. The bad-VUID tcon case still fails after the client rejects the response; larger credit windows exceed the 64-credit profile. Algorithm tests that first require AES-GMAC are skipped, not passed.
+
+## Remaining gates and restrictions
+
+- Kernel CIFS omits the mandatory NTLM MIC and is **incompatible**. Dedicated negative tests require `ntlm_mic_required` rejection for all selected dialects; they are not compatibility passes. MIC/signing requirements remain enforced.
+- Broader unmodified Samba torture remains incomplete, including full Windows security rights and session-error interoperability. Persistent Windows ACL changes and optional caching/durable handles are not granted by this preview.
+- NFSv3 **NLM/NSM is absent**. Native v3 evidence uses `nolocks`.
+- Full NFSv4.1 mandatory-operation conformance, unlink-open, complete cache/client consistency, multi-export sessions and full reboot/trunking remain open. Active destination OPENs currently cause FILE_OPEN on removal/replacement.
+- Special files, hardlinks and symlinks are outside the confined regular-file/directory profile. Tests requiring them are not relabeled as successful applicable cases.
+- Windows Client for NFS and Finder GUI remain unverified. Native Windows redirector tests require integrity and privacy; Windows reports `Encrypted=true, Signed=false` because AEAD supplies integrity for encrypted traffic.
+- Larger-than-RAM/soak, sudden power-loss, Windows namespace durability and persistent service registration require their own evidence.
+
+The macOS fixture uses a private offline identity seed with production Argon2id parameters (64 MiB/3/1), explicitly excluding management bootstrap/login from this client test. Linux/Windows regression still exercises those flows. SMB performs real NTLMv2/MIC authentication against normally enrolled credentials. Seed files, databases and keys are excluded from artifacts; the relay records only bounded protocol metadata. Reused server artifacts are accepted only after comparing `src`, `include`, `apps`, `xmake.lua` and the dependency lock against their recorded source commit.
+
+中文：已修复多项遗留实现问题并完成真实跨平台回归，M4 客户端验收已补齐。M5/M7 的完整合规门槛仍未关闭，不能把选定配置的全绿 Actions 当作 M0–M7 全部验收完成；M8 未开始。
+
+## Earlier remote runs
 
 | Commit | Run | Result |
 | --- | --- | --- |
@@ -17,48 +63,4 @@ This work is in progress. M8 has not started, and the M4 client gate is now clos
 | `69b8289` | [41001476891](https://github.com/TabNahida/tauCloud/actions/runs/41001476891) | GCC, Clang and Windows all passed, including new NFS cache counters/alias/restart tests and both FileZilla GUIs. Windows native encrypted SMB, Linux Samba and kernel NFSv3/v4.1 pass. macOS HVF guest booted but management bootstrap still exceeded its IPC deadline. |
 | `edbcbe3` | [41002404337](https://github.com/TabNahida/tauCloud/actions/runs/41002404337) | GCC/Clang/MSVC all passed, including new NFS creation semantics, native Linux/Windows clients and both FileZilla GUIs. The overall run failed in macOS guest initialization; see [verified matrix](verified-matrix.json) for the individually passing jobs. |
 
-The workflow now disables matrix fail-fast so one platform's failure does not cancel another platform's evidence. Artifacts retain raw results, client failures and bounded server/kernel logs.
-
-## Implemented corrections
-
-- Deterministic dependency export on Windows and repeatable clean-checkout Actions.
-- SMB 3.1.1 priority flags, successful-login accounting that preserves failed-attempt budgets, and explicit missing-MIC diagnostics.
-- NFS share reservations, byte locks, split unlock ranges, durable reclaim, session/client lifecycle, channel negotiation, connection binding and principal-isolated shared sessions/replay.
-- Native access/modify timestamps, durable mode/owner projection across export aliases, closed-destination rename replacement, namespace error handling and non-reserved directory cookies.
-- Exclude access time from WebDAV ETags so reads cannot invalidate FTP/WebDAV conditional mutations.
-- SMB wildcard negotiation, native CREATE flags, partial information replies and normalized names; same-transport LOGOFF/reauthentication and authenticated session replacement.
-- Bounded SMB credit replenishment that preserves unused message IDs across gaps; tested replay rejection. Native EOF/allocation shrink semantics without pretending to support quota-free preallocation.
-- Decline optional NFS directory delegations with the specified nonfatal response, allowing Linux kernel enumeration.
-- Durable NFS change counters from native metadata and projected attributes, independent of access time; actual non-atomic namespace change_info. Alias, restored-mtime, read-only and restart checks cover the counter behavior.
-
-Local regression passed M1–M6 including litmus. The M7 test was corrected to omit SET-only attributes from GETATTR, then all 15 M7 integration groups passed. Five NFS attribute/enumeration groups and four competing-principal/lock/restart groups passed. Selected unmodified upstream cases cover OPEN/current-stateid/SEQUENCE/reclaim, lifecycle and ordinary-file/directory namespace operations. The latest local counter regression and fixed-commit remote reruns are recorded separately; earlier successful runs do not validate later source changes.
-
-## Explicit compatibility boundaries and remaining gates
-
-- Ubuntu's tested kernel CIFS client omits the NTLM MIC required by this server. It is **not compatible**. The dedicated negative test must observe `ntlm_mic_required` rejection for every selected dialect; it is not a file-roundtrip pass. Signing/MIC policy was not weakened.
-- Samba 4.19.5 `smbclient` performs real signed 2.1 and 3.1.1 roundtrips. Broader unmodified `smbtorture` cases request unsupported full Windows security rights and remain failing. A Windows-2008-only skipped test is not counted as passed.
-- Windows native redirector testing uses Server 2025's `New-SmbMapping -TcpPort`, requires signing/encryption, and removes only its disposable mapping. It is a separate gate from Python/SSPI client coverage; the `92f230c` remote run passed create/write/flush/read/rename/truncate/enumerate/delete with dialect 3.1.1 and encryption. Windows reports `Signed=false` for encrypted traffic; AEAD provides integrity, and the test requests both RequireIntegrity and RequirePrivacy.
-- Unmodified FileZilla 3.66.5 GUI upload/download passed on Linux, locally and remotely (see [local report](filezilla-linux.json)); Windows FileZilla 3.71.1 GUI upload/download also passes (see [Windows report](filezilla-windows.json)). macOS 15.7.9 native NFSv3 now passes the file-operation roundtrip with `nolocks`; native SMB authentication now passes, but TREE_CONNECT still fails, and Finder GUI/eligible Windows NFS remain unverified. No entire client-matrix checkbox is closed. [Local Windows redirector evidence](windows-native-local.json) supplements the independent Server 2025 runner result.
-- NFSv3 NLM/NSM is absent. V4.1 full mandatory-operation coverage, unlink-open behavior, complete cache/client consistency, multi-export sessions and full reboot/trunking conformance remain open. Active destination OPENs currently cause FILE_OPEN on remove/replacement.
-- Special files, hardlinks and symlinks are outside the current confined regular-file/directory profile. Tests requiring those objects are not relabeled as successful applicable tests.
-- Larger-than-RAM/soak, sudden power-loss, namespace durability on Windows, and persistent service registration require their own evidence.
-
-中文：补齐工作尚未全部完成，M8 未开始。已补充真实远程构建、原版上游协议测试和内核客户端检查，并修复发现的多项实现问题。Linux 内核 CIFS 因缺少强制 MIC 被拒绝，不能算作兼容通过；Samba torture 的失败、未运行的平台及 NFS 的剩余实现门槛均保留。不能将选定场景通过或 CI 的部分成功解读为 M0–M7 全部验收完成。
-
-New local checks: 58 native NFS codec checks, four creation/attribute/truncation groups, five attribute/cache/restart groups and 37 selected unmodified upstream cases pass. SMB3 regression passes after restricting normalized-name queries by negotiated dialect. The macOS guest fixture prepares a private offline identity seed with the same Argon2id 64 MiB/3/1 parameters; this client test explicitly excludes management bootstrap/login, which remain covered by Linux/Windows regression. The offline seed does not bypass native SMB authentication or alter production security settings and IPC deadlines. Seed files, databases and keys are excluded from artifacts.
-
-Expanded local upstream control-plane run: **71 passed / 6 failed out of 77 selected** ([report](pynfs-control-expanded.json)). Five failures require delegations/callbacks not granted by this profile; EID50 requires SSV and currently receives SERVERFAULT. These are preserved as failures, not removed or counted as passes. RPCSEC_GSS/SSV remains outside this AUTH_SYS preview.
-
-The macOS-specific workflow can reuse a Linux server artifact only after comparing its recorded commit against `src`, `include`, `apps`, `xmake.lua` and the dependency lock. It records both server and harness revisions plus the archive hash. Run [41003681135](https://github.com/TabNahida/tauCloud/actions/runs/41003681135) tests this route. Duplicate full build [41003681053](https://github.com/TabNahida/tauCloud/actions/runs/41003681053) was intentionally cancelled because only the macOS harness changed; cancellation is not a successful run.
-
-macOS harness follow-up: [41003681135](https://github.com/TabNahida/tauCloud/actions/runs/41003681135) reached offline identity preparation but failed because the background shell retained the SSH command channel. Harness `ab045cf` detaches the process with explicit descriptors; [41004406480](https://github.com/TabNahida/tauCloud/actions/runs/41004406480) reruns only the native clients against verified `edbcbe3` server binaries.
-
-Run [41004406480](https://github.com/TabNahida/tauCloud/actions/runs/41004406480) completed fixture setup using HVF. macOS 15.7.9 native NFSv3 passed mkdir/write/fsync/read/rename/truncate/enumerate/delete against the verified `edbcbe3` Linux server. The 1,028,096-byte payload SHA-256 is `08e33aedf25337c87eb15e08c32a58f6f4caa21fe073d00b53014c57f8d148e0`. NFS used `nolocks` and does not validate absent NLM/NSM. Native SMB failed mounting with authentication error 77, so the overall workflow failed. The diagnostic rerun records only bounded protocol metadata, never authentication proofs or keys.
-
-Diagnostic run [41005235402](https://github.com/TabNahida/tauCloud/actions/runs/41005235402) reproduced the macOS SMB failure with correct `alice`/`TAUCLOUD`, NTLMv2 and a present MIC; NFSv3 passed again. Code review and a local independently generated response reproduced a server bug: requiring exact equality between the response clock and challenge timestamp. The correction uses a bounded five-minute response-clock check while retaining exact echoed target information, a ten-second one-use challenge, NT proof, MIC and SMB signing. New remote verification is pending; this paragraph is not a macOS SMB pass.
-
-The clock correction is commit `ca51016`. [Local before/after evidence](ntlm-clock.json) records the former rejection and passing SMB2/SMB3 regression. Cross-platform rerun: [41006409767](https://github.com/TabNahida/tauCloud/actions/runs/41006409767). GCC, Clang ASan/UBSan and Windows/MSVC all passed, including the clock regression with Windows SSPI; see [matrix](verified-matrix-ca51016.json). macOS NFSv3 passed again. SMB authentication now passes with a response-clock offset of -378 ms and signed messages, but TREE_CONNECT returns STATUS_OBJECT_NAME_NOT_FOUND ([macOS report](macos-native-ca51016.json)); the overall workflow is failed.
-
-The subsequent SMB share-lookup correction preserves canonical share IDs while matching names case-insensitively only for SMB. Ambiguous SMB publications are rejected, legacy ambiguities fail closed, and non-SMB aliases cannot shadow SMB exposures. Unknown shares return STATUS_BAD_NETWORK_NAME. Local M2/SMB2/SMB3 integration passes; native macOS rerun is still required.
-
-Additional unmodified Samba session/credit diagnostics found two server issues: an unsolicited 32-credit NEGOTIATE grant and disconnecting the valid session when another SessionId was supplied. The corrections retain a minimum-one/maximum-64 credit policy, return USER_SESSION_DELETED for an unknown session without executing it, and keep verifying all known-session signatures before compound side effects. Local SMB2/SMB3 regression passes, including an unknown-session LOGOFF followed by a valid signed ECHO. [Samba diagnostics](samba-session-diagnostics.json) still report failures: the corrected single-credit test progresses to an unsupported-rights CREATE; tcon still fails after the client rejects the bad-VUID response; larger windows exceed the profile cap. Algorithm cases requiring AES-GMAC initially are skips, not passes.
+Additional harness history: [41003681135](https://github.com/TabNahida/tauCloud/actions/runs/41003681135) failed because the fixture retained SSH descriptors; [41004406480](https://github.com/TabNahida/tauCloud/actions/runs/41004406480) fixed startup and passed macOS NFSv3 but failed SMB authentication ([report](macos-native.json)). [41005235402](https://github.com/TabNahida/tauCloud/actions/runs/41005235402) added safe NTLM diagnostics and reproduced that failure. [41006409767](https://github.com/TabNahida/tauCloud/actions/runs/41006409767) fixed authentication but exposed share-name lookup; [41008665113](https://github.com/TabNahida/tauCloud/actions/runs/41008665113) passed all jobs after that fix. Duplicate [41003681053](https://github.com/TabNahida/tauCloud/actions/runs/41003681053) was intentionally cancelled; cancellation is not a pass.

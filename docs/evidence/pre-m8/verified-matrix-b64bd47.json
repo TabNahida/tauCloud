@@ -1,0 +1,388 @@
+{
+  "source_commit": "b64bd47e3a6a4e37b3ae9a233b6be959ac261d41",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41009694197",
+  "scope": "selected M0-M7 backend profile; full SMB/NFS conformance remains incomplete",
+  "workflow_conclusion": "success",
+  "jobs": {
+    "linux-gcc": {
+      "status": "passed",
+      "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+      "compiler": "gcc",
+      "sanitizers": false,
+      "sources_sha256": "e50300d26ceb2577441d94ad6cf0201c75b73e1979b250194223b685c55273c8",
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41009694197/job/123912534554",
+      "smb": {
+        "status": "passed",
+        "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+        "authentication_provider": "pyspnego NTLM",
+        "checks": [
+          "verified repeated logins do not exhaust the failed-authentication budget",
+          "signed NTLMv2 MIC authentication, UTF-16 create/read/write/flush/query/directory/close",
+          "authenticated srvsvc NDR32 share enumeration filters inaccessible and non-SMB shares",
+          "SMB share lookup ignores case, preserves canonical grants and rejects ambiguous publication without non-SMB shadowing",
+          "share access conflicts, exclusive/shared byte locks, rename with live handles, truncate and last-close deletion",
+          "signed related compound CREATE/WRITE/READ/CLOSE and credit accounting",
+          "directory deletion is nonrecursive; traversal/ADS/non-NFC denied; unsupported persistent ACL query rejected",
+          "1 MiB streamed binary roundtrip with SHA-256",
+          "unknown-session LOGOFF preserves the valid session; client-clock NTLMv2 accepted; excessive skew, bad MIC/proof, unsigned/tampered signing and malformed packets rejected",
+          "SMB credential revocation invalidates live access; re-enrollment and SPNEGO reconnect succeed",
+          "SMB worker kill/restart reclaims handles and durable delete intent without restarting API, identity or files"
+        ],
+        "check_groups": 11
+      },
+      "smb3": {
+        "status": "passed",
+        "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+        "authentication_provider": "pyspnego NTLM",
+        "checks": [
+          "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 64",
+          "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+          "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+          "0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x300 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x302 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x311 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+          "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+          "leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent",
+          "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+          "unsupported signing/cipher/hash and malformed contexts fail without dialect fallback",
+          "independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+          "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+          "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+          "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+        ],
+        "check_groups": 18
+      }
+    },
+    "linux-clang": {
+      "status": "passed",
+      "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+      "compiler": "clang",
+      "sanitizers": true,
+      "sources_sha256": "e50300d26ceb2577441d94ad6cf0201c75b73e1979b250194223b685c55273c8",
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41009694197/job/123912534287",
+      "smb": {
+        "status": "passed",
+        "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+        "authentication_provider": "pyspnego NTLM",
+        "checks": [
+          "verified repeated logins do not exhaust the failed-authentication budget",
+          "signed NTLMv2 MIC authentication, UTF-16 create/read/write/flush/query/directory/close",
+          "authenticated srvsvc NDR32 share enumeration filters inaccessible and non-SMB shares",
+          "SMB share lookup ignores case, preserves canonical grants and rejects ambiguous publication without non-SMB shadowing",
+          "share access conflicts, exclusive/shared byte locks, rename with live handles, truncate and last-close deletion",
+          "signed related compound CREATE/WRITE/READ/CLOSE and credit accounting",
+          "directory deletion is nonrecursive; traversal/ADS/non-NFC denied; unsupported persistent ACL query rejected",
+          "1 MiB streamed binary roundtrip with SHA-256",
+          "unknown-session LOGOFF preserves the valid session; client-clock NTLMv2 accepted; excessive skew, bad MIC/proof, unsigned/tampered signing and malformed packets rejected",
+          "SMB credential revocation invalidates live access; re-enrollment and SPNEGO reconnect succeed",
+          "SMB worker kill/restart reclaims handles and durable delete intent without restarting API, identity or files"
+        ],
+        "check_groups": 11
+      },
+      "smb3": {
+        "status": "passed",
+        "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+        "authentication_provider": "pyspnego NTLM",
+        "checks": [
+          "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 64",
+          "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+          "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+          "0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x300 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x302 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x311 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+          "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+          "leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent",
+          "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+          "unsupported signing/cipher/hash and malformed contexts fail without dialect fallback",
+          "independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+          "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+          "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+          "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+        ],
+        "check_groups": 18
+      }
+    },
+    "windows-msvc": {
+      "status": "passed",
+      "host": "Windows-2025Server-10.0.26100-SP0",
+      "compiler": "msvc",
+      "sanitizers": false,
+      "sources_sha256": "efc3e45b2aeed6140a21d712623dba9f3a83cfbb18df2d2e2e4693b6ee3ae288",
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41009694197/job/123912534592",
+      "smb": {
+        "status": "passed",
+        "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+        "authentication_provider": "Windows SSPI (sspilib)",
+        "checks": [
+          "verified repeated logins do not exhaust the failed-authentication budget",
+          "signed NTLMv2 MIC authentication, UTF-16 create/read/write/flush/query/directory/close",
+          "authenticated srvsvc NDR32 share enumeration filters inaccessible and non-SMB shares",
+          "SMB share lookup ignores case, preserves canonical grants and rejects ambiguous publication without non-SMB shadowing",
+          "share access conflicts, exclusive/shared byte locks, rename with live handles, truncate and last-close deletion",
+          "signed related compound CREATE/WRITE/READ/CLOSE and credit accounting",
+          "directory deletion is nonrecursive; traversal/ADS/non-NFC denied; unsupported persistent ACL query rejected",
+          "1 MiB streamed binary roundtrip with SHA-256",
+          "unknown-session LOGOFF preserves the valid session; client-clock NTLMv2 accepted; excessive skew, bad MIC/proof, unsigned/tampered signing and malformed packets rejected",
+          "SMB credential revocation invalidates live access; re-enrollment and SPNEGO reconnect succeed",
+          "SMB worker kill/restart reclaims handles and durable delete intent without restarting API, identity or files"
+        ],
+        "check_groups": 11
+      },
+      "smb3": {
+        "status": "passed",
+        "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+        "authentication_provider": "Windows SSPI (sspilib)",
+        "checks": [
+          "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 64",
+          "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+          "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+          "0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x300 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x302 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x311 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+          "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+          "leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent",
+          "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+          "unsupported signing/cipher/hash and malformed contexts fail without dialect fallback",
+          "independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+          "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+          "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+          "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+        ],
+        "check_groups": 18
+      }
+    }
+  },
+  "clients": {
+    "filezilla-linux": {
+      "status": "passed",
+      "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+      "client": "FileZilla 3.66.5",
+      "protocol": "explicit FTPS",
+      "payload_bytes": 1028096,
+      "sha256": "08e33aedf25337c87eb15e08c32a58f6f4caa21fe073d00b53014c57f8d148e0",
+      "checks": [
+        "pinned disposable server certificate",
+        "native GUI queue upload and download",
+        "binary source/server/download match"
+      ]
+    },
+    "linux-native": {
+      "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+      "status": "passed",
+      "profiles": [
+        {
+          "name": "smbclient-2.1",
+          "status": "passed"
+        },
+        {
+          "name": "smbclient-3.1.1",
+          "status": "passed"
+        },
+        {
+          "name": "kernel-nfs-3",
+          "status": "passed"
+        },
+        {
+          "name": "kernel-nfs-4.1",
+          "status": "passed"
+        }
+      ]
+    },
+    "filezilla-windows": {
+      "status": "passed",
+      "host": "Windows-2025Server-10.0.26100-SP0",
+      "client": "FileZilla 3.71.1",
+      "protocol": "explicit FTPS",
+      "payload_bytes": 1028096,
+      "sha256": "08e33aedf25337c87eb15e08c32a58f6f4caa21fe073d00b53014c57f8d148e0",
+      "checks": [
+        "pinned disposable server certificate",
+        "native GUI queue upload and download",
+        "binary source/server/download match"
+      ]
+    },
+    "windows-native-smb": {
+      "status": "passed",
+      "host": "Windows-2025Server-10.0.26100-SP0",
+      "client": "Windows native SMB redirector",
+      "payload_sha256": "631B84027D6B9E52B539C4E8373622D23032DFADC64D60AF87339C9037E4F769",
+      "connection": {
+        "ServerName": "127.0.0.1",
+        "ShareName": "smb",
+        "Dialect": "3.1.1",
+        "Encrypted": true,
+        "Signed": false
+      }
+    },
+    "macos-native": {
+      "status": "passed",
+      "client_host": "macOS-15.7.9-x86_64-i386-64bit-Mach-O",
+      "server_host": "Ubuntu 24.04 QEMU guest",
+      "source_commit": "b64bd47e3a6a4e37b3ae9a233b6be959ac261d41",
+      "harness_commit": "b64bd47e3a6a4e37b3ae9a233b6be959ac261d41",
+      "server_archive_sha256": "f8a8c6ee26b57eabcd302548ec22a8a982297fcc7929a3a5c02e630066229296",
+      "accelerator": "hvf",
+      "guest_kernel": "Linux taucloud-acceptance 6.8.0-137-generic #137-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul 17 20:28:23 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+      "identity_setup": "offline disposable identity seed, native Argon2id 64 MiB/3/1; management login excluded; SMB authentication unchanged",
+      "run": "https://github.com/TabNahida/tauCloud/actions/runs/41009694197",
+      "job": "https://github.com/TabNahida/tauCloud/actions/runs/41009694197/job/123915139079",
+      "profiles": [
+        {
+          "name": "macos-native-smb",
+          "status": "passed",
+          "payload_sha256": "08e33aedf25337c87eb15e08c32a58f6f4caa21fe073d00b53014c57f8d148e0",
+          "payload_bytes": 1028096,
+          "checks": [
+            "mkdir",
+            "write",
+            "fsync",
+            "read verification",
+            "rename",
+            "truncate",
+            "enumerate",
+            "delete"
+          ]
+        },
+        {
+          "name": "macos-native-nfs3",
+          "status": "passed",
+          "payload_sha256": "08e33aedf25337c87eb15e08c32a58f6f4caa21fe073d00b53014c57f8d148e0",
+          "payload_bytes": 1028096,
+          "checks": [
+            "mkdir",
+            "write",
+            "fsync",
+            "read verification",
+            "rename",
+            "truncate",
+            "enumerate",
+            "delete"
+          ]
+        }
+      ],
+      "limitations": [
+        "NFSv3 uses nolocks; NLM/NSM is absent.",
+        "Native mounts do not validate Finder GUI or full conformance.",
+        "Management bootstrap/login is excluded from the offline disposable guest fixture."
+      ]
+    }
+  },
+  "nfs": {
+    "linux-gcc-nfs-state": {
+      "status": "passed",
+      "checks": [
+        "one kernel-style session accepts multiple mapped users without sharing their open authority",
+        "exclusive lock conflicts, denied owner details, disjoint writes and CLOSE with held locks",
+        "partial unlock splits ranges and preserves neighboring conflicts",
+        "process restart persists split lock ranges; matching client reclaims OPEN and locks before RECLAIM_COMPLETE"
+      ]
+    },
+    "linux-gcc-nfs-attributes": {
+      "status": "passed",
+      "checks": [
+        "v3 CREATE preserves mode, mapped ownership and explicit atime/mtime on native handles",
+        "v4 SETATTR updates aliases consistently; GETATTR rejects write-only time attributes",
+        "durable change counters detect equal-size writes with restored mtime, share alias state and return real namespace change_info; reads do not advance them",
+        "paged v4 READDIR skips reserved cookies 1/2 and resumes without duplicate or missing entries",
+        "mode/ownership and exact timestamps survive server restart through stable alias handles"
+      ]
+    },
+    "linux-gcc-nfs-create": {
+      "status": "passed",
+      "checks": [
+        "required suppattr_exclcreat advertises actual writable creation attributes",
+        "exclusive verifier retry preserves content; mismatched verifier and unsupported exclusive attributes reject without creation",
+        "UNCHECKED ignores nonzero size and mode on existing files; zero size truncates only after share reservations permit it",
+        "CREATE and OPEN return the attributes actually applied"
+      ]
+    },
+    "pynfs": {
+      "selected": 37,
+      "failures": 0,
+      "errors": 0
+    },
+    "pynfs-control": {
+      "selected": 34,
+      "failures": 0,
+      "errors": 0
+    },
+    "pynfs-namespace": {
+      "selected": 30,
+      "failures": 0,
+      "errors": 0
+    },
+    "windows-msvc-nfs-state": {
+      "status": "passed",
+      "checks": [
+        "one kernel-style session accepts multiple mapped users without sharing their open authority",
+        "exclusive lock conflicts, denied owner details, disjoint writes and CLOSE with held locks",
+        "partial unlock splits ranges and preserves neighboring conflicts",
+        "process restart persists split lock ranges; matching client reclaims OPEN and locks before RECLAIM_COMPLETE"
+      ]
+    },
+    "windows-msvc-nfs-attributes": {
+      "status": "passed",
+      "checks": [
+        "v3 CREATE preserves mode, mapped ownership and explicit atime/mtime on native handles",
+        "v4 SETATTR updates aliases consistently; GETATTR rejects write-only time attributes",
+        "durable change counters detect equal-size writes with restored mtime, share alias state and return real namespace change_info; reads do not advance them",
+        "paged v4 READDIR skips reserved cookies 1/2 and resumes without duplicate or missing entries",
+        "mode/ownership and exact timestamps survive server restart through stable alias handles"
+      ]
+    },
+    "windows-msvc-nfs-create": {
+      "status": "passed",
+      "checks": [
+        "required suppattr_exclcreat advertises actual writable creation attributes",
+        "exclusive verifier retry preserves content; mismatched verifier and unsupported exclusive attributes reject without creation",
+        "UNCHECKED ignores nonzero size and mode on existing files; zero size truncates only after share reservations permit it",
+        "CREATE and OPEN return the attributes actually applied"
+      ]
+    }
+  },
+  "kernel_cifs_negative_test": {
+    "status": "passed",
+    "test_kind": "mandatory_mic_rejection",
+    "profiles": [
+      {
+        "name": "kernel-cifs-2.1",
+        "status": "rejected_missing_mic",
+        "compatible": false
+      },
+      {
+        "name": "kernel-cifs-3.0",
+        "status": "rejected_missing_mic",
+        "compatible": false
+      },
+      {
+        "name": "kernel-cifs-3.02",
+        "status": "rejected_missing_mic",
+        "compatible": false
+      },
+      {
+        "name": "kernel-cifs-3.1.1",
+        "status": "rejected_missing_mic",
+        "compatible": false
+      }
+    ]
+  },
+  "limitations": [
+    "NFSv3 NLM/NSM absent; v3 native mounts use nolocks.",
+    "Full v4.1 mandatory/unlink-open/cache/reboot/trunking conformance remains open.",
+    "Broader Samba torture still fails on full security rights, session-error interoperability and larger credit windows.",
+    "Kernel CIFS rejection is not a compatibility pass.",
+    "Windows Client for NFS, Finder GUI, persistent service registration and power-loss/soak testing remain unverified."
+  ]
+}
