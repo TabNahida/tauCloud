@@ -125,11 +125,16 @@ def main():
             os.chmod(seed,0o600);json.dump(identity,out)
         try:run(scp+[str(seed),'ubuntu@127.0.0.1:work/identity-seed.json'])
         finally:seed.unlink(missing_ok=True)
-        identity_args=' --identity-seed identity-seed.json'
         report['identity_setup']='offline disposable identity seed, native Argon2id 64 MiB/3/1; management login excluded; SMB authentication unchanged'
         groups=json.dumps(sorted(set(os.getgroups()+[os.getgid()])))
-        command='cd work && nohup python3 mac_guest_fixture.py --uid '+str(os.getuid())+' --groups '+shlex.quote(groups)+identity_args+' --output info.json > fixture.log 2>&1 < /dev/null &'
-        run(ssh+[command])
+        fixture_args=['python3','mac_guest_fixture.py','--uid',str(os.getuid()),'--groups',groups,
+                      '--identity-seed','identity-seed.json','--output','info.json']
+        # Detach in Python: a background shell compound can keep SSH's channel
+        # descriptors open for the entire lifetime of the fixture.
+        spawn=('import os,subprocess;os.chdir("work");log=open("fixture.log","w");'
+               'p=subprocess.Popen('+repr(fixture_args)+',stdin=subprocess.DEVNULL,stdout=log,'
+               'stderr=subprocess.STDOUT,start_new_session=True,close_fds=True);print(p.pid)')
+        report['guest_fixture_pid']=int(run(ssh+['python3 -c '+shlex.quote(spawn)]).strip())
         deadline=time.monotonic()+240
         while True:
             try:guest=json.loads(run(ssh+['cat work/info.json']));break
