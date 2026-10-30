@@ -1,5 +1,7 @@
 # M7 experimental NFS validation — 2026-10-30
 
+This page preserves the original preview's historical evidence. Subsequent implementation changes and remote runs are recorded in [pre-M8 acceptance](../pre-m8/README.md); statements below about missing locks/attributes describe the original snapshot.
+
 M7 is **partially implemented**. These records validate the bounded experimental server and regress earlier milestones. They do not establish full M7a/NFSv4.1 or M7b/NFSv3 compatibility. See the [English](../../m7.md) / [中文](../../m7.zh-CN.md) guides and [ADR 0010](../../decisions/0010-nfs-preview.md).
 
 | Host/build | Existing regression | M7 native checks | M7 independent-codec TCP scenarios |

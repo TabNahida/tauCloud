@@ -89,7 +89,7 @@ std::string component(reader &r) {
   return n;
 }
 json attrs3(reader &r) {
-  // POSIX ownership/mode mutation is deliberately unavailable in this application-ACL profile.
+  // Mode/ownership are NFS metadata; application ACLs remain the authority.
   json a = json::object();
   if (r.boolean())
     a["mode"] = r.u32();
@@ -145,6 +145,21 @@ struct server::impl {
     } else
       b["export"] = export_name;
     auto grant = call("identity", "nfs_authorize", b);
+    if (op == "remove" || op == "rename") {
+      // This bounded profile does not retain unlinked native opens. Refuse to
+      // invalidate live state instead of acknowledging deletion of an open file.
+      auto parent = op == "remove" ? handle : args.at("target").get<std::string>();
+      auto name = op == "remove" ? args.at("name") : args.at("to");
+      bool self = op == "rename" && parent == handle && name == args.at("name");
+      if (!self) {
+        json target;
+        try { target = file(who, parent, "lookup", {{"name", name}}); }
+        catch (const error &e) { if (std::string_view(e.what()) != "not_found") throw; }
+        if (!target.is_null())
+          for (const auto &[id, state] : opens)
+            check(state.object != target.at("object").get<std::string>(), 10046);
+      }
+    }
     if (args.contains("uid")) {
       check(args.at("uid") == who.credential.at("uid"), 1);
       if (who.credential.at("uid") == 0) args["uid"] = 65534;

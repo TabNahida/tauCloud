@@ -85,7 +85,7 @@ uint32_t status(std::string_view code) {
     return 0xc000007f;
   if (code == "not_supported" || code == "directory_limit")
     return 0xc00000bb;
-  if (code == "unauthorized" || code == "rate_limited")
+  if (code == "unauthorized" || code == "rate_limited" || code == "ntlm_mic_required")
     return 0xc000006d;
   if (code == "forbidden" || code == "permission_denied" || code == "policy_revoked" ||
       code == "lease_expired" || code == "mixed_writers_disabled")

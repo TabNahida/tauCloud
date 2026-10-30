@@ -41,7 +41,7 @@ Evidence: [M0 runs](docs/evidence/README.md), [decisions](docs/m0.md#decisions-a
 - [x] Add foreground/service lifecycle integration for systemd and Windows SCM.
 - [x] Verify clean-checkout build, authenticated CLI access and clean stop on both hosts.
 
-Evidence: [M1 runs](docs/evidence/m1/README.md) and [implemented contracts/limits](docs/m1.md). Service adapters and unit are implemented; native foreground lifecycle was tested, without registering persistent host services. CI workflows are supplied, not claimed to have run on GitHub.
+Evidence: [M1 runs](docs/evidence/m1/README.md), [implemented contracts/limits](docs/m1.md), and [pre-M8 remote acceptance](docs/evidence/pre-m8/README.md). Service adapters and unit are implemented; native foreground lifecycle was tested, without registering persistent host services. Linux and Windows clean-checkout GitHub Actions have now run; each fixed-commit result is recorded separately.
 
 ## M2 — Shared identity, policy and file core
 
@@ -125,7 +125,7 @@ Selected-profile evidence: [M6 guide](docs/m6.md), [ADR 0009](docs/decisions/000
 - [x] Implement export policy, UID/GID mapping, root squash and explicit AUTH_SYS trust restrictions.
 - [x] Implement stable file handles, filesystem identity and stale-handle detection on ext4 and NTFS (bounded native-incarnation lookup; ADR 0010).
 - [ ] Implement v4.1 mandatory operations, sessions/slots, state IDs and replay handling.
-- [ ] Implement lock/open ownership, leases, recovery grace and reclaim persistence.
+- [x] Implement lock/open ownership, leases, recovery grace and reclaim persistence (bounded AUTH_SYS profile; cross-user, split-range and restart tests).
 - [x] Verify selected v4.1 FILE_SYNC, server reboot and retransmission paths with the Linux pynfs-codec client (kernel client and full recovery/conformance remain open).
 - [ ] Complete M7a conformance before publishing v4.1 compatibility.
 - [ ] Implement v3 operations, MOUNT/rpcbind and the selected NLM/NSM recovery profile.
@@ -133,7 +133,7 @@ Selected-profile evidence: [M6 guide](docs/m6.md), [ADR 0009](docs/decisions/000
 - [ ] Complete M7b Linux/macOS/eligible Windows client tests; publish client-version restrictions.
 - [x] Design RPCSEC_GSS/Kerberos as a later authenticated profile; do not conflate it with AUTH_SYS (ADR 0010).
 
-**Partial milestone:** [M7 preview](docs/m7.md), [中文](docs/m7.zh-CN.md), [ADR 0010](docs/decisions/0010-nfs-preview.md). Selected v4.1 sessions/slots/stateids, OPEN ownership/grace/reclaim and v3 data/MOUNT/discovery paths are implemented. The mandatory-operation checkbox stays open: locks/share-deny, full OPEN/state/attribute semantics and native client conformance are not supplied. The v3 checkbox stays open because NLM/NSM is absent. No complete NFS compatibility is published. Evidence distinguishes independent pynfs codecs from the full unrun suite.
+**Partial milestone:** [M7 preview](docs/m7.md), [中文](docs/m7.zh-CN.md), [ADR 0010](docs/decisions/0010-nfs-preview.md), [pre-M8 evidence](docs/evidence/pre-m8/README.md). Share-deny, byte locks/reclaim, OPEN upgrades, native timestamps, alias metadata and selected upstream conformance are now implemented/tested. Complete mandatory-operation, unlink-open/cache and native-client gates remain open. NLM/NSM is absent. No complete NFS compatibility is published; passing selected upstream tests is not a full-suite result.
 
 ## M8 — Plugins and Docker
 

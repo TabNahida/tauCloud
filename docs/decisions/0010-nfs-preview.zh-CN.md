@@ -10,10 +10,10 @@ NFS 使用独立 PACE TCP 进程。身份服务拥有导出和 AUTH_SYS 映射�
 
 管理员必须显式选择 `loopback-auth-sys`，配置 UID→用户、GID→组、匿名用户。UID 0 连同附加组强制 squash；其他 UID 的主组及所有附加组都必须映射到该用户所属的 tauCloud 组。未知值拒绝。AUTH_SYS 是本机客户端可伪造的声明，不是密码或加密身份认证；主机管理员不在隔离威胁边界内。
 
-v4.1 会话不持久化，使用有界 slot、序列、请求摘要与完整响应缓存。重启拒绝旧 session/stateid。OPEN 所有者证据在成功响应前持久化，允许同一映射主体、客户端所有者、open owner、文件和访问组合在 60 秒 grace 中 reclaim。grace 中拒绝新普通 OPEN。不提供字节锁、锁恢复、非零 share-deny；每个会话仅一个导出，同一 owner/file 不重复打开。活动导出的权限检查失败时不延长租约，因此不能无限依赖失效授权。
+v4.1 会话不持久化，使用有界 slot、序列、请求摘要与完整响应缓存。会话属于可信 AUTH_SYS 主机，可承载多个映射用户；OPEN/锁权限和重放摘要仍绑定各自主体。重启拒绝旧 session/stateid。OPEN/share-deny 和锁范围在成功前持久化，部分解锁拆分范围；匹配客户端、主体和所有者可在 60 秒 grace、RECLAIM_COMPLETE 之前恢复。grace 中拒绝普通新 OPEN。重复 OPEN 升级同一 owner/file 状态，OPEN_DOWNGRADE 缩小权限；每会话一个导出的限制仍然存在。上述已实现路径不等于完整 v4.1 一致性。
 
 v3 变更请求使用持久、有界的主体/XID/摘要/响应缓存；冲突和未完成请求不重复执行。文件域先记录 pending，再执行原生变更并记录结果。不确定结果需要后续恢复机制，目前返回重试错误，不自动猜测成功。缓存满后拒绝继续变更。所有 WRITE 都检查短写、循环完成并真实 flush 后回复 FILE_SYNC，UNSTABLE 请求也可提升到该稳定等级；COMMIT 真实 flush，服务重启更换 verifier。Windows 名称空间的断电保证仍受 M2 目录 flush 限制。
 
-剩余工作包括 v4.1 必需操作全集、锁与锁 reclaim、POSIX 属性、open 升级、原子覆盖/打开文件删除协调、可靠目录 change 属性、完整重启/trunking、多导出会话；v3 的 NLM/NSM 和完整 MOUNT/rpcbind 行为。UDP、v2/v4.0/v4.2、pNFS/RDMA 不在首批范围。当前不能宣称完整 v4.1 或 v3 兼容。
+mode/UID/GID 投影按原生对象代次持久化，导出别名共享投影，应用 ACL 始终是权限依据。时间戳通过固定的原生句柄更新。RENAME 可原子覆盖已关闭目标；目标有活动 NFS OPEN 时返回 FILE_OPEN，不作废活跃状态。剩余工作包括必需操作全集、完整 unlink-open、可靠目录 change 属性、完整重启/trunking、多导出会话，以及 v3 NLM/NSM 和完整 MOUNT/rpcbind。UDP、v2/v4.0/v4.2、pNFS/RDMA 不在首批范围，仍不宣称完整 v4.1/v3 兼容。
 
 后续 RPCSEC_GSS/Kerberos 配置必须单独实现 GSS 上下文、序列窗口、完整性/隐私保护、Kerberos principal→用户绑定，并在会话/恢复/重放中使用已认证 principal；需要独立凭据生命周期和降级测试，不能将 AUTH_SYS 数字映射当作 GSS 身份。协议和系统接口原始依据见[英文决策](0010-nfs-preview.md)。

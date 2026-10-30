@@ -82,8 +82,10 @@ def run(args):
         checks.append('M2 file schema migrates transactionally with backups; supervisor adds the new DAV role key')
         f.dav('OPTIONS',status=200)
         f.dav('PUT','first.txt',b'hello',status=201)
+        initial_etag=f.dav('HEAD','first.txt',status=200)[1]['etag']
         assert f.dav('GET','first.txt',status=200)[2]==b'hello'
-        f.dav('DELETE','first.txt',status=204)
+        assert f.dav('HEAD','first.txt',status=200)[1]['etag']==initial_etag
+        f.dav('DELETE','first.txt',headers={'If-Match':initial_etag},status=204)
         f.dav('MKCOL','tree',status=201)
         f.dav('MKCOL','tree/sub',status=201)
         f.dav('PUT','tree/sub/%E4%B8%AD%E6%96%87',b'unicode',status=201)

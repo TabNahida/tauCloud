@@ -307,6 +307,7 @@ json ntlm_exchange::verify(bytes type3, std::string_view hash) const {
   require(type3.size() >= micpos + 16 && (flags & 0x80011) == 0x80011 &&
               ((flags ^ get(challenge, 20, 4)) & 0x40000000) == 0,
           "unauthorized");
+  require(get(type3, 24, 4) >= micpos + 16, "ntlm_mic_required");
   auto response = sec(type3, 20, micpos + 16), domain = sec(type3, 28, micpos + 16),
        user = sec(type3, 36, micpos + 16), encrypted = sec(type3, 52, micpos + 16);
   auto name = utf8(user);

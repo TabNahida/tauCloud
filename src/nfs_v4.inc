@@ -115,7 +115,7 @@ bool has(const std::vector<uint32_t> &bits, unsigned i) {
 std::vector<uint32_t> supported_attrs() {
   std::vector<uint32_t> b(2);
   for (unsigned n : {0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 19, 20, 27, 28,
-                     29, 30, 31, 33, 35, 36, 37, 42, 43, 44, 45, 47, 51, 52, 53, 55})
+                     29, 30, 31, 33, 35, 36, 37, 42, 43, 44, 45, 47, 48, 51, 52, 53, 54, 55})
     b[n / 32] |= 1u << (n % 32);
   return b;
 }
@@ -133,6 +133,7 @@ json meta4(const identity &who, const std::string &h) {
   return file(who, h, "stat");
 }
 void attributes4(writer &out, const std::vector<uint32_t> &requested, const json &m) {
+  check(!has(requested, 48) && !has(requested, 54)); // Write-only time attributes.
   auto supported = supported_attrs();
   std::vector<uint32_t> returned(2);
   writer values;
@@ -227,7 +228,11 @@ void attributes4(writer &out, const std::vector<uint32_t> &requested, const json
         values.u64(ns / 1000000000).u32(uint32_t(ns % 1000000000));
         break;
       case 51:
+#ifdef _WIN32
+        values.u64(0).u32(100); // NTFS FILETIME precision.
+#else
         values.u64(0).u32(1);
+#endif
         break;
       }
     }
@@ -783,6 +788,15 @@ std::string v4(const identity &who, reader &r) {
           if (a.contains(field)) {
             auto name = a.at(field).get<std::string>();
             check(name.size() <= 255, 63);
+            check(name != "." && name != "..", 10041);
+            for (size_t offset = 0; offset < name.size();) {
+              utf8proc_int32_t cp;
+              auto n = utf8proc_iterate(reinterpret_cast<const utf8proc_uint8_t *>(name.data()+offset),
+                                        name.size()-offset, &cp);
+              check(n > 0 && !(cp >= 0xfdd0 && cp <= 0xfdef) &&
+                        (cp & 0xffff) != 0xfffe && (cp & 0xffff) != 0xffff);
+              offset += size_t(n);
+            }
             portable_path(name);
             check(name.find('/') == std::string::npos);
           }
@@ -797,6 +811,7 @@ std::string v4(const identity &who, reader &r) {
           current_state.clear();
         } else if (op == 22) {
           current = a.at("handle");
+          check(current == pseudo || decode_bytes(current).size() == 50, 10001);
           current_state.clear();
           meta4(who, current);
         } else if (op == 10) {
@@ -822,6 +837,7 @@ std::string v4(const identity &who, reader &r) {
         } else if (op == 16) {
           check(!current.empty(), 10020);
           check(current != pseudo, 2);
+          check(meta4(who, current).at("directory"), 20);
           auto m = file(who, current, "parent");
           current = m.value("export_root", false) ? pseudo : m.at("handle").get<std::string>();
           current_state.clear();
@@ -1033,7 +1049,7 @@ std::string v4(const identity &who, reader &r) {
           file(who, current, "remove", {{"name", a.at("name")}}, request);
           change4(body);
         } else if (op == 29) {
-          check(!saved.empty(), 10030);
+          check(!saved.empty() && !current.empty(), 10020);
           file(who, saved, "rename",
                {{"name", a.at("name")}, {"target", current}, {"to", a.at("to")}}, request);
           change4(body);
@@ -1044,15 +1060,16 @@ std::string v4(const identity &who, reader &r) {
           auto cookie = a.at("cookie").get<uint64_t>();
           auto &entries = m.at("entries");
           check(!cookie || a.at("verifier") == m.at("verifier"), 10003);
-          check(cookie <= entries.size(), 10003);
+          check(!cookie || (cookie >= 3 && cookie - 2 <= entries.size()), 10003);
           auto budget = std::min(a.at("count").get<uint32_t>(), 65536u);
           check(budget >= 512, 10005);
           body.fixed(decode_bytes(m.at("verifier").get<std::string>()));
-          size_t i = size_t(cookie);
+          size_t i = cookie ? size_t(cookie - 2) : 0;
           for (; i < entries.size(); ++i) {
             auto &e = entries[i];
             writer item;
-            item.boolean(true).u64(i + 1).opaque(e.at("name").get<std::string>());
+            // Cookies 1 and 2 are reserved by NFSv4 for client-side dot entries.
+            item.boolean(true).u64(i + 3).opaque(e.at("name").get<std::string>());
             attributes4(item, a.at("bits").get<std::vector<uint32_t>>(), e);
             if (body.data.size() + item.data.size() + 8 > budget)
               break;

@@ -27,6 +27,8 @@ def fixture(binary):
         f.api('groups', f.admin, dict(name='unix'))
         f.api('memberships', f.admin, dict(username='alice', group='unix'))
         (f.root / 'nfsdata/tmp').mkdir()
+        (f.root / 'nfsdata/tree/dir').mkdir(parents=True)
+        (f.root / 'nfsdata/tree/file').write_bytes(b'This is a test file.\n')
         f.api('nfs-exports', f.admin, dict(id='nfs', trust='loopback-auth-sys', anonymous='bob',
                                           uids={'1000':'alice'},
                                           gids={str(g):'unix' for g in (1000,3,17,100)}))

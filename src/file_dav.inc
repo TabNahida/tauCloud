@@ -20,6 +20,9 @@ json dav_meta(space_state &s, const std::string &path) {
     info = file.info();
     require(info.at("object") == value.at("native"), "object_replaced");
   }
+  // Reads and directory enumeration can update atime without changing the
+  // representation. Including it would invalidate our own conditional writes.
+  info.erase("accessed_ns");
   return {{"path", path},
           {"directory", info.at("directory")},
           {"size", info.at("directory").get<bool>() ? json(0) : info.at("size")},

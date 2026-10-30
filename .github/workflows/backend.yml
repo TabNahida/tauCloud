@@ -7,6 +7,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     strategy:
+      fail-fast: false
       matrix:
         compiler: [gcc, clang]
     steps:
@@ -25,7 +26,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y cifs-utils nfs-common smbclient
-          python3 tests/native_clients.py --bin build/linux/x86_64/release --output build/acceptance/native-linux.json
+          python3 tests/native_clients.py --bin build/linux/x86_64/release --output build/acceptance/native-linux.json --profiles smbclient-2.1 smbclient-3.1.1 kernel-nfs-3 kernel-nfs-4.1
+      - name: Kernel CIFS missing-MIC rejection (not compatibility)
+        if: always() && matrix.compiler == 'gcc'
+        run: python3 tests/native_clients.py --bin build/linux/x86_64/release --output build/acceptance/kernel-cifs-rejection.json --profiles kernel-cifs-2.1 kernel-cifs-3.0 kernel-cifs-3.02 kernel-cifs-3.1.1 --require-mic-rejection
       - name: Upstream pynfs client
         if: always() && matrix.compiler == 'gcc'
         run: |
@@ -37,6 +41,12 @@ jobs:
       - name: NFS competing clients and restart recovery
         if: always() && matrix.compiler == 'gcc'
         run: python3 tests/nfs_state_integration.py --bin build/linux/x86_64/release --output build/acceptance/nfs-state.json
+      - name: Upstream regular-file and directory namespace
+        if: always() && matrix.compiler == 'gcc'
+        run: python3 tests/pynfs_acceptance.py --bin build/linux/x86_64/release --output build/acceptance/pynfs-namespace.json LKPP1r LKPP1d LKPP2 LKPP3 PUTFH1r PUTFH1d PUTFH2 RNM1d RNM1r RNM2r RNM3r RNM4 RNM5 RNM6 RNM7 RNM8 RNM9 RNM10 RNM11 RNM12 RNM13 RNM14 RNM15 RNM16 RNM17 RNM18 RNM19 SEC1 SEC2 VF1r
+      - name: NFS native attributes and aliases
+        if: always() && matrix.compiler == 'gcc'
+        run: python3 tests/nfs_attributes_integration.py --bin build/linux/x86_64/release --output build/acceptance/nfs-attributes.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -60,6 +70,11 @@ jobs:
           PYTHONUTF8: '1'
       - name: NFS competing clients and restart recovery
         run: python tests/nfs_state_integration.py --bin build/windows/x64/release --output build/acceptance/nfs-state.json
+      - name: NFS native attributes and aliases
+        run: python tests/nfs_attributes_integration.py --bin build/windows/x64/release --output build/acceptance/nfs-attributes.json
+      - name: Windows native SMB redirector (signed and encrypted)
+        if: always()
+        run: python tests/windows_native_smb.py --bin build/windows/x64/release --output build/acceptance/windows-native-smb.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:

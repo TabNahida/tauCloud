@@ -65,6 +65,9 @@ def run(args):
     f=Fixture(args.bin,512 if args.sanitizers else 256);checks=[];clients=[]
     def passed(text):checks.append(text);print('PASS '+text,flush=True)
     try:
+        for _ in range(8):
+            repeated,_,_=f.connect();repeated.disconnect()
+        passed('verified repeated logins do not exhaust the failed-authentication budget')
         c,s,t=f.connect();clients.append(c)
         db=sqlite3.connect(f.state/'identity.db')
         try:

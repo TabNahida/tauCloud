@@ -21,6 +21,8 @@ def main():
     p.add_argument('--bin', type=Path, required=True)
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--profiles', nargs='+', help='Explicit profile names; default runs every profile')
+    p.add_argument('--require-mic-rejection', action='store_true',
+                   help='Negative compatibility test: selected kernel CIFS clients must be rejected for missing NTLM MIC')
     args = p.parse_args()
     report = dict(host=platform.platform(), recorded_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),
                   profiles=[], status='failed')
@@ -64,10 +66,14 @@ def main():
         if args.profiles:
             assert set(args.profiles) <= {x[0] for x in profiles}, 'unknown profile'
             profiles=[x for x in profiles if x[0] in args.profiles]
+        if args.require_mic_rejection:
+            assert all(kind=='cifs' for _,kind,_ in profiles), 'MIC rejection applies only to kernel CIFS'
         for name,kind,version in profiles:
             current=dict(name=name,status='failed',commands=[])
             report['profiles'].append(current)
             mounted=False
+            f.log.flush()
+            log_start=(f.base/'supervisor.log').stat().st_size
             try:
                 if kind=='samba':
                     target=f.base/'download'
@@ -104,6 +110,7 @@ assert [x.name for x in d.iterdir()]==['renamed']
 f.unlink();d.rmdir()
 '''
                     run(['python3','-c',code,str(mount),str(source)])
+                assert not args.require_mic_rejection, 'client unexpectedly authenticated without the required rejection'
                 current.update(status='passed',payload_sha256=hashlib.sha256(payload).hexdigest())
             except Exception:
                 current['error']=traceback.format_exc()
@@ -114,12 +121,19 @@ f.unlink();d.rmdir()
                         current.update(status='failed',cleanup_error=traceback.format_exc())
                         subprocess.run(['sudo','-n','umount','-lf',str(mount)],timeout=20)
                 f.log.flush()
-                current['server_log']=(f.base/'supervisor.log').read_text()[-65536:]
+                current['server_log']=(f.base/'supervisor.log').read_bytes()[log_start:].decode(errors='replace')[-65536:]
+                if (args.require_mic_rejection and not mounted and current['commands'] and
+                    current['commands'][-1]['returncode'] != 0 and
+                    '"ntlm_mic_required"' in current['server_log']):
+                    current['status']='rejected_missing_mic'
+                    current['compatible']=False
                 kernel=subprocess.run(['sudo','-n','dmesg','--ctime'],capture_output=True,text=True,timeout=10)
                 current['kernel_log']='\n'.join(line for line in kernel.stdout.splitlines()
                                                  if 'cifs' in line.lower() or 'nfs' in line.lower())[-32768:]
             print(name+': '+current['status'],flush=True)
-        report['status']='passed' if all(x['status']=='passed' for x in report['profiles']) else 'failed'
+        accepted=('rejected_missing_mic',) if args.require_mic_rejection else ('passed',)
+        report['test_kind']='mandatory_mic_rejection' if args.require_mic_rejection else 'file_roundtrip'
+        report['status']='passed' if all(x['status'] in accepted for x in report['profiles']) else 'failed'
     finally:
         args.output.parent.mkdir(parents=True,exist_ok=True)
         args.output.write_text(json.dumps(report,indent=2)+'\n')

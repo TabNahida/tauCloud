@@ -165,7 +165,8 @@ def run(args):
         checks.append('pynfs v4.1 EXCHANGE_ID/CREATE_SESSION/SEQUENCE, guarded OPEN, WRITE/READ, exact slot replay')
         seq=v.seq
         wrong=v.compound([op.putfh(h),op.read(state,1,4096)],seq=seq);assert wrong.status==10076,wrong
-        r=v.compound([op.putfh(h),op.getattr([0xffffffff,0xffffffff])]);assert r.status==0,r
+        # SET-only time attributes must not be requested by GETATTR.
+        r=v.compound([op.putfh(h),op.getattr([0xffffffff,0xffffffff & ~((1<<16)|(1<<22))])]);assert r.status==0,r
         stranger=client();stranger.session();r=stranger.compound([op.putfh(h),op.read(state,0,4096)]);assert r.status==10025,r
         checks.append('false slot replay and foreign stateid rejected; GETATTR subset independently decoded')
         oldowner=v.owner

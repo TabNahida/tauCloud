@@ -103,6 +103,17 @@ struct identity_store::impl {
     }
     tx.commit();
   }
+  void authenticated_attempt(const std::string &name) {
+    // Verified logins do not consume the failed-attempt budget. Preserve prior
+    // failures, including the global budget, rather than resetting either.
+    transaction tx(db);
+    for (const auto &key : std::vector<std::string>{"global", digest(name)}) {
+      statement q(db, "UPDATE attempts SET count=max(0,count-1) WHERE key=?");
+      q.bind(1, key);
+      q.row();
+    }
+    tx.commit();
+  }
   json smb_dispatch(const std::string &op, const json &body, const call_context &ctx) {
     using namespace smb_detail;
     if (op == "smb_enroll") {
@@ -183,6 +194,7 @@ struct identity_store::impl {
     }
     OPENSSL_cleanse(hash.data(), hash.size());
     ctx.check();
+    authenticated_attempt("smb:" + path_fold(name));
     statement prune(db, "DELETE FROM sessions WHERE expires<=?");
     prune.bind(1, now());
     prune.row();
@@ -260,6 +272,7 @@ struct identity_store::impl {
       ctx.check();
       require(equal(actual, verifier), "unauthorized");
       require(scope != "admin" || role == "admin", "forbidden");
+      authenticated_attempt(name);
       auto token = random_hex(), csrf = random_hex();
       int64_t expires = now() + (kind == "cli" ? 3600000 : 1800000);
       transaction tx(db);

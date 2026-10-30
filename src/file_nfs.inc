@@ -13,6 +13,19 @@ void nfs_init() {
       "CREATE TABLE IF NOT EXISTS attributes(id TEXT PRIMARY KEY,mode INTEGER NOT NULL);"
       "CREATE TABLE IF NOT EXISTS ownership(id TEXT PRIMARY KEY,uid INTEGER,gid INTEGER);"
       "CREATE TABLE IF NOT EXISTS exclusive_create(id TEXT PRIMARY KEY,verifier TEXT NOT NULL);");
+  // Earlier previews keyed projections by export handles. Metadata belongs to
+  // the native incarnation, so aliases must observe the same attributes.
+  {
+    transaction tx(*nfs_db);
+    sql(*nfs_db,
+        "INSERT OR IGNORE INTO attributes SELECT o.token,a.mode FROM attributes a "
+        "JOIN objects o ON a.id=o.id ORDER BY o.id;"
+        "INSERT OR IGNORE INTO ownership SELECT o.token,a.uid,a.gid FROM ownership a "
+        "JOIN objects o ON a.id=o.id ORDER BY o.id;"
+        "DELETE FROM attributes WHERE id IN (SELECT id FROM objects);"
+        "DELETE FROM ownership WHERE id IN (SELECT id FROM objects);");
+    tx.commit();
+  }
   statement q(*nfs_db, "SELECT value FROM secret");
   if (q.row())
     nfs_key = q.text(0);
@@ -83,10 +96,10 @@ json nfs_meta(space_state &s, const json &g, const std::string &path, native_fil
         break;
       }
   statement attrs(*nfs_db, "SELECT mode FROM attributes WHERE id=?");
-  attrs.bind(1, id);
+  attrs.bind(1, token);
   info["mode"] = attrs.row() ? attrs.integer(0) : (info.at("directory").get<bool>() ? 0700 : 0600);
   statement owner(*nfs_db, "SELECT uid,gid FROM ownership WHERE id=?");
-  owner.bind(1, id);
+  owner.bind(1, token);
   if (owner.row()) { info["uid"] = owner.integer(0); info["gid"] = owner.integer(1); }
   (void)s;
   return info;
@@ -94,7 +107,7 @@ json nfs_meta(space_state &s, const json &g, const std::string &path, native_fil
 void nfs_apply_attrs(space_state &s, const json &g, const std::string &path, native_file &f,
                      const json &attrs) {
   auto meta = nfs_meta(s, g, path, f);
-  auto id = encode_bytes(decode_bytes(meta.at("handle").get<std::string>()).substr(18, 16));
+  auto id = f.stable_identity();
   if (attrs.contains("atime_ns") || attrs.contains("mtime_ns"))
     f.set_times(attrs.contains("atime_ns") ? std::optional<uint64_t>(number(attrs, "atime_ns")) : std::nullopt,
                 attrs.contains("mtime_ns") ? std::optional<uint64_t>(number(attrs, "mtime_ns")) : std::nullopt);
@@ -362,16 +375,6 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
       q.bind(1, encode_bytes(raw.substr(18, 16)));
       q.bind(2, body.at("verifier")); q.row();
     }
-    if (body.contains("mode")) {
-      auto mode = number(body, "mode");
-      require(mode <= 0777, "not_supported");
-      auto raw = decode_bytes(result.at("handle").get<std::string>());
-      statement attrs(*nfs_db, "INSERT OR REPLACE INTO attributes VALUES(?,?)");
-      attrs.bind(1, encode_bytes(raw.substr(18, 16)));
-      attrs.bind(2, int64_t(mode));
-      attrs.row();
-      result["mode"] = mode;
-    }
     return finish(result);
   }
   if (op == "remove") {
@@ -405,20 +408,34 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     auto n = name("name"), t = name("to");
     auto from = p.empty() ? n : p + "/" + n;
     auto to = target.path.empty() ? t : target.path + "/" + t;
-    require(!beneath(to, from), "invalid_path");
-    case_check(s.directory, to);
     auto meta = dav_exists(s, from);
     require(meta.has_value(), "not_found");
-    // Replacing a live destination requires unlink/open-state coordination: reject explicitly.
-    require(!dav_exists(s, to), "already_exists");
+    if (from == to) { pending(request, hash); return finish(json::object()); }
+    require(!beneath(to, from), "invalid_path");
+    case_check(s.directory, to);
+    auto destination = dav_exists(s, to);
+    std::string replaced;
+    if (destination) {
+      require(destination->at("directory") == meta->at("directory"),
+              destination->at("directory").get<bool>() ? "is_directory" : "not_directory");
+      auto f = nfs_open(s, to, destination->at("directory"));
+      if (destination->at("directory")) require(f.list().empty(), "directory_not_empty");
+      replaced = f.stable_identity();
+      unlocked(space, to);
+      smb_sharing(space, to, 0x10000, 7);
+    }
     unlocked(space, from);
     smb_sharing(space, from, 0x10000, 7);
     dav_guard(s, from, actor, body, meta->at("directory"), true);
     dav_guard(s, to, actor, body);
     pending(request, hash);
-    s.directory.rename(from, to, false, meta->at("directory"));
+    s.directory.rename(from, to, bool(destination), meta->at("directory"));
     o.file.flush();
     target.file.flush();
+    if (!replaced.empty()) {
+      statement dead(*nfs_db, "UPDATE objects SET dead=1 WHERE token=?");
+      dead.bind(1, replaced); dead.row();
+    }
     scan(s, ctx);
     return finish(json::object());
   }

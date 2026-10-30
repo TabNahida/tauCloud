@@ -113,12 +113,15 @@ int main() {
       rejects([&] { identity.dispatch("validate", denied, context); }, "forbidden");
       identity.dispatch("logout", auth, context);
       rejects([&] { identity.dispatch("validate", auth, context); }, "unauthorized");
-      for (int i = 0; i < 4; ++i)
+      for (int i = 0; i < 5; ++i) {
+        // A valid login must neither consume nor clear previous failures.
+        identity.dispatch("login", {{"username", "admin"}, {"password", "unit-test-password-123"}}, context);
         rejects(
             [&] {
               identity.dispatch("login", {{"username", "admin"}, {"password", "bad"}}, context);
             },
             "unauthorized");
+      }
       rejects(
           [&] {
             identity.dispatch(
