@@ -16,8 +16,10 @@ def main():
     p.add_argument('--client', default='smbtorture')
     p.add_argument('--timeout', type=int, default=300,
                    help='Per-selector runtime; credit stress performs 8191 durable writes')
-    p.add_argument('selectors', nargs='+')
+    p.add_argument('selectors', nargs='*', help='Defaults to the versioned bounded-profile regression selection')
     args = p.parse_args()
+    if not args.selectors:
+        args.selectors = json.loads(Path(__file__).with_name('samba-profile.json').read_text())['selectors']
     args.output.parent.mkdir(parents=True, exist_ok=True)
     report = dict(host=platform.platform(), recorded_at=datetime.datetime.now(datetime.timezone.utc).isoformat(), tests=[])
     f = Fixture(args.bin)

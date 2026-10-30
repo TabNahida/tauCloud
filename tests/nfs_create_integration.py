@@ -4,7 +4,7 @@ import argparse
 import json
 from pathlib import Path
 from pynfs_acceptance import fixture
-from m7_integration import Client, op, t4, p4
+from m7_integration import Client, op, t4, p4, t3
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
@@ -26,6 +26,12 @@ def main():
     def close(c,h,result):call(c,[op.putfh(h),op.close(0,result.stateid)])
     try:
         c=client();d=client();root=c.root()
+        directory_attrs=t3.sattr3(t3.set_mode3(True,0o755),t3.set_uid3(True,1000),
+            t3.set_gid3(True,1000),t3.set_size3(True,0),t3.set_atime(1),t3.set_mtime(1))
+        result=c.v3('MKDIR',t3.MKDIR3args(t3.diropargs3(t3.nfs_fh3(root),b'zero-size-directory'),directory_attrs),9)
+        assert result.status==0,result
+        assert c.v3('GETATTR',t3.GETATTR3args(result.resok.obj.handle),1).status==0
+        checks.append('NFSv3 MKDIR accepts zero size hints without attempting to truncate a directory')
         r=call(c,[op.putfh(root),op.getattr([0,0,1<<11])])
         val=r.resarray[-1].opgetattr.resok4.obj_attributes
         assert val.attrmask==[0,0,1<<11],val

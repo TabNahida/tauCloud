@@ -73,6 +73,8 @@ uint32_t status(std::string_view code) {
     return 0xc0000054;
   if (code == "lock_not_granted")
     return 0xc0000055;
+  if (code == "invalid_lock_range")
+    return 0xc00001a1;
   if (code == "invalid_device_request")
     return 0xc0000010;
   if (code == "range_not_locked")
@@ -362,10 +364,11 @@ struct client {
   }
   opened &handle(std::string_view p, size_t offset, uint32_t tid) {
     auto fid = slice(p, offset, 16, 64);
-    if (fid == bytes(16, char(0xff)))
+    if (fid == bytes(16, char(0xff)) && (get(p, 16, 4) & 4))
       fid = related_file;
     auto it = files.find(fid);
     check(it != files.end() && it->second.tree_id == tid, 0xc0000128);
+    related_file = it->first;
     return it->second;
   }
   bytes fid_for(const opened &h) {
@@ -461,11 +464,11 @@ struct client {
       put(b, 6, response.size(), 2);
       co_return b + response;
     }
-    check(authenticated, 0xc0000022);
-    if (cmd == 13) {
+    if (cmd == 13 && (authenticated || get(p, 40, 8) == 0)) {
       check(structure == 4);
       co_return sized(4, 4);
     }
+    check(authenticated, 0xc0000022);
     if (cmd == 2) {
       check(structure == 4);
       co_await cleanup();
@@ -530,7 +533,10 @@ struct client {
     }
     if (cmd == 5) {
       check(structure == 57 && p.size() >= 120 && files.size() < 64);
-      auto name = path(slice(p, get(p, 108, 2), get(p, 110, 2), 120));
+      check(get(p, 68, 4) <= 3, 0xc00000a5); // BAD_IMPERSONATION_LEVEL
+      auto encoded_name = slice(p, get(p, 108, 2), get(p, 110, 2), 120);
+      check(encoded_name.empty() || (get(encoded_name, 0, 2) != '\\' && get(encoded_name, 0, 2) != '/'));
+      auto name = path(encoded_name);
       if (trees.at(tid).share == "IPC$") {
         check(path_fold(name) == "srvsvc" && get(p, 100, 4) == 1, 0xc0000034);
         auto fid = decode_bytes(random_hex(16));
@@ -544,6 +550,7 @@ struct client {
         b.replace(64, 16, fid);
         co_return b;
       }
+      bool query_disk_id = false;
       auto context_len = get(p, 116, 4);
       if (context_len) {
         auto contexts = slice(p, get(p, 112, 4), context_len, 120);
@@ -557,6 +564,10 @@ struct client {
           auto item = std::string_view(contexts).substr(pos, limit);
           auto tag = slice(item, get(item, 4, 2), get(item, 6, 2), 16);
           slice(item, get(item, 10, 2), get(item, 12, 4), 16);
+          if (tag == "QFid") {
+            check(!query_disk_id && get(item, 12, 4) == 0);
+            query_disk_id = true;
+          }
           if (tag == "DHnC" || tag == "DH2C" || tag == "TWrp" || tag == "SecD" || tag == "ExtA") {
             log("smb", "unsupported_create_context", std::string(tag));
             throw status_error(0xc00000bb);
@@ -579,8 +590,6 @@ struct client {
       access &= 0x0fffffff;
       if (maximum)
         access = (access & ~0x02000000) | (trees.at(tid).writable ? 0x1f01ff : 0x1200a9);
-      if (access & 0x20u)
-        access |= 1u;
       auto disposition = get(p, 100, 4), options = get(p, 104, 4);
       // MUST-ignore compatibility flags; NO_RECALL is a hint for HSM, which
       // this confined local-file profile does not implement.
@@ -613,6 +622,19 @@ struct client {
       put(b, 48, size, 8);
       put(b, 56, attributes(meta), 4);
       b.replace(64, 16, fid);
+      if (query_disk_id) {
+        bytes context(56, '\0');
+        put(context, 4, 16, 2);
+        put(context, 6, 4, 2);
+        put(context, 10, 24, 2);
+        put(context, 12, 32, 4);
+        context.replace(16, 4, "QFid");
+        context.replace(24, 8, decode_bytes(digest(meta.at("object").get<std::string>()).substr(0, 16)));
+        context.replace(32, 8, decode_bytes(digest(grant.at("root").at("volume").dump()).substr(0, 16)));
+        put(b, 80, 152, 4);
+        put(b, 84, context.size(), 4);
+        b += context;
+      }
       co_return b;
     }
     if (cmd == 6 || cmd == 7) {
@@ -711,8 +733,8 @@ struct client {
           throw;
         }
       }
-      check(get(p, 68, 4) == 0x11c017 && get(p, 112, 4) == 1, 0xc00000bb);
       auto &h = handle(p, 72, tid);
+      check(get(p, 68, 4) == 0x11c017 && get(p, 112, 4) == 1, 0xc00000bb);
       check(h.pipe && h.pending.empty());
       auto data = slice(p, get(p, 88, 4), get(p, 92, 4), 120);
       check(get(p, 104, 4) == 0);
@@ -878,8 +900,8 @@ struct client {
         size_t fixed = type == 1 && (klass == 9 || klass == 48) ? 4 :
                        type == 1 && klass == 18 ? 100 :
                        type == 1 && klass == 22 ? 24 :
-                       type == 2 && klass == 1 ? 18 :
-                       type == 2 && klass == 5 ? 12 : 0;
+                       type == 2 && klass == 1 ? 24 :
+                       type == 2 && klass == 5 ? 16 : 0;
         check(fixed && limit >= fixed, 0xc0000004);
         data.resize(limit);
         code = 0x80000005; // STATUS_BUFFER_OVERFLOW carries a QUERY_INFO response.
@@ -904,7 +926,7 @@ struct client {
         co_await operation(h, "stat", false);
         h.position = get(input, 0, 8);
       } else if (klass == 13) {
-        check(input.size() == 1 && get(input, 0, 1) <= 1);
+        check(!input.empty() && get(input, 0, 1) <= 1);
         request = {{"delete", bool(get(input, 0, 1))}};
         co_await operation(h, "disposition", true, request);
       } else if (klass == 10) {
@@ -1004,13 +1026,12 @@ struct client {
           // SMB 3.1.1 clients (including Samba) set priority bits on SESSION_SETUP.
           // Priority affects scheduling, not authorization or signing.
           auto allowed_flags = selected.dialect == 0x311 || cmd == 0 ? 0x1000007cull : 0x1000000cull;
-          check(!(flags & ~allowed_flags) && get(p, 6, 2) <= 1 && cmd <= 18);
-          check(!(flags & 4) || !requests.empty());
+          check(!(flags & ~allowed_flags) && get(p, 6, 2) <= 1);
           check(authenticated || (requests.empty() && !next));
-          auto request_session = (flags & 4) ? request_sessions.back() : get(p, 40, 8);
+          auto request_session = (flags & 4) && !requests.empty() ? request_sessions.back() : get(p, 40, 8);
           if (authenticated) {
-            check(cmd != 0 && cmd != 1, 0xc000035c);
-            // An unknown session gets an unsigned USER_SESSION_DELETED reply.
+            check(cmd != 0, 0xc000035c);
+            // An unknown session gets USER_SESSION_DELETED without a signature.
             // Never borrow this connection's session/key to execute its request.
             // Known-session signatures still all validate before any side effects.
             if (request_session == session && !encrypted)
@@ -1027,7 +1048,7 @@ struct client {
           offset += next;
         }
         related_file.clear();
-        uint32_t inherited_tree = 0, previous_status = 0;
+        uint32_t inherited_tree = 0, inherited_failure = 0;
         bytes output;
         for (size_t i = 0; i < requests.size(); ++i) {
           auto &p = requests[i];
@@ -1036,15 +1057,23 @@ struct client {
           bool related = get(p, 16, 4) & 4;
           if (related)
             tid = inherited_tree;
+          else {
+            related_file.clear();
+            inherited_failure = 0;
+          }
           bytes body;
-          bool unknown_session = authenticated && request_sessions[i] != session;
+          bool connection_echo = cmd == 13 && request_sessions[i] == 0;
+          bool unknown_session = !connection_echo && cmd != 0 && cmd != 1 &&
+              (authenticated ? request_sessions[i] != session : request_sessions[i] != 0);
           if (cmd == 0 || (cmd == 1 && selected.dialect == 0x311))
             transcript = preauth(transcript, p);
           try {
+            if (related && i == 0) inherited_failure = 0xc000000d;
+            if (related && inherited_failure) throw status_error(inherited_failure);
+            if (cmd == 1 && authenticated) throw status_error(0xc000000d);
             if (unknown_session)
               throw status_error(0xc0000203);
-            if (related && previous_status)
-              throw status_error(0xc000000d);
+            check(cmd <= 18);
             body = co_await command(p, tid, code);
           } catch (const status_error &e) {
             code = e.status;
@@ -1067,7 +1096,7 @@ struct client {
               put(body, 2, 1, 1);
               put(body, 4, 8, 4);
             }
-            if (cmd == 0 || cmd == 1)
+            if (cmd == 0 || (cmd == 1 && !authenticated))
               ending = true;
           }
           auto response = sized(64, 0);
@@ -1085,11 +1114,15 @@ struct client {
           for (size_t credit = 0; credit < credits; ++credit)
             credits_available.insert(high++);
           put(response, 14, credits, 2);
-          bool sign = authenticated && !encrypted && !unknown_session;
-          put(response, 16, 1 | (sign ? 8 : 0) | (related ? 4 : 0), 4);
+          bool sign = authenticated && !encrypted && !unknown_session && !connection_echo;
+          // Retain the request's SIGNED flag on a missing-session error so
+          // signing-required clients can observe the status. No unrelated
+          // session key is used and the signature bytes remain zero.
+          bool signed_flag = sign || (unknown_session && !encrypted && (get(p, 16, 4) & 8));
+          put(response, 16, 1 | (signed_flag ? 8 : 0) | (related ? 4 : 0), 4);
           put(response, 24, get(p, 24, 8), 8);
           put(response, 36, tid, 4);
-          put(response, 40, unknown_session ? request_sessions[i] : session, 8);
+          put(response, 40, (unknown_session || connection_echo) ? request_sessions[i] : session, 8);
           response += body;
           if (i + 1 < requests.size()) {
             response.resize((response.size() + 7) / 8 * 8, '\0');
@@ -1103,7 +1136,8 @@ struct client {
             negotiate_transcript = transcript;
           output += response;
           inherited_tree = tid;
-          previous_status = code;
+          if (code == 0xc0000203 || code == 0xc00000c9) inherited_failure = 0xc000000d;
+          else if (cmd == 5 && code) inherited_failure = code;
         }
         if (!socket.is_open())
           break;

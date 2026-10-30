@@ -226,17 +226,17 @@ def main():
             c = client()
         restart()
         assert nlm(2, b'B', state=3)[0] == 4
-        assert nlm(2, reclaim=True, state=3)[0] == 0
+        assert nlm(2, reclaim=True, state=0)[0] == 0
         restart() # A second crash between two range reclaims must preserve both.
-        assert nlm(2, reclaim=True, state=3)[0] == 0
-        assert nlm(2, reclaim=True, state=3, start=20, length=10)[0] == 0
+        assert nlm(2, reclaim=True, state=0)[0] == 0
+        assert nlm(2, reclaim=True, state=0, start=20, length=10)[0] == 0
         assert nlm(2, reclaim=True, state=3, start=40, length=10)[0] == 9
         wait(lambda: any(e[0] == 'reboot' and e[2] != boot for e in peer.events), timeout=10)
         assert nlm(4, length=0)[0] == 0
         wait(lambda: nlm(1, b'B')[0] == 0, timeout=75)
         assert nlm(2, b'B', state=3)[0] == 0
         assert nlm(4, b'B')[0] == 0
-        checks.append('server reboot advances NSM state, notifies peer and gates new locks; exact range reclaim survives a second crash, grace expires normally')
+        checks.append('server reboot advances NSM state, notifies peer and gates new locks; Linux-style zero-NSM-state reclaim matches persisted authority and ranges, survives a second crash, and grace expires normally')
         report = dict(status='passed', checks=checks,
                       callbacks=[dict(kind=e[0]) for e in peer.events])
         args.output.parent.mkdir(parents=True, exist_ok=True)

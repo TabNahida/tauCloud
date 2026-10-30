@@ -358,6 +358,9 @@ struct server::impl {
       }
       if (proc == 8 || proc == 9) {
         check(attrs.value("size", uint64_t(0)) == 0, 10004);
+        // A zero size hint on MKDIR is not a request to truncate the new
+        // directory. Reject nonzero sizes above, before namespace mutation.
+        if (proc == 9) attrs.erase("size");
         args.update(attrs);
         if (attrs.contains("mode")) {
           check(attrs.at("mode").get<uint32_t>() <= 0777, 10004);
@@ -479,8 +482,10 @@ struct server::impl {
       }
       return w.data;
     } catch (const error &e) {
+      log("nfs", "v3_" + std::to_string(proc), e.what());
       return v3_error(proc, status(e.what()));
     } catch (const failure &e) {
+      log("nfs", "v3_" + std::to_string(proc), std::to_string(e.status));
       return v3_error(proc, e.status);
     }
   }

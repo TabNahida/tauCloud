@@ -130,6 +130,23 @@ first.unlink();second.unlink()
                         run(['python3','-c',root_code,str(mount)])
                         current['checks']=['native pseudo-root mount and enumeration','simultaneous opens in two exports','complete file roundtrip through pseudo-root']
                     run(['python3','-c',code,str(mount/'nfs' if kind=='nfs-root' else mount),str(source)])
+                    if kind == 'nfs' and version == '4.1':
+                        # The second writer bypasses the kernel's page cache.
+                        # Restoring mtime and size makes change-attribute based
+                        # revalidation observable, rather than a same-cache read.
+                        cache_code = '''import os,sys
+from pathlib import Path
+p=Path(sys.argv[1])/'cache-probe';native=Path(sys.argv[2])/'cache-probe'
+with p.open('wb') as out: out.write(b'first');out.flush();os.fsync(out.fileno())
+assert p.read_bytes()==b'first'
+before=native.stat()
+with native.open('r+b') as out: out.write(b'other');out.flush();os.fsync(out.fileno())
+os.utime(native,ns=(before.st_atime_ns,before.st_mtime_ns))
+assert p.read_bytes()==b'other', 'close-to-open returned stale data after equal-size/restored-mtime mutation'
+p.unlink()
+'''
+                        run(['python3','-c',cache_code,str(mount),str(f.root/'nfsdata')])
+                        current.setdefault('checks', []).append('native v4.1 close-to-open cache invalidation after independent equal-size write with restored mtime')
                 assert not args.require_mic_rejection, 'client unexpectedly authenticated without the required rejection'
                 current.update(status='passed',payload_sha256=hashlib.sha256(payload).hexdigest())
             except Exception:

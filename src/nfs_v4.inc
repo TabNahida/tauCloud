@@ -470,6 +470,32 @@ json parse4(reader &r) {
     r.u64(); r.u32(); r.u64(); r.u32();
     bitmap(r); bitmap(r);
     break;
+  case 47:
+    r.fixed(16); r.u32(); r.u32(); bitmap(r);
+    break;
+  case 48:
+    r.u32(); r.u32(); r.u64(); r.fixed(8);
+    break;
+  case 49:
+    r.u64(); r.u64(); r.boolean(); r.fixed(16);
+    if (r.boolean()) r.u64();
+    if (r.boolean()) { r.u64(); r.u32(); }
+    r.u32(); r.opaque(65536);
+    break;
+  case 50:
+    r.boolean(); r.u32(); r.u32(); r.u64(); r.u64(); r.u64(); r.fixed(16); r.u32();
+    break;
+  case 51:
+    r.boolean(); r.u32(); r.u32();
+    if (r.u32() == 1) { r.u64(); r.u64(); r.fixed(16); r.opaque(65536); }
+    break;
+  case 56: {
+    r.u32();
+    auto claim = r.u32();
+    if (claim == 1) r.u32();
+    else if (claim != 4 && claim != 6) throw xdr_error();
+    break;
+  }
   case 9:
     a["bits"] = bitmap(r);
     break;

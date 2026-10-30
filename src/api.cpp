@@ -295,11 +295,12 @@ static pace::task<pace::http::server_response> handle(api_state &s, pace::http::
                            {"persistent_acl", false}});
       protocols.push_back({{"id", "nfs"}, {"implemented", true},
                            {"enabled", s.cfg.nfs_port != 0}, {"port", s.cfg.nfs_port},
-                           {"listen", "127.0.0.1"}, {"compatibility", "experimental"},
+                           {"listen", s.cfg.nfs_address}, {"compatibility", "experimental"},
                            {"versions", json::array({"4.1-subset", "3-subset"})},
                            {"auth", "explicit-loopback-AUTH_SYS"}, {"root_squash", true},
                            {"write_stability", "FILE_SYNC"}, {"persistent_sessions", false},
-                           {"nlm_nsm", false}, {"posix_locks", false},
+                           {"nlm_nsm", true}, {"nlm_profile", "v4-sync-loopback-advisory"},
+                           {"posix_locks", false},
                            {"full_conformance", false}});
       co_return response(protocols);
     }

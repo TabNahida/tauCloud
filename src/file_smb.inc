@@ -122,8 +122,6 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     // is unavailable. Granting them never bypasses the space's write policy.
     require((access & ~0x001f01ffu) == 0, "not_supported");
     require(!(access & (0xd0000u | 0x156u)) || grant.at("write").get<bool>(), "forbidden");
-    if (access & 0x20u)
-      access |= 1u; // FILE_EXECUTE also permits reading the file's contents.
     smb_sharing(space, path, access, sharing);
     auto existing = dav_exists(s, path);
     bool directory = existing ? existing->at("directory").get<bool>() : bool(options & 1);
@@ -155,7 +153,6 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     } else if (!directory)
       file = s.directory.open(path, false, false, bool(access & 6));
     if (truncate) {
-      range_unlocked("", file.info().at("object"), 0, UINT64_MAX);
       file.truncate(0);
       file.flush();
       index(space, path, file.info());
@@ -235,11 +232,13 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     return {{"flushed", true}};
   }
   if (op == "smb_lock") {
-    require(!h.directory && (h.access & 7), "forbidden");
+    require(!h.directory, "invalid_request");
+    require(h.access & 0x27, "forbidden");
     auto requested = body.at("locks");
     require(requested.is_array() && !requested.empty() && requested.size() <= 64,
             "invalid_request");
     auto candidate = locks;
+    const bool unlocking = requested.front().at("flags") == 4;
     for (auto v : requested) {
       auto lock_number = [&](const char *key) {
         const auto &n = v.at(key);
@@ -249,23 +248,32 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
       };
       auto start = lock_number("offset"), length = lock_number("length");
       unsigned flags = v.at("flags");
-      require(length > 0 && start <= UINT64_MAX - length, "invalid_offset");
-      if (flags == 4) {
-        auto found = std::find_if(candidate.begin(), candidate.end(), [&](const auto &l) {
-          return l.handle == id && l.start == start && l.end == start + length;
-        });
+      require(!length || length - 1 <= UINT64_MAX - start, "invalid_lock_range");
+      const bool through_max = length && start + length == 0;
+      if (unlocking) {
+        require(flags == 4, "invalid_request");
+        auto matches = [&](const auto &l) {
+          return l.handle == id && l.start == start && l.end == start + length && l.through_max == through_max;
+        };
+        // Exclusive entries precede stacked shared entries on exact unlock.
+        auto found = std::find_if(candidate.begin(), candidate.end(), [&](const auto &l) { return matches(l) && l.exclusive; });
+        if (found == candidate.end()) found = std::find_if(candidate.begin(), candidate.end(), matches);
         require(found != candidate.end(), "range_not_locked");
         candidate.erase(found);
+        locks = candidate; // Unlocks commit individually; later failure preserves earlier unlocks.
       } else {
         require(flags == 1 || flags == 2 || flags == 0x11 || flags == 0x12,
                 "invalid_request");
+        require(requested.size() == 1 || (flags & 0x10), "invalid_request");
         bool exclusive = (flags & 2) != 0;
         for (const auto &l : candidate)
-          require(l.object != meta.at("object").get<std::string>() || start >= l.end ||
-                      start + length <= l.start || (!exclusive && !l.exclusive),
+          require(l.object != meta.at("object").get<std::string>() ||
+                      (!l.through_max && start >= l.end) ||
+                      (!through_max && start + length <= l.start) ||
+                      (!exclusive && (!l.exclusive || l.handle == id)),
                   (flags & 0x10) ? "lock_not_granted" : "not_supported");
         require(candidate.size() < 256, "lock_limit");
-        candidate.push_back({id, meta.at("object"), start, start + length, exclusive});
+        candidate.push_back({id, meta.at("object"), start, start + length, exclusive, through_max});
       }
     }
     locks = std::move(candidate);
@@ -305,24 +313,32 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
             "forbidden");
     auto to = target.at("path").get<std::string>();
     portable_path(to);
-    require(to != path && !beneath(to, path), "invalid_path");
+    if (to == path) return {{"from", path}, {"path", to}, {"space", space}};
+    require(!beneath(to, path), "invalid_path");
     case_check(s.directory, to);
     dav_guard(s, path, actor, body, h.directory, true);
     dav_guard(s, to, actor, body, h.directory, true);
+    auto parent = [](const std::string &p) {
+      auto slash = p.rfind('/');
+      return slash == std::string::npos ? std::string() : p.substr(0, slash);
+    };
+    for (const auto &[other, x] : handles)
+      if (other != id && x.space == space && x.directory &&
+          (x.path == parent(path) || x.path == parent(to)))
+        require(x.protocol == "smb" && (!smb_categories(x.access) ||
+            (!(x.access & 0x10000) && (x.sharing & 4))), "sharing_violation");
+    if (h.directory)
+      for (const auto &[other, x] : handles)
+        require(x.space != space || x.path == path || !beneath(x.path, path), "forbidden");
     for (auto &[other, x] : handles)
-      if (x.space == space && beneath(x.path, path))
-        require(x.protocol == "smb" && (x.sharing & 4), "sharing_violation");
+      if (other != id && x.space == space && beneath(x.path, path))
+        require(x.protocol == "smb" && (!smb_categories(x.access) || (x.sharing & 4)), "sharing_violation");
     auto dest = dav_exists(s, to);
     if (dest) {
       require(body.value("replace", false), "already_exists");
       require(!dest->at("directory").get<bool>() && !h.directory, "not_supported");
       unlocked(space, to);
     }
-    // Pinned Windows parent handles forbid moving an ancestor of a live file.
-    // Use the same explicit sharing violation on both platforms.
-    if (h.directory)
-      for (auto &[other, x] : handles)
-        require(x.space != space || x.path == path || !beneath(x.path, path), "sharing_violation");
     statement pending_tree(db, "SELECT path FROM smb_pending WHERE space=?");
     pending_tree.bind(1, space);
     while (pending_tree.row())
@@ -340,12 +356,12 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
   }
   require(!h.directory, op == "smb_read" ? "invalid_device_request" : "is_directory");
   if (op == "smb_read") {
-    require(h.access & 1, "forbidden");
+    require(h.access & 0x21, "forbidden");
     auto offset = number(body, "offset"), count = number(body, "count");
     require(count <= 65536 && offset <= uint64_t(INT64_MAX) - count, "invalid_offset");
     for (auto &l : locks)
-      require(!l.exclusive || l.handle == id || l.object != meta.at("object").get<std::string>() ||
-                  offset >= l.end || offset + count <= l.start,
+      require(!count || !l.exclusive || l.handle == id || l.object != meta.at("object").get<std::string>() ||
+                  (!l.through_max && offset >= l.end) || offset + count <= l.start,
               "locked");
     auto data = h.file.read(offset, static_cast<size_t>(count));
     return {{"data", encode_bytes(data)}, {"read", data.size()}};
@@ -360,7 +376,6 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
       if (size >= previous)
         return {{"size", previous}};
     }
-    range_unlocked(id, meta.at("object"), std::min(size, previous), UINT64_MAX);
     quota(s, size > previous ? size - previous : 0);
     dav_guard(s, path, actor, body);
     lease(grant, ctx);
@@ -381,6 +396,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     require(data.size() <= 65536 && offset <= uint64_t(INT64_MAX) - data.size(), "invalid_offset");
     auto previous = meta.at("size").get<uint64_t>();
     require((h.access & 2) || offset == previous, "forbidden");
+    if (data.empty()) return {{"written", 0}};
     range_unlocked(id, meta.at("object"), offset, offset + data.size());
     quota(s, offset + data.size() > previous ? offset + data.size() - previous : 0);
     dav_guard(s, path, actor, body);

@@ -16,7 +16,7 @@ import threading
 import traceback
 
 from pynfs_acceptance import fixture
-from m7_integration import Client, t3
+from m7_integration import Client, t3, p3
 
 
 class Relay:
@@ -79,6 +79,17 @@ class Relay:
                                 offset = 40 + ((name_length + 3) & ~3)
                                 if offset + 12 <= 32 + header[7] <= len(packet):
                                     entry['uid'], entry['gid'], entry['group_count'] = struct.unpack('>3I', packet[offset:offset + 12])
+                            if header[3:6] == (100003, 3, 9):
+                                offset = 32 + ((header[7] + 3) & ~3)
+                                if offset + 8 <= len(packet):
+                                    verifier_size = struct.unpack_from('>I', packet, offset + 4)[0]
+                                    start = offset + 8 + ((verifier_size + 3) & ~3)
+                                    try:
+                                        u = p3.NFS3Unpacker(packet[start:])
+                                        attrs = u.unpack_MKDIR3args().attributes
+                                        entry['mkdir_attributes'] = str(attrs)
+                                    except Exception:
+                                        entry['decode_error'] = True
                             self.calls.append(entry)
                 target.sendall(data)
         except OSError:

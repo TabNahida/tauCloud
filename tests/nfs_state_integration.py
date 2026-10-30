@@ -20,6 +20,27 @@ def main():
         return expect(c,[op.putfh(h),op.lock(2,reclaim,start,length,locker)]).resarray[-1].oplock.resok4.lock_stateid
     try:
         a=connect();b=connect();root=a.root()
+        # Required lifecycle operations not covered by the upstream OPEN-only
+        # selection: bind a fresh connection, release lock state and downgrade.
+        bound=Client(port);clients.append(bound)
+        r=bound.compound([op.bind_conn_to_session(a.sid,1,False)],False)
+        assert r.status==0 and r.resarray[0].opbind_conn_to_session.bctsr_resok4.bctsr_dir==1,r
+        bound.sid=a.sid;bound.cid=a.cid;bound.seq=a.seq
+        expect(bound,[op.putpubfh(),op.lookup(b'nfs'),op.getfh()])
+        state,h=bound.open(root,b'lifecycle',True)
+        locked=lock(bound,h,state,b'lifecycle-owner',0,1)
+        expect(bound,[op.free_stateid(locked)],10037)
+        unlocked=expect(bound,[op.putfh(h),op.locku(2,0,locked,0,1)]).resarray[-1].oplocku.lock_stateid
+        result=expect(bound,[op.test_stateid([state,locked,unlocked])])
+        assert result.resarray[-1].optest_stateid.tsr_status_codes==[0,10024,0],result
+        expect(bound,[op.free_stateid(unlocked)])
+        expect(bound,[op.free_stateid(unlocked)],10025)
+        lowered=expect(bound,[op.putfh(h),op.open_downgrade(state,0,1,0)]).resarray[-1].opopen_downgrade.resok4.open_stateid
+        expect(bound,[op.putfh(h),op.write(lowered,0,2,b'forbidden')],10038)
+        expect(bound,[op.putfh(h),op.close(0,lowered)])
+        expect(bound,[op.putfh(root),op.remove(b'lifecycle')])
+        a.seq=bound.seq
+        checks.append('BIND_CONN_TO_SESSION on a fresh connection, PUTPUBFH, TEST_STATEID old/current states, FREE_STATEID held/unlocked states and read-only OPEN_DOWNGRADE')
         state,h=a.open(root,b'lock-file',True)
         f.api('memberships',f.admin,dict(username='bob',group='unix'))
         f.api('grants',f.admin,dict(space='nfsdata',subject_type='user',subject='bob',rights='rw'))

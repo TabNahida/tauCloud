@@ -11,6 +11,7 @@ from m1_integration import wait
 from smbprotocol.connection import Connection, Dialects
 from smbprotocol.session import Session
 from smbprotocol.tree import TreeConnect
+from smbprotocol.create_contexts import SMB2CreateContextRequest
 from smbprotocol.open import SMB2QueryInfoRequest, SMB2QueryInfoResponse, SMB2SetInfoRequest, Open, ImpersonationLevel, CreateDisposition, CreateOptions, FilePipePrinterAccessMask, ShareAccess
 from smbprotocol.file_info import FileAttributes, FileInformationClass, FileEndOfFileInformation, FileRenameInformation, FileDispositionInformation
 
@@ -85,6 +86,18 @@ def run(args):
         h.close();root=create(t,'',access=0x120089,disposition=1,options=1)
         entries=root.query_directory('??.txt',FileInformationClass.FILE_ID_BOTH_DIRECTORY_INFORMATION);assert [x['file_name'].get_value().decode('utf-16-le') for x in entries]==['中文.txt'];root.close()
         passed('signed NTLMv2 MIC authentication, UTF-16 create/read/write/flush/query/directory/close')
+        ids=[]
+        for name in ('id-file', 'id-file', 'id-other'):
+            context=SMB2CreateContextRequest();context['buffer_name']=b'QFid'
+            opened=Open(t,name)
+            result=opened.create(ImpersonationLevel.Impersonation,0x13019f,
+                FileAttributes.FILE_ATTRIBUTE_NORMAL,7,3,0x40,create_contexts=[context])
+            assert len(result)==1 and result[0]['reserved'].get_value()==bytes(16)
+            disk=result[0]['disk_file_id'].get_value()
+            assert disk==int.from_bytes(query(opened,6),'little')
+            ids.append((disk,result[0]['volume_id'].get_value()));opened.close()
+        assert ids[0]==ids[1] and ids[0][0]!=ids[2][0] and ids[0][1]==ids[2][1]
+        passed('QFid CREATE context agrees with internal file IDs across opens and distinguishes objects on one volume')
         ipc=TreeConnect(s,r'\\127.0.0.1\IPC$');ipc.connect();pipe=create(ipc,'srvsvc',access=0x12019f,disposition=1,options=0);assert shares(pipe)==['smb'];assert shares(pipe,transceive=True)==['smb'];pipe.close();ipc.disconnect()
         bob,bs,bt=f.connect(user='bob',share='IPC$');clients.append(bob);pipe=create(bt,'srvsvc',access=0x12019f,disposition=1,options=0);assert shares(pipe)==[];pipe.close();bob.disconnect()
         passed('authenticated srvsvc NDR32 share enumeration filters inaccessible and non-SMB shares')

@@ -75,10 +75,17 @@ def hostile(port,password):
     unknown=sid^0x100000000
     reply=exchange(sock,signed(header(2,3,unknown,flags=8)+struct.pack('<HH',4,0),key))
     assert status(reply)==0xc0000203 and struct.unpack_from('<Q',reply,40)[0]==unknown
-    assert not struct.unpack_from('<I',reply,16)[0]&8
+    assert struct.unpack_from('<I',reply,16)[0]&8 and reply[48:64] == b'\0'*16
     # The rejected LOGOFF cannot affect the actual authenticated session.
     reply=exchange(sock,signed(header(13,4,sid,flags=8)+struct.pack('<HH',4,0),key))
-    assert status(reply)==0 and signed(reply,key)[48:64]==reply[48:64];sock.close()
+    assert status(reply)==0 and signed(reply,key)[48:64]==reply[48:64]
+    reply=exchange(sock,signed(header(2,5,sid,flags=8)+struct.pack('<HH',4,0),key))
+    assert status(reply)==0
+    reply=exchange(sock,signed(header(13,6,sid,flags=8)+struct.pack('<HH',4,0),key))
+    assert status(reply)==0xc0000203 and reply[48:64]==bytes(16)
+    reply=exchange(sock,header(13,7)+struct.pack('<HH',4,0))
+    assert status(reply)==0 and struct.unpack_from('<Q',reply,40)[0]==0
+    sock.close()
     # Non-identical client clocks still authenticate with correct proof/MIC;
     # excessive clock skew remains a failure, independently of cryptography.
     for delta in (-1000,1000,-290000,290000):

@@ -103,12 +103,25 @@ int main() {
       }, "forbidden");
     auto metadata = open("data", 0x80, 0, 1);
     auto reader = open("data", 0x20, 7, 1);
+    ok(call("stat", "data", {{"handle", reader}}).at("access") == 0x20);
     ok(call("read", "data", {{"handle", reader}, {"offset", 0}, {"count", 1}})
            .at("read") == 0);
     call("close", "data", {{"handle", reader}});
     call("close", "data", {{"handle", metadata}});
     h = open("data");
     auto second = open("data");
+    ok(call("write", "data", {{"handle", h}, {"offset", INT64_MAX},
+        {"data", ""}, {"request_id", random_hex(16)}}).at("written") == 0);
+    ok(call("stat", "data", {{"handle", h}}).at("size") == 0);
+    // The uppermost byte is valid; only an end beyond UINT64_MAX overflows.
+    call("lock", "data", {{"handle", h}, {"locks", json::array({
+        {{"offset", UINT64_MAX}, {"length", 1}, {"flags", 0x12}}})}});
+    rejected([&] { call("lock", "data", {{"handle", second}, {"locks", json::array({
+        {{"offset", UINT64_MAX}, {"length", 1}, {"flags", 0x12}}})}}); }, "lock_not_granted");
+    rejected([&] { call("lock", "data", {{"handle", h}, {"locks", json::array({
+        {{"offset", UINT64_MAX}, {"length", 2}, {"flags", 0x12}}})}}); }, "invalid_lock_range");
+    call("lock", "data", {{"handle", h}, {"locks", json::array({
+        {{"offset", UINT64_MAX}, {"length", 1}, {"flags", 4}}})}});
     call("write", "data",
          {{"handle", h},
           {"offset", 0},

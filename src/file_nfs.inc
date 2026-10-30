@@ -478,7 +478,7 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     auto off = number(body, "offset"), count = number(body, "count");
     require(count <= 65536 && off <= uint64_t(INT64_MAX) - count, "invalid_offset");
     for (const auto &l : locks)
-      require(!l.exclusive || l.object != before.at("object").get<std::string>() || off >= l.end ||
+      require(!count || !l.exclusive || l.object != before.at("object").get<std::string>() || (!l.through_max && off >= l.end) ||
                   off + count <= l.start,
               "locked");
     auto data = o.file.read(off, count);

@@ -295,14 +295,18 @@ std::string nlm(const identity &who, uint32_t proc, reader &r) {
     check(!grace_end || recovering, 4);
     check(!recovering || nlm_grace_end, 4);
     if (proc == 2) {
-      nlm_peer_state(l.caller, l.state);
       if (recovering) {
         auto it = nlm_reclaim.find(key);
         check(it != nlm_reclaim.end() && it->second.handle == l.handle &&
             std::any_of(it->second.ranges.begin(), it->second.ranges.end(), [&](auto held) {
               return range.start >= held.start && range.end <= held.end && range.type == held.type;
             }), 9);
-      }
+        // A reclaim reports server recovery, not a client reboot. Linux
+        // deliberately leaves its request's NSM state zero on this path.
+        // Match persisted authority/owner/object/range first and retain the
+        // last observed peer state; a reclaim cannot retire peer locks.
+        l.state = it->second.state;
+      } else nlm_peer_state(l.caller, l.state);
     }
     if (auto conflict = nlm_conflict(l, range)) {
       if (proc == 2 && block) {

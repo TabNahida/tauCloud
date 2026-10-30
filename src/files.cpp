@@ -68,6 +68,7 @@ struct file_store::impl {
     std::string handle, object;
     uint64_t start, end;
     bool exclusive = true;
+    bool through_max = false;
   };
   std::map<std::string, std::unique_ptr<space_state>> spaces;
   std::map<std::string, opened> handles;
@@ -406,8 +407,9 @@ struct file_store::impl {
   }
   void range_unlocked(const std::string &handle, const std::string &object, uint64_t start,
                       uint64_t end) {
+    if (start == end) return;
     for (auto &l : locks)
-      require((l.handle == handle && l.exclusive) || l.object != object || start >= l.end ||
+      require((l.handle == handle && l.exclusive) || l.object != object || (!l.through_max && start >= l.end) ||
                   end <= l.start,
               "locked");
   }
@@ -669,8 +671,8 @@ struct file_store::impl {
         require(count <= file_chunk_size && offset <= uint64_t(INT64_MAX) - count,
                 "invalid_request");
         for (auto &l : locks)
-          require(!l.exclusive || l.handle == id ||
-                      l.object != info.at("object").get<std::string>() || offset >= l.end ||
+          require(!count || !l.exclusive || l.handle == id ||
+                      l.object != info.at("object").get<std::string>() || (!l.through_max && offset >= l.end) ||
                       offset + count <= l.start,
                   "locked");
         auto bytes = h.file.read(offset, static_cast<size_t>(count));

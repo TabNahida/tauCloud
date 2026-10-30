@@ -144,6 +144,21 @@ def main():
             assert result.status == 10004 and len(result.resarray) == 2, result
         checks.append('BACKCHANNEL_CTL updates bounded callback configuration; unknown GSS, SP4_NONE SET_SSV and obsolete v4.0 operations return defined per-operation errors')
 
+        zero = t4.stateid4(0, bytes(12))
+        optional = [op.delegpurge(alice.cid), op.delegreturn(zero), op.openattr(False),
+            op.getdeviceinfo(bytes(16), 1, 1024, []),
+            op.getdevicelist(1, 1, 0, bytes(8)),
+            op.layoutcommit(0, 1, False, zero, t4.newoffset4(False),
+                t4.newtime4(False), t4.layoutupdate4(1, b'')),
+            op.layoutget(False, 1, 1, 0, 1, 1, zero, 1024),
+            op.layoutreturn(False, 1, 1, t4.layoutreturn4(3)),
+            op.want_delegation(0, t4.deleg_claim4(4))]
+        for operation in optional:
+            result = alice.compound([op.putfh(root_handle), operation, op.getfh()])
+            assert result.status == 10004 and len(result.resarray) == 3, result
+            assert result.resarray[-1].resop == operation.argop, result
+        checks.append('optional pNFS/delegation/attribute operations are decoded and return NOTSUPP with their own operation number, not OP_ILLEGAL')
+
         assert alice.mount()[0] == 0
         f.api('nfs-exports', f.admin, dict(id='nfs', trust='loopback-auth-sys',
               anonymous='bob', uids={'1000': 'alice'}, gids={'1000': 'unix'},
