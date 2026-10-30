@@ -488,7 +488,15 @@ struct client {
       }
       json request = {
           {"auth", auth()}, {"protocol", "smb"}, {"share", share}, {"path", ""}, {"write", false}};
-      auto grant = co_await smb_rpc(s, "identity", "authorize", request);
+      json grant;
+      try {
+        grant = co_await smb_rpc(s, "identity", "authorize", request);
+      } catch (const error &e) {
+        if (std::string_view(e.what()) == "not_found")
+          throw status_error(0xc00000cc); // STATUS_BAD_NETWORK_NAME
+        throw;
+      }
+      share = grant.at("share");
       bool writable = false;
       request["write"] = true;
       try {

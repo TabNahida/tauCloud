@@ -181,7 +181,24 @@ json policy_dispatch(sqlite3 *db, const config &c, const std::string &operation,
     require(profile == "core" || !share_id.empty(), "forbidden");
     std::string exposed = "rw";
     if (!share_id.empty()) {
-      auto share = record(db, "shares", share_id);
+      json share;
+      if (profile == "smb") {
+        // Share identifiers are ASCII, but SMB share lookup is case-insensitive.
+        // Keep other protocols' identifiers unchanged and fail closed for old
+        // databases containing ambiguous SMB exposures.
+        statement q(db, "SELECT body FROM records WHERE kind='shares' AND id=? COLLATE NOCASE");
+        q.bind(1, share_id);
+        while (q.row()) {
+          auto candidate = json::parse(q.text(0));
+          if (!candidate.at("exposures").value("smb", "").empty()) {
+            require(share.is_null(), "case_collision");
+            share = std::move(candidate);
+          }
+        }
+        require(!share.is_null(), "not_found");
+        share_id = share.at("id");
+      } else
+        share = record(db, "shares", share_id);
       space = record(db, "spaces", share.at("space"));
       exposed = share.at("exposures").value(profile, "");
       auto sub = share.value("path", "");
@@ -429,6 +446,11 @@ json policy_dispatch(sqlite3 *db, const config &c, const std::string &operation,
       portable_path(path);
     auto exposures = data.value("exposures", json{{"core", "rw"}});
     require(exposures.is_object(), "invalid_request");
+    if (exposures.contains("smb"))
+      for (const auto &other : records(db, "shares"))
+        require(other.at("id") == id || !other.at("exposures").contains("smb") ||
+                    path_fold(other.at("id").get<std::string>()) != path_fold(id),
+                "case_collision");
     int writers = 0;
     for (auto &[protocol, mode] : exposures.items()) {
       require(protocol == "core" || protocol == "webdav" || protocol == "smb" ||

@@ -1,0 +1,42 @@
+{
+  "status": "failed",
+  "client_host": "macOS-15.7.9-x86_64-i386-64bit-Mach-O",
+  "server_host": "Ubuntu 24.04 QEMU guest",
+  "source_commit": "ca5101638c30174a45aef1d410de69dfec0e800d",
+  "harness_commit": "ca5101638c30174a45aef1d410de69dfec0e800d",
+  "server_archive_sha256": "a0b05ea20cb54823f2f7c19cca660e643d541f80b760f045644fc4fe1a417cdf",
+  "accelerator": "hvf",
+  "guest_kernel": "Linux taucloud-acceptance 6.8.0-137-generic #137-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul 17 20:28:23 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+  "identity_setup": "offline disposable identity seed, native Argon2id 64 MiB/3/1; management login excluded; SMB authentication unchanged",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41006409767",
+  "profiles": [
+    {
+      "name": "macos-native-smb",
+      "status": "failed",
+      "authentication": "passed: NTLMv2/MIC, signed SESSION_SETUP response and subsequent signed requests",
+      "response_clock_delta_ms": -378,
+      "failure": "TREE_CONNECT returns STATUS_OBJECT_NAME_NOT_FOUND; mount exits 64; no SMB file-operation pass"
+    },
+    {
+      "name": "macos-native-nfs3",
+      "status": "passed",
+      "mount_profile": "NFSv3 TCP, alternate ports, nolocks",
+      "payload_bytes": 1028096,
+      "payload_sha256": "08e33aedf25337c87eb15e08c32a58f6f4caa21fe073d00b53014c57f8d148e0",
+      "checks": [
+        "mkdir",
+        "write",
+        "fsync",
+        "read verification",
+        "rename",
+        "truncate",
+        "enumerate",
+        "delete"
+      ]
+    }
+  ],
+  "limitations": [
+    "NLM/NSM absent; NFSv3 mounts use nolocks.",
+    "Management bootstrap/login excluded from offline guest fixture provisioning."
+  ]
+}

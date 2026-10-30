@@ -1,0 +1,243 @@
+{
+  "source_commit": "ca5101638c30174a45aef1d410de69dfec0e800d",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41006409767",
+  "scope": "selected M0-M7 backend profile; full SMB/NFS conformance remains incomplete",
+  "workflow_conclusion": "failure: macOS SMB TREE_CONNECT; GCC/Clang/MSVC passed; macOS NFSv3 passed",
+  "jobs": {
+    "linux-gcc": {
+      "status": "passed",
+      "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+      "compiler": "gcc",
+      "sanitizers": false,
+      "sources_sha256": "d93cb98790d7e2444c5c237fdf47480db5219040552137016ea19571f9f8fdad",
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41006409767/job/123902200978",
+      "ntlm_clock_regression": {
+        "status": "passed",
+        "authentication_provider": "pyspnego NTLM",
+        "accepted_offsets_ms": [
+          -1000,
+          1000,
+          -290000,
+          290000
+        ],
+        "rejected_offsets_ms": [
+          -301000,
+          301000
+        ]
+      }
+    },
+    "linux-clang": {
+      "status": "passed",
+      "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+      "compiler": "clang",
+      "sanitizers": true,
+      "sources_sha256": "d93cb98790d7e2444c5c237fdf47480db5219040552137016ea19571f9f8fdad",
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41006409767/job/123902200980",
+      "ntlm_clock_regression": {
+        "status": "passed",
+        "authentication_provider": "pyspnego NTLM",
+        "accepted_offsets_ms": [
+          -1000,
+          1000,
+          -290000,
+          290000
+        ],
+        "rejected_offsets_ms": [
+          -301000,
+          301000
+        ]
+      }
+    },
+    "windows-msvc": {
+      "status": "passed",
+      "host": "Windows-2025Server-10.0.26100-SP0",
+      "compiler": "msvc",
+      "sanitizers": false,
+      "sources_sha256": "88d986e6523a8c4ccc308a0de7e30c10e2db0be69ae8039151ef82a130b22657",
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41006409767/job/123902200856",
+      "ntlm_clock_regression": {
+        "status": "passed",
+        "authentication_provider": "Windows SSPI (sspilib)",
+        "accepted_offsets_ms": [
+          -1000,
+          1000,
+          -290000,
+          290000
+        ],
+        "rejected_offsets_ms": [
+          -301000,
+          301000
+        ]
+      }
+    }
+  },
+  "clients": {
+    "filezilla-linux": {
+      "status": "passed",
+      "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+      "client": "FileZilla 3.66.5",
+      "protocol": "explicit FTPS",
+      "payload_bytes": 1028096,
+      "sha256": "08e33aedf25337c87eb15e08c32a58f6f4caa21fe073d00b53014c57f8d148e0",
+      "checks": [
+        "pinned disposable server certificate",
+        "native GUI queue upload and download",
+        "binary source/server/download match"
+      ]
+    },
+    "filezilla-windows": {
+      "status": "passed",
+      "host": "Windows-2025Server-10.0.26100-SP0",
+      "client": "FileZilla 3.71.1",
+      "protocol": "explicit FTPS",
+      "payload_bytes": 1028096,
+      "sha256": "08e33aedf25337c87eb15e08c32a58f6f4caa21fe073d00b53014c57f8d148e0",
+      "checks": [
+        "pinned disposable server certificate",
+        "native GUI queue upload and download",
+        "binary source/server/download match"
+      ]
+    },
+    "linux-native": {
+      "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+      "status": "passed",
+      "profiles": [
+        {
+          "name": "smbclient-2.1",
+          "status": "passed"
+        },
+        {
+          "name": "smbclient-3.1.1",
+          "status": "passed"
+        },
+        {
+          "name": "kernel-nfs-3",
+          "status": "passed"
+        },
+        {
+          "name": "kernel-nfs-4.1",
+          "status": "passed"
+        }
+      ]
+    },
+    "windows-native-smb": {
+      "status": "passed",
+      "host": "Windows-2025Server-10.0.26100-SP0",
+      "client": "Windows native SMB redirector",
+      "payload_sha256": "631B84027D6B9E52B539C4E8373622D23032DFADC64D60AF87339C9037E4F769",
+      "connection": {
+        "ServerName": "127.0.0.1",
+        "ShareName": "smb",
+        "Dialect": "3.1.1",
+        "Encrypted": true,
+        "Signed": false
+      }
+    }
+  },
+  "nfs": {
+    "linux-nfs-state": {
+      "status": "passed",
+      "checks": [
+        "one kernel-style session accepts multiple mapped users without sharing their open authority",
+        "exclusive lock conflicts, denied owner details, disjoint writes and CLOSE with held locks",
+        "partial unlock splits ranges and preserves neighboring conflicts",
+        "process restart persists split lock ranges; matching client reclaims OPEN and locks before RECLAIM_COMPLETE"
+      ]
+    },
+    "linux-nfs-attributes": {
+      "status": "passed",
+      "checks": [
+        "v3 CREATE preserves mode, mapped ownership and explicit atime/mtime on native handles",
+        "v4 SETATTR updates aliases consistently; GETATTR rejects write-only time attributes",
+        "durable change counters detect equal-size writes with restored mtime, share alias state and return real namespace change_info; reads do not advance them",
+        "paged v4 READDIR skips reserved cookies 1/2 and resumes without duplicate or missing entries",
+        "mode/ownership and exact timestamps survive server restart through stable alias handles"
+      ]
+    },
+    "linux-nfs-create": {
+      "status": "passed",
+      "checks": [
+        "required suppattr_exclcreat advertises actual writable creation attributes",
+        "exclusive verifier retry preserves content; mismatched verifier and unsupported exclusive attributes reject without creation",
+        "UNCHECKED ignores nonzero size and mode on existing files; zero size truncates only after share reservations permit it",
+        "CREATE and OPEN return the attributes actually applied"
+      ]
+    },
+    "windows-nfs-state": {
+      "status": "passed",
+      "checks": [
+        "one kernel-style session accepts multiple mapped users without sharing their open authority",
+        "exclusive lock conflicts, denied owner details, disjoint writes and CLOSE with held locks",
+        "partial unlock splits ranges and preserves neighboring conflicts",
+        "process restart persists split lock ranges; matching client reclaims OPEN and locks before RECLAIM_COMPLETE"
+      ]
+    },
+    "windows-nfs-attributes": {
+      "status": "passed",
+      "checks": [
+        "v3 CREATE preserves mode, mapped ownership and explicit atime/mtime on native handles",
+        "v4 SETATTR updates aliases consistently; GETATTR rejects write-only time attributes",
+        "durable change counters detect equal-size writes with restored mtime, share alias state and return real namespace change_info; reads do not advance them",
+        "paged v4 READDIR skips reserved cookies 1/2 and resumes without duplicate or missing entries",
+        "mode/ownership and exact timestamps survive server restart through stable alias handles"
+      ]
+    },
+    "windows-nfs-create": {
+      "status": "passed",
+      "checks": [
+        "required suppattr_exclcreat advertises actual writable creation attributes",
+        "exclusive verifier retry preserves content; mismatched verifier and unsupported exclusive attributes reject without creation",
+        "UNCHECKED ignores nonzero size and mode on existing files; zero size truncates only after share reservations permit it",
+        "CREATE and OPEN return the attributes actually applied"
+      ]
+    },
+    "pynfs": {
+      "selected": 37,
+      "failures": 0,
+      "errors": 0
+    },
+    "pynfs-control": {
+      "selected": 34,
+      "failures": 0,
+      "errors": 0
+    },
+    "pynfs-namespace": {
+      "selected": 30,
+      "failures": 0,
+      "errors": 0
+    }
+  },
+  "kernel_cifs_negative_test": {
+    "status": "passed",
+    "test_kind": "mandatory_mic_rejection",
+    "profiles": [
+      {
+        "name": "kernel-cifs-2.1",
+        "status": "rejected_missing_mic",
+        "compatible": false
+      },
+      {
+        "name": "kernel-cifs-3.0",
+        "status": "rejected_missing_mic",
+        "compatible": false
+      },
+      {
+        "name": "kernel-cifs-3.02",
+        "status": "rejected_missing_mic",
+        "compatible": false
+      },
+      {
+        "name": "kernel-cifs-3.1.1",
+        "status": "rejected_missing_mic",
+        "compatible": false
+      }
+    ]
+  },
+  "limitations": [
+    "macOS NTLMv2/MIC authentication and signed requests pass; SMB TREE_CONNECT fails, so native SMB roundtrip is not passed.",
+    "NFSv3 NLM/NSM absent; v3 native mounts use nolocks.",
+    "Full v4.1 mandatory/unlink-open/cache/reboot/trunking conformance remains open.",
+    "Broader Samba torture still fails on unsupported full Windows security rights.",
+    "Kernel CIFS rejection is not a compatibility pass."
+  ]
+}

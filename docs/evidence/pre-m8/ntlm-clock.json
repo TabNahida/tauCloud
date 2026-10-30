@@ -1,0 +1,40 @@
+{
+  "scope": "local NTLM response-clock regression; native macOS result recorded separately",
+  "source_commit": "ca5101638c30174a45aef1d410de69dfec0e800d",
+  "before": {
+    "server_source": "edbcbe3e944dbeba93d9fd5b53e2adf0efc4cb1a",
+    "case": "valid NT proof and MIC with client response timestamp 1 second before challenge timestamp",
+    "result": "unexpected STATUS_LOGON_FAILURE reproduced"
+  },
+  "after": {
+    "status": "passed",
+    "clock_offsets_ms_accepted": [
+      -1000,
+      1000,
+      -299000,
+      299000
+    ],
+    "clock_offsets_ms_rejected": [
+      -301000,
+      301000
+    ],
+    "accepted_session_check": "signed SMB ECHO succeeds after authentication",
+    "note": "Committed regression uses +/-290000 ms for the near-boundary positive case to allow slow CI scheduling; the +/-301000 ms negative cases are unchanged."
+  },
+  "regression": {
+    "m5": {
+      "status": "passed",
+      "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+      "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+      "authentication_provider": "pyspnego NTLM",
+      "groups": 10
+    },
+    "m6": {
+      "status": "passed",
+      "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+      "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+      "authentication_provider": "pyspnego NTLM",
+      "groups": 17
+    }
+  }
+}

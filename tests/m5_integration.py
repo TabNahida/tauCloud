@@ -68,7 +68,7 @@ def run(args):
         for _ in range(8):
             repeated,_,_=f.connect();repeated.disconnect()
         passed('verified repeated logins do not exhaust the failed-authentication budget')
-        c,s,t=f.connect();clients.append(c)
+        c,s,t=f.connect(share='SmB');clients.append(c)
         db=sqlite3.connect(f.state/'identity.db')
         try:
             cipher=db.execute("SELECT cipher FROM smb_credentials WHERE name='alice'").fetchone()[0]
@@ -88,6 +88,18 @@ def run(args):
         ipc=TreeConnect(s,r'\\127.0.0.1\IPC$');ipc.connect();pipe=create(ipc,'srvsvc',access=0x12019f,disposition=1,options=0);assert shares(pipe)==['smb'];assert shares(pipe,transceive=True)==['smb'];pipe.close();ipc.disconnect()
         bob,bs,bt=f.connect(user='bob',share='IPC$');clients.append(bob);pipe=create(bt,'srvsvc',access=0x12019f,disposition=1,options=0);assert shares(pipe)==[];pipe.close();bob.disconnect()
         passed('authenticated srvsvc NDR32 share enumeration filters inaccessible and non-SMB shares')
+        # Preserve API identifier spelling, while resolving SMB names without
+        # case sensitivity. A non-SMB alias must not shadow the SMB exposure.
+        f.api('shares',f.admin,dict(id='SMB',space='smbdata',exposures={'core':'r'}))
+        f.api('shares',f.admin,dict(id='SMB',space='smbdata',exposures={'smb':'rw'},update=True),expected=409)
+        f.api('shares',f.admin,dict(id='MixCase',space='smbdata',exposures={'smb':'rw'}))
+        f.api('shares',f.admin,dict(id='mixcase',space='smbdata',exposures={'smb':'rw'}),expected=409)
+        for alias in ('SMB','MIXCASE','mixcase'):
+            alias_tree=TreeConnect(s,'\\\\127.0.0.1\\'+alias);alias_tree.connect()
+            opened=create(alias_tree,'中文.txt',access=0x120089,disposition=1)
+            assert opened.read(0,9)==b'hello SMB';opened.close();alias_tree.disconnect()
+        denied(lambda:TreeConnect(s,r'\\127.0.0.1\missing-share').connect(),0xc00000cc)
+        passed('SMB share lookup ignores case, preserves canonical grants and rejects ambiguous publication without non-SMB shadowing')
         h=create(t,'sharing',share=1);denied(lambda:create(t,'sharing'),0xc0000043);h.close()
         h=create(t,'sharing');other=create(t,'sharing');h.write(b'abcdef')
         lock(h,(0,3,0x12));denied(lambda:other.read(0,3),0xc0000054);denied(lambda:other.write(b'x',1),0xc0000054);assert other.read(3,3)==b'def';lock(h,(0,3,4))

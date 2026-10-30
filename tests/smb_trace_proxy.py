@@ -56,6 +56,10 @@ class HeaderProxy:
                                 length=int.from_bytes(token[index:index+2],'little');offset=int.from_bytes(token[index+4:index+8],'little')
                                 if length<=128 and offset>=64 and offset+length<=len(token):
                                     item[label]=token[offset:offset+length].decode('utf-16-le',errors='replace')
+                elif direction=='request' and command==3 and len(frame)>=72:
+                    off=int.from_bytes(frame[68:70],'little');n=int.from_bytes(frame[70:72],'little')
+                    if n<=512 and off>=72 and off+n<=len(frame):
+                        item['fixture_share_path']=frame[off:off+n].decode('utf-16-le',errors='replace')
                 elif direction=='request' and command==5 and len(frame)>=120:
                     item.update(access=hex(int.from_bytes(frame[88:92],'little')),
                                 attributes=hex(int.from_bytes(frame[92:96],'little')),

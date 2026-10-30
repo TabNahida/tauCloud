@@ -126,7 +126,7 @@ def run(args):
         c=Connection(uuid.uuid4(),'127.0.0.1',f.smbport,require_signing=True);clients.append(c)
         c.connect(dialect=dialect,preferred_encryption_algos=ciphers)
         s=Session(c,username='TAUCLOUD\\alice',password=f.password,require_encryption=encrypted_session,auth_protocol='ntlm');s.connect()
-        t=TreeConnect(s,r'\\127.0.0.1\smb');t.connect()
+        t=TreeConnect(s,r'\\127.0.0.1\SmB');t.connect()
         return c,s,t
     try:
         sock,sid,key,_,_,_=wire_auth(f.smbport,f.password,'alice',bootstrap=True)
