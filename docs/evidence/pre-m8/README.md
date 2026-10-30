@@ -1,6 +1,6 @@
 # Pre-M8 acceptance work — 2026-10-30
 
-This work is in progress. M8 has not started, and the full M4/M5/M7 release gates remain open. A successful selected-profile run is not full protocol conformance. All public pushes use the explicitly authorized `codex/pre-m8-acceptance` branch.
+This work is in progress. M8 has not started, and the M4 client gate is now closed; full M5/M7 release gates remain open. A successful selected-profile run is not full protocol conformance. All public pushes use the explicitly authorized `codex/pre-m8-acceptance` branch.
 
 ## Recorded remote runs
 
@@ -15,6 +15,9 @@ This work is in progress. M8 has not started, and the full M4/M5/M7 release gate
 | `9be16de` | [40996860599](https://github.com/TabNahida/tauCloud/actions/runs/40996860599) | GCC including kernel NFSv3/v4.1 and Samba roundtrips passed. Windows core passed but native rename failed. Clang exposed a LOGOFF transport race. macOS guest failed during boot. |
 | `e4d1937` | [40998763054](https://github.com/TabNahida/tauCloud/actions/runs/40998763054) | GCC/Clang passed. Windows native rename still failed; macOS guest boot/SSH worked, but server initialization exceeded the IPC deadline under software emulation. |
 | `92f230c` | [41000056554](https://github.com/TabNahida/tauCloud/actions/runs/41000056554) | GCC/Clang passed, including Linux FileZilla. Windows core/state/attributes and native SMB redirector passed; FileZilla stopped at its welcome dialog because Windows ignored the redirected APPDATA variable. macOS software-emulated guest again exceeded the management bootstrap IPC deadline. |
+
+| `69b8289` | [41001476891](https://github.com/TabNahida/tauCloud/actions/runs/41001476891) | GCC, Clang and Windows all passed, including new NFS cache counters/alias/restart tests and both FileZilla GUIs. Windows native encrypted SMB, Linux Samba and kernel NFSv3/v4.1 pass. macOS hardware-acceleration probe/client result pending. |
+| `edbcbe3` | [41002404337](https://github.com/TabNahida/tauCloud/actions/runs/41002404337) | New NFS creation semantics and test-only macOS emulation setup; remote run in progress. |
 
 The workflow now disables matrix fail-fast so one platform's failure does not cancel another platform's evidence. Artifacts retain raw results, client failures and bounded server/kernel logs.
 
@@ -37,7 +40,7 @@ Local regression passed M1–M6 including litmus. The M7 test was corrected to o
 - Ubuntu's tested kernel CIFS client omits the NTLM MIC required by this server. It is **not compatible**. The dedicated negative test must observe `ntlm_mic_required` rejection for every selected dialect; it is not a file-roundtrip pass. Signing/MIC policy was not weakened.
 - Samba 4.19.5 `smbclient` performs real signed 2.1 and 3.1.1 roundtrips. Broader unmodified `smbtorture` cases request unsupported full Windows security rights and remain failing. A Windows-2008-only skipped test is not counted as passed.
 - Windows native redirector testing uses Server 2025's `New-SmbMapping -TcpPort`, requires signing/encryption, and removes only its disposable mapping. It is a separate gate from Python/SSPI client coverage; the `92f230c` remote run passed create/write/flush/read/rename/truncate/enumerate/delete with dialect 3.1.1 and encryption. Windows reports `Signed=false` for encrypted traffic; AEAD provides integrity, and the test requests both RequireIntegrity and RequirePrivacy.
-- Unmodified FileZilla 3.66.5 GUI upload/download passed on Linux, locally and remotely (see [local report](filezilla-linux.json)); Windows GUI config isolation is being corrected. macOS Finder/native SMB/NFS and eligible Windows NFS remain unverified. No entire client-matrix checkbox is closed. [Local Windows redirector evidence](windows-native-local.json) supplements the independent Server 2025 runner result.
+- Unmodified FileZilla 3.66.5 GUI upload/download passed on Linux, locally and remotely (see [local report](filezilla-linux.json)); Windows FileZilla 3.71.1 GUI upload/download also passes (see [Windows report](filezilla-windows.json)). macOS Finder/native SMB/NFS and eligible Windows NFS remain unverified. No entire client-matrix checkbox is closed. [Local Windows redirector evidence](windows-native-local.json) supplements the independent Server 2025 runner result.
 - NFSv3 NLM/NSM is absent. V4.1 full mandatory-operation coverage, unlink-open behavior, complete cache/client consistency, multi-export sessions and full reboot/trunking conformance remain open. Active destination OPENs currently cause FILE_OPEN on remove/replacement.
 - Special files, hardlinks and symlinks are outside the current confined regular-file/directory profile. Tests requiring those objects are not relabeled as successful applicable tests.
 - Larger-than-RAM/soak, sudden power-loss, namespace durability on Windows, and persistent service registration require their own evidence.
@@ -45,3 +48,5 @@ Local regression passed M1–M6 including litmus. The M7 test was corrected to o
 中文：补齐工作尚未全部完成，M8 未开始。已补充真实远程构建、原版上游协议测试和内核客户端检查，并修复发现的多项实现问题。Linux 内核 CIFS 因缺少强制 MIC 被拒绝，不能算作兼容通过；Samba torture 的失败、未运行的平台及 NFS 的剩余实现门槛均保留。不能将选定场景通过或 CI 的部分成功解读为 M0–M7 全部验收完成。
 
 New local checks: 58 native NFS codec checks, four creation/attribute/truncation groups, five attribute/cache/restart groups and 37 selected unmodified upstream cases pass. SMB3 regression passes after restricting normalized-name queries by negotiated dialect. The macOS TCG fallback prepares a private offline identity seed with the same Argon2id 64 MiB/3/1 parameters; this client test explicitly excludes management bootstrap/login, which remain covered by Linux/Windows regression. Native SMB authentication and all product security/timeouts remain unchanged. Seed files, databases and keys are excluded from artifacts.
+
+Expanded local upstream control-plane run: **71 passed / 6 failed out of 77 selected** ([report](pynfs-control-expanded.json)). Five failures require delegations/callbacks not granted by this profile; EID50 requires SSV and currently receives SERVERFAULT. These are preserved as failures, not removed or counted as passes. RPCSEC_GSS/SSV remains outside this AUTH_SYS preview.

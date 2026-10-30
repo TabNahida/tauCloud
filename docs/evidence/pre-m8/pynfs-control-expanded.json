@@ -1,0 +1,39 @@
+{
+  "source_commit": "edbcbe3e944dbeba93d9fd5b53e2adf0efc4cb1a",
+  "status": "failed",
+  "selected": 77,
+  "passed": 71,
+  "failed": [
+    {
+      "code": "DELEG6",
+      "name": "testCBSecParmsNull",
+      "message": "Could not get delegation"
+    },
+    {
+      "code": "DELEG7",
+      "name": "testCBSecParmsChange",
+      "message": "Could not get delegation"
+    },
+    {
+      "code": "DELEG5",
+      "name": "testCBSecParms",
+      "message": "Could not get delegation"
+    },
+    {
+      "code": "DSESS9003",
+      "name": "testDestroy3",
+      "message": "Could not get delegation"
+    },
+    {
+      "code": "DSESS9002",
+      "name": "testDestroy2",
+      "message": "Could not get delegation"
+    },
+    {
+      "code": "EID50",
+      "name": "testSSV",
+      "message": "nfs4lib.NFS4Error: Compound should return NFS4_OK, instead got NFS4ERR_SERVERFAULT"
+    }
+  ],
+  "scope": "expanded upstream exchange_id/create_session/destroy_session/destroy_clientid/secinfo_no_name; delegation and SSV cases remain unsupported, not passes"
+}

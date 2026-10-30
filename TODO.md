@@ -86,11 +86,11 @@ Acceptance: [M3 evidence](docs/evidence/m3/README.md). Explorer and Finder are r
 - [x] Add EPSV/PASV, feature discovery, machine-readable listings and accurate transfer-type errors.
 - [x] Implement explicit FTPS and protected, correctly associated data channels.
 - [x] Keep plaintext FTP explicit opt-in; reject anonymous/FXP/unsupported active-mode requests.
-- [ ] Verify FileZilla, curl and an independent FTP client on both server hosts.
+- [x] Verify FileZilla, curl and an independent FTP client on both server hosts.
 - [x] Test revoked credentials, interrupted transfers, TLS failures and passive-port exhaustion.
 - [x] Kill/restart the worker during transfer; verify sibling protocols survive and storage ownership reconciles.
 
-Implementation and recorded scope: [M4 guide](docs/m4.md), [M4 evidence](docs/evidence/m4/README.md). Unmodified Linux FileZilla GUI upload/download passed; Windows GUI configuration isolation is being corrected, so the full client gate remains unchecked; the preview does not claim full client-matrix acceptance.
+Implementation and recorded scope: [M4 guide](docs/m4.md), [M4 evidence](docs/evidence/m4/README.md). Unmodified FileZilla GUI FTPS upload/download, curl and Python FTP clients pass on Linux and Windows; fixed-commit results are recorded in [pre-M8 evidence](docs/evidence/pre-m8/README.md). The deployment scope remains the documented loopback preview.
 
 ## M5 — SMB2
 

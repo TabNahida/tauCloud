@@ -1,0 +1,17 @@
+{
+  "status": "passed",
+  "host": "Windows-2025Server-10.0.26100-SP0",
+  "client": "FileZilla 3.71.1",
+  "certificate_sha256": "242c0349bbc461577e5f69705aee626bf96b31049622f175d2296947ac056bb2",
+  "protocol": "explicit FTPS",
+  "payload_bytes": 1028096,
+  "sha256": "08e33aedf25337c87eb15e08c32a58f6f4caa21fe073d00b53014c57f8d148e0",
+  "checks": [
+    "pinned disposable server certificate",
+    "native GUI queue upload and download",
+    "binary source/server/download match"
+  ],
+  "source_commit": "69b828977879eeee98503cfda5a01d00850b586f",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41001476891",
+  "artifact_id": 12953717947
+}
