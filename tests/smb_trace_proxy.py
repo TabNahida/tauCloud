@@ -1,7 +1,8 @@
-"""Disposable test-only SMB relay; records framing/header fields, never auth blobs."""
+"""Disposable test-only SMB relay; records protocol metadata, never auth blobs."""
 import select
 import socket
 import threading
+import time
 
 class HeaderProxy:
     def __init__(self, target):
@@ -17,12 +18,23 @@ class HeaderProxy:
             if len(buf)<size+4:return
             frame=bytes(buf[4:4+size]);del buf[:4+size]
             if len(self.trace)>=512:continue
-            item=dict(direction=direction,size=size,magic=frame[:4].hex())
+            item=dict(direction=direction,size=size,magic=frame[:4].hex(),time=time.monotonic())
             if frame[:4]==b'\xfeSMB' and len(frame)>=64:
                 command=int.from_bytes(frame[12:14],'little')
                 item.update(command=command,flags=int.from_bytes(frame[16:20],'little'),
                             message_id=int.from_bytes(frame[24:32],'little'))
                 if direction=='response':item['status']=hex(int.from_bytes(frame[8:12],'little'))
+                elif command==5 and len(frame)>=120:
+                    item.update(access=hex(int.from_bytes(frame[88:92],'little')),
+                                attributes=hex(int.from_bytes(frame[92:96],'little')),
+                                disposition=int.from_bytes(frame[100:104],'little'),
+                                options=hex(int.from_bytes(frame[104:108],'little')),
+                                name_bytes=int.from_bytes(frame[110:112],'little'))
+                    off=int.from_bytes(frame[108:110],'little');n=item['name_bytes']
+                    if n<=512 and off>=120 and off+n<=len(frame):
+                        item['fixture_path']=frame[off:off+n].decode('utf-16-le',errors='replace')
+                elif command in (16,17) and len(frame)>=96:
+                    item.update(info_type=frame[66],info_class=frame[67],buffer_length=int.from_bytes(frame[68:72],'little'))
                 if command==0 and len(frame)>=100:
                     if direction=='request':
                         count=int.from_bytes(frame[66:68],'little')

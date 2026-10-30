@@ -21,6 +21,10 @@ import urllib.request
 
 IMAGE='https://cloud-images.ubuntu.com/releases/noble/release-20260814/ubuntu-24.04-server-cloudimg-amd64.img'
 IMAGE_SHA='6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733'
+BOOT_FILES={
+    'vmlinuz':'76a7f2ef15fcbd2f5c25cd7e7b413f903b2078396063557f1dffb4a0b089a964',
+    'initrd':'194f73c17ca4795f987f2e1713c7184f8d1bb88f063f79a753dada5da6a9987c',
+}
 PASSWORD='M3-disposable-password-123!'
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -48,6 +52,14 @@ def main():
         with image.open('rb') as inp:
             while chunk:=inp.read(1024*1024):h.update(chunk)
         assert h.hexdigest()==IMAGE_SHA,'Ubuntu image hash mismatch'
+        for name,digest in BOOT_FILES.items():
+            target=work/name
+            url=IMAGE.rsplit('/',1)[0]+'/unpacked/ubuntu-24.04-server-cloudimg-amd64-'+name+'-generic'
+            if not target.exists():
+                with urllib.request.urlopen(url,timeout=60) as src,target.open('wb') as out:
+                    while chunk:=src.read(1024*1024):out.write(chunk)
+            assert hashlib.sha256(target.read_bytes()).hexdigest()==digest,'Ubuntu boot-file hash mismatch'
+        report['boot_files_sha256']=BOOT_FILES
         key=work/'ssh-key'
         if not key.exists():run(['ssh-keygen','-q','-t','ed25519','-N','','-f',str(key)])
         seed=work/'seed';seed.mkdir(exist_ok=True)
@@ -60,6 +72,8 @@ def main():
         sshport=port()
         console=work/'console.log'
         qemu=['qemu-system-x86_64','-machine','q35,accel=tcg','-cpu','max','-smp','4','-m','4096',
+              '-kernel',str(work/'vmlinuz'),'-initrd',str(work/'initrd'),
+              '-append','root=/dev/vda1 ro console=ttyS0 noapic',
               '-drive',f'file={disk},if=virtio,format=qcow2','-drive',f'file={iso},media=cdrom,readonly=on',
               '-netdev',f'user,id=net0,hostfwd=tcp:127.0.0.1:{sshport}-:22','-device','virtio-net-pci,netdev=net0',
               '-display','none','-serial',f'file:{console}']
@@ -70,6 +84,8 @@ def main():
         deadline=time.monotonic()+600
         while True:
             if processes[0].poll() is not None:raise RuntimeError('QEMU exited before SSH was ready')
+            if console.exists() and 'Kernel panic' in console.read_text(errors='replace'):
+                raise RuntimeError('Guest kernel panic; see mac-console.log')
             try:run(ssh+['true'],timeout=8);break
             except (subprocess.SubprocessError,OSError):
                 if time.monotonic()>deadline:raise RuntimeError('Guest SSH boot deadline exceeded')

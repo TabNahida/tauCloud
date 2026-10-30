@@ -141,7 +141,9 @@ bytes standard(const json &m) {
   return b;
 }
 bytes file_info(unsigned klass, const json &m, const std::string &name, uint32_t access) {
-  auto native_name = "\\" + name;
+  // NormalizedNameInformation is relative to the share (MS-SMB2 3.3.5.20.1).
+  // NameInformation includes the leading separator; they are not interchangeable.
+  auto native_name = (klass == 48 ? "" : "\\") + name;
   std::replace(native_name.begin(), native_name.end(), '/', '\\');
   auto encoded = utf16(native_name);
   bytes b;
@@ -284,12 +286,15 @@ struct client {
   pace::tcp::stream socket;
   bool negotiated = false, authenticated = false, ending = false, raw_ntlm = false;
   bool multiprotocol = false;
+  bool logged_off = false;
   uint64_t session = 0, low = 0, high = 1;
+  uint64_t previous_session = 0;
   std::set<uint64_t> consumed;
-  std::string exchange, token;
+  std::string exchange, token, username;
   bytes key, encryption_key, decryption_key;
   negotiation selected;
   bytes transcript = bytes(64, '\0');
+  bytes negotiate_transcript = bytes(64, '\0');
   bytes nonce_prefix = decode_bytes(random_hex(4));
   uint64_t nonce_counter = 0;
   std::set<bytes> received_nonces;
@@ -384,23 +389,25 @@ struct client {
   }
 #include "smb_rpc.inc"
   pace::task<bytes> command(std::string_view p, uint32_t &tid, uint32_t &code) {
+    check(!logged_off, 0xc0000203);
     auto cmd = get(p, 12, 2);
     auto structure = get(p, 64, 2);
     if (cmd == 0) {
-      check(!negotiated && get(p, 40, 8) == 0 && get(p, 16, 4) == 0);
+      check(!negotiated && get(p, 40, 8) == 0);
       auto response = selected.accept(p, s.guid);
+      check(!(get(p, 16, 4) & ~(selected.dialect == 0x311 ? 0x70ull : 0ull)));
       negotiated = true;
       co_return response;
     }
     check(negotiated, 0xc00000bb);
     if (cmd == 1) {
-      check(!authenticated && structure == 25 && p.size() >= 88 && get(p, 66, 1) == 0 &&
-            get(p, 80, 8) == 0);
+      check(!authenticated && structure == 25 && p.size() >= 88 && get(p, 66, 1) == 0);
       auto security = slice(p, get(p, 76, 2), get(p, 78, 2), 88);
       json request = {{"token", encode_bytes(security)}};
       bytes response;
       if (exchange.empty()) {
         check(get(p, 40, 8) == 0);
+        previous_session = get(p, 80, 8);
         raw_ntlm = security.starts_with(std::string_view("NTLMSSP\0", 8));
         auto r = co_await smb_rpc(s, "identity", "smb_negotiate", request);
         exchange = r.at("exchange");
@@ -415,6 +422,13 @@ struct client {
         exchange.clear();
         auto r = co_await smb_rpc(s, "identity", "smb_authenticate", request);
         token = r.at("token");
+        username = r.at("username");
+        // A reconnect still proves credentials. Only then may it replace an
+        // older session belonging to that same canonical identity.
+        for (auto *other : s.clients)
+          if (other != this && previous_session && other->session == previous_session &&
+              other->username == username)
+            other->close();
         key = decode_bytes(r.at("session_key").get<std::string>());
         if (selected.dialect >= 0x300) {
           auto session_key = key;
@@ -450,7 +464,7 @@ struct client {
         co_await smb_rpc(s, "identity", "logout", a);
       } catch (...) {
       }
-      ending = true;
+      logged_off = true;
       co_return sized(4, 4);
     }
     if (cmd == 3) {
@@ -798,7 +812,18 @@ struct client {
           throw status_error(0xc00000bb);
       } else
         throw status_error(0xc00000bb); // No synthetic DACL presented as persistent security.
-      check(data.size() <= limit, 0xc0000023);
+      if (data.size() > limit) {
+        // Variable-length names must return the fixed prefix and the required
+        // name length, allowing native clients to retry with a larger buffer.
+        size_t fixed = type == 1 && (klass == 9 || klass == 48) ? 4 :
+                       type == 1 && klass == 18 ? 100 :
+                       type == 1 && klass == 22 ? 24 :
+                       type == 2 && klass == 1 ? 18 :
+                       type == 2 && klass == 5 ? 12 : 0;
+        check(fixed && limit >= fixed, 0xc0000004);
+        data.resize(limit);
+        code = 0x80000005; // STATUS_BUFFER_OVERFLOW carries a QUERY_INFO response.
+      }
       auto b = sized(8, 9);
       put(b, 2, 72, 2);
       put(b, 4, data.size(), 4);
@@ -913,7 +938,7 @@ struct client {
           auto flags = get(p, 16, 4), cmd = get(p, 12, 2);
           // SMB 3.1.1 clients (including Samba) set priority bits on SESSION_SETUP.
           // Priority affects scheduling, not authorization or signing.
-          auto allowed_flags = selected.dialect == 0x311 ? 0x1000007cull : 0x1000000cull;
+          auto allowed_flags = selected.dialect == 0x311 || cmd == 0 ? 0x1000007cull : 0x1000000cull;
           check(!(flags & ~allowed_flags) && get(p, 6, 2) <= 1 && cmd <= 18);
           check(!(flags & 4) || !requests.empty());
           check(authenticated || (requests.empty() && !next));
@@ -967,8 +992,13 @@ struct client {
           // later in this compound, not just suppress its response.
           if (!socket.is_open())
             break;
-          if (code && code != 0xc0000016) {
+          if (code && code != 0xc0000016 && code != 0x80000005) {
             body = sized(9, 9);
+            if (code == 0xc0000004 && selected.dialect == 0x311) {
+              body = sized(16, 9);
+              put(body, 2, 1, 1);
+              put(body, 4, 8, 4);
+            }
             if (cmd == 0 || cmd == 1)
               ending = true;
           }
@@ -995,6 +1025,8 @@ struct client {
             response.replace(48, 16, signature(key, response, selected.dialect >= 0x300));
           if ((cmd == 0 || (cmd == 1 && code == 0xc0000016)) && selected.dialect == 0x311)
             transcript = preauth(transcript, response);
+          if (cmd == 0 && !code)
+            negotiate_transcript = transcript;
           output += response;
           inherited_tree = tid;
           previous_status = code;
@@ -1013,6 +1045,21 @@ struct client {
         header[3] = char(output.size());
         auto timer = s.io->call_after(5s, [this] { close(); });
         co_await socket.write_all(header + output);
+        if (logged_off) {
+          // LOGOFF ends the session, not the transport. Keeping the connection
+          // alive also prevents EOF racing the client's receipt of this reply.
+          logged_off = authenticated = raw_ntlm = false;
+          session = 0;
+          token.clear();
+          username.clear();previous_session = 0;
+          exchange.clear();
+          std::fill(key.begin(), key.end(), 0);
+          std::fill(encryption_key.begin(), encryption_key.end(), 0);
+          std::fill(decryption_key.begin(), decryption_key.end(), 0);
+          key.clear();encryption_key.clear();decryption_key.clear();
+          received_nonces.clear();nonce_counter = 0;
+          transcript = negotiate_transcript;
+        }
       }
     } catch (const status_error &e) {
       log("smb", "connection_rejected", std::to_string(e.status));

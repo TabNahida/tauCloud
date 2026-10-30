@@ -11,6 +11,8 @@ from smbprotocol.tree import TreeConnect
 from smbprotocol.open import Open, ImpersonationLevel, SMB2CreateRequest, SMB2WriteRequest
 from smbprotocol.file_info import FileAttributes, FileDispositionInformation, FileRenameInformation, FileEndOfFileInformation
 from smbprotocol.ioctl import SMB2IOCTLRequest
+from smbprotocol.exceptions import SMBResponseException
+from smbprotocol.open import SMB2QueryInfoRequest, SMB2QueryInfoResponse
 from smbprotocol.create_contexts import SMB2CreateDurableHandleRequestV2, SMB2CreateDurableHandleReconnectV2, SMB2CreateRequestLease
 from smbprotocol.change_notify import SMB2ChangeNotifyRequest
 from cryptography.hazmat.primitives.ciphers.aead import AESCCM, AESGCM
@@ -41,7 +43,7 @@ def multiprotocol_packet(dialects=('NT LM 0.12','SMB 2.002','SMB 2.???')):
     return b'\xffSMB\x72'+bytes(27)+b'\0'+struct.pack('<H',len(body))+body
 
 
-def wire_auth(port,password,user,dialect=0x311,alter_transcript=False,bootstrap=False):
+def wire_auth(port,password,user,dialect=0x311,alter_transcript=False,bootstrap=False,previous_session=0):
     sock=socket.create_connection(('127.0.0.1',port),timeout=10)
     try:
         if bootstrap:
@@ -52,7 +54,7 @@ def wire_auth(port,password,user,dialect=0x311,alter_transcript=False,bootstrap=
         transcript=hashlib.sha512(bytes(64)+req).digest();transcript=hashlib.sha512(transcript+resp).digest()
         if alter_transcript:transcript=bytes(64)
         ctx=spnego.client(username='TAUCLOUD\\'+user,password=password,protocol='ntlm',hostname='127.0.0.1',service='cifs')
-        def setup(token,mid,sid):return header(1,mid,sid,flags=0x10 if dialect==0x311 else 0)+struct.pack('<HBBIIHHQ',25,0,1,0,0,88,len(token),0)+token
+        def setup(token,mid,sid):return header(1,mid,sid,flags=0x10 if dialect==0x311 else 0)+struct.pack('<HBBIIHHQ',25,0,1,0,0,88,len(token),previous_session)+token
         req=setup(ctx.step(),1+int(bootstrap),0);resp=exchange(sock,req);assert status(resp)==0xc0000016
         transcript=hashlib.sha512(transcript+req).digest();transcript=hashlib.sha512(transcript+resp).digest()
         sid=struct.unpack_from('<Q',resp,40)[0];off,n=struct.unpack_from('<HH',resp,68)
@@ -122,6 +124,11 @@ def run(args):
         sock,sid,key,_,_,_=wire_auth(f.smbport,f.password,'alice',bootstrap=True)
         assert status(exchange(sock,sign(header(13,4,sid,flags=8)+struct.pack('<HH',4,0),key)))==0
         sock.close()
+        old,old_sid,*_=wire_auth(f.smbport,f.password,'alice')
+        new,sid,key,_,_,_=wire_auth(f.smbport,f.password,'alice',previous_session=old_sid)
+        assert old.recv(1)==b'';old.close()
+        assert status(exchange(new,sign(header(13,3,sid,flags=8)+struct.pack('<HH',4,0),key)))==0
+        new.close()
         for probe in (multiprotocol_packet(('NT LM 0.12',)),multiprotocol_packet()[:-1],
                       multiprotocol_packet().replace(b'\xffSMB\x72',b'\xffSMB\x73')):
             rejected_connection(socket.create_connection(('127.0.0.1',f.smbport),timeout=10),probe)
@@ -134,7 +141,16 @@ def run(args):
             assert c.dialect==dialect and c.supports_encryption and not c.supports_file_leasing and not c.supports_multi_channel
             h=create(t,'signed-'+hex(dialect));h.write(b'signed');assert h.read(0,6)==b'signed';h.close()
             h=create(t,'native-options-'+hex(dialect),options=0x400060|0x400|0x20000|0x800000)
-            h.write(b'local');assert h.read(0,5)==b'local';h.close()
+            h.write(b'local');assert h.read(0,5)==b'local'
+            normalized=query(h,48);assert normalized[4:].decode('utf-16-le')=='native-options-'+hex(dialect)
+            q=SMB2QueryInfoRequest();q['info_type']=1;q['file_info_class']=48;q['output_buffer_length']=8;q['file_id']=h.file_id
+            try:c.receive(c.send(q,s.session_id,t.tree_connect_id));raise AssertionError('missing overflow')
+            except SMBResponseException as e:
+                assert e.status==0x80000005
+                response=SMB2QueryInfoResponse();response.unpack(e.header['data'].get_value())
+                partial=response['buffer'].get_value();assert len(partial)==8 and int.from_bytes(partial[:4],'little')>4
+            denied(lambda:query(h,48,limit=1),0xc0000004)
+            h.close()
             passed(f'{hex(dialect)} AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2')
             s.encrypt_data=True
             name='加密-'+hex(dialect);h=create(t,name);h.write(bytes(range(256))*256);h.flush();assert h.read(0,65536)==bytes(range(256))*256
@@ -157,6 +173,12 @@ def run(args):
             assert digest.digest()==expected.digest();h.close()
             passed(f'{hex(dialect)} encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and {args.large_mib} MiB SHA-256 stream')
             c.disconnect(close=False)
+        c,s,t=connect(0x311,encrypted_session=True)
+        s.disconnect()
+        fresh=Session(c,username='TAUCLOUD\\alice',password=f.password,require_encryption=True,auth_protocol='ntlm');fresh.connect()
+        tree=TreeConnect(fresh,r'\\127.0.0.1\smb');tree.connect()
+        h=create(tree,'after-logoff');h.write(b'new session');assert h.read(0,11)==b'new session';h.close();c.disconnect()
+        passed('LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting')
         c,s,t=connect(None,[1],True);assert c.dialect==0x311 and c.cipher_id==1
         h=create(t,'fallback-ccm');h.write(b'CCM');assert h.read(0,3)==b'CCM';h.close();c.disconnect(close=False)
         passed('default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work')
