@@ -6,7 +6,7 @@ from m1_integration import wait
 
 class Fixture:
     password = 'M3-disposable-password-123!'
-    def __init__(self, binary, memory=256):
+    def __init__(self, binary, memory=256, seed_identity=None):
         self.binary = Path(binary).resolve()
         self.suffix = '.exe' if os.name == 'nt' else ''
         self.tmp = tempfile.TemporaryDirectory(prefix='tc3-')
@@ -26,10 +26,15 @@ class Fixture:
         self.context = ssl.create_default_context(cafile=str(self.state / 'tls-cert.pem'))
         self.log = (self.base / 'supervisor.log').open('w')
         self.start()
-        self.ctl('bootstrap', '--username', 'admin', '--password-stdin', stdin=self.password+'\n')
-        self.admin = self.api('auth/login', data=dict(username='admin', password=self.password, scope='admin'))['token']
-        self.api('users', self.admin, dict(username='alice', password=self.password))
-        self.api('users', self.admin, dict(username='bob', password=self.password))
+        if seed_identity is None:
+            self.ctl('bootstrap', '--username', 'admin', '--password-stdin', stdin=self.password+'\n')
+            self.admin = self.api('auth/login', data=dict(username='admin', password=self.password, scope='admin'))['token']
+            self.api('users', self.admin, dict(username='alice', password=self.password))
+            self.api('users', self.admin, dict(username='bob', password=self.password))
+        else:
+            # Test-only offline provisioning for an emulated native-client
+            # fixture. Ordinary acceptance always exercises bootstrap/login.
+            self.stop();self.admin=seed_identity(self.state);self.start()
         self.api('storage-roots', self.admin, dict(id='data', path=str(self.root)))
         self.api('spaces', self.admin, dict(id='alice', root='data', path='alice', owner='alice', quota=2*1024**3))
         self.api('shares', self.admin, dict(id='dav', space='alice', exposures={'webdav':'rw'}))

@@ -774,6 +774,9 @@ struct client {
       check(limit <= 65536 && get(p, 76, 4) == 0);
       auto meta = co_await operation(h, "stat", false);
       bytes data;
+      if (type == 1 && klass == 48)
+        check(selected.dialect != 0x202 && selected.dialect != 0x210 && selected.dialect != 0x302,
+              0xc00000bb); // MS-SMB2 3.3.5.20.1 dialect restriction.
       if (type == 1)
         data = file_info(static_cast<unsigned>(klass), meta, h.path, h.access);
       else if (type == 2) {

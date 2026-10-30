@@ -108,8 +108,29 @@ def main():
         run(scp+[str(a.archive.resolve()),'ubuntu@127.0.0.1:work/server.tgz'],timeout=180)
         run(scp+[str(ROOT/'tests'/n) for n in ('m1_integration.py','m3_integration.py','mac_guest_fixture.py')]+['ubuntu@127.0.0.1:work/'])
         run(ssh+['cd work && tar xzf server.tgz -C bin'])
+        identity_args=''
+        report['identity_setup']='normal bootstrap and login'
+        if not accelerated:
+            # Argon2 under TCG exceeds the real server's four-second IPC budget.
+            # Compute exactly the production parameters on the native host and
+            # seed only a stopped disposable test DB. SMB still performs real
+            # NTLMv2/MIC authentication against normally enrolled credentials.
+            from argon2.low_level import hash_secret_raw,Type
+            identity=dict(token=os.urandom(32).hex(),users=[])
+            for name in ('admin','alice','bob'):
+                salt=os.urandom(16).hex()
+                verifier=hash_secret_raw(PASSWORD.encode(),salt.encode(),time_cost=3,
+                                         memory_cost=65536,parallelism=1,hash_len=32,type=Type.ID,version=19).hex()
+                identity['users'].append(dict(name=name,salt=salt,verifier=verifier))
+            seed=work/'identity-seed.json'
+            with seed.open('w') as out:
+                os.chmod(seed,0o600);json.dump(identity,out)
+            try:run(scp+[str(seed),'ubuntu@127.0.0.1:work/identity-seed.json'])
+            finally:seed.unlink(missing_ok=True)
+            identity_args=' --identity-seed identity-seed.json'
+            report['identity_setup']='offline disposable identity seed, native Argon2id 64 MiB/3/1; management login excluded; SMB authentication unchanged'
         groups=json.dumps(sorted(set(os.getgroups()+[os.getgid()])))
-        command='cd work && nohup python3 mac_guest_fixture.py --uid '+str(os.getuid())+' --groups '+shlex.quote(groups)+' --output info.json > fixture.log 2>&1 < /dev/null &'
+        command='cd work && nohup python3 mac_guest_fixture.py --uid '+str(os.getuid())+' --groups '+shlex.quote(groups)+identity_args+' --output info.json > fixture.log 2>&1 < /dev/null &'
         run(ssh+[command])
         deadline=time.monotonic()+240
         while True:

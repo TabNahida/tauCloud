@@ -14,7 +14,7 @@ This work is in progress. M8 has not started, and the full M4/M5/M7 release gate
 | `5a00380` | [40994316771](https://github.com/TabNahida/tauCloud/actions/runs/40994316771) | GCC/Clang/Windows core regression passed; 37 + 34 + 30 selected upstream cases passed. Native Linux v4.1 exposed optional directory-delegation handling; Windows native mapping failed. |
 | `9be16de` | [40996860599](https://github.com/TabNahida/tauCloud/actions/runs/40996860599) | GCC including kernel NFSv3/v4.1 and Samba roundtrips passed. Windows core passed but native rename failed. Clang exposed a LOGOFF transport race. macOS guest failed during boot. |
 | `e4d1937` | [40998763054](https://github.com/TabNahida/tauCloud/actions/runs/40998763054) | GCC/Clang passed. Windows native rename still failed; macOS guest boot/SSH worked, but server initialization exceeded the IPC deadline under software emulation. |
-| `92f230c` | [41000056554](https://github.com/TabNahida/tauCloud/actions/runs/41000056554) | GCC/Clang passed, including Linux FileZilla. Windows core/state/attributes and native SMB redirector passed; FileZilla stopped at its welcome dialog because Windows ignored the redirected APPDATA variable. macOS result pending at this revision. |
+| `92f230c` | [41000056554](https://github.com/TabNahida/tauCloud/actions/runs/41000056554) | GCC/Clang passed, including Linux FileZilla. Windows core/state/attributes and native SMB redirector passed; FileZilla stopped at its welcome dialog because Windows ignored the redirected APPDATA variable. macOS software-emulated guest again exceeded the management bootstrap IPC deadline. |
 
 The workflow now disables matrix fail-fast so one platform's failure does not cancel another platform's evidence. Artifacts retain raw results, client failures and bounded server/kernel logs.
 
@@ -43,3 +43,5 @@ Local regression passed M1–M6 including litmus. The M7 test was corrected to o
 - Larger-than-RAM/soak, sudden power-loss, namespace durability on Windows, and persistent service registration require their own evidence.
 
 中文：补齐工作尚未全部完成，M8 未开始。已补充真实远程构建、原版上游协议测试和内核客户端检查，并修复发现的多项实现问题。Linux 内核 CIFS 因缺少强制 MIC 被拒绝，不能算作兼容通过；Samba torture 的失败、未运行的平台及 NFS 的剩余实现门槛均保留。不能将选定场景通过或 CI 的部分成功解读为 M0–M7 全部验收完成。
+
+New local checks: 58 native NFS codec checks, four creation/attribute/truncation groups, five attribute/cache/restart groups and 37 selected unmodified upstream cases pass. SMB3 regression passes after restricting normalized-name queries by negotiated dialect. The macOS TCG fallback prepares a private offline identity seed with the same Argon2id 64 MiB/3/1 parameters; this client test explicitly excludes management bootstrap/login, which remain covered by Linux/Windows regression. Native SMB authentication and all product security/timeouts remain unchanged. Seed files, databases and keys are excluded from artifacts.

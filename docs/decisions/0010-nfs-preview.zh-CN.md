@@ -14,6 +14,8 @@ v4.1 会话不持久化，使用有界 slot、序列、请求摘要与完整响�
 
 v3 变更请求使用持久、有界的主体/XID/摘要/响应缓存；冲突和未完成请求不重复执行。文件域先记录 pending，再执行原生变更并记录结果。不确定结果需要后续恢复机制，目前返回重试错误，不自动猜测成功。缓存满后拒绝继续变更。所有 WRITE 都检查短写、循环完成并真实 flush 后回复 FILE_SYNC，UNSTABLE 请求也可提升到该稳定等级；COMMIT 真实 flush，服务重启更换 verifier。Windows 名称空间的断电保证仍受 M2 目录 flush 限制。
 
-mode/UID/GID 投影按原生对象代次持久化，导出别名共享投影，应用 ACL 始终是权限依据。时间戳通过固定的原生句柄更新。RENAME 可原子覆盖已关闭目标；目标有活动 NFS OPEN 时返回 FILE_OPEN，不作废活跃状态。剩余工作包括必需操作全集、完整 unlink-open、可靠目录 change 属性、完整重启/trunking、多导出会话，以及 v3 NLM/NSM 和完整 MOUNT/rpcbind。UDP、v2/v4.0/v4.2、pNFS/RDMA 不在首批范围，仍不宣称完整 v4.1/v3 兼容。
+mode/UID/GID 投影按原生对象代次持久化，导出别名共享投影，应用 ACL 始终是权限依据。时间戳通过固定的原生句柄更新。RENAME 可原子覆盖已关闭目标；目标有活动 NFS OPEN 时返回 FILE_OPEN，不作废活跃状态。剩余工作包括必需操作全集、完整 unlink-open、完整重启/trunking、多导出会话，以及 v3 NLM/NSM 和完整 MOUNT/rpcbind。UDP、v2/v4.0/v4.2、pNFS/RDMA 不在首批范围，仍不宣称完整 v4.1/v3 兼容。
 
 后续 RPCSEC_GSS/Kerberos 配置必须单独实现 GSS 上下文、序列窗口、完整性/隐私保护、Kerberos principal→用户绑定，并在会话/恢复/重放中使用已认证 principal；需要独立凭据生命周期和降级测试，不能将 AUTH_SYS 数字映射当作 GSS 身份。协议和系统接口原始依据见[英文决策](0010-nfs-preview.md)。
+
+补齐进展：change 属性改为按原生 ctime/ChangeTime、大小、mtime 和投影元数据计算的持久化变更序号，忽略 atime；已验证等长写入后恢复 mtime、别名、只读及重启行为。名称空间操作返回真实的非原子 change_info。EXCLUSIVE4_1 提供可设置属性位图；UNCHECKED 对现有文件的零长度截断先检查共享冲突，并返回实际设置的属性。完整缓存一致性、unlink-open、NLM/NSM 和完整客户端矩阵仍未验收。

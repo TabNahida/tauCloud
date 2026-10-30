@@ -388,6 +388,7 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
         require(q.row() && q.text(0) == body.at("verifier").get<std::string>(), "already_exists");
       }
       pending(request, hash);
+      result["created"] = false;
       return finish(result);
     }
     case_check(s.directory, child);
@@ -403,6 +404,7 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     nfs_apply_attrs(s, g, child, f, body);
     f.flush();
     auto result = nfs_meta(s, g, child, f);
+    result["created"] = true;
     if (mode >= 2) {
       auto raw = decode_bytes(result.at("handle").get<std::string>());
       statement q(*nfs_db, "INSERT INTO exclusive_create VALUES(?,?)");

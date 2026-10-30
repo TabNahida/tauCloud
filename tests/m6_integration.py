@@ -158,14 +158,17 @@ def run(args):
             h=create(t,'signed-'+hex(dialect));h.write(b'signed');assert h.read(0,6)==b'signed';h.close()
             h=create(t,'native-options-'+hex(dialect),options=0x400060|0x400|0x20000|0x800000)
             h.write(b'local');assert h.read(0,5)==b'local'
-            normalized=query(h,48);assert normalized[4:].decode('utf-16-le')=='native-options-'+hex(dialect)
-            q=SMB2QueryInfoRequest();q['info_type']=1;q['file_info_class']=48;q['output_buffer_length']=8;q['file_id']=h.file_id
-            try:c.receive(c.send(q,s.session_id,t.tree_connect_id));raise AssertionError('missing overflow')
-            except SMBResponseException as e:
-                assert e.status==0x80000005
-                response=SMB2QueryInfoResponse();response.unpack(e.header['data'].get_value())
-                partial=response['buffer'].get_value();assert len(partial)==8 and int.from_bytes(partial[:4],'little')>4
-            denied(lambda:query(h,48,limit=1),0xc0000004)
+            if dialect==0x302:
+                denied(lambda:query(h,48),0xc00000bb)
+            else:
+                normalized=query(h,48);assert normalized[4:].decode('utf-16-le')=='native-options-'+hex(dialect)
+                q=SMB2QueryInfoRequest();q['info_type']=1;q['file_info_class']=48;q['output_buffer_length']=8;q['file_id']=h.file_id
+                try:c.receive(c.send(q,s.session_id,t.tree_connect_id));raise AssertionError('missing overflow')
+                except SMBResponseException as e:
+                    assert e.status==0x80000005
+                    response=SMB2QueryInfoResponse();response.unpack(e.header['data'].get_value())
+                    partial=response['buffer'].get_value();assert len(partial)==8 and int.from_bytes(partial[:4],'little')>4
+                denied(lambda:query(h,48,limit=1),0xc0000004)
             h.close()
             h=create(t,'allocation-'+hex(dialect));h.write(b'abcdefgh')
             allocation=FileAllocationInformation();allocation['allocation_size']=8;setinfo(h,allocation)

@@ -113,11 +113,15 @@ bool has(const std::vector<uint32_t> &bits, unsigned i) {
   return i / 32 < bits.size() && (bits[i / 32] & (1u << (i % 32)));
 }
 std::vector<uint32_t> supported_attrs() {
-  std::vector<uint32_t> b(2);
+  std::vector<uint32_t> b(3);
   for (unsigned n : {0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 19, 20, 27, 28,
-                     29, 30, 31, 33, 35, 36, 37, 42, 43, 44, 45, 47, 48, 51, 52, 53, 54, 55})
+                     29, 30, 31, 33, 35, 36, 37, 42, 43, 44, 45, 47, 48, 51, 52, 53, 54, 55, 75})
     b[n / 32] |= 1u << (n % 32);
   return b;
+}
+std::vector<uint32_t> writable_attrs() {
+  // Verifiers live in the database, so timestamps need not be reserved.
+  return {1u << 4, (1u << 1) | (1u << 4) | (1u << 5) | (1u << 16) | (1u << 22)};
 }
 json meta4(const identity &who, const std::string &h) {
   check(!h.empty(), 10020);
@@ -135,9 +139,9 @@ json meta4(const identity &who, const std::string &h) {
 void attributes4(writer &out, const std::vector<uint32_t> &requested, const json &m) {
   check(!has(requested, 48) && !has(requested, 54)); // Write-only time attributes.
   auto supported = supported_attrs();
-  std::vector<uint32_t> returned(2);
+  std::vector<uint32_t> returned(supported.size());
   writer values;
-  for (unsigned i = 0; i < 64; ++i)
+  for (unsigned i = 0; i < supported.size() * 32; ++i)
     if (has(requested, i) && has(supported, i)) {
       returned[i / 32] |= 1u << (i % 32);
       bool dir = m.at("directory");
@@ -237,6 +241,9 @@ void attributes4(writer &out, const std::vector<uint32_t> &requested, const json
         values.u64(0).u32(1);
 #endif
         break;
+      case 75:
+        put_bitmap(values, writable_attrs());
+        break;
       }
     }
   while (!returned.empty() && !returned.back())
@@ -284,7 +291,7 @@ json create_attrs4(const json &a, bool dir, bool create = true) {
         }
         attrs[i == 48 ? "atime_ns" : "mtime_ns"] = ns;
       } else
-        check(false, 10032);
+        check(false, has(supported_attrs(), i) ? 22 : 10032);
     }
   r.end();
   (void)dir;
@@ -914,9 +921,17 @@ std::string v4(const identity &who, reader &r) {
           check(current != pseudo && !current.empty(), 10020);
           if (a.at("create") == 1) {
             check(claim == 0, 22);
+            if (a.at("mode") == 3) {
+              auto bits = a.at("attrs").at("bits").get<std::vector<uint32_t>>();
+              auto allowed = writable_attrs();
+              for (size_t i = 0; i < bits.size(); ++i)
+                check((bits[i] & ~(i < allowed.size() ? allowed[i] : 0u)) == 0, 22);
+            }
             if (a.contains("attrs")) create_attrs4(a.at("attrs"), false);
           }
           auto target = current;
+          bool created = false;
+          std::vector<uint32_t> attrset;
           uint64_t parent_before = claim == 0 ? meta4(who, current).at("change").get<uint64_t>() : 0;
           if (claim == 0) {
             try {
@@ -926,7 +941,8 @@ std::string v4(const identity &who, reader &r) {
                 auto attrs = a.contains("attrs") ? create_attrs4(a.at("attrs"), false) : json::object();
                 attrs["name"] = a.at("name"); attrs["create_mode"] = a.at("mode");
                 if (a.contains("verifier")) attrs["verifier"] = a.at("verifier");
-                target = file(who, current, "create", attrs, request).at("handle");
+                auto result = file(who, current, "create", attrs, request);
+                target = result.at("handle"); created = result.value("created", false);
               }
             } catch (const error &e) {
               if (std::string_view(e.what()) != "not_found" || a.at("create") != 1)
@@ -935,7 +951,8 @@ std::string v4(const identity &who, reader &r) {
               attrs["name"] = a.at("name");
               attrs["create_mode"] = a.at("mode");
               if (a.contains("verifier")) attrs["verifier"] = a.at("verifier");
-              target = file(who, current, "create", attrs, request).at("handle");
+              auto result = file(who, current, "create", attrs, request);
+              target = result.at("handle"); created = result.value("created", false);
             }
           }
           uint64_t parent_after = claim == 0 ? meta4(who, current).at("change").get<uint64_t>() : 0;
@@ -973,6 +990,18 @@ std::string v4(const identity &who, reader &r) {
           for (const auto &[id, o] : opens)
             if (o.object == m.at("object").get<std::string>() && id != previous)
               check(!(o.deny & access) && !(deny & o.access), 10015);
+          if (created && a.contains("attrs"))
+            attrset = a.at("attrs").at("bits").get<std::vector<uint32_t>>();
+          if (!created && a.at("create") == 1 && a.at("mode") == 0) {
+            auto attrs = create_attrs4(a.at("attrs"), false);
+            if (attrs.contains("size") && attrs.at("size") == 0) {
+              // A failed share reservation must never truncate someone else's file.
+              // Other UNCHECKED attributes are ignored for an existing object.
+              file(who, target, "resize", {{"size", 0},
+                   {"state_owner", previous.empty() ? std::string() : previous.substr(8)}}, digest(request + ":truncate"));
+              attrset = {1u << 4};
+            }
+          }
           writer state;
           state.u32(1).fixed(decode_bytes(random_hex(12)));
           auto stateid = encode_bytes(state.data);
@@ -992,7 +1021,7 @@ std::string v4(const identity &who, reader &r) {
           current_state = stateid;
           body.fixed(state.data);
           change4(body, parent_before, parent_after);
-          body.u32(0).u32(0).u32(0);
+          body.u32(0); put_bitmap(body, attrset); body.u32(0);
         } else if (op == 4) {
           auto id = open_key(a.at("state"), sid);
           auto &o = state4(id, sid, current, 0, who);
@@ -1058,7 +1087,7 @@ std::string v4(const identity &who, reader &r) {
           auto m = file(who, current, "mkdir", attrs, request);
           current = m.at("handle");
           change4(body, m.at("change_before"), m.at("change_after"));
-          body.u32(0);
+          put_bitmap(body, a.at("attrs").at("bits").get<std::vector<uint32_t>>());
         } else if (op == 28) {
           for (const auto &[id, o] : opens) {
             auto m = file(who, current, "lookup", {{"name", a.at("name")}});
