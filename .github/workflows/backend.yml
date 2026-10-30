@@ -1,5 +1,10 @@
 name: Backend pre-M8 acceptance
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+    paths-ignore: ['docs/**', 'TODO.md']
+  pull_request:
+    paths-ignore: ['docs/**', 'TODO.md']
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
@@ -47,6 +52,14 @@ jobs:
       - name: NFS native attributes and aliases
         if: always() && matrix.compiler == 'gcc'
         run: python3 tests/nfs_attributes_integration.py --bin build/linux/x86_64/release --output build/acceptance/nfs-attributes.json
+      - name: Package the same Linux server for macOS native-client tests
+        if: always() && matrix.compiler == 'gcc'
+        run: tar czf build/linux-server.tgz -C build/linux/x86_64/release .
+      - uses: actions/upload-artifact@v4
+        if: always() && matrix.compiler == 'gcc'
+        with:
+          name: linux-server
+          path: build/linux-server.tgz
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -54,6 +67,25 @@ jobs:
           path: |
             build/m7/*.json
             build/acceptance/*
+  macos-clients:
+    needs: linux
+    if: always()
+    runs-on: macos-15-intel
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-server
+          path: build
+      - run: brew install qemu
+      - name: macOS native SMB and NFSv3 against isolated Linux guest
+        run: python3 scripts/run_macos_clients.py --archive build/linux-server.tgz --output build/acceptance/macos-native.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: macos-native
+          path: build/acceptance/*
   windows:
     runs-on: windows-2025
     timeout-minutes: 45
