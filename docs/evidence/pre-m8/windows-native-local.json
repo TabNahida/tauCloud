@@ -1,0 +1,17 @@
+{
+  "connection": {
+    "ServerName": "127.0.0.1",
+    "ShareName": "smb",
+    "Dialect": "3.1.1",
+    "Encrypted": true,
+    "Signed": false
+  },
+  "status": "passed",
+  "payload_sha256": "63-1B-84-02-7D-6B-9E-52-B5-39-C4-E8-37-36-22-D2-30-32-DF-AD-C6-4D-60-AF-87-33-9C-90-37-E4-F7-69",
+  "client": "Windows native SMB redirector",
+  "server_host": "Linux WSL2 GCC release",
+  "client_host": "Windows native redirector via WSL loopback forwarding",
+  "source_commit": "92f230c",
+  "scope": "1 MiB create/write/flush/hash/read/rename/truncate/enumerate/delete. RequireIntegrity and RequirePrivacy requested; encrypted SMB3 supplies AEAD integrity, so Windows reports Signed=false for this encrypted connection.",
+  "server_binary_sha256": "5f51417924dfc7653abc22485857c2370f2c0416a8ce19cf0f2f1170f9a56b57"
+}

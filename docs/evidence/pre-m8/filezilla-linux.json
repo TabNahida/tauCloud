@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "client": "FileZilla 3.66.5",
+  "certificate_sha256": "273fd653d120f9735ab79fc6ad97c17838c1e82c8cc010bf2cd3b6bc32390ad3",
+  "protocol": "explicit FTPS",
+  "payload_bytes": 1028096,
+  "sha256": "08e33aedf25337c87eb15e08c32a58f6f4caa21fe073d00b53014c57f8d148e0",
+  "checks": [
+    "pinned disposable server certificate",
+    "native GUI queue upload and download",
+    "binary source/server/download match"
+  ],
+  "source_commit": "e4d19371730f1e94c7712155b4ca356ca0957bc0",
+  "scope": "Linux server and unmodified Ubuntu FileZilla GUI; isolated Xvfb helper relocated locally. Windows pending."
+}

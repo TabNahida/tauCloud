@@ -22,7 +22,7 @@ public:
   static native_file root(const fs::path &path);
   native_file open(const std::string &path, bool directory = false, bool create = false,
                    bool write = false) const;
-  json info() const;
+  json info(bool change_stamp = false) const;
   // Filesystems without native incarnation evidence are ineligible for persistent NFS handles.
   std::string stable_identity() const;
   std::vector<json> list() const;

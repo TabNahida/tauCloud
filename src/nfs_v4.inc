@@ -155,7 +155,7 @@ void attributes4(writer &out, const std::vector<uint32_t> &requested, const json
         values.u32(0);
         break;
       case 3:
-        values.u64(ns);
+        values.u64(m.value("change", uint64_t(0)));
         break;
       case 4:
         values.u64(size);
@@ -224,6 +224,9 @@ void attributes4(writer &out, const std::vector<uint32_t> &requested, const json
             .u32(uint32_t(m.value("accessed_ns", ns) % 1000000000));
         break;
       case 52:
+        values.u64(m.value("changed_ns", ns) / 1000000000)
+            .u32(uint32_t(m.value("changed_ns", ns) % 1000000000));
+        break;
       case 53:
         values.u64(ns / 1000000000).u32(uint32_t(ns % 1000000000));
         break;
@@ -562,7 +565,10 @@ open_state &state4(const std::string &id, const std::string &sid, const std::str
   return it->second;
 }
 #include "nfs_locks.inc"
-void change4(writer &w) { w.boolean(false).u64(0).u64(0); } // No atomic change_info claim.
+void change4(writer &w, uint64_t before, uint64_t after) {
+  // External host mutations cannot be serialized with the server's operation.
+  w.boolean(false).u64(before).u64(after);
+}
 std::string v4(const identity &who, reader &r) {
   auto tag = r.opaque(1024);
   auto minor = r.u32(), count = r.u32();
@@ -911,6 +917,7 @@ std::string v4(const identity &who, reader &r) {
             if (a.contains("attrs")) create_attrs4(a.at("attrs"), false);
           }
           auto target = current;
+          uint64_t parent_before = claim == 0 ? meta4(who, current).at("change").get<uint64_t>() : 0;
           if (claim == 0) {
             try {
               target = file(who, current, "lookup", {{"name", a.at("name")}}).at("handle");
@@ -931,6 +938,7 @@ std::string v4(const identity &who, reader &r) {
               target = file(who, current, "create", attrs, request).at("handle");
             }
           }
+          uint64_t parent_after = claim == 0 ? meta4(who, current).at("change").get<uint64_t>() : 0;
           auto m = meta4(who, target);
           check(!m.at("directory").get<bool>(), 21);
           // Authorization is checked for read and for the requested write access.
@@ -983,7 +991,7 @@ std::string v4(const identity &who, reader &r) {
           current = target;
           current_state = stateid;
           body.fixed(state.data);
-          change4(body);
+          change4(body, parent_before, parent_after);
           body.u32(0).u32(0).u32(0);
         } else if (op == 4) {
           auto id = open_key(a.at("state"), sid);
@@ -1049,21 +1057,21 @@ std::string v4(const identity &who, reader &r) {
           attrs["name"] = a.at("name");
           auto m = file(who, current, "mkdir", attrs, request);
           current = m.at("handle");
-          change4(body);
+          change4(body, m.at("change_before"), m.at("change_after"));
           body.u32(0);
         } else if (op == 28) {
           for (const auto &[id, o] : opens) {
             auto m = file(who, current, "lookup", {{"name", a.at("name")}});
             check(o.fh != m.at("handle").get<std::string>(), 10008);
           }
-          file(who, current, "remove", {{"name", a.at("name")}}, request);
-          change4(body);
+          auto m = file(who, current, "remove", {{"name", a.at("name")}}, request);
+          change4(body, m.at("change_before"), m.at("change_after"));
         } else if (op == 29) {
           check(!saved.empty() && !current.empty(), 10020);
-          file(who, saved, "rename",
+          auto m = file(who, saved, "rename",
                {{"name", a.at("name")}, {"target", current}, {"to", a.at("to")}}, request);
-          change4(body);
-          change4(body);
+          change4(body, m.at("change_before"), m.at("change_after"));
+          change4(body, m.at("target_before"), m.at("target_after"));
         } else if (op == 26) {
           check(current != pseudo, 10004);
           auto m = file(who, current, "list");

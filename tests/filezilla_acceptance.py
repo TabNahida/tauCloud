@@ -71,6 +71,17 @@ def main():
     data=bytes(range(251))*4096;(local/'payload.bin').write_bytes(data)
     log=(f.base/'filezilla-stdout.log').open('w')
     try:
+        if os.name=='nt':
+            # Windows uses the Known Folder API, not the APPDATA environment
+            # variable. Keep the installed client and the user's profile intact:
+            # run an unchanged copy with FileZilla's documented defaults file.
+            installed=Path(a.filezilla).resolve();portable=f.base/'filezilla-client'
+            shutil.copytree(installed.parent,portable)
+            a.filezilla=str(portable/installed.name)
+            defaults=ET.Element('FileZilla3');settings=ET.SubElement(defaults,'Settings')
+            ET.SubElement(settings,'Setting',name='Config Location').text=str(config)
+            ET.SubElement(settings,'Setting',name='Disable update check').text='1'
+            xmlfile(portable/'fzdefaults.xml',defaults)
         if os.name!='nt':
             # Xvfb chooses an unused display and reports it on a private pipe.
             rd,wr=os.pipe()
@@ -94,7 +105,7 @@ def main():
         if os.name=='nt':
             from pywinauto import Application
             app=Application(backend='win32').connect(process=proc.pid,timeout=30)
-            window=app.window(title_re='.*FileZilla.*');window.wait('visible',timeout=30)
+            window=app.window(title='FileZilla');window.wait('ready',timeout=30)
             window.set_focus();window.type_keys('^p')
         else:
             deadline=time.monotonic()+30

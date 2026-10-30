@@ -71,7 +71,19 @@ def main():
         run(['qemu-img','create','-f','qcow2','-F','qcow2','-b',str(image),str(disk),'12G'])
         sshport=port()
         console=work/'console.log'
-        qemu=['qemu-system-x86_64','-machine','q35,accel=tcg','-cpu','max','-smp','4','-m','4096',
+        # Probe actual Hypervisor.framework access, not merely the compiled-in
+        # accelerator list. A hosted runner may deny nested virtualization.
+        probe=subprocess.Popen(['qemu-system-x86_64','-machine','q35,accel=hvf','-cpu','host',
+                                '-m','128','-S','-display','none','-nodefaults'],
+                               stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        time.sleep(2)
+        accelerated=probe.poll() is None
+        if accelerated:probe.terminate()
+        _,probe_error=probe.communicate(timeout=10)
+        report['accelerator']='hvf' if accelerated else 'tcg'
+        report['accelerator_probe']=probe_error[-2048:]
+        qemu=['qemu-system-x86_64','-machine','q35,accel='+report['accelerator'],
+              '-cpu','host' if accelerated else 'max','-smp','4','-m','4096',
               '-kernel',str(work/'vmlinuz'),'-initrd',str(work/'initrd'),
               '-append','root=/dev/vda1 ro console=ttyS0 noapic',
               '-drive',f'file={disk},if=virtio,format=qcow2','-drive',f'file={iso},media=cdrom,readonly=on',

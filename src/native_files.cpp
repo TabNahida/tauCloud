@@ -186,7 +186,7 @@ std::string native_file::stable_identity() const {
          encode_bytes(std::string_view(reinterpret_cast<char *>(h->f_handle), h->handle_bytes));
 #endif
 }
-json native_file::info() const {
+json native_file::info(bool change_stamp) const {
 #ifdef _WIN32
   FILE_ID_INFO id{};
   BY_HANDLE_FILE_INFORMATION meta{};
@@ -196,7 +196,7 @@ json native_file::info() const {
   require(!(meta.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT), "unsafe_path");
   bool directory = (meta.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
   require(directory || meta.nNumberOfLinks == 1, "hardlink_denied");
-  return {{"object",
+  json result = {{"object",
            std::to_string(id.VolumeSerialNumber) + ":" +
                encode_bytes(std::string_view(reinterpret_cast<char *>(id.FileId.Identifier), 16)) +
                ":" +
@@ -211,6 +211,13 @@ json native_file::info() const {
                                   100 -
                               uint64_t(116444736000000000) * 100},
           {"size", (uint64_t(meta.nFileSizeHigh) << 32) | meta.nFileSizeLow}};
+  if (change_stamp) {
+    FILE_BASIC_INFO basic{};
+    if (!GetFileInformationByHandleEx(impl_->file->handle, FileBasicInfo, &basic, sizeof(basic)))
+      native_error();
+    result["changed_ns"] = (uint64_t(basic.ChangeTime.QuadPart) - 116444736000000000ull) * 100;
+  }
+  return result;
 #else
   struct stat s {};
   if (fstat(impl_->file->handle, &s) != 0)
@@ -221,7 +228,7 @@ json native_file::info() const {
   require(statx(impl_->file->handle, "", AT_EMPTY_PATH, STATX_BTIME, &sx) == 0 &&
               (sx.stx_mask & STATX_BTIME),
           "stable_identity_unavailable");
-  return {{"object", std::to_string(s.st_dev) + ":" + std::to_string(s.st_ino) + ":" +
+  json result = {{"object", std::to_string(s.st_dev) + ":" + std::to_string(s.st_ino) + ":" +
                          std::to_string(sx.stx_btime.tv_sec) + ":" +
                          std::to_string(sx.stx_btime.tv_nsec)},
           {"volume", std::to_string(s.st_dev)},
@@ -229,6 +236,9 @@ json native_file::info() const {
           {"accessed_ns", int64_t(s.st_atim.tv_sec) * 1000000000 + s.st_atim.tv_nsec},
           {"modified_ns", int64_t(s.st_mtim.tv_sec) * 1000000000 + s.st_mtim.tv_nsec},
           {"size", s.st_size}};
+  if (change_stamp)
+    result["changed_ns"] = int64_t(s.st_ctim.tv_sec) * 1000000000 + s.st_ctim.tv_nsec;
+  return result;
 #endif
 }
 native_file native_file::root(const fs::path &path) {

@@ -90,7 +90,7 @@ Acceptance: [M3 evidence](docs/evidence/m3/README.md). Explorer and Finder are r
 - [x] Test revoked credentials, interrupted transfers, TLS failures and passive-port exhaustion.
 - [x] Kill/restart the worker during transfer; verify sibling protocols survive and storage ownership reconciles.
 
-Implementation and recorded scope: [M4 guide](docs/m4.md), [M4 evidence](docs/evidence/m4/README.md). FileZilla is not installed on the acceptance hosts, so its client gate remains unchecked; the preview does not claim full client-matrix acceptance.
+Implementation and recorded scope: [M4 guide](docs/m4.md), [M4 evidence](docs/evidence/m4/README.md). Unmodified Linux FileZilla GUI upload/download passed; Windows GUI configuration isolation is being corrected, so the full client gate remains unchecked; the preview does not claim full client-matrix acceptance.
 
 ## M5 — SMB2
 
@@ -102,7 +102,7 @@ Implementation and recorded scope: [M4 guide](docs/m4.md), [M4 evidence](docs/ev
 - [x] Evaluate and implement the minimal authenticated share-enumeration RPC surface required by clients.
 - [x] Pass the signed SMB 2.1 profile; add 2.0.2 only as explicit compatibility mode.
 - [x] Keep optional leases/oplocks/durable handles disabled until individually verified.
-- [ ] Complete the full Windows/Linux/macOS client and applicable Samba torture matrix. Linux/Windows smbprotocol, Windows SSPI and hostile packet coverage are recorded; Explorer, kernel clients, macOS and Samba torture remain unverified.
+- [ ] Complete the full Windows/Linux/macOS client and applicable Samba torture matrix. Linux/Windows smbprotocol, Windows SSPI and hostile packet coverage are recorded; Windows native encrypted redirector and Samba smbclient roundtrips now pass. Kernel CIFS is rejected for missing NTLM MIC; macOS and broader Samba torture gates remain open.
 - [x] Document deployment conflicts, dialect limits and revocation/recovery behavior.
 
 Implementation scope and exclusions: [M5 guide](docs/m5.md), [ADR 0008](docs/decisions/0008-smb-profile.md), [evidence](docs/evidence/m5/README.md). Signed SMB 2.1 only; basic metadata is a conservative projection, persistent ACL/attribute writes are explicitly unsupported. The checked implementation items do not close the full client-matrix release gate.
@@ -133,7 +133,7 @@ Selected-profile evidence: [M6 guide](docs/m6.md), [ADR 0009](docs/decisions/000
 - [ ] Complete M7b Linux/macOS/eligible Windows client tests; publish client-version restrictions.
 - [x] Design RPCSEC_GSS/Kerberos as a later authenticated profile; do not conflate it with AUTH_SYS (ADR 0010).
 
-**Partial milestone:** [M7 preview](docs/m7.md), [中文](docs/m7.zh-CN.md), [ADR 0010](docs/decisions/0010-nfs-preview.md), [pre-M8 evidence](docs/evidence/pre-m8/README.md). Share-deny, byte locks/reclaim, OPEN upgrades, native timestamps, alias metadata and selected upstream conformance are now implemented/tested. Complete mandatory-operation, unlink-open/cache and native-client gates remain open. NLM/NSM is absent. No complete NFS compatibility is published; passing selected upstream tests is not a full-suite result.
+**Partial milestone:** [M7 preview](docs/m7.md), [中文](docs/m7.zh-CN.md), [ADR 0010](docs/decisions/0010-nfs-preview.md), [pre-M8 evidence](docs/evidence/pre-m8/README.md). Share-deny, byte locks/reclaim, OPEN upgrades, native timestamps, alias metadata and selected upstream conformance are now implemented/tested. Persistent change counters and actual namespace change_info now have alias/restart/restored-mtime tests. Complete mandatory-operation, unlink-open/full cache consistency and native-client gates remain open. NLM/NSM is absent. No complete NFS compatibility is published; passing selected upstream tests is not a full-suite result.
 
 ## M8 — Plugins and Docker
 

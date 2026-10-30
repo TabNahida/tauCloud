@@ -12,7 +12,10 @@ void nfs_init() {
       "CREATE INDEX IF NOT EXISTS native ON objects(export,token,dead);"
       "CREATE TABLE IF NOT EXISTS attributes(id TEXT PRIMARY KEY,mode INTEGER NOT NULL);"
       "CREATE TABLE IF NOT EXISTS ownership(id TEXT PRIMARY KEY,uid INTEGER,gid INTEGER);"
-      "CREATE TABLE IF NOT EXISTS exclusive_create(id TEXT PRIMARY KEY,verifier TEXT NOT NULL);");
+      "CREATE TABLE IF NOT EXISTS exclusive_create(id TEXT PRIMARY KEY,verifier TEXT NOT NULL);"
+      "CREATE TABLE IF NOT EXISTS change_clock(id INTEGER PRIMARY KEY,value INTEGER NOT NULL);"
+      "INSERT OR IGNORE INTO change_clock VALUES(1,0);"
+      "CREATE TABLE IF NOT EXISTS changes(token TEXT PRIMARY KEY,signature TEXT NOT NULL,value INTEGER NOT NULL);");
   // Earlier previews keyed projections by export handles. Metadata belongs to
   // the native incarnation, so aliases must observe the same attributes.
   {
@@ -60,7 +63,9 @@ json nfs_meta(space_state &s, const json &g, const std::string &path, native_fil
     if (q.row())
       id = q.text(0);
   }
-  auto info = f.info();
+  auto info = f.info(true);
+  auto stamp = info;
+  stamp.erase("accessed_ns"); // Reading a file must not invalidate its data cache.
   if (id.empty()) {
     statement count(*nfs_db, "SELECT count(*) FROM objects");
     count.row();
@@ -98,9 +103,33 @@ json nfs_meta(space_state &s, const json &g, const std::string &path, native_fil
   statement attrs(*nfs_db, "SELECT mode FROM attributes WHERE id=?");
   attrs.bind(1, token);
   info["mode"] = attrs.row() ? attrs.integer(0) : (info.at("directory").get<bool>() ? 0700 : 0600);
+  stamp["mode"] = info["mode"];
   statement owner(*nfs_db, "SELECT uid,gid FROM ownership WHERE id=?");
   owner.bind(1, token);
-  if (owner.row()) { info["uid"] = owner.integer(0); info["gid"] = owner.integer(1); }
+  if (owner.row()) {
+    info["uid"] = owner.integer(0); info["gid"] = owner.integer(1);
+    stamp["uid"] = info["uid"]; stamp["gid"] = info["gid"];
+  }
+  auto signature = digest(stamp.dump());
+  int64_t change = 0;
+  {
+    statement q(*nfs_db, "SELECT signature,value FROM changes WHERE token=?");
+    q.bind(1, token);
+    if (q.row() && q.text(0) == signature)
+      change = q.integer(1);
+  }
+  if (!change) {
+    transaction tx(*nfs_db);
+    statement q(*nfs_db, "SELECT value FROM change_clock WHERE id=1");
+    require(q.row() && q.integer(0) < INT64_MAX, "operation_limit");
+    change = q.integer(0) + 1;
+    statement clock(*nfs_db, "UPDATE change_clock SET value=? WHERE id=1");
+    clock.bind(1, change);clock.row();
+    statement update(*nfs_db, "INSERT OR REPLACE INTO changes VALUES(?,?,?)");
+    update.bind(1, token);update.bind(2, signature);update.bind(3, change);update.row();
+    tx.commit();
+  }
+  info["change"] = change;
   (void)s;
   return info;
 }
@@ -233,8 +262,13 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
   } else
     smb_sharing(space, p, 1, 7);
   lease(g, ctx);
+  auto change_before = mutation && dir ? nfs_meta(s, g, p, o.file).at("change").get<uint64_t>() : 0;
   auto finish = [&](json result) {
     if (mutation) {
+      if (dir) {
+        result["change_before"] = change_before;
+        result["change_after"] = nfs_meta(s, g, p, o.file).at("change");
+      }
       transaction tx(db);
       complete(request, result);
       audit(actor, "nfs_" + op, p);
@@ -405,12 +439,16 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     require(dir, "not_directory");
     auto target = nfs_resolve(s, g, body.at("target"), false, ctx);
     require(target.file.info().at("directory"), "not_directory");
+    auto target_before = nfs_meta(s, g, target.path, target.file).at("change");
     auto n = name("name"), t = name("to");
     auto from = p.empty() ? n : p + "/" + n;
     auto to = target.path.empty() ? t : target.path + "/" + t;
     auto meta = dav_exists(s, from);
     require(meta.has_value(), "not_found");
-    if (from == to) { pending(request, hash); return finish(json::object()); }
+    if (from == to) {
+      pending(request, hash);
+      return finish({{"target_before", target_before}, {"target_after", target_before}});
+    }
     require(!beneath(to, from), "invalid_path");
     case_check(s.directory, to);
     auto destination = dav_exists(s, to);
@@ -437,7 +475,8 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
       dead.bind(1, replaced); dead.row();
     }
     scan(s, ctx);
-    return finish(json::object());
+    return finish({{"target_before", target_before},
+                   {"target_after", nfs_meta(s, g, target.path, target.file).at("change")}});
   }
   throw error("not_supported");
 }
