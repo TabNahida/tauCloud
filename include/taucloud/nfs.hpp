@@ -38,6 +38,7 @@ class server {
 public:
   server(const config &, domain_call);
   ~server();
-  std::string dispatch(std::string_view record);
+  std::string dispatch(std::string_view record, std::string connection = "test");
+  void disconnect(const std::string &connection);
 };
 } // namespace tc::nfs_detail

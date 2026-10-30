@@ -858,7 +858,10 @@ struct client {
           check(!next || (next >= 64 && next % 8 == 0 && next < remaining.size()));
           auto p = bytes(remaining.substr(0, next ? next : remaining.size()));
           auto flags = get(p, 16, 4), cmd = get(p, 12, 2);
-          check(!(flags & ~0x1000000cull) && get(p, 6, 2) <= 1 && cmd <= 18);
+          // SMB 3.1.1 clients (including Samba) set priority bits on SESSION_SETUP.
+          // Priority affects scheduling, not authorization or signing.
+          auto allowed_flags = selected.dialect == 0x311 ? 0x1000007cull : 0x1000000cull;
+          check(!(flags & ~allowed_flags) && get(p, 6, 2) <= 1 && cmd <= 18);
           check(!(flags & 4) || !requests.empty());
           check(authenticated || (requests.empty() && !next));
           if (authenticated) {

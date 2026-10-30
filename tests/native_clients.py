@@ -20,6 +20,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--bin', type=Path, required=True)
     p.add_argument('--output', type=Path, required=True)
+    p.add_argument('--profiles', nargs='+', help='Explicit profile names; default runs every profile')
     args = p.parse_args()
     report = dict(host=platform.platform(), recorded_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),
                   profiles=[], status='failed')
@@ -60,6 +61,9 @@ def main():
         profiles=[('smbclient-2.1','samba','SMB2_10'),('smbclient-3.1.1','samba','SMB3_11')]
         profiles += [('kernel-cifs-'+v,'cifs',v) for v in ('2.1','3.0','3.02','3.1.1')]
         profiles += [('kernel-nfs-'+v,'nfs',v) for v in ('3','4.1')]
+        if args.profiles:
+            assert set(args.profiles) <= {x[0] for x in profiles}, 'unknown profile'
+            profiles=[x for x in profiles if x[0] in args.profiles]
         for name,kind,version in profiles:
             current=dict(name=name,status='failed',commands=[])
             report['profiles'].append(current)

@@ -43,7 +43,7 @@ def wire_auth(port,password,user,dialect=0x311,alter_transcript=False):
         transcript=hashlib.sha512(bytes(64)+req).digest();transcript=hashlib.sha512(transcript+resp).digest()
         if alter_transcript:transcript=bytes(64)
         ctx=spnego.client(username='TAUCLOUD\\'+user,password=password,protocol='ntlm',hostname='127.0.0.1',service='cifs')
-        def setup(token,mid,sid):return header(1,mid,sid)+struct.pack('<HBBIIHHQ',25,0,1,0,0,88,len(token),0)+token
+        def setup(token,mid,sid):return header(1,mid,sid,flags=0x10 if dialect==0x311 else 0)+struct.pack('<HBBIIHHQ',25,0,1,0,0,88,len(token),0)+token
         req=setup(ctx.step(),1,0);resp=exchange(sock,req);assert status(resp)==0xc0000016
         transcript=hashlib.sha512(transcript+req).digest();transcript=hashlib.sha512(transcript+resp).digest()
         sid=struct.unpack_from('<Q',resp,40)[0];off,n=struct.unpack_from('<HH',resp,68)

@@ -11,6 +11,7 @@ void nfs_init() {
       "token TEXT NOT NULL,path TEXT NOT NULL,directory INTEGER NOT NULL,dead INTEGER NOT NULL);"
       "CREATE INDEX IF NOT EXISTS native ON objects(export,token,dead);"
       "CREATE TABLE IF NOT EXISTS attributes(id TEXT PRIMARY KEY,mode INTEGER NOT NULL);"
+      "CREATE TABLE IF NOT EXISTS ownership(id TEXT PRIMARY KEY,uid INTEGER,gid INTEGER);"
       "CREATE TABLE IF NOT EXISTS exclusive_create(id TEXT PRIMARY KEY,verifier TEXT NOT NULL);");
   statement q(*nfs_db, "SELECT value FROM secret");
   if (q.row())
@@ -84,8 +85,28 @@ json nfs_meta(space_state &s, const json &g, const std::string &path, native_fil
   statement attrs(*nfs_db, "SELECT mode FROM attributes WHERE id=?");
   attrs.bind(1, id);
   info["mode"] = attrs.row() ? attrs.integer(0) : (info.at("directory").get<bool>() ? 0700 : 0600);
+  statement owner(*nfs_db, "SELECT uid,gid FROM ownership WHERE id=?");
+  owner.bind(1, id);
+  if (owner.row()) { info["uid"] = owner.integer(0); info["gid"] = owner.integer(1); }
   (void)s;
   return info;
+}
+void nfs_apply_attrs(space_state &s, const json &g, const std::string &path, native_file &f,
+                     const json &attrs) {
+  auto meta = nfs_meta(s, g, path, f);
+  auto id = encode_bytes(decode_bytes(meta.at("handle").get<std::string>()).substr(18, 16));
+  if (attrs.contains("atime_ns") || attrs.contains("mtime_ns"))
+    f.set_times(attrs.contains("atime_ns") ? std::optional<uint64_t>(number(attrs, "atime_ns")) : std::nullopt,
+                attrs.contains("mtime_ns") ? std::optional<uint64_t>(number(attrs, "mtime_ns")) : std::nullopt);
+  if (attrs.contains("mode")) {
+    statement q(*nfs_db, "INSERT OR REPLACE INTO attributes VALUES(?,?)");
+    q.bind(1, id); q.bind(2, int64_t(number(attrs, "mode"))); q.row();
+  }
+  if (attrs.contains("uid") || attrs.contains("gid")) {
+    statement q(*nfs_db, "INSERT OR REPLACE INTO ownership VALUES(?,?,?)");
+    q.bind(1, id); q.bind(2, int64_t(attrs.value("uid", meta.at("uid").get<uint64_t>())));
+    q.bind(3, int64_t(attrs.value("gid", meta.at("gid").get<uint64_t>()))); q.row();
+  }
 }
 struct nfs_object {
   std::string path;
@@ -166,7 +187,8 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
   require(ctx.caller == "nfs", "forbidden");
   auto op = body.at("op").get<std::string>();
   bool mutation = op == "write" || op == "resize" || op == "create" || op == "mkdir" ||
-                  op == "remove" || op == "rename";
+                  op == "remove" || op == "rename" || op == "setattr";
+  if (body.contains("mode")) require(number(body, "mode") <= 0777, "not_supported");
   auto g = verify(body.at("grant"), mutation);
   require(g.at("protocol") == "nfs" && g.contains("export"), "forbidden");
   auto &s = attach(g, ctx);
@@ -273,9 +295,9 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     o.file.flush();
     return nfs_meta(s, g, p, o.file);
   }
-  if (op == "write" || op == "resize") {
-    require(!dir, "is_directory");
-    auto off = op == "write" ? number(body, "offset") : number(body, "size");
+  if (op == "write" || op == "resize" || op == "setattr") {
+    require(!dir || (op == "setattr" && !body.contains("size")), "is_directory");
+    auto off = op == "write" ? number(body, "offset") : body.value("size", uint64_t(0));
     auto data = op == "write" ? decode_bytes(body.at("data").get<std::string>()) : std::string();
     require(data.size() <= 65536 && off <= uint64_t(INT64_MAX) - data.size(), "invalid_offset");
     auto end = off + data.size(), old = before.at("size").get<uint64_t>();
@@ -290,8 +312,9 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
           require(n > 0 && n <= data.size() - written, "io_error");
           written += n;
         }
-      } else
+      } else if (body.contains("size"))
         o.file.truncate(off);
+      if (op == "setattr") nfs_apply_attrs(s, g, p, o.file, body);
       o.file.flush(); // All acknowledgements are FILE_SYNC, even for UNSTABLE requests.
     } catch (...) {
       index(space, p, o.file.info());
@@ -321,10 +344,17 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
       return finish(result);
     }
     case_check(s.directory, child);
+    if (body.contains("size")) quota(s, number(body, "size"));
     pending(request, hash);
     auto f = s.directory.open(child, op == "mkdir", true, op == "create");
+    if (body.contains("size")) {
+      require(op == "create", "is_directory");
+      f.truncate(number(body, "size"));
+    }
     f.flush();
     o.file.flush();
+    nfs_apply_attrs(s, g, child, f, body);
+    f.flush();
     auto result = nfs_meta(s, g, child, f);
     if (mode >= 2) {
       auto raw = decode_bytes(result.at("handle").get<std::string>());

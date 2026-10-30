@@ -17,7 +17,7 @@ struct nfs_runtime {
           return rpc(c, "nfs", target, op, body);
         }) {}
 };
-pace::task<std::string> process(nfs_runtime &s, std::string packet) {
+pace::task<std::string> process(nfs_runtime &s, std::string packet, std::string connection) {
   struct pending {
     std::string reply;
     std::exception_ptr failure;
@@ -27,9 +27,9 @@ pace::task<std::string> process(nfs_runtime &s, std::string packet) {
   taucloud::bounded_executor::ticket ticket;
   require(s.pool.submit(
               s.io, nfs_detail::max_record, std::chrono::steady_clock::now() + 5s,
-              [&s, p, packet = std::move(packet)](std::stop_token stop) {
+              [&s, p, packet = std::move(packet), connection](std::stop_token stop) {
                 require(!stop.stop_requested(), "cancelled");
-                p->reply = s.protocol.dispatch(packet);
+                p->reply = s.protocol.dispatch(packet, connection);
               },
               [p](taucloud::bounded_executor::result r) {
                 p->failure = r.error;
@@ -52,13 +52,20 @@ pace::task<std::string> process(nfs_runtime &s, std::string packet) {
 }
 pace::task<void> serve(nfs_runtime &s, pace::tcp::stream socket) {
   s.sockets.insert(&socket);
+  auto connection = random_hex(16);
+  bool active = false;
   try {
     while (socket.is_open()) {
       nfs_detail::record_decoder record;
       {
+        auto idle = s.io->call_after(active ? 120s : 15s, [&socket] { socket.close(); });
+        auto first = co_await socket.read_exact(4, 4);
+        idle.cancel();
         auto timer = s.io->call_after(15s, [&socket] { socket.close(); });
         for (;;) {
-          auto prefix = co_await socket.read_exact(4, 4);
+          auto prefix = std::move(first);
+          first.clear();
+          if (prefix.empty()) prefix = co_await socket.read_exact(4, 4);
           nfs_detail::reader r(prefix);
           auto marker = r.u32();
           auto n = record.fragment(marker);
@@ -67,7 +74,8 @@ pace::task<void> serve(nfs_runtime &s, pace::tcp::stream socket) {
             break;
         }
       }
-      auto response = co_await process(s, std::move(record.data));
+      auto response = co_await process(s, std::move(record.data), connection);
+      active = true;
       require(response.size() <= nfs_detail::max_record, "response_limit");
       nfs_detail::writer header;
       header.u32(0x80000000u | uint32_t(response.size()));
@@ -77,6 +85,7 @@ pace::task<void> serve(nfs_runtime &s, pace::tcp::stream socket) {
   } catch (...) {
   }
   socket.close();
+  s.protocol.disconnect(connection);
   s.sockets.erase(&socket);
   --s.connections;
 }

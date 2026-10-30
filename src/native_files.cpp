@@ -204,6 +204,8 @@ json native_file::info() const {
                               meta.ftCreationTime.dwLowDateTime)},
           {"volume", std::to_string(id.VolumeSerialNumber)},
           {"directory", directory},
+          {"accessed_ns", ((uint64_t(meta.ftLastAccessTime.dwHighDateTime) << 32) |
+                           meta.ftLastAccessTime.dwLowDateTime) * 100 - uint64_t(116444736000000000) * 100},
           {"modified_ns", ((uint64_t(meta.ftLastWriteTime.dwHighDateTime) << 32) |
                            meta.ftLastWriteTime.dwLowDateTime) *
                                   100 -
@@ -224,6 +226,7 @@ json native_file::info() const {
                          std::to_string(sx.stx_btime.tv_nsec)},
           {"volume", std::to_string(s.st_dev)},
           {"directory", S_ISDIR(s.st_mode)},
+          {"accessed_ns", int64_t(s.st_atim.tv_sec) * 1000000000 + s.st_atim.tv_nsec},
           {"modified_ns", int64_t(s.st_mtim.tv_sec) * 1000000000 + s.st_mtim.tv_nsec},
           {"size", s.st_size}};
 #endif
@@ -510,6 +513,36 @@ void native_file::flush() const {
 #else
   if (fsync(impl_->file->handle) != 0)
     native_error();
+#endif
+}
+void native_file::set_times(std::optional<uint64_t> accessed, std::optional<uint64_t> modified) {
+  for (auto value : {accessed, modified})
+    require(!value || *value <= uint64_t(INT64_MAX), "invalid_timestamp");
+#ifdef _WIN32
+  // Reopen by the pinned object handle, never by pathname. Attribute-only
+  // access also works for directories whose traversal handles deny DELETE.
+  auto handle = ReOpenFile(impl_->file->handle, FILE_WRITE_ATTRIBUTES,
+                           FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                           FILE_FLAG_BACKUP_SEMANTICS);
+  if (handle == INVALID_HANDLE_VALUE) native_error();
+  auto convert = [](uint64_t ns) {
+    auto ticks = ns / 100 + uint64_t(116444736000000000);
+    return FILETIME{DWORD(ticks), DWORD(ticks >> 32)};
+  };
+  auto a = convert(accessed.value_or(0)), m = convert(modified.value_or(0));
+  bool ok = SetFileTime(handle, nullptr, accessed ? &a : nullptr, modified ? &m : nullptr);
+  auto saved = GetLastError();
+  CloseHandle(handle);
+  SetLastError(saved);
+  if (!ok) native_error();
+#else
+  timespec values[2]{};
+  size_t i = 0;
+  for (auto value : {accessed, modified}) {
+    values[i].tv_sec = value ? time_t(*value / 1000000000) : 0;
+    values[i++].tv_nsec = value ? long(*value % 1000000000) : UTIME_OMIT;
+  }
+  if (futimens(impl_->file->handle, values) != 0) native_error();
 #endif
 }
 void native_file::rename(const std::string &from, const std::string &to, bool replace,

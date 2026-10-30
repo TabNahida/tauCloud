@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <map>
 #include <set>
+#include <utf8proc.h>
 namespace tc::nfs_detail {
 namespace {
 struct failure {
@@ -45,8 +46,8 @@ uint32_t status(std::string_view code) {
   return 22;
 }
 uint64_t hex64(const std::string &hex) { return std::stoull(hex.substr(0, 16), nullptr, 16); }
-void time3(writer &w, const json &m) {
-  auto ns = m.at("modified_ns").get<uint64_t>();
+void time3(writer &w, const json &m, const char *key = "modified_ns") {
+  auto ns = m.value(key, m.at("modified_ns").get<uint64_t>());
   w.u32(uint32_t(ns / 1000000000)).u32(uint32_t(ns % 1000000000));
 }
 void attr3(writer &w, const json &m) {
@@ -63,7 +64,7 @@ void attr3(writer &w, const json &m) {
       .u32(0)
       .u64(hex64(m.at("fsid")))
       .u64(hex64(m.at("fileid")));
-  time3(w, m);
+  time3(w, m, "accessed_ns");
   time3(w, m);
   time3(w, m);
 }
@@ -102,11 +103,13 @@ json attrs3(reader &r) {
     auto t = r.u32();
     check(t <= 2);
     if (t) {
-      a[key] = t;
+      uint64_t ns = uint64_t(now()) * 1000000;
       if (t == 2) {
-        r.u32();
-        check(r.u32() < 1000000000);
+        auto sec = r.u32(), nano = r.u32();
+        check(nano < 1000000000);
+        ns = uint64_t(sec) * 1000000000 + nano;
       }
+      a[std::string(key) + "_ns"] = ns;
     }
   }
   return a;
@@ -117,6 +120,7 @@ struct server::impl {
   domain_call call;
   database db;
   std::mutex mutex;
+  std::string connection;
   std::string verifier = decode_bytes(random_hex(8));
   struct identity {
     json credential;
@@ -133,7 +137,7 @@ struct server::impl {
     json b = {{"peer", "127.0.0.1"},
               {"credential", who.credential},
               {"write", op == "write" || op == "resize" || op == "create" || op == "mkdir" ||
-                            op == "remove" || op == "rename"}};
+                            op == "remove" || op == "rename" || op == "setattr"}};
     if (export_name.empty()) {
       auto raw = decode_bytes(handle);
       check(raw.size() == 50 && raw[0] == 1, 70);
@@ -141,7 +145,17 @@ struct server::impl {
     } else
       b["export"] = export_name;
     auto grant = call("identity", "nfs_authorize", b);
-    if (op == "read" || op == "write" || op == "resize") {
+    if (args.contains("uid")) {
+      check(args.at("uid") == who.credential.at("uid"), 1);
+      if (who.credential.at("uid") == 0) args["uid"] = 65534;
+    }
+    if (args.contains("gid")) {
+      bool permitted = args.at("gid") == who.credential.at("gid");
+      for (const auto &g : who.credential.at("groups")) permitted |= args.at("gid") == g;
+      check(permitted, 1);
+      if (who.credential.at("uid") == 0) args["gid"] = 65534;
+    }
+    if (op == "read" || op == "write" || op == "resize" || op == "setattr") {
       expire();
       json stat = {{"grant", grant}, {"op", "stat"}, {"handle", handle}};
       auto object = call(grant.at("root").at("worker"), "nfs_file", stat).at("object").get<std::string>();
@@ -151,8 +165,8 @@ struct server::impl {
       for (const auto &[id, opened] : opens)
         if (opened.object == object && id.substr(8) != owner && (opened.deny & access))
           throw error("nfs_share_denied");
-      auto begin = op == "resize" ? 0 : args.value("offset", uint64_t(0));
-      auto count = op == "resize" ? UINT64_MAX : op == "read" ? args.value("count", uint64_t(0))
+      auto begin = op == "resize" || op == "setattr" ? 0 : args.value("offset", uint64_t(0));
+      auto count = op == "resize" || op == "setattr" ? UINT64_MAX : op == "read" ? args.value("count", uint64_t(0))
                             : uint64_t(decode_bytes(args.at("data").get<std::string>()).size());
       check(count == UINT64_MAX || begin <= UINT64_MAX - count);
       auto end = count == UINT64_MAX ? UINT64_MAX : begin + (count ? count - 1 : 0);
@@ -194,7 +208,7 @@ struct server::impl {
         r.u32();
         check(false, 10004);
       }
-      op = "resize";
+      op = "setattr";
       break;
     case 3:
       op = "lookup";
@@ -225,7 +239,9 @@ struct server::impl {
       op = proc == 8 ? "create" : "mkdir";
       if (proc == 8) {
         auto mode = r.u32();
-        check(mode <= 1, 10004);
+        check(mode <= 2);
+        args["create_mode"] = mode;
+        if (mode == 2) { args["verifier"] = encode_bytes(r.fixed(8)); break; }
       }
       attrs = attrs3(r);
       break;
@@ -269,13 +285,11 @@ struct server::impl {
     json meta;
     try {
       if (proc == 2) {
-        check(attrs.size() == 1 && attrs.contains("size"), 10004);
-        args["size"] = attrs.at("size");
+        args.update(attrs);
       }
       if (proc == 8 || proc == 9) {
-        check(!attrs.contains("uid") && !attrs.contains("gid") && !attrs.contains("atime") &&
-                  !attrs.contains("mtime") && attrs.value("size", uint64_t(0)) == 0,
-              10004);
+        check(attrs.value("size", uint64_t(0)) == 0, 10004);
+        args.update(attrs);
         if (attrs.contains("mode")) {
           check(attrs.at("mode").get<uint32_t>() <= 0777, 10004);
           args["mode"] = attrs.at("mode");
@@ -415,8 +429,9 @@ struct server::impl {
     return w.data;
   }
 #include "nfs_v4.inc"
-  std::string dispatch(std::string_view packet) {
+  std::string dispatch(std::string_view packet, std::string connection_id) {
     std::lock_guard guard(mutex);
+    connection = std::move(connection_id);
     reader r(packet);
     uint32_t xid = r.u32();
     writer reply;
@@ -578,5 +593,11 @@ struct server::impl {
 };
 server::server(const config &c, domain_call f) : impl_(std::make_unique<impl>(c, std::move(f))) {}
 server::~server() = default;
-std::string server::dispatch(std::string_view record) { return impl_->dispatch(record); }
+std::string server::dispatch(std::string_view record, std::string connection) {
+  return impl_->dispatch(record, std::move(connection));
+}
+void server::disconnect(const std::string &connection) {
+  std::lock_guard guard(impl_->mutex);
+  for (auto &[id, session] : impl_->sessions) session.connections.erase(connection);
+}
 } // namespace tc::nfs_detail

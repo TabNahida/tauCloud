@@ -45,13 +45,13 @@ def main():
     args.output.parent.mkdir(parents=True, exist_ok=True)
     f, port = fixture(args.bin)
     try:
-        command = [sys.executable, 'testserver.py', f'127.0.0.1:{port}/nfs',
+        command = [sys.executable, '-u', 'testserver.py', f'127.0.0.1:{port}/nfs',
                    '--minorversion=1', '--uid=1000', '--gid=1000', '--noinit', '--nocleanup',
                    '--jsonout', str(args.output), '--verbose'] + args.selectors
-        result = subprocess.run(command, cwd=ROOT / 'build/pynfs/nfs4.1',
-                                capture_output=True, text=True, timeout=900)
-        args.output.with_suffix('.log').write_text(result.stdout + result.stderr)
-        print(result.stdout + result.stderr)
+        with args.output.with_suffix('.log').open('w') as log:
+            result = subprocess.run(command, cwd=ROOT / 'build/pynfs/nfs4.1',
+                                    stdout=log, stderr=subprocess.STDOUT, text=True, timeout=900)
+        print(args.output.with_suffix('.log').read_text())
         # The upstream runner does not always communicate failed tests via its exit code.
         if not args.output.exists():
             return result.returncode or 1

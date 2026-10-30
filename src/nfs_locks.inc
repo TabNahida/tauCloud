@@ -10,7 +10,7 @@ lock_range lock_interval(const json &a) {
 }
 json durable_lock(const lock_state &l, const lock_range &range) {
   const auto &c = client_ids.at(l.client);
-  return {{"kind", "lock"}, {"client", c.owner}, {"principal", c.principal},
+  return {{"kind", "lock"}, {"client", c.owner}, {"principal", l.principal},
           {"owner", l.owner}, {"handle", l.fh}, {"start", range.start},
           {"end", range.end}, {"type", range.type}};
 }
@@ -64,7 +64,7 @@ std::vector<lock_range> without_range(const std::vector<lock_range> &ranges, loc
 void lock_conflict(const lock_state &candidate, lock_range range, writer &body) {
   for (const auto &[key, other] : byte_locks) {
     if (candidate.object != other.object ||
-        (candidate.client == other.client && candidate.owner == other.owner))
+        (candidate.client == other.client && candidate.owner == other.owner && candidate.principal == other.principal))
       continue;
     for (auto held : other.ranges)
       if (range.start <= held.end && range.end >= held.start && (range.type == 2 || held.type == 2)) {
@@ -81,8 +81,8 @@ void lock_operation(const identity &who, const json &a, const std::string &sid,
   if (op == 39) {
     auto owner = a.at("owner").get<std::string>();
     for (const auto &[key, l] : byte_locks)
-      check(l.client != client || l.owner != owner || l.ranges.empty(), 10037);
-    std::erase_if(byte_locks, [&](const auto &l) { return l.second.client == client && l.second.owner == owner; });
+      check(l.client != client || l.owner != owner || l.principal != who.key || l.ranges.empty(), 10037);
+    std::erase_if(byte_locks, [&](const auto &l) { return l.second.client == client && l.second.owner == owner && l.second.principal == who.key; });
     return;
   }
   if (op == 45) {
@@ -90,9 +90,11 @@ void lock_operation(const identity &who, const json &a, const std::string &sid,
     for (const auto &[key, o] : opens)
       if (key.substr(8) == id.substr(8)) {
         open_key(id, sid);
+        check(o.principal == who.key, 10025);
         check(false, 10037);
       }
     auto key = lock_key(id, sid);
+    check(byte_locks.at(key).principal == who.key, 10025);
     check(byte_locks.at(key).ranges.empty(), 10037);
     byte_locks.erase(key);
     return;
@@ -102,7 +104,7 @@ void lock_operation(const identity &who, const json &a, const std::string &sid,
   auto range = lock_interval(a);
   if (op == 13) {
     check(!grace_end, 10013);
-    lock_state candidate{client, "", current, m.at("object"), a.at("owner"), {}};
+    lock_state candidate{client, "", current, m.at("object"), a.at("owner"), who.key, {}};
     lock_conflict(candidate, range, body);
     return;
   }
@@ -110,17 +112,17 @@ void lock_operation(const identity &who, const json &a, const std::string &sid,
   lock_state state;
   if (op == 12 && a.at("new").get<bool>()) {
     auto openid = open_key(a.at("state"), sid);
-    auto &o = state4(openid, sid, current, range.type == 1 ? 1 : 2);
-    state = {client, openid.substr(8), current, o.object, a.at("owner"), {}};
+    auto &o = state4(openid, sid, current, range.type == 1 ? 1 : 2, who);
+    state = {client, openid.substr(8), current, o.object, a.at("owner"), who.key, {}};
     for (const auto &[id, old] : byte_locks)
-      if (old.client == client && old.owner == state.owner && old.object == state.object) {
+      if (old.client == client && old.owner == state.owner && old.object == state.object && old.principal == who.key) {
         key = id; state = old; break;
       }
   } else {
     key = lock_key(a.at("state"), sid);
     state = byte_locks.at(key);
     check(state.fh == current, 10025);
-    state4(io_state(key, sid), sid, current, range.type == 1 ? 1 : 2);
+    state4(io_state(key, sid), sid, current, range.type == 1 ? 1 : 2, who);
   }
   bool recovering = op == 12 && a.at("reclaim").get<bool>();
   if (op == 12) {

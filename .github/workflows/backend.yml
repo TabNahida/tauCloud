@@ -31,6 +31,9 @@ jobs:
         run: |
           python3 scripts/prepare_pynfs.py
           python3 tests/pynfs_acceptance.py --bin build/linux/x86_64/release --output build/acceptance/pynfs.json OPEN1 OPEN2 OPEN6 OPEN7 OPEN8 OPEN30 OPEN31 CSID1 CSID2 CSID3 CSID4 CSID5 CSID6 CSID8 CSID9 CSID10 sequence reclaim_complete
+      - name: Upstream NFS session and client lifecycle
+        if: always() && matrix.compiler == 'gcc'
+        run: python3 tests/pynfs_acceptance.py --bin build/linux/x86_64/release --output build/acceptance/pynfs-control.json SECNN3 SECNN4 DESCID7 DSESS9005 DSESS9004 DSESS9001 CSESS23 CSESS5a CSESS5b CSESS26 CSESS9 CSESS10 CSESS29 CSESS16 CSESS16a CSESS15 COMP5 COMP3 EID6 EID6a EID6b EID6c EID6d EID6e EID6f EID6g EID7 EID8 EID5d EID5e EID5f EID5fb EID9 EID4
       - name: NFS competing clients and restart recovery
         if: always() && matrix.compiler == 'gcc'
         run: python3 tests/nfs_state_integration.py --bin build/linux/x86_64/release --output build/acceptance/nfs-state.json
@@ -55,8 +58,12 @@ jobs:
       - run: python scripts/run_m7.py --compiler msvc
         env:
           PYTHONUTF8: '1'
+      - name: NFS competing clients and restart recovery
+        run: python tests/nfs_state_integration.py --bin build/windows/x64/release --output build/acceptance/nfs-state.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: windows-msvc
-          path: build/m7/*.json
+          path: |
+            build/m7/*.json
+            build/acceptance/*

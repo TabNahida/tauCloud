@@ -5,6 +5,7 @@ struct client_id {
   int64_t expires = now() + 60000;
   bool reclaim_complete = false;
   std::set<std::string> reclaimed_filesystems;
+  uint64_t replaces = 0;
 };
 struct slot {
   uint32_t seq = 0;
@@ -17,12 +18,15 @@ struct session {
   int64_t expires;
   std::vector<slot> slots;
   std::vector<uint32_t> channel;
+  std::set<std::string> connections;
 };
 struct open_state {
   std::string session, fh, owner, recovery;
   uint32_t access, deny;
   uint64_t client;
   std::string object;
+  std::string principal;
+  json credential;
 };
 struct lock_range {
   uint64_t start, end;
@@ -31,6 +35,7 @@ struct lock_range {
 struct lock_state {
   uint64_t client;
   std::string open_other, fh, object, owner;
+  std::string principal;
   std::vector<lock_range> ranges;
 };
 std::map<uint64_t, client_id> client_ids;
@@ -51,6 +56,18 @@ void remove_recovery(const std::string &id) {
   statement q(db, "DELETE FROM recovery WHERE id=?");
   q.bind(1, id);
   q.row();
+}
+void retire_client(uint64_t client) {
+  for (auto it = byte_locks.begin(); it != byte_locks.end();)
+    if (it->second.client == client) {
+      persist_locks(it->second, {}); it = byte_locks.erase(it);
+    } else ++it;
+  for (auto it = opens.begin(); it != opens.end();)
+    if (it->second.client == client) {
+      remove_recovery(it->second.recovery); it = opens.erase(it);
+    } else ++it;
+  std::erase_if(sessions, [&](const auto &s) { return s.second.client == client; });
+  client_ids.erase(client);
 }
 void expire() {
   if (grace_end && now() >= grace_end) {
@@ -202,6 +219,9 @@ void attributes4(writer &out, const std::vector<uint32_t> &requested, const json
         values.u64(size);
         break;
       case 47:
+        values.u64(m.value("accessed_ns", ns) / 1000000000)
+            .u32(uint32_t(m.value("accessed_ns", ns) % 1000000000));
+        break;
       case 52:
       case 53:
         values.u64(ns / 1000000000).u32(uint32_t(ns % 1000000000));
@@ -221,7 +241,7 @@ json parse_attrs4(reader &r) {
   auto bytes = r.opaque(4096);
   return {{"bits", bits}, {"bytes", encode_bytes(bytes)}};
 }
-json create_attrs4(const json &a, bool dir) {
+json create_attrs4(const json &a, bool dir, bool create = true) {
   auto bits = a.at("bits").get<std::vector<uint32_t>>();
   auto bytes = decode_bytes(a.at("bytes").get<std::string>());
   reader r(bytes);
@@ -233,13 +253,34 @@ json create_attrs4(const json &a, bool dir) {
         check(mode <= 0777, 10032);
         attrs["mode"] = mode;
       }
-      else if (i == 4)
-        check(r.u64() == 0, 10032);
-      else
+      else if (i == 4) {
+        auto size = r.u64();
+        check(size <= uint64_t(INT64_MAX), 27);
+        check(!dir, 21);
+        attrs["size"] = size;
+      } else if (i == 36 || i == 37) {
+        auto owner = r.opaque(1024);
+        check(!owner.empty() && owner.size() <= 10 &&
+                  owner.find_first_not_of("0123456789") == std::string::npos, 10039);
+        auto id = std::stoull(owner);
+        check(id <= UINT32_MAX, 10039);
+        attrs[i == 36 ? "uid" : "gid"] = id;
+      } else if (i == 48 || i == 54) {
+        auto how = r.u32();
+        check(how <= 1);
+        uint64_t ns = uint64_t(now()) * 1000000;
+        if (how == 1) {
+          auto sec = r.u64(); auto nano = r.u32();
+          check(nano < 1000000000 && sec <= (uint64_t(INT64_MAX) - nano) / 1000000000, 22);
+          ns = sec * 1000000000 + nano;
+        }
+        attrs[i == 48 ? "atime_ns" : "mtime_ns"] = ns;
+      } else
         check(false, 10032);
     }
   r.end();
   (void)dir;
+  (void)create;
   return attrs;
 }
 std::vector<uint32_t> channel(reader &r) {
@@ -301,6 +342,8 @@ json parse4(reader &r) {
           throw xdr_error();
         for (uint32_t j = 0; j < groups; ++j)
           r.u32();
+      } else if (auth == 6) {
+        r.u32(); r.opaque(1024); r.opaque(1024); // Callback GSS offers; no backchannel granted.
       } else if (auth != 0)
         throw xdr_error();
     }
@@ -501,9 +544,10 @@ std::string next_state(const std::string &id) {
   return encode_bytes(st.data);
 }
 open_state &state4(const std::string &id, const std::string &sid, const std::string &h,
-                   uint32_t access) {
+                   uint32_t access, const identity &who) {
   auto it = opens.find(open_key(id, sid));
   check(it->second.fh == h, 10025);
+  check(it->second.principal == who.key, 10025);
   check((it->second.access & access) == access, 10038);
   return it->second;
 }
@@ -516,6 +560,15 @@ std::string v4(const identity &who, reader &r) {
   writer out;
   if (minor != 1)
     return out.u32(10021).opaque(tag).u32(0).data;
+  for (size_t offset = 0; offset < tag.size();) {
+    utf8proc_int32_t codepoint;
+    auto n = utf8proc_iterate(reinterpret_cast<const utf8proc_uint8_t *>(tag.data() + offset),
+                              tag.size() - offset, &codepoint);
+    if (n < 0 || (codepoint >= 0xfdd0 && codepoint <= 0xfdef) ||
+        (codepoint & 0xffff) == 0xfffe || (codepoint & 0xffff) == 0xffff)
+      return out.u32(22).opaque(tag).u32(0).data;
+    offset += size_t(n);
+  }
   if (count > 16)
     return out.u32(10018).opaque(tag).u32(0).data;
   std::vector<json> ops;
@@ -530,7 +583,8 @@ std::string v4(const identity &who, reader &r) {
   } catch (const failure &e) {
     return out.u32(e.status).opaque(tag).u32(0).data;
   }
-  auto hash = digest(std::string(r.data.substr(start)));
+  // A shared AUTH_SYS session must never replay another user's cached data.
+  auto hash = digest(who.key + std::string(r.data.substr(start)));
   expire();
   std::string sid, current, saved, current_state, saved_state;
   slot *active = nullptr;
@@ -538,7 +592,10 @@ std::string v4(const identity &who, reader &r) {
   writer results;
   auto session_check = [&](const std::string &id) -> session & {
     auto i = sessions.find(id);
-    check(i != sessions.end() && i->second.principal == who.key, 10052);
+    // AUTH_SYS sessions belong to the loopback client host. A kernel client
+    // multiplexes different users on one session; each file operation still
+    // obtains fresh authority and each open state is bound to its principal.
+    check(i != sessions.end(), 10052);
     return i->second;
   };
   // Reserve sufficient cached response space before any compound side effects.
@@ -559,25 +616,51 @@ std::string v4(const identity &who, reader &r) {
     writer body;
     uint32_t code = 0;
     try {
-      if (index == 0 && op != 53)
-        check(ops.size() == 1 && (op == 42 || op == 43 || op == 44 || op == 41 || op == 57), 10071);
+      if (index == 0 && op != 53 && !a.value("unknown", false)) {
+        bool standalone = op == 42 || op == 43 || op == 44 || op == 41 || op == 57;
+        check(standalone, 10071);
+        check(ops.size() == 1, 10081);
+      }
+      if (a.value("unknown", false)) check(false, 10044);
       if (index > 0)
         check(op != 53, 10064);
       if (op == 42) {
         check(a.at("protect") == 0, 10006);
-        check(client_ids.size() < 128, 10018);
+        auto flags = a.at("flags").get<uint32_t>();
+        check((flags & ~0x40070103u) == 0);
         uint64_t id = 0;
         bool confirmed = false;
-        for (auto &[n, c] : client_ids)
-          if (c.owner == a.at("owner").get<std::string>() && c.principal == who.key &&
-              c.verifier == a.at("verifier").get<std::string>()) {
-            id = n;
-            confirmed = !c.create_reply.empty();
-            break;
+        uint64_t existing = 0;
+        std::vector<uint64_t> unconfirmed;
+        for (const auto &[n, c] : client_ids)
+          if (c.owner == a.at("owner").get<std::string>()) {
+            if (c.create_reply.empty()) unconfirmed.push_back(n);
+            else existing = n;
           }
+        uint64_t replaces = 0;
+        if (flags & 0x40000000) {
+          check(existing != 0, 2);
+          auto &c = client_ids.at(existing);
+          check(c.principal == who.key, 1);
+          check(c.verifier == a.at("verifier").get<std::string>(), 10027);
+          id = existing; confirmed = true;
+        } else if (existing) {
+          auto &c = client_ids.at(existing);
+          if (c.principal == who.key && c.verifier == a.at("verifier").get<std::string>()) {
+            id = existing; confirmed = true;
+          } else if (c.principal == who.key) replaces = existing;
+          else {
+            for (const auto &[key, o] : opens) check(o.client != existing, 10017);
+            for (const auto &[key, s] : sessions) check(s.client != existing, 10017);
+            retire_client(existing);
+          }
+        }
         if (!id) {
+          for (auto old : unconfirmed) retire_client(old);
+          check(client_ids.size() < 128, 10018);
           id = hex64(random_hex(8)) & INT64_MAX;
           client_ids[id] = {a.at("owner"), who.key, a.at("verifier"), 1, "", ""};
+          client_ids.at(id).replaces = replaces;
         }
         body.u64(id)
             .u32(client_ids.at(id).sequence)
@@ -590,24 +673,34 @@ std::string v4(const identity &who, reader &r) {
       } else if (op == 43) {
         auto id = a.at("client").get<uint64_t>();
         auto it = client_ids.find(id);
-        check(it != client_ids.end() && it->second.principal == who.key, 10022);
+        check(it != client_ids.end(), 10022);
         auto &c = it->second;
+        check(!c.create_reply.empty() || c.principal == who.key, 10017);
         auto seq = a.at("seq").get<uint32_t>();
         if (seq + 1 == c.sequence && !c.create_reply.empty()) {
-          check(c.create_hash == hash, 10076);
+          // CREATE_SESSION has its own replay slot, independent of the enclosing
+          // COMPOUND/session/tag. The sequence ID identifies the cached result.
           body.fixed(c.create_reply);
         } else {
           check(seq == c.sequence, 10063);
+          check((a.at("flags").get<uint32_t>() & ~7u) == 0);
           check(sessions.size() < 32, 10018);
           auto fore = a.at("fore").get<std::vector<uint32_t>>();
-          check(fore[1] >= 512 && fore[2] >= 512 && fore[4] > 0 && fore[5] > 0,
+          check(fore[1] >= 256 && fore[2] >= 256 && fore[4] > 0 && fore[5] > 0,
                 10005);
+          auto back_offer = a.at("back").get<std::vector<uint32_t>>();
+          check(back_offer[1] >= 128 && back_offer[2] >= 128 && back_offer[4] && back_offer[5], 10005);
           fore = {0, std::min(fore[1], 128 * 1024u), std::min(fore[2], 128 * 1024u),
                   std::min({fore[3], fore[2], 128 * 1024u}), std::min(fore[4], 16u),
                   std::min(fore[5], 8u)};
           std::vector<uint32_t> back = {0, 4096, 4096, 0, 1, 1};
           auto idstr = random_hex(16);
-          sessions.emplace(idstr, session{id, who.key, now() + 60000, std::vector<slot>(fore[5]), fore});
+          if (c.replaces) {
+            if (!sid.empty() && sessions.at(sid).client == c.replaces) active = nullptr;
+            retire_client(c.replaces);
+            c.replaces = 0;
+          }
+          sessions.emplace(idstr, session{id, who.key, now() + 60000, std::vector<slot>(fore[5]), fore, {connection}});
           body.fixed(decode_bytes(idstr)).u32(seq).u32(0);
           put_channel(body, fore);
           put_channel(body, back);
@@ -618,6 +711,8 @@ std::string v4(const identity &who, reader &r) {
       } else if (op == 53) {
         sid = a.at("session");
         auto &s = session_check(sid);
+        check(s.connections.contains(connection) || s.connections.size() < 64, 10018);
+        s.connections.insert(connection); // SP4_NONE permits implicit binding.
         check(r.data.size() <= s.channel[1], 10065);
         check(count <= s.channel[4], 10070);
         check(bound <= s.channel[2], 10066);
@@ -630,7 +725,8 @@ std::string v4(const identity &who, reader &r) {
         for (const auto &[id, o] : opens)
           if (o.session == sid) {
             try {
-              file(who, o.fh, "stat");
+              identity owner{o.credential, o.principal};
+              file(owner, o.fh, "stat");
             } catch (...) {
               check(false, 10008);
             }
@@ -659,13 +755,16 @@ std::string v4(const identity &who, reader &r) {
             .u32(0);
       } else if (op == 41) {
         auto &s = session_check(a.at("session"));
-        (void)s;
+        check(s.connections.contains(connection) || s.connections.size() < 64, 10018);
+        s.connections.insert(connection);
         check(!a.at("rdma").get<bool>() && a.at("dir").get<uint32_t>() != 2, 10004);
         body.fixed(decode_bytes(a.at("session").get<std::string>())).u32(1).boolean(false);
       } else if (op == 44) {
         auto target = a.at("session").get<std::string>();
-        session_check(target);
-        check(target != sid, 10016);
+        auto &s = session_check(target);
+        check(s.connections.contains(connection), 10055);
+        check(target != sid || index + 1 == ops.size(), 10081);
+        if (target == sid) active = nullptr;
         sessions.erase(target);
       } else if (op == 57) {
         auto id = a.at("client").get<uint64_t>();
@@ -756,8 +855,13 @@ std::string v4(const identity &who, reader &r) {
           body.u32(asked & 0x3f).u32(allowed);
         } else if (op == 33 || op == 52) {
           meta4(who, current);
-          if (op == 52)
-            check(a.at("style") == 0, 10004);
+          if (op == 52) {
+            check(a.at("style").get<uint32_t>() <= 1);
+            if (a.at("style") == 1) {
+              check(current != pseudo, 2);
+              file(who, current, "parent");
+            }
+          }
           else
             file(who, current, "lookup", {{"name", a.at("name")}});
           body.u32(1).u32(1);
@@ -815,7 +919,7 @@ std::string v4(const identity &who, reader &r) {
           auto owner = a.at("owner").get<std::string>();
           std::string previous;
           for (const auto &[id, o] : opens) {
-            if (o.client == session.client && o.owner == owner && o.fh == target)
+            if (o.client == session.client && o.owner == owner && o.fh == target && o.principal == who.key)
               previous = id;
             // One export per session bounds policy renewal work and keeps isolation explicit.
             if (o.session == sid)
@@ -847,7 +951,8 @@ std::string v4(const identity &who, reader &r) {
           persist.bind(2, durable.dump());
           persist.row();
           if (!previous.empty()) opens.erase(previous);
-          opens.emplace(stateid, open_state{sid, target, owner, rid, access, deny, session.client, m.at("object")});
+          opens.emplace(stateid, open_state{sid, target, owner, rid, access, deny, session.client,
+                                           m.at("object"), who.key, who.credential});
           reclaim.erase(rid);
           current = target;
           current_state = stateid;
@@ -856,7 +961,7 @@ std::string v4(const identity &who, reader &r) {
           body.u32(0).u32(0).u32(0);
         } else if (op == 4) {
           auto id = open_key(a.at("state"), sid);
-          auto &o = state4(id, sid, current, 0);
+          auto &o = state4(id, sid, current, 0, who);
           for (const auto &[key, l] : byte_locks)
             check(l.open_other != id.substr(8) || l.ranges.empty(), 10037);
           std::erase_if(byte_locks, [&](const auto &l) { return l.second.open_other == id.substr(8); });
@@ -866,7 +971,7 @@ std::string v4(const identity &who, reader &r) {
           body.fixed(decode_bytes(current_state));
         } else if (op == 21) {
           auto id = open_key(a.at("state"), sid);
-          auto &o = state4(id, sid, current, 0);
+          auto &o = state4(id, sid, current, 0, who);
           auto access = a.at("access").get<uint32_t>(), deny = a.at("deny").get<uint32_t>();
           check(access > 0 && access <= 3 && deny <= 3);
           check((access & o.access) == access && (deny & o.deny) == deny);
@@ -887,7 +992,7 @@ std::string v4(const identity &who, reader &r) {
           auto io_args = json::object();
           if (id != std::string(32, '0') && !(op == 25 && id == std::string(32, 'f'))) {
             auto openid = io_state(id, sid);
-            state4(openid, sid, current, op == 25 ? 1 : 2);
+            state4(openid, sid, current, op == 25 ? 1 : 2, who);
             io_args["state_owner"] = openid.substr(8);
           }
           if (op == 25) {
@@ -905,13 +1010,9 @@ std::string v4(const identity &who, reader &r) {
             body.u32(m.at("count")).u32(2).fixed(verifier);
           } else {
             auto bits = a.at("attrs").at("bits").get<std::vector<uint32_t>>();
-            check(bits == std::vector<uint32_t>{16}, 10032);
-            auto data = decode_bytes(a.at("attrs").at("bytes").get<std::string>());
-            reader values(data);
-            auto size = values.u64();
-            values.end();
-            io_args["size"] = size;
-            file(who, current, "resize", io_args, request);
+            auto attrs = create_attrs4(a.at("attrs"), meta4(who, current).at("directory"), false);
+            io_args.update(attrs);
+            file(who, current, "setattr", io_args, request);
             put_bitmap(body, bits);
           }
         } else if (op == 5) {
@@ -962,7 +1063,8 @@ std::string v4(const identity &who, reader &r) {
           body.u32(uint32_t(a.at("states").size()));
           for (auto &id : a.at("states")) {
             try {
-              io_state(id, sid);
+              auto key = io_state(id, sid);
+              check(opens.at(key).principal == who.key, 10025);
               body.u32(0);
             } catch (const failure &e) { body.u32(e.status); }
           }

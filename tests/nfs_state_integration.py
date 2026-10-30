@@ -21,6 +21,19 @@ def main():
     try:
         a=connect();b=connect();root=a.root()
         state,h=a.open(root,b'lock-file',True)
+        f.api('memberships',f.admin,dict(username='bob',group='unix'))
+        f.api('grants',f.admin,dict(space='nfsdata',subject_type='user',subject='bob',rights='rw'))
+        f.api('nfs-exports',f.admin,dict(id='nfs',trust='loopback-auth-sys',anonymous='bob',update=True,
+                                       uids={'1000':'alice','1001':'bob'},gids={'1000':'unix'}))
+        other=Client(port,uid=1001);clients.append(other);other.sid=a.sid;other.seq=a.seq
+        stolen=other.compound([op.putfh(root),op.open(0,3,0,t4.open_owner4(a.cid,b'writer'),
+                       t4.openflag4(1,t4.createhow4(1,t4.fattr4([],b''))),t4.open_claim4(0,file=b'lock-file')),
+                       op.getfh()],seq=a.seq)
+        assert stolen.status==10076,stolen
+        expect(other,[op.putfh(h),op.getattr([16])])
+        expect(other,[op.putfh(h),op.read(state,0,1)],10025)
+        a.seq=other.seq
+        checks.append('one kernel-style session accepts multiple mapped users without sharing their open authority')
         bstate,bh=b.open(root,b'lock-file',owner=b'other-open')
         expect(a,[op.putfh(h),op.write(state,0,2,b'_'*80)])
         locked=lock(a,h,state,b'lock-owner',10,20)
