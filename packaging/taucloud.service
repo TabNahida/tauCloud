@@ -1,0 +1,22 @@
+[Unit]
+Description=tauCloud backend supervisor
+After=network.target
+
+[Service]
+Type=simple
+User=taucloud
+Group=taucloud
+StateDirectory=taucloud
+StateDirectoryMode=0700
+ExecStart=/opt/taucloud/taucloud_supervisor --state /var/lib/taucloud
+Restart=on-failure
+RestartSec=2
+# Children survive supervisor crashes and are authenticated before adoption.
+KillMode=process
+TimeoutStopSec=70
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

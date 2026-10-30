@@ -1,0 +1,148 @@
+{
+  "schema": 1,
+  "recorded_at": "2026-10-29T03:03:29.954397+00:00",
+  "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "python": "3.12.3",
+  "machine": "x86_64",
+  "logical_cpus": 24,
+  "compiler": "gcc",
+  "sanitizers": false,
+  "sources_sha256": "edb765f31747bec802fb3bf4b12f81578fd7c2b218725589fbb6fe91de5f15c7",
+  "pace": "d3842473b2bea63e291eb25fe44f610cbd49b02e",
+  "milestone_status": "incomplete",
+  "steps": [
+    {
+      "command": [
+        "/usr/bin/python3",
+        "scripts/fetch_pace.py",
+        "--verify"
+      ],
+      "returncode": 0,
+      "seconds": 0.055,
+      "stdout": "PACE verified: d3842473b2bea63e291eb25fe44f610cbd49b02e",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "xmake",
+        "f",
+        "-c",
+        "-p",
+        "linux",
+        "-a",
+        "x86_64",
+        "-m",
+        "debug",
+        "-o",
+        "build/linux-gcc",
+        "--m0=y",
+        "--sanitizers=n",
+        "--toolchain=gcc",
+        "-y"
+      ],
+      "returncode": 0,
+      "seconds": 0.519,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "xmake",
+        "-j",
+        "4"
+      ],
+      "returncode": 0,
+      "seconds": 1.899,
+      "stdout": "[ 75%]: <taucloud_m0_runtime> cache compiling.debug experiments/m0/runtime.cpp\n[ 82%]: <taucloud_m0_runtime> linking.debug taucloud_m0_runtime\n[100%]: build ok, spent 1.709s",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "xmake",
+        "run",
+        "taucloud_m0_runtime"
+      ],
+      "returncode": 0,
+      "seconds": 0.311,
+      "stdout": "{\"probe\":\"runtime\",\"status\":\"passed\",\"checks\":13}",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "xmake",
+        "run",
+        "taucloud_m0_filesystem"
+      ],
+      "returncode": 0,
+      "seconds": 0.313,
+      "stdout": "{\"probe\":\"filesystem\",\"status\":\"passed\",\"host\":\"linux\",\"case_sensitive\":true,\"symlink_test\":\"passed\",\"power_loss_durability\":\"not_tested\"}",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/python3",
+        "experiments/m0/recovery.py"
+      ],
+      "returncode": 0,
+      "seconds": 0.255,
+      "stdout": "{\"probe\": \"recovery\", \"status\": \"passed\", \"transport\": \"AF_UNIX\", \"checks\": 17, \"limits\": \"serial prototype; production ACL/admission and durable generation authority pending\"}",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/python3",
+        "experiments/m0/updates.py"
+      ],
+      "returncode": 0,
+      "seconds": 0.74,
+      "stdout": "{\"probe\": \"updates\", \"status\": \"passed\", \"checks\": 11, \"crypto\": \"OpenSSL 3.0.13 30 Jan 2024 (Library: OpenSSL 3.0.13 30 Jan 2024)\", \"sqlite\": \"3.45.1\", \"power_loss_durability\": \"not_tested\"}",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/python3",
+        "experiments/m0/smb.py"
+      ],
+      "returncode": 0,
+      "seconds": 0.026,
+      "stdout": "{\"probe\": \"smb_vectors\", \"status\": \"passed\", \"checks\": 12, \"interop\": \"not_tested\", \"scope\": \"offline codecs, NTLMv2 vectors, signed CREATE validation; no SPNEGO/server\"}",
+      "stderr": ""
+    },
+    {
+      "command": [
+        ".deps/smb-venv/bin/python",
+        "experiments/m0/smb_interop.py",
+        "--client",
+        "impacket"
+      ],
+      "returncode": 0,
+      "seconds": 0.078,
+      "stdout": "{\"probe\": \"smb_interop\", \"status\": \"passed\", \"client\": \"impacket 0.12.0\", \"events\": [\"negotiate_2.1_signing_required\", \"ntlmv2_authenticated\", \"signed_open\", \"rejected_unsigned_or_tampered\"], \"scope\": \"loopback disposable protocol slice, not SMB support\"}",
+      "stderr": ""
+    }
+  ],
+  "tool_versions": [
+    {
+      "command": [
+        "xmake",
+        "--version"
+      ],
+      "returncode": 0,
+      "seconds": 0.029,
+      "stdout": "xmake v3.1.1+HEAD.3ba37a0, A cross-platform build utility based on Lua",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "g++",
+        "--version"
+      ],
+      "returncode": 0,
+      "seconds": 0.001,
+      "stdout": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+      "stderr": ""
+    }
+  ],
+  "probe_status": "passed",
+  "path_normalization": "Checkout, temporary fixture and interpreter paths replaced by placeholders; version banners shortened."
+}

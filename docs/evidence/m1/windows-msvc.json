@@ -1,0 +1,93 @@
+{
+  "schema": 1,
+  "recorded_at": "2026-10-29T09:33:21.749952+00:00",
+  "host": "Windows-11-10.0.26200-SP0",
+  "compiler": "msvc",
+  "sanitizers": false,
+  "sources_sha256": "a04f231378b377404a7c668364ee6bfe7e166f77db9a451cd90ae0f2dc04e462",
+  "dependencies": {
+    "schema": 1,
+    "pace": {
+      "url": "https://github.com/TabNahida/PACE.git",
+      "revision": "d3842473b2bea63e291eb25fe44f610cbd49b02e",
+      "source_sha256": "f516debaec9dba0e827c0491719d5e98055df7326124fe00b7e3b83667843ecd",
+      "license": "MIT",
+      "modules": [
+        "runtime"
+      ],
+      "optional_dependencies": []
+    },
+    "m1": {
+      "recipe_repository": "https://github.com/xmake-io/xmake-repo.git",
+      "recipe_revision": "fc12a12ac9d1ae5e8f7a9fb83288f11c79ded17b",
+      "openssl": {
+        "version": "3.5.9",
+        "source_sha256": "e3365bdecdbcd88b2454a89a5ae526f6cc07cc76eca24753034b37680cd271f3",
+        "license": "Apache-2.0"
+      },
+      "sqlite3": {
+        "xmake_version": "3.51.0+300",
+        "version": "3.51.3",
+        "source_sha256": "81f5be397049b0cae1b167f2225af7646fc0f82e4a9b3c48c9ea3a533e21d77a",
+        "license": "Public domain"
+      },
+      "nlohmann_json": {
+        "version": "3.12.0",
+        "source_sha256": "4b92eb0c06d10683f7447ce9406cb97cd4b453be18d7279320f7b2f025c10187",
+        "license": "MIT"
+      }
+    },
+    "recipes": {
+      "url": "https://github.com/xmake-io/xmake-repo.git",
+      "revision": "fc12a12ac9d1ae5e8f7a9fb83288f11c79ded17b",
+      "source_sha256": "7e0950b38d545d6c5fb8ecc30179d33c3234438de45704212c9684d18f003b8f",
+      "license": "Apache-2.0"
+    }
+  },
+  "steps": [
+    {
+      "command": [
+        "<windows-user>\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+        "scripts/fetch_pace.py",
+        "--verify"
+      ],
+      "returncode": 0,
+      "stdout": "pace verified: d3842473b2bea63e291eb25fe44f610cbd49b02e\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "<windows-user>\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+        "scripts/fetch_pace.py",
+        "--dependency",
+        "recipes",
+        "--verify"
+      ],
+      "returncode": 0,
+      "stdout": "recipes verified: fc12a12ac9d1ae5e8f7a9fb83288f11c79ded17b\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "<native-checkout>\\build\\windows\\x64\\debug\\taucloud_m1_tests.exe"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\":29,\"status\":\"passed\"}\n",
+      "stderr": "{\"code\":\"invalid_request\",\"event\":\"ipc_rejected\",\"role\":\"helper\",\"time\":1793266402668}\n{\"code\":\"invalid_request\",\"event\":\"ipc_rejected\",\"role\":\"helper\",\"time\":1793266402675}\n{\"code\":\"invalid_request\",\"event\":\"ipc_rejected\",\"role\":\"helper\",\"time\":1793266402679}\n{\"code\":\"invalid_request\",\"event\":\"ipc_rejected\",\"role\":\"helper\",\"time\":1793266402680}\n{\"code\":\"invalid_request\",\"event\":\"ipc_rejected\",\"role\":\"helper\",\"time\":1793266402680}\n"
+    },
+    {
+      "command": [
+        "<windows-user>\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+        "tests/m1_integration.py",
+        "--bin",
+        "<native-checkout>\\build\\windows\\x64\\debug",
+        "--output",
+        "<native-checkout>\\build\\m1\\windows-msvc.integration.json"
+      ],
+      "returncode": 0,
+      "stdout": "{\n  \"schema\": 1,\n  \"recorded_at\": \"2026-10-29T09:33:43.177225+00:00\",\n  \"host\": \"Windows-11-10.0.26200-SP0\",\n  \"python\": \"3.13.3\",\n  \"checks\": [\n    \"all service targets start and readiness resolves dependencies\",\n    \"single supervisor owner fence\",\n    \"one-use local administrator bootstrap\",\n    \"unauthenticated, incorrect password and untrusted TLS rejected\",\n    \"HTTP body limit, connection admission and idle TLS timeout\",\n    \"authenticated CLI and truthful capabilities; read scope cannot restart\",\n    \"read-scoped session logout and immediate revocation\",\n    \"browser secure cookies, exact-origin CORS, CSRF and revocation\",\n    \"idempotent restart and sibling continuity\",\n    \"supervisor crash verified adoption preserves workers and session\",\n    \"abrupt worker death recovers with backoff\",\n    \"persistent crash-loop limit\",\n    \"graceful dependency-ordered shutdown\",\n    \"abrupt migration transaction recovery and pre-upgrade backup\",\n    \"SQLite integrity, hashed tokens/passwords, redacted logs\"\n  ],\n  \"status\": \"passed\"\n}\n",
+      "stderr": ""
+    }
+  ],
+  "status": "passed"
+}

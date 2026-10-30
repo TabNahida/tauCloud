@@ -1,0 +1,153 @@
+{
+  "schema": 1,
+  "recorded_at": "2026-10-29T22:48:06.282049+00:00",
+  "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "compiler": "gcc",
+  "sanitizers": false,
+  "sources_sha256": "0d5d4f24c892e28367368157e8e08eb6d677b9f8d36319e04eb3eae699bc32ae",
+  "dependencies": {
+    "schema": 1,
+    "pace": {
+      "url": "https://github.com/TabNahida/PACE.git",
+      "revision": "d3842473b2bea63e291eb25fe44f610cbd49b02e",
+      "source_sha256": "f516debaec9dba0e827c0491719d5e98055df7326124fe00b7e3b83667843ecd",
+      "license": "MIT",
+      "modules": [
+        "runtime"
+      ],
+      "optional_dependencies": []
+    },
+    "m1": {
+      "recipe_repository": "https://github.com/xmake-io/xmake-repo.git",
+      "recipe_revision": "fc12a12ac9d1ae5e8f7a9fb83288f11c79ded17b",
+      "openssl": {
+        "version": "3.5.9",
+        "source_sha256": "e3365bdecdbcd88b2454a89a5ae526f6cc07cc76eca24753034b37680cd271f3",
+        "license": "Apache-2.0"
+      },
+      "sqlite3": {
+        "xmake_version": "3.51.0+300",
+        "version": "3.51.3",
+        "source_sha256": "81f5be397049b0cae1b167f2225af7646fc0f82e4a9b3c48c9ea3a533e21d77a",
+        "license": "Public domain"
+      },
+      "nlohmann_json": {
+        "version": "3.12.0",
+        "source_sha256": "4b92eb0c06d10683f7447ce9406cb97cd4b453be18d7279320f7b2f025c10187",
+        "license": "MIT"
+      }
+    },
+    "recipes": {
+      "url": "https://github.com/xmake-io/xmake-repo.git",
+      "revision": "fc12a12ac9d1ae5e8f7a9fb83288f11c79ded17b",
+      "source_sha256": "7e0950b38d545d6c5fb8ecc30179d33c3234438de45704212c9684d18f003b8f",
+      "license": "Apache-2.0"
+    },
+    "m3": {
+      "pugixml": {
+        "version": "1.15",
+        "source_sha256": "b39647064d9e28297a34278bfb897092bf33b7c487906ddfc094c9e8868bddcb",
+        "license": "MIT"
+      },
+      "utf8proc": {
+        "version": "2.11.3",
+        "source_sha256": "abfed50b6d4da51345713661370290f4f4747263ee73dc90356299dfc7990c78",
+        "license": "MIT"
+      }
+    }
+  },
+  "steps": [
+    {
+      "command": [
+        "/usr/bin/python3",
+        "scripts/fetch_pace.py",
+        "--verify"
+      ],
+      "returncode": 0,
+      "stdout": "pace verified: d3842473b2bea63e291eb25fe44f610cbd49b02e\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/python3",
+        "scripts/fetch_pace.py",
+        "--dependency",
+        "recipes",
+        "--verify"
+      ],
+      "returncode": 0,
+      "stdout": "recipes verified: fc12a12ac9d1ae5e8f7a9fb83288f11c79ded17b\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "<checkout>/build/linux/x86_64/release/taucloud_m1_tests"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\":29,\"status\":\"passed\"}\n",
+      "stderr": "{\"code\":\"invalid_request\",\"event\":\"ipc_rejected\",\"role\":\"helper\",\"time\":1793314086680}\n{\"code\":\"invalid_request\",\"event\":\"ipc_rejected\",\"role\":\"helper\",\"time\":1793314086689}\n{\"code\":\"invalid_request\",\"event\":\"ipc_rejected\",\"role\":\"helper\",\"time\":1793314086705}\n{\"code\":\"invalid_request\",\"event\":\"ipc_rejected\",\"role\":\"helper\",\"time\":1793314086706}\n{\"code\":\"invalid_request\",\"event\":\"ipc_rejected\",\"role\":\"helper\",\"time\":1793314086706}\n"
+    },
+    {
+      "command": [
+        "/usr/bin/python3",
+        "tests/m1_integration.py",
+        "--bin",
+        "<checkout>/build/linux/x86_64/release",
+        "--output",
+        "build/m3/final-linux-gcc.integration.json"
+      ],
+      "returncode": 0,
+      "stdout": "{\n  \"schema\": 1,\n  \"recorded_at\": \"2026-10-29T22:48:25.888443+00:00\",\n  \"host\": \"Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39\",\n  \"python\": \"3.12.3\",\n  \"checks\": [\n    \"all service targets start and readiness resolves dependencies\",\n    \"single supervisor owner fence\",\n    \"one-use local administrator bootstrap\",\n    \"unauthenticated, incorrect password and untrusted TLS rejected\",\n    \"HTTP body limit, connection admission and idle TLS timeout\",\n    \"authenticated CLI and truthful capabilities; read scope cannot restart\",\n    \"read-scoped session logout and immediate revocation\",\n    \"browser secure cookies, exact-origin CORS, CSRF and revocation\",\n    \"idempotent restart and sibling continuity\",\n    \"supervisor crash verified adoption preserves workers and session\",\n    \"abrupt worker death recovers with backoff\",\n    \"persistent crash-loop limit\",\n    \"graceful dependency-ordered shutdown\",\n    \"abrupt migration transaction recovery and pre-upgrade backup\",\n    \"SQLite integrity, hashed tokens/passwords, redacted logs\"\n  ],\n  \"status\": \"passed\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "<checkout>/build/linux/x86_64/release/taucloud_m2_tests"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\":35,\"disk_full\":\"native-adapter fault injection\",\"offset_bits\":64,\"status\":\"passed\"}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/python3",
+        "tests/m2_integration.py",
+        "--bin",
+        "<checkout>/build/linux/x86_64/release",
+        "--large-mib",
+        "1",
+        "--output",
+        "build/m3/final-linux-gcc.files.json"
+      ],
+      "returncode": 0,
+      "stdout": "{\n  \"status\": \"passed\",\n  \"host\": \"Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39\",\n  \"checks\": [\n    \"users/groups/membership; separate management roles; root, space and writer overlap rejected\",\n    \"two-user isolation and administrator has no implicit file grant; aliases charge quota once\",\n    \"portable names, traversal, case aliases, hard links and symlink rejection\",\n    \"random writes, explicit flush, range locks, stable open identity across rename\",\n    \"quota pre-reservation, staged visibility and cancellation releases capacity\",\n    \"acknowledged grant and group revocation; open handles cannot bypass policy\",\n    \"domain crash fencing, sibling continuity and durable staged upload recovery\",\n    \"bounded CPU/memory/network/capacity inventory, honest disk-health states and audit\",\n    \"bounded HTTPS CLI upload/download with SHA-256 match: 1048576 bytes; worker budget 512 MiB\",\n    \"clean stop, all owner databases consistent and logs exclude credentials\"\n  ],\n  \"large_bytes\": 1048576,\n  \"worker_memory_budget_bytes\": 536870912,\n  \"physical_host_ram_exceeded\": false,\n  \"hard_memory_limit\": \"not_applied\",\n  \"sampled_peak_rss_bytes\": {\n    \"file\": 0,\n    \"api\": 0\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "<checkout>/build/linux/x86_64/release/taucloud_m3_tests"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\":28,\"status\":\"passed\"}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/python3",
+        "tests/m3_integration.py",
+        "--bin",
+        "<checkout>/build/linux/x86_64/release",
+        "--large-mib",
+        "257",
+        "--output",
+        "build/m3/final-linux-gcc.dav.json",
+        "--litmus",
+        "build/litmus/installed/bin/litmus"
+      ],
+      "returncode": 0,
+      "stdout": "-> running `basic':\n\n 0. begin................. \n 0. begin................. pass\n\n 1. options............... \n 1. options............... pass\n\n 2. put_get............... \n 2. put_get............... pass\n\n 3. put_get_utf8_segment.. \n 3. put_get_utf8_segment.. pass\n\n 4. put_no_parent......... \n 4. put_no_parent......... pass\n\n 5. put_location.......... \n 5. put_location.......... pass\n\n 6. mkcol_over_plain...... \n 6. mkcol_over_plain...... pass\n\n 7. delete................ \n 7. delete................ pass\n\n 8. delete_null........... \n 8. delete_null........... pass\n\n 9. delete_fragment....... \n 9. delete_fragment....... pass\n\n10. mkcol................. \n10. mkcol................. pass\n\n11. mkcol_again........... \n11. mkcol_again........... pass\n\n12. delete_coll........... \n12. delete_coll........... pass\n\n13. mkcol_no_parent....... \n13. mkcol_no_parent....... pass\n\n14. mkcol_with_body....... \n14. mkcol_with_body....... pass\n\n15. finish................ \n15. finish................ pass\n<- summary for `basic': of 16 tests run: 16 passed, 0 failed. 100.0%\n-> running `copymove':\n\n 0. begin................. \n 0. begin................. pass\n\n 1. copy_init............. \n 1. copy_init............. pass\n\n 2. copy_simple........... \n 2. copy_simple........... pass\n\n 3. copy_overwrite........ \n 3. copy_overwrite........ pass\n\n 4. copy_abspath.......... \n 4. copy_abspath.......... pass\n\n 5. copy_nodestcoll....... \n 5. copy_nodestcoll....... pass\n\n 6. copy_cleanup.......... \n 6. copy_cleanup.......... pass\n\n 7. copy_coll............. \n 7. copy_coll............. pass\n\n 8. copy_shallow.......... \n 8. copy_shallow.......... pass\n\n 9. move.................. \n 9. move.................. pass\n\n10. move_coll............. \n10. move_coll............. pass\n\n11. move_cleanup.......... \n11. move_cleanup.......... pass\n\n12. finish................ \n12. finish................ pass\n<- summary for `copymove': of 13 tests run: 13 passed, 0 failed. 100.0%\n-> running `props':\n\n 0. begin................. \n 0. begin................. pass\n\n 1. propfind_invalid...... \n 1. propfind_invalid...... pass\n\n 2. propfind_invalid2..... \n 2. propfind_invalid2..... pass\n\n 3. propfind_d0........... \n 3. propfind_d0........... pass\n\n 4. propinit.............. \n 4. propinit.............. pass\n\n 5. propset............... \n 5. propset............... pass\n\n 6. propget............... \n 6. propget............... pass\n\n 7. propextended.......... \n 7. propextended.......... pass\n\n 8. propmove.............. \n 8. propmove.............. pass\n\n 9. propget............... \n 9. propget............... pass\n\n10. propdeletes........... \n10. propdeletes........... pass\n\n11. propget............... \n11. propget............... pass\n\n12. propset............... \n12. propset............... pass\n\n13. propdeletes........... \n13. propdeletes........... pass\n\n14. propdeletes........... \n14. propdeletes........... pass\n\n15. propreplace........... \n15. propreplace........... pass\n\n16. propget............... \n16. propget............... pass\n\n17. propnullns............ \n17. propnullns............ pass\n\n18. propget............... \n18. propget............... pass\n\n19. prophighunicode....... \n19. prophighunicode....... pass\n\n20. propget............... \n20. propget............... pass\n\n21. propremoveset......... \n21. propremoveset......... pass\n\n22. propget............... \n22. propget............... pass\n\n23. propsetremove......... \n23. propsetremove......... pass\n\n24. propget............... \n24. propget............... pass\n\n25. propvalnspace......... \n25. propvalnspace......... pass\n\n26. propwformed........... \n26. propwformed........... pass\n\n27. propinit.............. \n27. propinit.............. pass\n\n28. propgetlastmod........ \n28. propgetlastmod........ pass\n\n29. propmanyns............ \n29. propmanyns............ pass\n\n30. propget............... \n30. propget............... pass\n\n31. propcleanup........... \n31. propcleanup........... pass\n\n32. finish................ \n32. finish................ pass\n<- summary for `props': of 33 tests run: 33 passed, 0 failed. 100.0%\n-> running `locks':\n\n 0. begin................. \n 0. begin................. pass\n\n 1. options............... \n 1. options............... pass\n\n 2. precond............... \n 2. precond............... pass\n\n 3. init_locks............ \n 3. init_locks............ pass\n\n 4. put................... \n 4. put................... pass\n\n 5. lock_excl............. \n 5. lock_excl............. pass\n\n 6. discover.............. \n 6. discover.............. pass\n\n 7. refresh............... \n 7. refresh............... pass\n\n 8. notowner_modify....... \n 8. notowner_modify....... pass\n\n 9. notowner_lock......... \n 9. notowner_lock......... pass\n\n10. owner_modify.......... \n10. owner_modify.......... pass\n\n11. notowner_modify....... \n11. notowner_modify....... pass\n\n12. notowner_lock......... \n12. notowner_lock......... pass\n\n13. copy.................. \n13. copy.................. pass\n\n14. cond_put.............. \n14. cond_put.............. pass\n\n15. fail_cond_put......... \n15. fail_cond_put......... pass\n\n16. cond_put_with_not..... \n16. cond_put_with_not..... pass\n\n17. cond_put_corrupt_token \n17. cond_put_corrupt_token pass\n\n18. complex_cond_put...... \n18. complex_cond_put...... pass\n\n19. fail_complex_cond_put. \n19. fail_complex_cond_put. pass\n\n20. unlock................ \n20. unlock................ pass\n\n21. fail_cond_put_unlocked \n21. fail_cond_put_unlocked pass\n\n22. lock_shared........... \n22. lock_shared........... pass\n\n23. notowner_modify....... \n23. notowner_modify....... pass\n\n24. notowner_lock......... \n24. notowner_lock......... pass\n\n25. owner_modify.......... \n25. owner_modify.......... pass\n\n26. double_sharedlock..... \n26. double_sharedlock..... pass\n\n27. notowner_modify....... \n27. notowner_modify....... pass\n\n28. notowner_lock......... \n28. notowner_lock......... pass\n\n29. unlock................ \n29. unlock................ pass\n\n30. prep_collection....... \n30. prep_collection....... pass\n\n31. lock_collection....... \n31. lock_collection....... pass\n\n32. owner_modify.......... \n32. owner_modify.......... pass\n\n33. notowner_modify....... \n33. notowner_modify....... pass\n\n34. refresh............... \n34. refresh............... pass\n\n35. indirect_refresh...... \n35. indirect_refresh...... pass\n\n36. unlock................ \n36. unlock................ pass\n\n37. unmapped_lock......... \n37. unmapped_lock......... pass\n\n38. unlock................ \n38. unlock................ pass\n\n39. finish................ \n39. finish................ pass\n<- summary for `locks': of 40 tests run: 40 passed, 0 failed. 100.0%\n-> running `http':\n\n 0. begin................. \n 0. begin................. pass\n\n 1. direct_connect........ \n 1. direct_connect........ pass\n\n 2. expect100............. \n 2. expect100............. SKIPPED (skipping for SSL server)\n\n 3. finish................ \n 3. finish................ pass\n-> 1 test was skipped.\n<- summary for `http': of 3 tests run: 3 passed, 0 failed. 100.0%\n\n",
+      "stderr": ""
+    }
+  ],
+  "status": "passed"
+}

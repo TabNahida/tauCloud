@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "status": "initial admission policy, not a throughput result",
+  "reference": {
+    "cpu": "Intel Core Ultra 7 270K Plus, 24 logical CPUs",
+    "linux_memory_kib": 197226000,
+    "linux_filesystem": "ext4",
+    "windows_filesystem": "NTFS",
+    "minimum_deployment": "4 logical CPUs / 8 GiB RAM; not yet load-tested"
+  },
+  "per_worker": {
+    "connections": 64,
+    "blocking_threads": 4,
+    "outstanding_blocking_jobs_including_completions": 64,
+    "reserved_blocking_bytes": 16777216,
+    "rss_soft_bytes": 268435456,
+    "rss_hard_bytes": 536870912,
+    "ipc_control_frame_bytes": 65536,
+    "ipc_inflight_requests": 32
+  },
+  "per_connection": {
+    "transfer_chunk_bytes": 65536,
+    "transfer_chunks": 2,
+    "control_and_codec_bytes": 131072,
+    "total_owned_bytes": 262144,
+    "inflight_file_operations": 2
+  },
+  "global": {
+    "workers": 8,
+    "connections": 256,
+    "file_transfer_bytes": 67108864,
+    "blocking_jobs": 256,
+    "rss_hard_bytes": 4294967296
+  },
+  "deadlines_seconds": {
+    "handshake": 10,
+    "ipc_request": 5,
+    "queue_wait": 2,
+    "transfer_no_progress": 30,
+    "policy_lease": 15,
+    "graceful_drain": 15,
+    "worker_kill_after_fencing": 30
+  },
+  "experiment_overrides": {
+    "runtime_threads": 1,
+    "runtime_jobs": 4,
+    "runtime_bytes": 4096,
+    "ipc_frame_bytes": 65536,
+    "policy_lease_seconds": 2
+  }
+}

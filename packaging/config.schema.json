@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taucloud.local/config.schema.json",
+  "title": "tauCloud M1 local management configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": 1
+    },
+    "listen": {
+      "const": "127.0.0.1"
+    },
+    "port": {
+      "type": "integer",
+      "minimum": 1024,
+      "maximum": 65535
+    },
+    "connections": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 128
+    },
+    "ipc_queue": {
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 64
+    },
+    "restart_limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 20
+    },
+    "memory_mb": {
+      "type": "integer",
+      "minimum": 256,
+      "maximum": 4096
+    }
+  },
+  "required": [
+    "schema",
+    "listen",
+    "port",
+    "connections",
+    "ipc_queue",
+    "restart_limit",
+    "memory_mb"
+  ]
+}

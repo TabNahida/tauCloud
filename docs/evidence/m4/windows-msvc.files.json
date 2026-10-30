@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "host": "Windows-11-10.0.26200-SP0",
+  "checks": [
+    "users/groups/membership; separate management roles; root, space and writer overlap rejected",
+    "two-user isolation and administrator has no implicit file grant; aliases charge quota once",
+    "portable names, traversal, case aliases, hard links and symlink rejection",
+    "random writes, explicit flush, range locks, stable open identity across rename",
+    "quota pre-reservation, staged visibility and cancellation releases capacity",
+    "acknowledged grant and group revocation; open handles cannot bypass policy",
+    "domain crash fencing, sibling continuity and durable staged upload recovery",
+    "bounded CPU/memory/network/capacity inventory, honest disk-health states and audit",
+    "bounded HTTPS CLI upload/download with SHA-256 match: 1048576 bytes; worker budget 512 MiB",
+    "clean stop, all owner databases consistent and logs exclude credentials"
+  ],
+  "large_bytes": 1048576,
+  "worker_memory_budget_bytes": 536870912,
+  "physical_host_ram_exceeded": false,
+  "hard_memory_limit": "windows_job_private_commit",
+  "sampled_peak_rss_bytes": {
+    "file": 11902976,
+    "api": 14241792
+  }
+}

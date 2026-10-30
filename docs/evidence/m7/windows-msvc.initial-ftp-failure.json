@@ -1,0 +1,190 @@
+{
+  "schema": 1,
+  "recorded_at": "2026-10-30T01:22:37.431091+00:00",
+  "host": "Windows-11-10.0.26200-SP0",
+  "compiler": "msvc",
+  "sanitizers": false,
+  "sources_sha256": "026a2063807c7cefc3fd28fabfd199d25771ea48eb597fff6fc567cd164cee80",
+  "dependencies": {
+    "schema": 1,
+    "pace": {
+      "url": "https://github.com/TabNahida/PACE.git",
+      "revision": "d3842473b2bea63e291eb25fe44f610cbd49b02e",
+      "source_sha256": "f516debaec9dba0e827c0491719d5e98055df7326124fe00b7e3b83667843ecd",
+      "license": "MIT",
+      "modules": [
+        "runtime"
+      ],
+      "optional_dependencies": []
+    },
+    "m1": {
+      "recipe_repository": "https://github.com/xmake-io/xmake-repo.git",
+      "recipe_revision": "fc12a12ac9d1ae5e8f7a9fb83288f11c79ded17b",
+      "openssl": {
+        "version": "3.5.9",
+        "source_sha256": "e3365bdecdbcd88b2454a89a5ae526f6cc07cc76eca24753034b37680cd271f3",
+        "license": "Apache-2.0"
+      },
+      "sqlite3": {
+        "xmake_version": "3.51.0+300",
+        "version": "3.51.3",
+        "source_sha256": "81f5be397049b0cae1b167f2225af7646fc0f82e4a9b3c48c9ea3a533e21d77a",
+        "license": "Public domain"
+      },
+      "nlohmann_json": {
+        "version": "3.12.0",
+        "source_sha256": "4b92eb0c06d10683f7447ce9406cb97cd4b453be18d7279320f7b2f025c10187",
+        "license": "MIT"
+      }
+    },
+    "recipes": {
+      "url": "https://github.com/xmake-io/xmake-repo.git",
+      "revision": "fc12a12ac9d1ae5e8f7a9fb83288f11c79ded17b",
+      "source_sha256": "7e0950b38d545d6c5fb8ecc30179d33c3234438de45704212c9684d18f003b8f",
+      "license": "Apache-2.0"
+    },
+    "m3": {
+      "pugixml": {
+        "version": "1.15",
+        "source_sha256": "b39647064d9e28297a34278bfb897092bf33b7c487906ddfc094c9e8868bddcb",
+        "license": "MIT"
+      },
+      "utf8proc": {
+        "version": "2.11.3",
+        "source_sha256": "abfed50b6d4da51345713661370290f4f4747263ee73dc90356299dfc7990c78",
+        "license": "MIT"
+      }
+    },
+    "pynfs": {
+      "url": "https://github.com/linux-nfs/pynfs.git",
+      "revision": "cd4701827a8261fedbfb4c6e39029fb9671321a6",
+      "source_sha256": "c24c38b8b1d94527192594825c64eadf0641ef44c43d7690bb98a952f61d9a4c",
+      "license": "GPL-2.0-or-later (test tooling only)",
+      "runtime_dependency": false
+    }
+  },
+  "steps": [
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\.deps\\smb-client\\Scripts\\python.exe",
+        "scripts/fetch_pace.py",
+        "--verify"
+      ],
+      "returncode": 0,
+      "stdout": "pace verified: d3842473b2bea63e291eb25fe44f610cbd49b02e\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\.deps\\smb-client\\Scripts\\python.exe",
+        "scripts/fetch_pace.py",
+        "--dependency",
+        "recipes",
+        "--verify"
+      ],
+      "returncode": 0,
+      "stdout": "recipes verified: fc12a12ac9d1ae5e8f7a9fb83288f11c79ded17b\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\.deps\\smb-client\\Scripts\\python.exe",
+        "scripts/fetch_nfs_client.py"
+      ],
+      "returncode": 0,
+      "stdout": "pynfs verified: cd4701827a8261fedbfb4c6e39029fb9671321a6\nInput file is nfs3.x\nWill use output files nfs3_const.py, nfs3_type.py, and nfs3_pack.py\nIgnoring program NFS_PROGRAM = 100003\nInput file is nfs4.x\nWill use output files nfs4_const.py, nfs4_type.py, and nfs4_pack.py\nIgnoring program NFS4_PROGRAM = 100003\nIgnoring program NFS4_CALLBACK = 0x40000000\nInput file is mnt3.x\nWill use output files mnt3_const.py, mnt3_type.py, and mnt3_pack.py\nIgnoring program MOUNT_PROGRAM = 100005\n",
+      "stderr": "Generating LALR tables\n"
+    },
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\windows\\x64\\release\\taucloud_m1_tests.exe"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\":29,\"status\":\"passed\"}\n",
+      "stderr": "{\"code\":\"invalid_request\",\"event\":\"ipc_rejected\",\"role\":\"helper\",\"time\":1793323359784}\n{\"code\":\"invalid_request\",\"event\":\"ipc_rejected\",\"role\":\"helper\",\"time\":1793323359792}\n{\"code\":\"invalid_request\",\"event\":\"ipc_rejected\",\"role\":\"helper\",\"time\":1793323359795}\n{\"code\":\"invalid_request\",\"event\":\"ipc_rejected\",\"role\":\"helper\",\"time\":1793323359795}\n{\"code\":\"invalid_request\",\"event\":\"ipc_rejected\",\"role\":\"helper\",\"time\":1793323359795}\n"
+    },
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\.deps\\smb-client\\Scripts\\python.exe",
+        "tests/m1_integration.py",
+        "--bin",
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\windows\\x64\\release",
+        "--output",
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\m7\\windows-msvc.integration.json"
+      ],
+      "returncode": 0,
+      "stdout": "{\n  \"schema\": 1,\n  \"recorded_at\": \"2026-10-30T01:23:05.555376+00:00\",\n  \"host\": \"Windows-11-10.0.26200-SP0\",\n  \"python\": \"3.13.3\",\n  \"checks\": [\n    \"all service targets start and readiness resolves dependencies\",\n    \"single supervisor owner fence\",\n    \"one-use local administrator bootstrap\",\n    \"unauthenticated, incorrect password and untrusted TLS rejected\",\n    \"HTTP body limit, connection admission and idle TLS timeout\",\n    \"authenticated CLI and truthful capabilities; read scope cannot restart\",\n    \"read-scoped session logout and immediate revocation\",\n    \"browser secure cookies, exact-origin CORS, CSRF and revocation\",\n    \"idempotent restart and sibling continuity\",\n    \"supervisor crash verified adoption preserves workers and session\",\n    \"abrupt worker death recovers with backoff\",\n    \"persistent crash-loop limit\",\n    \"graceful dependency-ordered shutdown\",\n    \"abrupt migration transaction recovery and pre-upgrade backup\",\n    \"SQLite integrity, hashed tokens/passwords, redacted logs\"\n  ],\n  \"status\": \"passed\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\windows\\x64\\release\\taucloud_m2_tests.exe"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\":35,\"disk_full\":\"native-adapter fault injection\",\"offset_bits\":64,\"status\":\"passed\"}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\.deps\\smb-client\\Scripts\\python.exe",
+        "tests/m2_integration.py",
+        "--bin",
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\windows\\x64\\release",
+        "--large-mib",
+        "1",
+        "--output",
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\m7\\windows-msvc.files.json"
+      ],
+      "returncode": 0,
+      "stdout": "{\n  \"status\": \"passed\",\n  \"host\": \"Windows-11-10.0.26200-SP0\",\n  \"checks\": [\n    \"users/groups/membership; separate management roles; root, space and writer overlap rejected\",\n    \"two-user isolation and administrator has no implicit file grant; aliases charge quota once\",\n    \"portable names, traversal, case aliases, hard links and symlink rejection\",\n    \"random writes, explicit flush, range locks, stable open identity across rename\",\n    \"quota pre-reservation, staged visibility and cancellation releases capacity\",\n    \"acknowledged grant and group revocation; open handles cannot bypass policy\",\n    \"domain crash fencing, sibling continuity and durable staged upload recovery\",\n    \"bounded CPU/memory/network/capacity inventory, honest disk-health states and audit\",\n    \"bounded HTTPS CLI upload/download with SHA-256 match: 1048576 bytes; worker budget 512 MiB\",\n    \"clean stop, all owner databases consistent and logs exclude credentials\"\n  ],\n  \"large_bytes\": 1048576,\n  \"worker_memory_budget_bytes\": 536870912,\n  \"physical_host_ram_exceeded\": false,\n  \"hard_memory_limit\": \"windows_job_private_commit\",\n  \"sampled_peak_rss_bytes\": {\n    \"file\": 11911168,\n    \"api\": 14143488\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\windows\\x64\\release\\taucloud_m3_tests.exe"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\":28,\"status\":\"passed\"}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\.deps\\smb-client\\Scripts\\python.exe",
+        "tests/m3_integration.py",
+        "--bin",
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\windows\\x64\\release",
+        "--large-mib",
+        "1",
+        "--output",
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\m7\\windows-msvc.dav.json"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\windows\\x64\\release\\taucloud_m4_tests.exe"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\":18,\"status\":\"passed\"}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\.deps\\smb-client\\Scripts\\python.exe",
+        "tests/m4_integration.py",
+        "--bin",
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\windows\\x64\\release",
+        "--large-mib",
+        "1",
+        "--output",
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\m7\\windows-msvc.ftp.json"
+      ],
+      "returncode": 1,
+      "stdout": "PASS M3 state adds isolated FTP worker; plaintext default deny, anonymous/active/FXP/downgrade denied\nPASS stdlib FTP client: UTF-8, PASV, MLSD/MLST facts, directories/rename/delete, binary roundtrip and safe REST upload/download\nPASS EPSV ALL and TLS certificate verification; fresh or different-control TLS sessions rejected on data channel\nControl diagnostic: TimeoutError('The read operation timed out')\nService diagnostic: {'api': {'failures': [], 'generation': '992dd0fbcd2ebbcc9b7989fda3a0200b', 'identity': {'birth': 134377970404328269, 'exe': 'C:\\\\Users\\\\TabYe\\\\AppData\\\\Local\\\\Temp\\\\taucloud-m7-f219c698e8a34df394ba803febedab24\\\\build\\\\windows\\\\x64\\\\release\\\\taucloud_api.exe', 'generation': '992dd0fbcd2ebbcc9b7989fda3a0200b', 'pid': 49960, 'rss': 2547712}, 'next': 0, 'rss': 13070336, 'started': 1793323440463, 'status': 'running'}, 'file': {'failures': [], 'generation': '7f8c8c23e1b01341b3524cb543bbe355', 'identity': {'birth': 134377970378692144, 'exe': 'C:\\\\Users\\\\TabYe\\\\AppData\\\\Local\\\\Temp\\\\taucloud-m7-f219c698e8a34df394ba803febedab24\\\\build\\\\windows\\\\x64\\\\release\\\\taucloud_file.exe', 'generation': '7f8c8c23e1b01341b3524cb543bbe355', 'pid': 43480, 'rss': 2555904}, 'next': 0, 'rss': 11972608, 'started': 1793323437895, 'status': 'running'}, 'file_1': {'failures': [], 'generation': '7fade0d537600002de6ceb1181b601a7', 'identity': {'birth': 134377970381002051, 'exe': 'C:\\\\Users\\\\TabYe\\\\AppData\\\\Local\\\\Temp\\\\taucloud-m7-f219c698e8a34df394ba803febedab24\\\\build\\\\windows\\\\x64\\\\release\\\\taucloud_file_1.exe', 'generation': '7fade0d537600002de6ceb1181b601a7', 'pid': 32120, 'rss': 2547712}, 'next': 0, 'rss': 11485184, 'started': 1793323438126, 'status': 'running'}, 'file_2': {'failures': [], 'generation': 'a66d4dedd5ab4be0d715f5c247bef2a9', 'identity': {'birth': 134377970382939704, 'exe': 'C:\\\\Users\\\\TabYe\\\\AppData\\\\Local\\\\Temp\\\\taucloud-m7-f219c698e8a34df394ba803febedab24\\\\build\\\\windows\\\\x64\\\\release\\\\taucloud_file_2.exe', 'generation': 'a66d4dedd5ab4be0d715f5c247bef2a9', 'pid': 48324, 'rss': 2547712}, 'next': 0, 'rss': 11493376, 'started': 1793323438319, 'status': 'running'}, 'file_3': {'failures': [], 'generation': 'dbd60c5e870eff84c8adf75d0b515e72', 'identity': {'birth': 134377970384525397, 'exe': 'C:\\\\Users\\\\TabYe\\\\AppData\\\\Local\\\\Temp\\\\taucloud-m7-f219c698e8a34df394ba803febedab24\\\\build\\\\windows\\\\x64\\\\release\\\\taucloud_file_3.exe', 'generation': 'dbd60c5e870eff84c8adf75d0b515e72', 'pid': 37008, 'rss': 2547712}, 'next': 0, 'rss': 11501568, 'started': 1793323438477, 'status': 'running'}, 'ftp': {'failures': [], 'generation': '2e656a505acb5821b92714edf2b74ff4', 'identity': {'birth': 134377970396937555, 'exe': 'C:\\\\Users\\\\TabYe\\\\AppData\\\\Local\\\\Temp\\\\taucloud-m7-f219c698e8a34df394ba803febedab24\\\\build\\\\windows\\\\x64\\\\release\\\\taucloud_ftp.exe', 'generation': '2e656a505acb5821b92714edf2b74ff4', 'pid': 46664, 'rss': 2547712}, 'next': 0, 'rss': 13996032, 'started': 1793323439721, 'status': 'running'}, 'helper': {'failures': [], 'generation': '5225c5d39219d942b6df789406aa1ac0', 'identity': {'birth': 134377970393581996, 'exe': 'C:\\\\Users\\\\TabYe\\\\AppData\\\\Local\\\\Temp\\\\taucloud-m7-f219c698e8a34df394ba803febedab24\\\\build\\\\windows\\\\x64\\\\release\\\\taucloud_helper.exe', 'generation': '5225c5d39219d942b6df789406aa1ac0', 'pid': 9412, 'rss': 2547712}, 'next': 0, 'rss': 10362880, 'started': 1793323439385, 'status': 'running'}, 'identity': {'failures': [], 'generation': 'a08c4d5859f92086c2177c6cac8958ba', 'identity': {'birth': 134377970375706452, 'exe': 'C:\\\\Users\\\\TabYe\\\\AppData\\\\Local\\\\Temp\\\\taucloud-m7-f219c698e8a34df394ba803febedab24\\\\build\\\\windows\\\\x64\\\\release\\\\taucloud_identity.exe', 'generation': 'a08c4d5859f92086c2177c6cac8958ba', 'pid': 73232, 'rss': 2547712}, 'next': 0, 'rss': 12054528, 'started': 1793323437597, 'status': 'running'}, 'monitor': {'failures': [], 'generation': '97294b7b74ba353a02b1571a080395fe', 'identity': {'birth': 134377970387601618, 'exe': 'C:\\\\Users\\\\TabYe\\\\AppData\\\\Local\\\\Temp\\\\taucloud-m7-f219c698e8a34df394ba803febedab24\\\\build\\\\windows\\\\x64\\\\release\\\\taucloud_monitor.exe', 'generation': '97294b7b74ba353a02b1571a080395fe', 'pid': 48608, 'rss': 2547712}, 'next': 0, 'rss': 10371072, 'started': 1793323438785, 'status': 'running'}, 'nfs': {'failures': [], 'generation': 'c0706d30ca3bfa70f99fd1d6cbe19510', 'identity': {'birth': 134377970402298411, 'exe': 'C:\\\\Users\\\\TabYe\\\\AppData\\\\Local\\\\Temp\\\\taucloud-m7-f219c698e8a34df394ba803febedab24\\\\build\\\\windows\\\\x64\\\\release\\\\taucloud_nfs.exe', 'generation': 'c0706d30ca3bfa70f99fd1d6cbe19510', 'pid': 13508, 'rss': 2555904}, 'next': 0, 'rss': 10502144, 'started': 1793323440255, 'status': 'running'}, 'protocol': {'failures': [], 'generation': '9baed193fc44005596c5e95623ef89c8', 'identity': {'birth': 134377970386051577, 'exe': 'C:\\\\Users\\\\TabYe\\\\AppData\\\\Local\\\\Temp\\\\taucloud-m7-f219c698e8a34df394ba803febedab24\\\\build\\\\windows\\\\x64\\\\release\\\\taucloud_protocol.exe', 'generation': '9baed193fc44005596c5e95623ef89c8', 'pid': 61528, 'rss': 2547712}, 'next': 0, 'rss': 10362880, 'started': 1793323438630, 'status': 'running'}, 'smb': {'failures': [], 'generation': '7209aa1c6ed30d63b03b1a128ce98771', 'identity': {'birth': 134377970399984185, 'exe': 'C:\\\\Users\\\\TabYe\\\\AppData\\\\Local\\\\Temp\\\\taucloud-m7-f219c698e8a34df394ba803febedab24\\\\build\\\\windows\\\\x64\\\\release\\\\taucloud_smb.exe', 'generation': '7209aa1c6ed30d63b03b1a128ce98771', 'pid': 72364, 'rss': 2547712}, 'next': 0, 'rss': 10412032, 'started': 1793323440026, 'status': 'running'}, 'storage_admin': {'failures': [], 'generation': '366227369ef6b1df60a40c99493964be', 'identity': {'birth': 134377970391984827, 'exe': 'C:\\\\Users\\\\TabYe\\\\AppData\\\\Local\\\\Temp\\\\taucloud-m7-f219c698e8a34df394ba803febedab24\\\\build\\\\windows\\\\x64\\\\release\\\\taucloud_storage_admin.exe', 'generation': '366227369ef6b1df60a40c99493964be', 'pid': 61732, 'rss': 2547712}, 'next': 0, 'rss': 10342400, 'started': 1793323439225, 'status': 'running'}, 'updater': {'failures': [], 'generation': '5bee69eef4fb633490db57e2cf847543', 'identity': {'birth': 134377970389004376, 'exe': 'C:\\\\Users\\\\TabYe\\\\AppData\\\\Local\\\\Temp\\\\taucloud-m7-f219c698e8a34df394ba803febedab24\\\\build\\\\windows\\\\x64\\\\release\\\\taucloud_updater.exe', 'generation': '5bee69eef4fb633490db57e2cf847543', 'pid': 28944, 'rss': 2547712}, 'next': 0, 'rss': 10358784, 'started': 1793323438926, 'status': 'running'}, 'webdav': {'failures': [], 'generation': '06976a275b29cf23dd1340991ea58d72', 'identity': {'birth': 134377970395076339, 'exe': 'C:\\\\Users\\\\TabYe\\\\AppData\\\\Local\\\\Temp\\\\taucloud-m7-f219c698e8a34df394ba803febedab24\\\\build\\\\windows\\\\x64\\\\release\\\\taucloud_webdav.exe', 'generation': '06976a275b29cf23dd1340991ea58d72', 'pid': 41904, 'rss': 2547712}, 'next': 0, 'rss': 11993088, 'started': 1793323439534, 'status': 'running'}}\nFixture log: {\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793323432831}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"supervisor\",\"time\":1793323437360}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793323437424}\n\n",
+      "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\tests\\m4_integration.py\", line 250, in <module>\n    args=p.parse_args();report=run(args)\n                               ~~~^^^^^^\n  File \"C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\tests\\m4_integration.py\", line 130, in run\n    item=f.connect();item.sendcmd('EPSV');held.append(item)\n                     ~~~~~~~~~~~~^^^^^^^^\n  File \"C:\\Users\\TabYe\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\ftplib.py\", line 281, in sendcmd\n    return self.getresp()\n           ~~~~~~~~~~~~^^\n  File \"C:\\Users\\TabYe\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\ftplib.py\", line 252, in getresp\n    raise error_temp(resp)\nftplib.error_temp: 425 Passive ports exhausted\n"
+    }
+  ],
+  "status": "failed"
+}

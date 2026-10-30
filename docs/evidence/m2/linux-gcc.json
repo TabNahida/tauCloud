@@ -1,0 +1,148 @@
+{
+  "schema": 1,
+  "recorded_at": "2026-10-29T21:55:47.189731+00:00",
+  "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "compiler": "gcc",
+  "sanitizers": false,
+  "sources_sha256": "516bce9dff77bbdf9793c952759b5151c8c67824e57293522341f9321cf5b520",
+  "dependencies": {
+    "schema": 1,
+    "pace": {
+      "url": "https://github.com/TabNahida/PACE.git",
+      "revision": "d3842473b2bea63e291eb25fe44f610cbd49b02e",
+      "source_sha256": "f516debaec9dba0e827c0491719d5e98055df7326124fe00b7e3b83667843ecd",
+      "license": "MIT",
+      "modules": [
+        "runtime"
+      ],
+      "optional_dependencies": []
+    },
+    "m1": {
+      "recipe_repository": "https://github.com/xmake-io/xmake-repo.git",
+      "recipe_revision": "fc12a12ac9d1ae5e8f7a9fb83288f11c79ded17b",
+      "openssl": {
+        "version": "3.5.9",
+        "source_sha256": "e3365bdecdbcd88b2454a89a5ae526f6cc07cc76eca24753034b37680cd271f3",
+        "license": "Apache-2.0"
+      },
+      "sqlite3": {
+        "xmake_version": "3.51.0+300",
+        "version": "3.51.3",
+        "source_sha256": "81f5be397049b0cae1b167f2225af7646fc0f82e4a9b3c48c9ea3a533e21d77a",
+        "license": "Public domain"
+      },
+      "nlohmann_json": {
+        "version": "3.12.0",
+        "source_sha256": "4b92eb0c06d10683f7447ce9406cb97cd4b453be18d7279320f7b2f025c10187",
+        "license": "MIT"
+      }
+    },
+    "recipes": {
+      "url": "https://github.com/xmake-io/xmake-repo.git",
+      "revision": "fc12a12ac9d1ae5e8f7a9fb83288f11c79ded17b",
+      "source_sha256": "7e0950b38d545d6c5fb8ecc30179d33c3234438de45704212c9684d18f003b8f",
+      "license": "Apache-2.0"
+    }
+  },
+  "steps": [
+    {
+      "command": [
+        "/usr/bin/python3",
+        "scripts/fetch_pace.py",
+        "--verify"
+      ],
+      "returncode": 0,
+      "stdout": "pace verified: d3842473b2bea63e291eb25fe44f610cbd49b02e\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/python3",
+        "scripts/fetch_pace.py",
+        "--dependency",
+        "recipes",
+        "--verify"
+      ],
+      "returncode": 0,
+      "stdout": "recipes verified: fc12a12ac9d1ae5e8f7a9fb83288f11c79ded17b\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "xmake",
+        "f",
+        "-y",
+        "-c",
+        "-p",
+        "linux",
+        "-a",
+        "x86_64",
+        "-m",
+        "debug",
+        "--m0=n",
+        "--m1=y",
+        "--toolchain=gcc",
+        "--sanitizers=n"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "xmake",
+        "-y",
+        "-j",
+        "8"
+      ],
+      "returncode": 0,
+      "stdout": "[ 18%]: <taucloud_api> cache compiling.debug apps/main.cpp\n[ 19%]: <taucloud_helper> cache compiling.debug apps/main.cpp\n[ 20%]: <taucloud_identity> cache compiling.debug apps/main.cpp\n[ 20%]: <taucloud_ctl> cache compiling.debug apps/main.cpp\n[ 20%]: <taucloud_file> cache compiling.debug apps/main.cpp\n[ 20%]: <taucloud_file_1> cache compiling.debug apps/main.cpp\n[ 20%]: <taucloud_file_2> cache compiling.debug apps/main.cpp\n[ 20%]: <taucloud_file_3> cache compiling.debug apps/main.cpp\n[ 21%]: <taucloud_m1_tests> cache compiling.debug tests/m1_core.cpp\n[ 22%]: <taucloud_m2_tests> cache compiling.debug tests/m2_core.cpp\n[ 24%]: <taucloud_m2_tests> cache compiling.debug src/native_files.cpp\n[ 25%]: <taucloud_monitor> cache compiling.debug apps/main.cpp\n[ 26%]: <taucloud_protocol> cache compiling.debug apps/main.cpp\n[ 27%]: <taucloud_storage_admin> cache compiling.debug apps/main.cpp\n[ 28%]: <taucloud_supervisor> cache compiling.debug apps/main.cpp\n[ 29%]: <taucloud_updater> cache compiling.debug apps/main.cpp\n[ 30%]: <pace_runtime> cache compiling.debug .deps/pace/src/runtime/io_context.cpp\n[ 31%]: <pace_runtime> cache compiling.debug .deps/pace/src/runtime/runtime.cpp\n[ 32%]: <pace_runtime> cache compiling.debug .deps/pace/src/runtime/poller.cpp\n[ 33%]: <taucloud_core> cache compiling.debug src/native_files.cpp\n[ 34%]: <taucloud_core> cache compiling.debug src/policy.cpp\n[ 36%]: <taucloud_core> cache compiling.debug src/identity.cpp\n[ 37%]: <taucloud_core> cache compiling.debug src/api.cpp\n[ 38%]: <taucloud_core> cache compiling.debug src/platform.cpp\n[ 39%]: <taucloud_core> cache compiling.debug src/ipc.cpp\n[ 40%]: <taucloud_core> cache compiling.debug src/inventory.cpp\n[ 41%]: <taucloud_core> cache compiling.debug src/files.cpp\n[ 42%]: <taucloud_core> cache compiling.debug src/services.cpp\n[ 43%]: <taucloud_core> cache compiling.debug src/core.cpp\n[ 44%]: <taucloud_core> cache compiling.debug .deps/pace/src/networking/net.cpp\n[ 45%]: <taucloud_core> cache compiling.debug .deps/pace/src/networking/udp.cpp\n[ 46%]: <taucloud_core> cache compiling.debug .deps/pace/src/extensions/tls.cpp\n[ 48%]: <taucloud_core> cache compiling.debug .deps/pace/src/application/http.cpp\n[ 49%]: <taucloud_core> cache compiling.debug .deps/pace/src/application/http_url.cpp\n[ 50%]: <pace_runtime> archiving.debug libpace_runtime.a\n[ 60%]: <taucloud_core> archiving.debug libtaucloud_core.a\n[ 62%]: <taucloud_api> linking.debug taucloud_api\n[ 63%]: <taucloud_m1_tests> linking.debug taucloud_m1_tests\n[ 63%]: <taucloud_ctl> linking.debug taucloud_ctl\n[ 63%]: <taucloud_identity> linking.debug taucloud_identity\n[ 63%]: <taucloud_helper> linking.debug taucloud_helper\n[ 63%]: <taucloud_file_3> linking.debug taucloud_file_3\n[ 63%]: <taucloud_file_2> linking.debug taucloud_file_2\n[ 63%]: <taucloud_file_1> linking.debug taucloud_file_1\n[ 63%]: <taucloud_file> linking.debug taucloud_file\n[ 64%]: <taucloud_m2_tests> linking.debug taucloud_m2_tests\n[ 65%]: <taucloud_monitor> linking.debug taucloud_monitor\n[ 66%]: <taucloud_protocol> linking.debug taucloud_protocol\n[ 67%]: <taucloud_storage_admin> linking.debug taucloud_storage_admin\n[ 68%]: <taucloud_supervisor> linking.debug taucloud_supervisor\n[ 69%]: <taucloud_updater> linking.debug taucloud_updater\n[100%]: build ok, spent 9.471s\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "<checkout>/build/linux/x86_64/debug/taucloud_m1_tests"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\":29,\"status\":\"passed\"}\n",
+      "stderr": "{\"code\":\"invalid_request\",\"event\":\"ipc_rejected\",\"role\":\"helper\",\"time\":1793310957355}\n{\"code\":\"invalid_request\",\"event\":\"ipc_rejected\",\"role\":\"helper\",\"time\":1793310957364}\n{\"code\":\"invalid_request\",\"event\":\"ipc_rejected\",\"role\":\"helper\",\"time\":1793310957373}\n{\"code\":\"invalid_request\",\"event\":\"ipc_rejected\",\"role\":\"helper\",\"time\":1793310957373}\n{\"code\":\"invalid_request\",\"event\":\"ipc_rejected\",\"role\":\"helper\",\"time\":1793310957374}\n"
+    },
+    {
+      "command": [
+        "/usr/bin/python3",
+        "tests/m1_integration.py",
+        "--bin",
+        "<checkout>/build/linux/x86_64/debug",
+        "--output",
+        "<checkout>/build/m2/linux-gcc.integration.json"
+      ],
+      "returncode": 0,
+      "stdout": "{\n  \"schema\": 1,\n  \"recorded_at\": \"2026-10-29T21:56:15.913491+00:00\",\n  \"host\": \"Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39\",\n  \"python\": \"3.12.3\",\n  \"checks\": [\n    \"all service targets start and readiness resolves dependencies\",\n    \"single supervisor owner fence\",\n    \"one-use local administrator bootstrap\",\n    \"unauthenticated, incorrect password and untrusted TLS rejected\",\n    \"HTTP body limit, connection admission and idle TLS timeout\",\n    \"authenticated CLI and truthful capabilities; read scope cannot restart\",\n    \"read-scoped session logout and immediate revocation\",\n    \"browser secure cookies, exact-origin CORS, CSRF and revocation\",\n    \"idempotent restart and sibling continuity\",\n    \"supervisor crash verified adoption preserves workers and session\",\n    \"abrupt worker death recovers with backoff\",\n    \"persistent crash-loop limit\",\n    \"graceful dependency-ordered shutdown\",\n    \"abrupt migration transaction recovery and pre-upgrade backup\",\n    \"SQLite integrity, hashed tokens/passwords, redacted logs\"\n  ],\n  \"status\": \"passed\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "<checkout>/build/linux/x86_64/debug/taucloud_m2_tests"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\":35,\"disk_full\":\"native-adapter fault injection\",\"offset_bits\":64,\"status\":\"passed\"}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/python3",
+        "tests/m2_integration.py",
+        "--bin",
+        "<checkout>/build/linux/x86_64/debug",
+        "--large-mib",
+        "257",
+        "--output",
+        "<checkout>/build/m2/linux-gcc.files.json"
+      ],
+      "returncode": 0,
+      "stdout": "{\n  \"status\": \"passed\",\n  \"host\": \"Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39\",\n  \"checks\": [\n    \"users/groups/membership; separate management roles; root, space and writer overlap rejected\",\n    \"two-user isolation and administrator has no implicit file grant; aliases charge quota once\",\n    \"portable names, traversal, case aliases, hard links and symlink rejection\",\n    \"random writes, explicit flush, range locks, stable open identity across rename\",\n    \"quota pre-reservation, staged visibility and cancellation releases capacity\",\n    \"acknowledged grant and group revocation; open handles cannot bypass policy\",\n    \"domain crash fencing, sibling continuity and durable staged upload recovery\",\n    \"bounded CPU/memory/network/capacity inventory, honest disk-health states and audit\",\n    \"bounded HTTPS CLI upload/download with SHA-256 match: 269484032 bytes; worker budget 256 MiB\",\n    \"clean stop, all owner databases consistent and logs exclude credentials\"\n  ],\n  \"large_bytes\": 269484032,\n  \"worker_memory_budget_bytes\": 268435456,\n  \"physical_host_ram_exceeded\": false,\n  \"hard_memory_limit\": \"linux_RLIMIT_DATA\",\n  \"sampled_peak_rss_bytes\": {\n    \"file\": 14893056,\n    \"api\": 19656704\n  }\n}\n",
+      "stderr": ""
+    }
+  ],
+  "status": "passed"
+}

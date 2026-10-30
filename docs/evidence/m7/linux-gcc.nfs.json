@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "checks": [
+    "TCP record fragmentation and MOUNT v3 with independent XDR codecs",
+    "unknown UID/GID/groups rejected; root squashed to explicitly unprivileged subject",
+    "root squash uses anonymous read rights, strips privileged groups and rejects writes/revoked rights",
+    "read-only TCP portmapper advertises NFS and does not advertise unsupported NLM",
+    "trailing XDR rejected before WRITE; previously persisted bytes remain intact",
+    "v3 guarded CREATE, 64 KiB UNSTABLE upgraded to FILE_SYNC, READ, COMMIT, exact duplicate WRITE",
+    "MAC tamper rejected; file handle survives external rename and all-service restart; durable v3 replay and new write verifier",
+    "deleted/recreated path cannot revive an old file handle",
+    "v3 MKDIR, cross-directory RENAME, READDIRPLUS, REMOVE/RMDIR type separation",
+    "pynfs v4.1 EXCHANGE_ID/CREATE_SESSION/SEQUENCE, guarded OPEN, WRITE/READ, exact slot replay",
+    "false slot replay and foreign stateid rejected; GETATTR subset independently decoded",
+    "old sessions/stateids invalidated on reboot; persisted owner can reclaim OPEN during grace; CLOSE releases recovery record",
+    "unrelated client cannot reclaim another owner after restart",
+    "export disable revokes existing handles through fresh identity grants",
+    "offline metadata backup strips NFS enrollment and excludes persistent capability/recovery databases"
+  ],
+  "client": "linux-nfs/pynfs cd4701827a8261fedbfb4c6e39029fb9671321a6 generated NFSv3/v4.1 codecs",
+  "full_conformance": false,
+  "test_sha256": "31204526a352b306a5afbb2aa90c111e0972df73190488dcd34c6de8619ceed1",
+  "data_sha256": "7daca2095d0438260fa849183dfc67faa459fdf4936e1bc91eec6b281b27e4c2"
+}

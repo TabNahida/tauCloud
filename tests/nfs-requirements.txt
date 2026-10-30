@@ -1,0 +1,3 @@
+# Test-time generation of pinned linux-nfs/pynfs XDR codecs, not server dependencies.
+ply==3.11
+xdrlib3==0.1.1

@@ -1,0 +1,163 @@
+{
+  "schema": 1,
+  "recorded_at": "2026-10-29T02:59:03.247997+00:00",
+  "host": "Windows-11-10.0.26200-SP0",
+  "python": "3.13.3",
+  "machine": "AMD64",
+  "logical_cpus": 24,
+  "compiler": "msvc",
+  "sanitizers": false,
+  "sources_sha256": "edb765f31747bec802fb3bf4b12f81578fd7c2b218725589fbb6fe91de5f15c7",
+  "pace": "d3842473b2bea63e291eb25fe44f610cbd49b02e",
+  "milestone_status": "incomplete",
+  "steps": [
+    {
+      "command": [
+        "<python>",
+        "scripts/fetch_pace.py",
+        "--verify"
+      ],
+      "returncode": 0,
+      "seconds": 1.881,
+      "stdout": "PACE verified: d3842473b2bea63e291eb25fe44f610cbd49b02e",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "xmake",
+        "f",
+        "-c",
+        "-p",
+        "windows",
+        "-a",
+        "x64",
+        "-m",
+        "debug",
+        "-o",
+        "build/windows-msvc",
+        "--m0=y",
+        "--sanitizers=n",
+        "--toolchain=msvc",
+        "-y",
+        "--vs=2026",
+        "--vs_toolset=14.51.36231",
+        "--vs_sdkver=10.0.26100.0"
+      ],
+      "returncode": 0,
+      "seconds": 0.319,
+      "stdout": "checking for Microsoft C/C++ Compiler (x64) ... ok\nchecking for Microsoft Visual Studio (x64) version ... 2026",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "xmake",
+        "-j",
+        "4"
+      ],
+      "returncode": 0,
+      "seconds": 3.155,
+      "stdout": "[ 18%]: <taucloud_m0_filesystem> compiling.debug experiments\\m0\\filesystem.cpp\n[ 25%]: <pace_runtime> compiling.debug .deps\\pace\\src\\runtime\\poller.cpp\n[ 25%]: <pace_runtime> compiling.debug .deps\\pace\\src\\runtime\\io_context.cpp\n[ 25%]: <taucloud_m0_runtime> compiling.debug experiments\\m0\\runtime.cpp\n[ 31%]: <pace_runtime> compiling.debug .deps\\pace\\src\\runtime\\runtime.cpp\n[ 37%]: <taucloud_m0_filesystem> linking.debug taucloud_m0_filesystem.exe\n[ 69%]: <pace_runtime> archiving.debug pace_runtime.lib\n[ 75%]: <taucloud_m0_runtime> linking.debug taucloud_m0_runtime.exe\n[100%]: build ok, spent 2.891s",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "xmake",
+        "run",
+        "taucloud_m0_runtime"
+      ],
+      "returncode": 0,
+      "seconds": 0.478,
+      "stdout": "{\"probe\":\"runtime\",\"status\":\"passed\",\"checks\":13}",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "xmake",
+        "run",
+        "taucloud_m0_filesystem"
+      ],
+      "returncode": 0,
+      "seconds": 0.312,
+      "stdout": "{\"probe\":\"filesystem\",\"status\":\"passed\",\"host\":\"windows\",\"case_sensitive\":false,\"symlink_test\":\"passed\",\"power_loss_durability\":\"not_tested\"}",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "<python>",
+        "experiments/m0/recovery.py"
+      ],
+      "returncode": 0,
+      "seconds": 0.519,
+      "stdout": "{\"probe\": \"recovery\", \"status\": \"passed\", \"transport\": \"AF_PIPE\", \"checks\": 17, \"limits\": \"serial prototype; production ACL/admission and durable generation authority pending\"}",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "<python>",
+        "experiments/m0/updates.py"
+      ],
+      "returncode": 0,
+      "seconds": 2.207,
+      "stdout": "{\"probe\": \"updates\", \"status\": \"passed\", \"checks\": 11, \"crypto\": \"OpenSSL 3.2.3 3 Sep 2024 (Library: OpenSSL 3.2.3 3 Sep 2024)\", \"sqlite\": \"3.49.1\", \"power_loss_durability\": \"not_tested\"}",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "<python>",
+        "experiments/m0/smb.py"
+      ],
+      "returncode": 0,
+      "seconds": 0.072,
+      "stdout": "{\"probe\": \"smb_vectors\", \"status\": \"passed\", \"checks\": 12, \"interop\": \"not_tested\", \"scope\": \"offline codecs, NTLMv2 vectors, signed CREATE validation; no SPNEGO/server\"}",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "powershell",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "experiments/m0/windows_host.ps1"
+      ],
+      "returncode": 0,
+      "seconds": 1.125,
+      "stdout": "{\"probe\":\"windows_host\",\"status\":\"passed\",\"version\":\"25H2\",\"build\":\"26200.9457\",\"fixture_filesystem\":\"NTFS\",\"exclusive_bind_445\":\"AddressAlreadyInUse\",\"loopback_alternative_listener\":true,\"services_modified\":false,\"remote_firewall_connectivity\":\"not_tested\"}",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "<fixture>\\.deps\\smb-venv\\Scripts\\python.exe",
+        "experiments/m0/smb_interop.py",
+        "--client",
+        "smbprotocol"
+      ],
+      "returncode": 0,
+      "seconds": 0.398,
+      "stdout": "{\"probe\": \"smb_interop\", \"status\": \"passed\", \"client\": \"smbprotocol 1.15.0\", \"events\": [\"negotiate_2.1_signing_required\", \"ntlmv2_authenticated\", \"signed_open\", \"rejected_unsigned_or_tampered\"], \"scope\": \"loopback disposable protocol slice, not SMB support\"}",
+      "stderr": ""
+    }
+  ],
+  "tool_versions": [
+    {
+      "command": [
+        "xmake",
+        "--version"
+      ],
+      "returncode": 0,
+      "seconds": 0.121,
+      "stdout": "xmake v3.1.1+HEAD.3ba37a0d4, A cross-platform build utility based on Lua",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "cl"
+      ],
+      "returncode": -1,
+      "error": "[WinError 2] 系统找不到指定的文件。"
+    }
+  ],
+  "probe_status": "passed",
+  "path_normalization": "Checkout, temporary fixture and interpreter paths replaced by placeholders; version banners shortened."
+}

@@ -1,0 +1,258 @@
+{
+  "schema": 1,
+  "recorded_at": "2026-10-30T01:30:14.688337+00:00",
+  "host": "Windows-11-10.0.26200-SP0",
+  "compiler": "msvc",
+  "sanitizers": false,
+  "sources_sha256": "a1a6a6d6cad4c1a4db7cf799c5abc19e42fca1d36c12e7617e145bf6808f39b8",
+  "dependencies": {
+    "schema": 1,
+    "pace": {
+      "url": "https://github.com/TabNahida/PACE.git",
+      "revision": "d3842473b2bea63e291eb25fe44f610cbd49b02e",
+      "source_sha256": "f516debaec9dba0e827c0491719d5e98055df7326124fe00b7e3b83667843ecd",
+      "license": "MIT",
+      "modules": [
+        "runtime"
+      ],
+      "optional_dependencies": []
+    },
+    "m1": {
+      "recipe_repository": "https://github.com/xmake-io/xmake-repo.git",
+      "recipe_revision": "fc12a12ac9d1ae5e8f7a9fb83288f11c79ded17b",
+      "openssl": {
+        "version": "3.5.9",
+        "source_sha256": "e3365bdecdbcd88b2454a89a5ae526f6cc07cc76eca24753034b37680cd271f3",
+        "license": "Apache-2.0"
+      },
+      "sqlite3": {
+        "xmake_version": "3.51.0+300",
+        "version": "3.51.3",
+        "source_sha256": "81f5be397049b0cae1b167f2225af7646fc0f82e4a9b3c48c9ea3a533e21d77a",
+        "license": "Public domain"
+      },
+      "nlohmann_json": {
+        "version": "3.12.0",
+        "source_sha256": "4b92eb0c06d10683f7447ce9406cb97cd4b453be18d7279320f7b2f025c10187",
+        "license": "MIT"
+      }
+    },
+    "recipes": {
+      "url": "https://github.com/xmake-io/xmake-repo.git",
+      "revision": "fc12a12ac9d1ae5e8f7a9fb83288f11c79ded17b",
+      "source_sha256": "7e0950b38d545d6c5fb8ecc30179d33c3234438de45704212c9684d18f003b8f",
+      "license": "Apache-2.0"
+    },
+    "m3": {
+      "pugixml": {
+        "version": "1.15",
+        "source_sha256": "b39647064d9e28297a34278bfb897092bf33b7c487906ddfc094c9e8868bddcb",
+        "license": "MIT"
+      },
+      "utf8proc": {
+        "version": "2.11.3",
+        "source_sha256": "abfed50b6d4da51345713661370290f4f4747263ee73dc90356299dfc7990c78",
+        "license": "MIT"
+      }
+    },
+    "pynfs": {
+      "url": "https://github.com/linux-nfs/pynfs.git",
+      "revision": "cd4701827a8261fedbfb4c6e39029fb9671321a6",
+      "source_sha256": "c24c38b8b1d94527192594825c64eadf0641ef44c43d7690bb98a952f61d9a4c",
+      "license": "GPL-2.0-only; XDR definitions BSD-3-Clause (test tooling only)",
+      "runtime_dependency": false,
+      "export_note": "Unused NFSv4.0 symlinks omitted; all regular files verified. Generated files live under build/nfs-client."
+    }
+  },
+  "steps": [
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\.deps\\smb-client\\Scripts\\python.exe",
+        "scripts/fetch_pace.py",
+        "--verify"
+      ],
+      "returncode": 0,
+      "stdout": "pace verified: d3842473b2bea63e291eb25fe44f610cbd49b02e\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\.deps\\smb-client\\Scripts\\python.exe",
+        "scripts/fetch_pace.py",
+        "--dependency",
+        "recipes",
+        "--verify"
+      ],
+      "returncode": 0,
+      "stdout": "recipes verified: fc12a12ac9d1ae5e8f7a9fb83288f11c79ded17b\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\.deps\\smb-client\\Scripts\\python.exe",
+        "scripts/fetch_nfs_client.py"
+      ],
+      "returncode": 0,
+      "stdout": "pynfs verified: cd4701827a8261fedbfb4c6e39029fb9671321a6\nInput file is nfs3.x\nWill use output files nfs3_const.py, nfs3_type.py, and nfs3_pack.py\nIgnoring program NFS_PROGRAM = 100003\nInput file is nfs4.x\nWill use output files nfs4_const.py, nfs4_type.py, and nfs4_pack.py\nIgnoring program NFS4_PROGRAM = 100003\nIgnoring program NFS4_CALLBACK = 0x40000000\nInput file is mnt3.x\nWill use output files mnt3_const.py, mnt3_type.py, and mnt3_pack.py\nIgnoring program MOUNT_PROGRAM = 100005\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\windows\\x64\\release\\taucloud_m1_tests.exe"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\":29,\"status\":\"passed\"}\n",
+      "stderr": "{\"code\":\"invalid_request\",\"event\":\"ipc_rejected\",\"role\":\"helper\",\"time\":1793323815989}\n{\"code\":\"invalid_request\",\"event\":\"ipc_rejected\",\"role\":\"helper\",\"time\":1793323815995}\n{\"code\":\"invalid_request\",\"event\":\"ipc_rejected\",\"role\":\"helper\",\"time\":1793323815998}\n{\"code\":\"invalid_request\",\"event\":\"ipc_rejected\",\"role\":\"helper\",\"time\":1793323815998}\n{\"code\":\"invalid_request\",\"event\":\"ipc_rejected\",\"role\":\"helper\",\"time\":1793323815998}\n"
+    },
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\.deps\\smb-client\\Scripts\\python.exe",
+        "tests/m1_integration.py",
+        "--bin",
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\windows\\x64\\release",
+        "--output",
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\m7\\windows-msvc.integration.json"
+      ],
+      "returncode": 0,
+      "stdout": "{\n  \"schema\": 1,\n  \"recorded_at\": \"2026-10-30T01:30:42.671807+00:00\",\n  \"host\": \"Windows-11-10.0.26200-SP0\",\n  \"python\": \"3.13.3\",\n  \"checks\": [\n    \"all service targets start and readiness resolves dependencies\",\n    \"single supervisor owner fence\",\n    \"one-use local administrator bootstrap\",\n    \"unauthenticated, incorrect password and untrusted TLS rejected\",\n    \"HTTP body limit, connection admission and idle TLS timeout\",\n    \"authenticated CLI and truthful capabilities; read scope cannot restart\",\n    \"read-scoped session logout and immediate revocation\",\n    \"browser secure cookies, exact-origin CORS, CSRF and revocation\",\n    \"idempotent restart and sibling continuity\",\n    \"supervisor crash verified adoption preserves workers and session\",\n    \"abrupt worker death recovers with backoff\",\n    \"persistent crash-loop limit\",\n    \"graceful dependency-ordered shutdown\",\n    \"abrupt migration transaction recovery and pre-upgrade backup\",\n    \"SQLite integrity, hashed tokens/passwords, redacted logs\"\n  ],\n  \"status\": \"passed\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\windows\\x64\\release\\taucloud_m2_tests.exe"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\":35,\"disk_full\":\"native-adapter fault injection\",\"offset_bits\":64,\"status\":\"passed\"}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\.deps\\smb-client\\Scripts\\python.exe",
+        "tests/m2_integration.py",
+        "--bin",
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\windows\\x64\\release",
+        "--large-mib",
+        "1",
+        "--output",
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\m7\\windows-msvc.files.json"
+      ],
+      "returncode": 0,
+      "stdout": "{\n  \"status\": \"passed\",\n  \"host\": \"Windows-11-10.0.26200-SP0\",\n  \"checks\": [\n    \"users/groups/membership; separate management roles; root, space and writer overlap rejected\",\n    \"two-user isolation and administrator has no implicit file grant; aliases charge quota once\",\n    \"portable names, traversal, case aliases, hard links and symlink rejection\",\n    \"random writes, explicit flush, range locks, stable open identity across rename\",\n    \"quota pre-reservation, staged visibility and cancellation releases capacity\",\n    \"acknowledged grant and group revocation; open handles cannot bypass policy\",\n    \"domain crash fencing, sibling continuity and durable staged upload recovery\",\n    \"bounded CPU/memory/network/capacity inventory, honest disk-health states and audit\",\n    \"bounded HTTPS CLI upload/download with SHA-256 match: 1048576 bytes; worker budget 512 MiB\",\n    \"clean stop, all owner databases consistent and logs exclude credentials\"\n  ],\n  \"large_bytes\": 1048576,\n  \"worker_memory_budget_bytes\": 536870912,\n  \"physical_host_ram_exceeded\": false,\n  \"hard_memory_limit\": \"windows_job_private_commit\",\n  \"sampled_peak_rss_bytes\": {\n    \"file\": 11943936,\n    \"api\": 13529088\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\windows\\x64\\release\\taucloud_m3_tests.exe"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\":28,\"status\":\"passed\"}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\.deps\\smb-client\\Scripts\\python.exe",
+        "tests/m3_integration.py",
+        "--bin",
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\windows\\x64\\release",
+        "--large-mib",
+        "1",
+        "--output",
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\m7\\windows-msvc.dav.json"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\windows\\x64\\release\\taucloud_m4_tests.exe"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\":18,\"status\":\"passed\"}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\.deps\\smb-client\\Scripts\\python.exe",
+        "tests/m4_integration.py",
+        "--bin",
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\windows\\x64\\release",
+        "--large-mib",
+        "1",
+        "--output",
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\m7\\windows-msvc.ftp.json"
+      ],
+      "returncode": 0,
+      "stdout": "PASS M3 state adds isolated FTP worker; plaintext default deny, anonymous/active/FXP/downgrade denied\nPASS stdlib FTP client: UTF-8, PASV, MLSD/MLST facts, directories/rename/delete, binary roundtrip and safe REST upload/download\nPASS EPSV ALL and TLS certificate verification; fresh or different-control TLS sessions rejected on data channel\nPASS configured passive port exhaustion returns 425 and releases listeners on ABOR/QUIT\nPASS in-band ABOR and missing TLS close_notify discard staging, preserve existing file, release quota\nPASS bounded malformed commands, mismatched data peer, stalled TLS, quota overflow and changed-source resume rejection\nPASS share revocation during STOR cleans unpublished data; disabled credentials invalidate existing control sessions\nPASS FTP kill/restart reclaims stages; API, identity, file and DAV processes survive; mixed writer gate retained\nPASS independent curl explicit FTPS probe (strict session binding retained)\nPASS bounded streaming upload/download 1 MiB with digest verification\nPASS explicit plaintext opt-in works after restart with stdlib and curl; default remains TLS only\n{\n  \"status\": \"passed\",\n  \"checks\": [\n    \"M3 state adds isolated FTP worker; plaintext default deny, anonymous/active/FXP/downgrade denied\",\n    \"stdlib FTP client: UTF-8, PASV, MLSD/MLST facts, directories/rename/delete, binary roundtrip and safe REST upload/download\",\n    \"EPSV ALL and TLS certificate verification; fresh or different-control TLS sessions rejected on data channel\",\n    \"configured passive port exhaustion returns 425 and releases listeners on ABOR/QUIT\",\n    \"in-band ABOR and missing TLS close_notify discard staging, preserve existing file, release quota\",\n    \"bounded malformed commands, mismatched data peer, stalled TLS, quota overflow and changed-source resume rejection\",\n    \"share revocation during STOR cleans unpublished data; disabled credentials invalidate existing control sessions\",\n    \"FTP kill/restart reclaims stages; API, identity, file and DAV processes survive; mixed writer gate retained\",\n    \"independent curl explicit FTPS probe (strict session binding retained)\",\n    \"bounded streaming upload/download 1 MiB with digest verification\",\n    \"explicit plaintext opt-in works after restart with stdlib and curl; default remains TLS only\"\n  ],\n  \"clients\": {\n    \"curl_ftps\": {\n      \"version\": \"curl 8.21.0 (Windows) libcurl/8.21.0 Schannel zlib/1.3.2 WinIDN WinLDAP\",\n      \"returncode\": 0,\n      \"status\": \"passed\"\n    },\n    \"python\": {\n      \"version\": \"3.13.3\",\n      \"tls\": \"OpenSSL 3.0.16 11 Feb 2025\",\n      \"status\": \"passed\",\n      \"adapter\": \"stdlib FTP_TLS plus explicit SSL session reuse\"\n    },\n    \"large_transfer\": {\n      \"bytes\": 1048576,\n      \"sha256\": \"fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83\",\n      \"seconds\": 0.4802275000838563,\n      \"worker_memory_mb\": 256\n    },\n    \"curl_plain\": {\n      \"version\": \"curl 8.21.0 (Windows) libcurl/8.21.0 Schannel zlib/1.3.2 WinIDN WinLDAP\",\n      \"status\": \"passed\"\n    }\n  },\n  \"filezilla\": {\n    \"status\": \"not_tested\",\n    \"reason\": \"No installed automatable FileZilla GUI on either acceptance host\"\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\windows\\x64\\release\\taucloud_m5_tests.exe"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\":80,\"status\":\"passed\"}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\.deps\\smb-client\\Scripts\\python.exe",
+        "tests/m5_integration.py",
+        "--bin",
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\windows\\x64\\release",
+        "--large-mib",
+        "17",
+        "--output",
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\m7\\windows-msvc.smb.json"
+      ],
+      "returncode": 0,
+      "stdout": "PASS signed NTLMv2 MIC authentication, UTF-16 create/read/write/flush/query/directory/close\nPASS authenticated srvsvc NDR32 share enumeration filters inaccessible and non-SMB shares\nPASS share access conflicts, exclusive/shared byte locks, rename with live handles, truncate and last-close deletion\nPASS signed related compound CREATE/WRITE/READ/CLOSE and credit accounting\nPASS directory deletion is nonrecursive; traversal/ADS/non-NFC denied; unsupported persistent ACL query rejected\nPASS 17 MiB streamed binary roundtrip with SHA-256\nPASS bad MIC/proof, unsigned or tampered signing, oversized/truncated headers and invalid compound rejected\nPASS SMB credential revocation invalidates live access; re-enrollment and SPNEGO reconnect succeed\nPASS SMB worker kill/restart reclaims handles and durable delete intent without restarting API, identity or files\n{\"status\": \"passed\", \"checks\": [\"signed NTLMv2 MIC authentication, UTF-16 create/read/write/flush/query/directory/close\", \"authenticated srvsvc NDR32 share enumeration filters inaccessible and non-SMB shares\", \"share access conflicts, exclusive/shared byte locks, rename with live handles, truncate and last-close deletion\", \"signed related compound CREATE/WRITE/READ/CLOSE and credit accounting\", \"directory deletion is nonrecursive; traversal/ADS/non-NFC denied; unsupported persistent ACL query rejected\", \"17 MiB streamed binary roundtrip with SHA-256\", \"bad MIC/proof, unsigned or tampered signing, oversized/truncated headers and invalid compound rejected\", \"SMB credential revocation invalidates live access; re-enrollment and SPNEGO reconnect succeed\", \"SMB worker kill/restart reclaims handles and durable delete intent without restarting API, identity or files\"], \"client\": \"smbprotocol 1.15.0 / pyspnego 0.12.4\", \"host\": \"Windows-11-10.0.26200-SP0\", \"authentication_provider\": \"Windows SSPI (sspilib)\", \"large_mib\": 17, \"sha256\": \"ec50baf7fce21cbdb746f461b49328154ecce497b9fb1f5675ee13704c605bc4\", \"port\": 65529, \"sanitizers\": false}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\windows\\x64\\release\\taucloud_m6_tests.exe"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\":509,\"milestone\":\"M6\",\"status\":\"passed\"}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\.deps\\smb-client\\Scripts\\python.exe",
+        "tests/m6_integration.py",
+        "--bin",
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\windows\\x64\\release",
+        "--large-mib",
+        "17",
+        "--output",
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\m7\\windows-msvc.smb3.json"
+      ],
+      "returncode": 0,
+      "stdout": "PASS 0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2\nPASS 0x300 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 17 MiB SHA-256 stream\nPASS 0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2\nPASS 0x302 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 17 MiB SHA-256 stream\nPASS 0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2\nPASS 0x311 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 17 MiB SHA-256 stream\nPASS default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work\nPASS leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent\nPASS SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks\nPASS unsupported signing/cipher/hash and malformed contexts fail without dialect fallback\nPASS independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect\nPASS tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect\nPASS fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file\nPASS SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys\n{\"status\": \"passed\", \"checks\": [\"0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2\", \"0x300 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 17 MiB SHA-256 stream\", \"0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2\", \"0x302 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 17 MiB SHA-256 stream\", \"0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2\", \"0x311 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 17 MiB SHA-256 stream\", \"default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work\", \"leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent\", \"SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks\", \"unsupported signing/cipher/hash and malformed contexts fail without dialect fallback\", \"independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect\", \"tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect\", \"fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file\", \"SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys\"], \"client\": \"smbprotocol 1.15.0 / pyspnego 0.12.4\", \"host\": \"Windows-11-10.0.26200-SP0\", \"authentication_provider\": \"Windows SSPI (sspilib)\", \"large_mib\": 17, \"sha256\": \"ec50baf7fce21cbdb746f461b49328154ecce497b9fb1f5675ee13704c605bc4\", \"port\": 49186, \"sanitizers\": false}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\windows\\x64\\release\\taucloud_m7_tests.exe"
+      ],
+      "returncode": 0,
+      "stdout": "{\"checks\":58,\"status\":\"passed\"}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\.deps\\smb-client\\Scripts\\python.exe",
+        "tests/m7_integration.py",
+        "--bin",
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\windows\\x64\\release",
+        "--output",
+        "C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\build\\m7\\windows-msvc.nfs.json"
+      ],
+      "returncode": 1,
+      "stdout": "",
+      "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\TabYe\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\shutil.py\", line 625, in _rmtree_unsafe\n    os.unlink(fullname)\n    ~~~~~~~~~^^^^^^^^^^\nPermissionError: [WinError 32] \u53e6\u4e00\u4e2a\u7a0b\u5e8f\u6b63\u5728\u4f7f\u7528\u6b64\u6587\u4ef6\uff0c\u8fdb\u7a0b\u65e0\u6cd5\u8bbf\u95ee\u3002: 'C:\\\\Users\\\\TabYe\\\\AppData\\\\Local\\\\Temp\\\\tc3-jdutd7ep\\\\backup\\\\identity.db'\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\tests\\m7_integration.py\", line 200, in <module>\n    result=run(a);print(json.dumps(result,indent=2))\n  File \"C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\tests\\m7_integration.py\", line 196, in run\n    finally:f.close()\n            ~~~~~~~^^\n  File \"C:\\Users\\TabYe\\AppData\\Local\\Temp\\taucloud-m7-f219c698e8a34df394ba803febedab24\\tests\\m3_integration.py\", line 52, in close\n    self.log.close(); self.tmp.cleanup()\n                      ~~~~~~~~~~~~~~~~^^\n  File \"C:\\Users\\TabYe\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tempfile.py\", line 954, in cleanup\n    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)\n    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\TabYe\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tempfile.py\", line 934, in _rmtree\n    _shutil.rmtree(name, onexc=onexc)\n    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\TabYe\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\shutil.py\", line 790, in rmtree\n    return _rmtree_unsafe(path, onexc)\n  File \"C:\\Users\\TabYe\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\shutil.py\", line 629, in _rmtree_unsafe\n    onexc(os.unlink, fullname, err)\n    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\TabYe\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tempfile.py\", line 909, in onexc\n    _os.unlink(path)\n    ~~~~~~~~~~^^^^^^\nPermissionError: [WinError 32] \u53e6\u4e00\u4e2a\u7a0b\u5e8f\u6b63\u5728\u4f7f\u7528\u6b64\u6587\u4ef6\uff0c\u8fdb\u7a0b\u65e0\u6cd5\u8bbf\u95ee\u3002: 'C:\\\\Users\\\\TabYe\\\\AppData\\\\Local\\\\Temp\\\\tc3-jdutd7ep\\\\backup\\\\identity.db'\n"
+    }
+  ],
+  "status": "failed"
+}

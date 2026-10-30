@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "recorded_date": "2026-10-30",
+  "final_sources_sha256": "47331f31c9362b358d927341f0498162878c00997af646d2973aa8ee206ae0f8",
+  "implementation_sha256": "da9bc15f98062e31fdd367b04fed2e9a8aee8ef5a44591c50de5252591074d93",
+  "windows_ntfs_source_matches_workspace": true,
+  "nfs_test_sha256": "31204526a352b306a5afbb2aa90c111e0972df73190488dcd34c6de8619ceed1",
+  "note": "Full Windows regression passed M1-M6 and M7 native checks, then failed at final fixture cleanup because Python sqlite3 context manager did not close its read connection. Explicit close fixes the fixture only. The complete affected NFS integration was rerun and passed; Windows sources were compared to the workspace after the fix. Historical failed runs remain unmodified.",
+  "gcc_full_regression": "passed",
+  "clang_full_regression": "passed",
+  "windows_m1_m6_and_native_checks": "passed",
+  "windows_corrected_nfs_integration": "passed",
+  "full_nfs_conformance": false
+}

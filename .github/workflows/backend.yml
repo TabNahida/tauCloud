@@ -1,0 +1,42 @@
+name: Backend M7 experimental profile
+on: [push, pull_request]
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: '3.1.1'
+      - run: python3 scripts/fetch_pace.py
+      - run: python3 scripts/fetch_pace.py --dependency recipes
+      - run: sudo apt-get update && sudo apt-get install -y libssl-dev libexpat1-dev
+      - run: python3 scripts/fetch_litmus.py
+      - run: python3 -m pip install --break-system-packages -r tests/smb-requirements.txt -r tests/nfs-requirements.txt
+      - run: python3 scripts/run_m7.py --compiler ${{ matrix.compiler }} ${{ matrix.compiler == 'clang' && '--mode debug --sanitizers' || '' }} --litmus build/litmus/installed/bin/litmus
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: linux-${{ matrix.compiler }}
+          path: build/m7/*.json
+  windows:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+      - uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: '3.1.1'
+      - run: python scripts/fetch_pace.py
+      - run: python scripts/fetch_pace.py --dependency recipes
+      - run: python -m pip install -r tests/smb-requirements.txt -r tests/nfs-requirements.txt
+      - run: python scripts/run_m7.py --compiler msvc
+        env:
+          PYTHONUTF8: '1'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-msvc
+          path: build/m7/*.json

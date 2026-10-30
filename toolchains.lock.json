@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "xmake": {"version": "3.1.1", "revision_prefix": "3ba37a0"},
+  "cxx_standard": 20,
+  "linux": {
+    "distribution": "Ubuntu 24.04.4 LTS x86-64",
+    "reference_kernel": "6.18.40.1-microsoft-standard-WSL2",
+    "gcc": "13.3.0 (Ubuntu 13.3.0-6ubuntu2~24.04.1)",
+    "clang": "18.1.3 (1ubuntu1)",
+    "python": "3.12.3",
+    "filesystem": "ext4 via reference kernel",
+    "openssl_cli": "3.0.13",
+    "sqlite_python": "3.45.1"
+  },
+  "windows": {
+    "os": "Windows 11 25H2 x64",
+    "build": "26200.9457",
+    "visual_studio": "2026 Community (18)",
+    "msvc_toolset": "14.51.36231",
+    "sdk": "10.0.26100.0",
+    "python": "3.13.3",
+    "filesystem": "NTFS 3.1",
+    "openssl_cli": "3.2.3 (Git for Windows)",
+    "sqlite_python": "3.49.1"
+  },
+  "policy": "Exact observed reproduction baseline, not immutable OS images or a production dependency/security support claim. Record drift and re-run evidence; SDK/toolset selected explicitly by the runner."
+}

@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "checks": [
+    "0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+    "0x300 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+    "0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+    "0x302 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+    "0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+    "0x311 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+    "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+    "leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent",
+    "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+    "unsupported signing/cipher/hash and malformed contexts fail without dialect fallback",
+    "independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+    "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+    "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+    "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+  ],
+  "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+  "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "authentication_provider": "pyspnego NTLM",
+  "large_mib": 1,
+  "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+  "port": 51517,
+  "sanitizers": true
+}

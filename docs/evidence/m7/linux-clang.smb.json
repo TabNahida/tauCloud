@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "checks": [
+    "signed NTLMv2 MIC authentication, UTF-16 create/read/write/flush/query/directory/close",
+    "authenticated srvsvc NDR32 share enumeration filters inaccessible and non-SMB shares",
+    "share access conflicts, exclusive/shared byte locks, rename with live handles, truncate and last-close deletion",
+    "signed related compound CREATE/WRITE/READ/CLOSE and credit accounting",
+    "directory deletion is nonrecursive; traversal/ADS/non-NFC denied; unsupported persistent ACL query rejected",
+    "1 MiB streamed binary roundtrip with SHA-256",
+    "bad MIC/proof, unsigned or tampered signing, oversized/truncated headers and invalid compound rejected",
+    "SMB credential revocation invalidates live access; re-enrollment and SPNEGO reconnect succeed",
+    "SMB worker kill/restart reclaims handles and durable delete intent without restarting API, identity or files"
+  ],
+  "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+  "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "authentication_provider": "pyspnego NTLM",
+  "large_mib": 1,
+  "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+  "port": 40465,
+  "sanitizers": true
+}

@@ -1,0 +1,8 @@
+.deps/
+.xmake/
+build/
+__pycache__/
+*.pyc
+
+debug.log
+child.log

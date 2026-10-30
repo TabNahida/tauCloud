@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "probe": "dependency_acquisition",
+  "status": "passed",
+  "revision": "d3842473b2bea63e291eb25fe44f610cbd49b02e",
+  "network_fetch": "passed from GitHub by exact revision",
+  "offline_git_export": "passed from committed object, working tree ignored",
+  "modified_export": "rejected",
+  "restored_export": "passed",
+  "diagnostic": "PACE export is missing or modified; remove .deps/pace and fetch again",
+  "source_sha256": "f516debaec9dba0e827c0491719d5e98055df7326124fe00b7e3b83667843ecd"
+}

@@ -1,0 +1,33 @@
+# ADR 0003 — Filesystem, IPC, recovery and NFS state
+
+The bounded M7 preview refines native handle reopening in [ADR 0010](0010-nfs-preview.md); its incomplete compatibility gates are explicit.
+
+[简体中文](0003-storage-ipc-nfs.zh-CN.md)
+
+Status: accepted for M1/M2 implementation, with explicit release gates below.
+
+## Filesystem contract
+
+Linux requires `openat2` with `RESOLVE_BENEATH | RESOLVE_NO_SYMLINKS | RESOLVE_NO_MAGICLINKS | RESOLVE_NO_XDEV`, relative to an owned root descriptor. There is no string-prefix fallback. Windows uses handle-relative `NtCreateFile`, opens reparse points rather than traversing them, and rejects reparse tags and hardlinks. The M0 Windows probe deliberately accepts one filename component only; nested resolution remains disabled until M2 walks components with ancestor handles protected against rename. Both reject traversal, ambiguous separators and alternate streams. Host administrators remain outside this confinement boundary.
+
+The disposable probes verify hardlink/symlink rejection, identity across rename/reopen, open-object survival after deletion, case sensitivity and successful native flush calls on ext4/NTFS. Linux additionally races hostile symlink replacement. Windows temporary fixtures reside on NTFS even when source code is on a WSL share. Linux `fsync(file)` plus `fsync(directory)` is distinguished from Windows `FlushFileBuffers(file)`; neither experiment establishes power-loss durability, directory-entry persistence on NTFS, cross-volume atomicity, Unicode collision policy, mount races or inode reuse safety. NTFS directory durability needs explicit M2 qualification rather than pretending POSIX fsync is portable.
+
+Native `(device,inode)` / `(volume serial,128-bit FileId)` identify a live object, not a perpetual capability. App object IDs are random UUIDs persisted by the owning storage domain. Store native incarnation/recovery evidence with each UUID, tombstone deletion, never reuse application IDs, and invalidate handles when generation or incarnation cannot be proven. A path rename must not create a new object ID; external host mutation requires reconciliation. No public NFS persistent handle is released from an inode-only map.
+
+## Local transports and process ownership
+
+Choose Unix sockets with private directory permissions and peer credentials on Linux, ACL-protected named pipes restricted to service SIDs on Windows. PACE's Windows WSAPoll cannot await pipe handles: use an overlapped I/O adapter with bounded completion posts to the owner context; Linux uses nonblocking Unix descriptors on the reactor. Until those adapters are implemented in M1, dedicated bounded blocking workers can host control IPC, never unbounded reactor blocking. Python `AF_UNIX` / `AF_PIPE` in M0 proves transport/restart feasibility, not the production adapter or ACLs.
+
+Frames carry version, request ID, deadline, caller/resource and generation. M0 uses bounded byte messages, JSON rather than pickle, per-connection unpredictable challenges, HMAC proof of peer possession and request-bound authenticated replies. Production boot credentials are separately provisioned to each service; don't share the policy signing key with protocol workers. Prototype configuration includes both secrets solely inside disposable fixtures. OS transport identity and explicit ACL tests are mandatory before admitting untrusted local users. No unauthenticated arbitrary command channel is provided.
+
+One lock file per domain prevents concurrent owners. On failure, retire the generation, kill/reap its process and drain/mark uncertain writes before granting ownership to a successor. Persist generation allocation transactionally in M1; the M0 harness deliberately assigns generations as test input. Adoption requires a fresh challenge, matching instance nonce/generation and live PID identity, not a PID file alone; production also verifies executable identity and OS process creation time. A fresh adopter process, killed/restarted worker, surviving sibling traffic, stale grants, lease expiry, wrong keys, unsupported versions and duplicate owners are exercised on both transports. M0 is a serial server; production multiplexing, queue saturation and stop/cancel RPCs remain M1 tests.
+
+Docker uses approved Unix sockets / Windows named pipes behind the same bounded scheduling adapters, or mutually authenticated configured TLS. Do not expose arbitrary daemon routes. M0 selects transport architecture; live daemon inventory, API negotiation, hijacked streams, engine permissions and WSL/Windows path translation remain M8 acceptance, not implicit consequences of the IPC test.
+
+## NFS persistent state
+
+An opaque handle contains format version, export UUID, object UUID, incarnation and a keyed authenticator. Its entire wire encoding must fit the NFSv3 64-byte limit if shared with v3; use a 16-byte MAC and fixed-width fields. On export removal, object deletion/reuse or unprovable identity return STALE. A storage-worker generation is for internal fencing; ordinary worker restart must not automatically invalidate an otherwise proven persistent NFS handle. Reopen through native stable-handle facilities (Linux exportfs handle / Windows file-ID open) only with scoped privilege and root membership checks, or declare that filesystem ineligible. Paths alone cannot satisfy persistent handles after external rename.
+
+The domain state owner stores export/object mappings and incarnation tombstones. The NFS state owner stores client/open/lock owners, sessions, slot sequence numbers, last request digest/result, lease epoch, recovery grace and reclaim eligibility. Persist successful non-idempotent result/replay state before acknowledgement; uncertain operations reconcile before reuse of a slot. Bound cached responses and use protocol-defined retry errors when replay state cannot be retained. Restore restart grace from durable state, reject unrelated clients' reclaim, and never extend leases forever while policy is unavailable. NFSv3 reboot write verifiers change after loss of unstable data; COMMIT acknowledges only actual durable completion.
+
+AUTH_SYS maps configured numeric UID/GID to tauCloud subjects per export, root-squashes UID 0 to an explicitly configured anonymous identity, rejects unmapped/expired grants and caps supplementary groups. It remains an opt-in trusted-network profile: client-supplied numbers are not password authentication. Windows uses the same application mapping, not implicit Windows SID equivalence. Kerberos/principal mapping is a later independent profile. Stable-handle reuse/reboot, replay/reclaim and write durability are M7 release gates on each filesystem.

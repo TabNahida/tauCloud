@@ -1,0 +1,187 @@
+#include <taucloud/smb.hpp>
+#include <taucloud/files.hpp>
+#include <iostream>
+using namespace tc;
+using namespace tc::smb_detail;
+int main() {
+  int checks = 0;
+  auto ok = [&](bool v) {
+    require(v, "test_failed");
+    ++checks;
+  };
+  auto rejected = [&](auto fn, std::string code) {
+    try {
+      fn();
+      throw error("expected_rejection");
+    } catch (const error &e) {
+      if (code != e.what())
+        std::cerr << code << " != " << e.what() << '\n';
+      ok(code == e.what());
+    }
+  };
+  auto base = fs::temp_directory_path() / ("tc5-unit-" + random_hex(6));
+  try {
+    ok(encode_bytes(nt_hash("Password")) == "a4f49c406510bdcab6824ee7c30fd852");
+    ok(encode_bytes(hmac(nt_hash("Password"), utf16("USERDomain"))) ==
+       "0c868a403bfd7a93a3001ef22ef02e3f");
+    ok(utf8(utf16("中文-é-😀")) == "中文-é-😀");
+    rejected([&] { utf8(bytes("\x00\xd8", 2)); }, "invalid_path");
+    rejected([&] { get("abc", 2, 2); }, "invalid_packet");
+    auto key = decode_bytes(random_hex());
+    auto sealed = seal(key, "credential", "alice");
+    ok(unseal(key, sealed, "alice") == "credential");
+    rejected([&] { unseal(key, sealed, "bob"); }, "credential_corrupt");
+    sealed.back() ^= 1;
+    rejected([&] { unseal(key, sealed, "alice"); }, "credential_corrupt");
+    auto token = bytes("NTLMSSP\0", 8) + bytes(40, '\0');
+    ok(ntlm_token(spnego(token)) == token);
+    rejected([&] { ntlm_token(bytes("\xa1\x82\xff\xff", 4)); }, "invalid_packet");
+    for (size_t i = 0; i < token.size(); ++i) {
+      try {
+        ntlm_token(std::string_view(spnego(token)).substr(0, i));
+      } catch (const error &) {
+        ++checks;
+      }
+    }
+    initialize(base / "state", 38443);
+    auto cfg = config::load(base / "state");
+    ok(cfg.smb_port == 0);
+    auto original = read_json(cfg.state / "config.json");
+    for (auto bad : {json(445), json(38443), json(65536), json("4445")}) {
+      auto j = original;
+      j["smb_port"] = bad;
+      write_json(cfg.state / "config.json", j);
+      rejected([&] { config::load(cfg.state); }, "invalid_config");
+    }
+    write_json(cfg.state / "config.json", original);
+    fs::create_directories(base / "files");
+    auto root = inspect_root(base / "files");
+    root["id"] = "data";
+    root["worker"] = "file";
+    json space = {{"id", "alice"},    {"root", "data"}, {"path", "alice"},
+                  {"owner", "alice"}, {"group", ""},    {"quota", 1024}};
+    auto ctx = [](std::string caller) {
+      return call_context{caller, random_hex(16), now() + 30000, {}};
+    };
+    auto store = std::make_unique<file_store>(cfg, "file", random_hex(16));
+    space = store->dispatch("provision", {{"root", root}, {"space", space}}, ctx("identity"));
+    auto grantkey = read_json(cfg.state / "ipc-keys.json").at("identity").get<std::string>();
+    auto grant = [&](std::string path, bool expired = false) {
+      json g = {{"actor", "alice"}, {"root", root},
+                {"space", space},   {"path", path},
+                {"write", true},    {"share", "smb"},
+                {"epoch", 2},       {"expires", now() + (expired ? -100 : 2000)},
+                {"protocol", "smb"}};
+      g["signature"] = mac(grantkey, g.dump());
+      return g;
+    };
+    auto call = [&](std::string op, std::string path, json body = json::object()) {
+      body["grant"] = grant(path);
+      return store->dispatch("smb_" + op, body, ctx("smb"));
+    };
+    auto open = [&](std::string path, uint32_t access = 0x13019f, unsigned share = 7,
+                    unsigned disposition = 3, unsigned options = 0x40) {
+      return call("open", path,
+                  {{"write", true},
+                   {"access", access},
+                   {"sharing", share},
+                   {"disposition", disposition},
+                   {"options", options}})
+          .at("handle")
+          .get<std::string>();
+    };
+    auto h = open("data", 0x13019f, 1);
+    rejected([&] { open("data"); }, "sharing_violation");
+    call("close", "data", {{"handle", h}});
+    h = open("data");
+    auto second = open("data");
+    call("write", "data",
+         {{"handle", h},
+          {"offset", 0},
+          {"data", encode_bytes("abcdef")},
+          {"request_id", random_hex(16)}});
+    call(
+        "lock", "data",
+        {{"handle", h}, {"locks", json::array({{{"offset", 0}, {"length", 3}, {"flags", 0x12}}})}});
+    rejected([&] { call("read", "data", {{"handle", second}, {"offset", 0}, {"count", 3}}); },
+             "locked");
+    rejected(
+        [&] {
+          call("write", "data",
+               {{"handle", second},
+                {"offset", 1},
+                {"data", encode_bytes("x")},
+                {"request_id", random_hex(16)}});
+        },
+        "locked");
+    ok(call("read", "data", {{"handle", second}, {"offset", 3}, {"count", 3}}).at("data") ==
+       encode_bytes("def"));
+    rejected(
+        [&] {
+          call("lock", "data",
+               {{"handle", second},
+                {"locks", json::array({{{"offset", 4}, {"length", 1}, {"flags", 0x12}},
+                                       {{"offset", 1}, {"length", 1}, {"flags", 0x12}}})}});
+        },
+        "locked");
+    // The successful first item of a rejected lock vector must have rolled back.
+    call(
+        "lock", "data",
+        {{"handle", h}, {"locks", json::array({{{"offset", 4}, {"length", 1}, {"flags", 0x12}}})}});
+    ++checks;
+    call("rename", "data", {{"handle", h}, {"target", grant("renamed")}});
+    ok(call("read", "renamed", {{"handle", second}, {"offset", 3}, {"count", 1}}).at("data") ==
+       encode_bytes("d"));
+    rejected([&] { call("resize", "renamed", {{"handle", h}, {"size", 2048}}); }, "quota_exceeded");
+    call("close", "renamed", {{"handle", second}});
+    call("disposition", "renamed", {{"handle", h}, {"delete", true}});
+    rejected([&] { open("renamed"); }, "delete_pending");
+    // Pending deletion survives loss of both worker process and its volatile handle map.
+    store.reset();
+    store = std::make_unique<file_store>(cfg, "file", random_hex(16));
+    store->dispatch("smb_recover", {}, ctx("smb"));
+    ok(!fs::exists(base / "files/alice/renamed"));
+    auto binary = open("binary");
+    call("write", "binary",
+         {{"handle", binary},
+          {"offset", 0},
+          {"data", encode_bytes(bytes("\0\xff", 2))},
+          {"request_id", random_hex(16)}});
+    call("close", "binary", {{"handle", binary}});
+    ++checks;
+    auto short_handle = open("short-write");
+    test_write_budget(2);
+    auto short_result = call("write", "short-write",
+                             {{"handle", short_handle},
+                              {"offset", 0},
+                              {"data", encode_bytes("abcdef")},
+                              {"request_id", random_hex(16)}});
+    ok(short_result.at("written") == 2);
+    auto failed_id = random_hex(16);
+    auto failed_body = json{{"handle", short_handle},
+                            {"offset", 2},
+                            {"data", encode_bytes("x")},
+                            {"request_id", failed_id}};
+    rejected([&] { call("write", "short-write", failed_body); }, "disk_full");
+    test_write_budget(-1);
+    rejected([&] { call("write", "short-write", failed_body); }, "uncertain_write");
+    ok(call("stat", "short-write", {{"handle", short_handle}}).at("size") == 2);
+    call("close", "short-write", {{"handle", short_handle}});
+    auto dir = open("dir", 0x13019f, 7, 3, 1);
+    rejected([&] { open("dir", 0x120089, 7, 1, 0x40); }, "is_directory");
+    call("close", "dir", {{"handle", dir}});
+    h = open("stale");
+    store->dispatch("smb_recover", {}, ctx("smb"));
+    rejected([&] { call("read", "stale", {{"handle", h}, {"offset", 0}, {"count", 1}}); },
+             "stale_handle");
+    store.reset();
+    fs::remove_all(base);
+    std::cout << json{{"status", "passed"}, {"checks", checks}}.dump() << '\n';
+    return 0;
+  } catch (const std::exception &e) {
+    std::cerr << e.what() << '\n';
+    std::error_code ec;
+    fs::remove_all(base, ec);
+    return 1;
+  }
+}

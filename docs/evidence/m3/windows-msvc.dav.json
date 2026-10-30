@@ -1,0 +1,29 @@
+{
+  "curl": {
+    "version": "curl 8.21.0 (Windows) libcurl/8.21.0 Schannel zlib/1.3.2 WinIDN WinLDAP",
+    "status": "passed"
+  },
+  "transfer": {
+    "sampled_peak_rss": {
+      "file": 14675968,
+      "webdav": 15364096
+    },
+    "bytes": 269484032,
+    "sha256": "4abab08ceed920de81ff10ce3d81795bf053df432b4c024734b1d9507f8b2233",
+    "worker_budget_mib": 256,
+    "hard_limit": "windows_job_private_commit"
+  },
+  "status": "passed",
+  "checks": [
+    "M2 file schema migrates transactionally with backups; supervisor adds the new DAV role key",
+    "TLS Basic auth, UTF-8 names, recursive collection COPY/MOVE/DELETE and type-changing overwrite",
+    "independent curl TLS upload/download with certificate verification",
+    "auth/condition before 100-continue; ranges, HEAD, 304/412/416; interrupted PUT releases quota",
+    "chunk framing, UTF-8/NFC and encoded traversal checks, bounded depth, DTD/entity rejection, destination origin confinement",
+    "durable recursive COPY journal resumes from pre-publication crash cut",
+    "persistent properties and exclusive lock survive file-worker crash; owner/token enforcement across DAV and core; expiry",
+    "share exposure updates revoke active DAV writes and cancellation releases reservations",
+    "streaming upload/download SHA-256 roundtrip",
+    "offline backup refuses running services; restore into new state rotates TLS/IPC, revokes sessions and preserves metadata/files"
+  ]
+}

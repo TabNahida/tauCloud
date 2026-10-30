@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "recorded_at": "2026-10-29T22:52:26.888717+00:00",
+  "host": "Windows-11-10.0.26200-SP0",
+  "python": "3.13.3",
+  "checks": [
+    "all service targets start and readiness resolves dependencies",
+    "single supervisor owner fence",
+    "one-use local administrator bootstrap",
+    "unauthenticated, incorrect password and untrusted TLS rejected",
+    "HTTP body limit, connection admission and idle TLS timeout",
+    "authenticated CLI and truthful capabilities; read scope cannot restart",
+    "read-scoped session logout and immediate revocation",
+    "browser secure cookies, exact-origin CORS, CSRF and revocation",
+    "idempotent restart and sibling continuity",
+    "supervisor crash verified adoption preserves workers and session",
+    "abrupt worker death recovers with backoff",
+    "persistent crash-loop limit",
+    "graceful dependency-ordered shutdown",
+    "abrupt migration transaction recovery and pre-upgrade backup",
+    "SQLite integrity, hashed tokens/passwords, redacted logs"
+  ],
+  "status": "passed"
+}
