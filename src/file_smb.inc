@@ -21,6 +21,9 @@ void smb_sharing(const std::string &space, const std::string &path, uint32_t acc
     if (h.space == space && h.path == path) {
       auto existing = h.protocol == "smb" ? smb_categories(h.access) : (h.writable ? 3u : 1u);
       auto sharing = h.protocol == "smb" ? h.sharing : 3u;
+      // Metadata-only opens do not participate in data/delete sharing checks.
+      if (!existing || !smb_categories(access))
+        continue;
       require((smb_categories(access) & ~sharing) == 0 && (existing & ~share) == 0,
               "sharing_violation");
     }
@@ -100,6 +103,12 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
   auto &s = attach(grant, ctx);
   if (!cleanup)
     lease(grant, ctx);
+  if (op == "smb_path_stat") {
+    auto f = path.empty() ? native_file() : s.directory.open(path, true);
+    auto info = path.empty() ? s.directory.info() : f.info();
+    info["size"] = 0;
+    return info;
+  }
   if (op == "smb_open") {
     smb_reap(s);
     require(handles.size() < 128, "handle_limit");
@@ -109,9 +118,12 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     unsigned sharing = body.at("sharing"), disposition = body.at("disposition"),
              options = body.at("options");
     require(sharing <= 7 && disposition <= 5, "invalid_request");
-    // Attribute/security mutations have no portable implementation in this profile.
-    require((access & ~0x001301bfu) == 0, "not_supported");
-    require(!(access & (0x10000u | 0x116u)) || grant.at("write").get<bool>(), "forbidden");
+    // Standard file rights are valid even when an optional SET_INFO operation
+    // is unavailable. Granting them never bypasses the space's write policy.
+    require((access & ~0x001f01ffu) == 0, "not_supported");
+    require(!(access & (0xd0000u | 0x156u)) || grant.at("write").get<bool>(), "forbidden");
+    if (access & 0x20u)
+      access |= 1u; // FILE_EXECUTE also permits reading the file's contents.
     smb_sharing(space, path, access, sharing);
     auto existing = dav_exists(s, path);
     bool directory = existing ? existing->at("directory").get<bool>() : bool(options & 1);
@@ -229,9 +241,15 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
             "invalid_request");
     auto candidate = locks;
     for (auto v : requested) {
-      auto start = number(v, "offset"), length = number(v, "length");
+      auto lock_number = [&](const char *key) {
+        const auto &n = v.at(key);
+        require(n.is_number_unsigned() || (n.is_number_integer() && n.get<int64_t>() >= 0),
+                "invalid_offset");
+        return n.get<uint64_t>();
+      };
+      auto start = lock_number("offset"), length = lock_number("length");
       unsigned flags = v.at("flags");
-      require(length > 0 && start <= uint64_t(INT64_MAX) - length, "invalid_offset");
+      require(length > 0 && start <= UINT64_MAX - length, "invalid_offset");
       if (flags == 4) {
         auto found = std::find_if(candidate.begin(), candidate.end(), [&](const auto &l) {
           return l.handle == id && l.start == start && l.end == start + length;
@@ -239,12 +257,13 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
         require(found != candidate.end(), "range_not_locked");
         candidate.erase(found);
       } else {
-        require(flags == 0x11 || flags == 0x12, "not_supported");
-        bool exclusive = flags == 0x12;
+        require(flags == 1 || flags == 2 || flags == 0x11 || flags == 0x12,
+                "invalid_request");
+        bool exclusive = (flags & 2) != 0;
         for (const auto &l : candidate)
           require(l.object != meta.at("object").get<std::string>() || start >= l.end ||
                       start + length <= l.start || (!exclusive && !l.exclusive),
-                  "locked");
+                  (flags & 0x10) ? "lock_not_granted" : "not_supported");
         require(candidate.size() < 256, "lock_limit");
         candidate.push_back({id, meta.at("object"), start, start + length, exclusive});
       }
@@ -319,7 +338,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     scan(s, ctx);
     return {{"from", path}, {"path", to}, {"space", space}};
   }
-  require(!h.directory, "is_directory");
+  require(!h.directory, op == "smb_read" ? "invalid_device_request" : "is_directory");
   if (op == "smb_read") {
     require(h.access & 1, "forbidden");
     auto offset = number(body, "offset"), count = number(body, "count");

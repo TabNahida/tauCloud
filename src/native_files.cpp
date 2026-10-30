@@ -162,11 +162,19 @@ struct resource {
 struct native_file::impl {
   std::shared_ptr<resource> file = std::make_shared<resource>();
   std::vector<std::shared_ptr<resource>> parents;
+  bool allow_unlinked = false;
 };
 native_file::native_file() : impl_(std::make_unique<impl>()) {}
 native_file::~native_file() = default;
 native_file::native_file(native_file &&) noexcept = default;
 native_file &native_file::operator=(native_file &&) noexcept = default;
+native_file native_file::retain() const {
+  info();
+  native_file result;
+  *result.impl_ = *impl_;
+  result.impl_->allow_unlinked = true;
+  return result;
+}
 std::string native_file::stable_identity() const {
 #ifdef _WIN32
   // NTFS file IDs contain the MFT sequence, and are verified on the pinned handle.
@@ -195,7 +203,8 @@ json native_file::info(bool change_stamp) const {
     native_error();
   require(!(meta.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT), "unsafe_path");
   bool directory = (meta.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
-  require(directory || meta.nNumberOfLinks == 1, "hardlink_denied");
+  require(directory || meta.nNumberOfLinks == 1 ||
+              (impl_->allow_unlinked && meta.nNumberOfLinks == 0), "hardlink_denied");
   json result = {{"object",
            std::to_string(id.VolumeSerialNumber) + ":" +
                encode_bytes(std::string_view(reinterpret_cast<char *>(id.FileId.Identifier), 16)) +
@@ -223,7 +232,8 @@ json native_file::info(bool change_stamp) const {
   if (fstat(impl_->file->handle, &s) != 0)
     native_error();
   require(S_ISDIR(s.st_mode) || S_ISREG(s.st_mode), "unsafe_path");
-  require(S_ISDIR(s.st_mode) || s.st_nlink == 1, "hardlink_denied");
+  require(S_ISDIR(s.st_mode) || s.st_nlink == 1 ||
+              (impl_->allow_unlinked && s.st_nlink == 0), "hardlink_denied");
   struct statx sx {};
   require(statx(impl_->file->handle, "", AT_EMPTY_PATH, STATX_BTIME, &sx) == 0 &&
               (sx.stx_mask & STATX_BTIME),

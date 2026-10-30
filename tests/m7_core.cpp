@@ -71,6 +71,15 @@ int main() {
       dir.remove("after");
       auto replacement = dir.open("after", false, true, true);
       ok(replacement.stable_identity() != id);
+      replacement.write(0, "retained");
+      auto pinned = replacement.retain();
+      replacement = native_file();
+      dir.remove("after");
+      ok(pinned.read(0, 8) == "retained");
+      pinned.write(0, "R");
+      pinned.flush();
+      ok(pinned.info().at("size") == 8);
+      ok(pinned.retain().read(0, 8) == "Retained");
     }
     initialize(root / "state", 38443);
     auto cfg = config::load(root / "state");

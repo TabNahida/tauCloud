@@ -72,6 +72,11 @@ struct file_store::impl {
   std::map<std::string, std::unique_ptr<space_state>> spaces;
   std::map<std::string, opened> handles;
   std::vector<byte_lock> locks;
+  struct retained_nfs_file {
+    std::string space, path, root;
+    native_file file;
+  };
+  std::map<std::string, retained_nfs_file> nfs_retained;
   impl(const config &c, std::string r, std::string g)
       : cfg(c), role(std::move(r)), generation(std::move(g)),
         key(read_json(c.state / "ipc-keys.json").at("identity")), db(c.state / (role + ".db")) {
@@ -204,7 +209,11 @@ struct file_store::impl {
     statement q(db, "SELECT COALESCE(SUM(size),0) FROM objects WHERE space=?");
     q.bind(1, space);
     q.row();
-    return static_cast<uint64_t>(q.integer(0));
+    auto total = static_cast<uint64_t>(q.integer(0));
+    for (const auto &[token, retained] : nfs_retained)
+      if (retained.space == space)
+        total += retained.file.info().at("size").get<uint64_t>();
+    return total;
   }
   uint64_t reserved(const std::string &space) {
     uint64_t total = 0;
@@ -427,6 +436,7 @@ struct file_store::impl {
     std::lock_guard guard(mutex);
     ctx.check();
     if (op == "nfs_file") return nfs_dispatch(body, ctx);
+    if (op == "nfs_reap") return nfs_reap(body, ctx);
     if (op.starts_with("smb_"))
       return smb_dispatch(op, body, ctx);
     if (op == "inspect") {

@@ -19,6 +19,8 @@ public:
   ~native_file();
   native_file(native_file &&) noexcept;
   native_file &operator=(native_file &&) noexcept;
+  // Share an already-confined descriptor, retaining access after unlink.
+  native_file retain() const;
   static native_file root(const fs::path &path);
   native_file open(const std::string &path, bool directory = false, bool create = false,
                    bool write = false) const;

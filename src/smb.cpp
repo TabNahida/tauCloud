@@ -65,10 +65,16 @@ uint32_t status(std::string_view code) {
     return 0xc0000034;
   if (code == "already_exists" || code == "case_collision")
     return 0xc0000035;
+  if (code == "invalid_path" || code == "unsupported_name" || code == "reserved_name")
+    return 0xc0000033;
   if (code == "sharing_violation")
     return 0xc0000043;
   if (code == "locked")
     return 0xc0000054;
+  if (code == "lock_not_granted")
+    return 0xc0000055;
+  if (code == "invalid_device_request")
+    return 0xc0000010;
   if (code == "range_not_locked")
     return 0xc000007e;
   if (code == "delete_pending")
@@ -170,11 +176,14 @@ bytes file_info(unsigned klass, const json &m, const std::string &name, uint32_t
     return b + encoded;
   }
   if (klass == 14) {
-    return bytes(8, '\0');
+    b.assign(8, '\0');
+    put(b, 0, m.value("position", uint64_t(0)), 8);
+    return b;
   }
   if (klass == 18) {
     b = basic(m) + standard(m) + file_info(6, m, name, access) + bytes(4, '\0') +
-        file_info(8, m, name, access) + bytes(16, '\0') + file_info(9, m, name, access);
+        file_info(8, m, name, access) + file_info(14, m, name, access) +
+        bytes(8, '\0') + file_info(9, m, name, access);
     return b;
   }
   if (klass == 34) {
@@ -280,6 +289,7 @@ struct opened {
   bool pipe = false;
   bytes pending;
   std::set<uint16_t> contexts;
+  uint64_t position = 0;
 };
 struct client {
   smb_state &s;
@@ -509,7 +519,7 @@ struct client {
       auto b = sized(16, 16);
       b[2] = 1;
       put(b, 4, 0x30, 4);
-      put(b, 12, writable ? 0x1301bf : 0x1200a9, 4);
+      put(b, 12, writable ? 0x1f01ff : 0x1200a9, 4);
       co_return b;
     }
     check(trees.contains(tid), 0xc00000c9);
@@ -565,10 +575,12 @@ struct client {
       if (access & 0x20000000)
         access |= 0x1200a0;
       if (access & 0x10000000)
-        access |= 0x1301bf;
+        access |= 0x1f01ff;
       access &= 0x0fffffff;
       if (maximum)
-        access = (access & ~0x02000000) | (trees.at(tid).writable ? 0x1301bf : 0x1200a9);
+        access = (access & ~0x02000000) | (trees.at(tid).writable ? 0x1f01ff : 0x1200a9);
+      if (access & 0x20u)
+        access |= 1u;
       auto disposition = get(p, 100, 4), options = get(p, 104, 4);
       // MUST-ignore compatibility flags; NO_RECALL is a hint for HSM, which
       // this confined local-file profile does not implement.
@@ -582,7 +594,7 @@ struct client {
         log("smb", "unsupported_create_attributes", std::to_string(get(p, 92, 4)));
         throw status_error(0xc00000bb);
       }
-      bool writing = (access & (0x10000 | 0x116)) || disposition != 1;
+      bool writing = (access & (0xd0000 | 0x156)) || disposition != 1;
       auto grant = co_await authorize(tid, name, writing);
       json request = {
           {"grant", grant},           {"write", writing},           {"access", access},
@@ -660,6 +672,7 @@ struct client {
         auto data = decode_bytes(r.at("data").get<std::string>());
         check(!data.empty() || length == 0, 0xc0000011);
         check(data.size() >= get(p, 96, 4), 0xc0000011);
+        h.position = get(p, 72, 8) + data.size();
         auto b = sized(16, 17);
         b[2] = 80;
         put(b, 4, data.size(), 4);
@@ -671,6 +684,7 @@ struct client {
       request["flush"] = bool(get(p, 108, 4) & 1);
       request["request_id"] = random_hex(16);
       auto r = co_await operation(h, "write", true, request);
+      h.position = get(p, 72, 8) + r.at("written").get<uint32_t>();
       auto b = sized(16, 17);
       put(b, 4, r.at("written").get<uint32_t>(), 4);
       co_return b;
@@ -732,28 +746,62 @@ struct client {
       check(structure == 33 && p.size() >= 96);
       auto &h = handle(p, 72, tid);
       auto klass = get(p, 66, 1), flags = get(p, 67, 1);
-      check(!(flags & ~0x13ull));
+      check(!(flags & ~0x17ull));
       auto limit = get(p, 92, 4);
       check(limit > 0 && limit <= 65536);
       auto pattern = utf8(slice(p, get(p, 88, 2), get(p, 90, 2), 96));
-      if (h.pattern.empty() || (flags & 0x11)) {
+      bool initial_query = h.pattern.empty() || (flags & 0x11);
+      if (initial_query) {
         if (!pattern.empty())
           h.pattern = pattern;
         else if (h.pattern.empty())
           h.pattern = "*";
         h.entries = co_await operation(h, "list", false);
+        // Include the directory entries expected by native enumeration clients.
+        // Resolve '..' through a fresh grant within the share; the share root
+        // points to itself and never exposes its host parent.
+        auto self = co_await operation(h, "stat", false);
+        auto parent_path = h.path.substr(0, h.path.rfind('/') == std::string::npos
+                                             ? 0 : h.path.rfind('/'));
+        auto parent_grant = co_await authorize(tid, parent_path, false);
+        json parent_request = {{"grant", parent_grant}};
+        auto parent = co_await smb_rpc(s, parent_grant.at("root").at("worker"),
+                                      "smb_path_stat", parent_request);
+        self["name"] = ".";
+        parent["name"] = "..";
+        h.entries.insert(h.entries.begin(), parent);
+        h.entries.insert(h.entries.begin(), self);
         h.cursor = 0;
-      } else
-        co_await operation(h, "stat", false);
+      } else {
+        // Preserve enumeration cookies while dropping entries removed by other
+        // handles. Refresh metadata without returning replaced incarnations.
+        auto current = co_await operation(h, "list", false);
+        std::map<std::string, json> live;
+        for (auto &entry : current)
+          live.emplace(entry.at("name"), entry);
+        for (auto &entry : h.entries) {
+          auto name = entry.at("name").get<std::string>();
+          if (name == "." || name == "..")
+            continue;
+          auto found = live.find(name);
+          if (found == live.end() || found->second.at("object") != entry.at("object"))
+            entry["removed"] = true;
+          else
+            entry = found->second;
+        }
+      }
+      if (flags & 4)
+        h.cursor = std::min<size_t>(get(p, 68, 4), h.entries.size());
       bytes output;
       size_t previous = 0;
       while (h.cursor < h.entries.size()) {
         auto item = h.entries[h.cursor];
-        if (!wildcard(h.pattern, item.at("name"))) {
+        if (item.value("removed", false) || !wildcard(h.pattern, item.at("name"))) {
           ++h.cursor;
           continue;
         }
         auto entry = directory_entry(static_cast<unsigned>(klass), item);
+        put(entry, 4, h.cursor + 1, 4);
         auto pad = output.empty() ? 0 : (8 - output.size() % 8) % 8;
         if (output.size() + pad + entry.size() > limit) {
           check(!output.empty(), 0xc0000023);
@@ -769,7 +817,7 @@ struct client {
         if (flags & 2)
           break;
       }
-      check(!output.empty(), 0x80000006);
+      check(!output.empty(), initial_query ? 0xc000000f : 0x80000006);
       auto b = sized(8, 9);
       put(b, 2, 72, 2);
       put(b, 4, output.size(), 4);
@@ -781,6 +829,7 @@ struct client {
       auto type = get(p, 66, 1), klass = get(p, 67, 1), limit = get(p, 68, 4);
       check(limit <= 65536 && get(p, 76, 4) == 0);
       auto meta = co_await operation(h, "stat", false);
+      meta["position"] = h.position;
       bytes data;
       if (type == 1 && klass == 48)
         check(selected.dialect != 0x202 && selected.dialect != 0x210 && selected.dialect != 0x302,
@@ -850,6 +899,10 @@ struct client {
         check(input.size() == 8);
         request = {{"size", get(input, 0, 8)}};
         co_await operation(h, klass == 20 ? "resize" : "allocation", true, request);
+      } else if (klass == 14) {
+        check(input.size() == 8 && get(input, 0, 8) <= uint64_t(INT64_MAX));
+        co_await operation(h, "stat", false);
+        h.position = get(input, 0, 8);
       } else if (klass == 13) {
         check(input.size() == 1 && get(input, 0, 1) <= 1);
         request = {{"delete", bool(get(input, 0, 1))}};
@@ -1027,7 +1080,7 @@ struct client {
           // unspent credits, not the numeric span, and honor bounded requests
           // for more credits so native clients can issue compound operations.
           auto credits = std::min<uint64_t>(std::max<uint64_t>(get(p, 14, 2), 1),
-                                           64 - credits_available.size());
+                                           8192 - credits_available.size());
           check(high < UINT64_MAX - credits);
           for (size_t credit = 0; credit < credits; ++credit)
             credits_available.insert(high++);

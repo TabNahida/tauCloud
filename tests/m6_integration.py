@@ -136,8 +136,8 @@ def run(args):
             with socket.create_connection(('127.0.0.1',f.smbport),timeout=10) as probe:
                 req=bytearray(negotiate_packet());struct.pack_into('<H',req,14,requested)
                 response=exchange(probe,req);assert status(response)==0
-                assert struct.unpack_from('<H',response,14)[0]==max(1,min(requested,64))
-        passed('NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 64')
+                assert struct.unpack_from('<H',response,14)[0]==max(1,min(requested,8192))
+        passed('NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192')
         sock,sid,key,_,_,_=wire_auth(f.smbport,f.password,'alice',bootstrap=True)
         assert status(exchange(sock,sign(header(13,4,sid,flags=8)+struct.pack('<HH',4,0),key)))==0
         sock.close()

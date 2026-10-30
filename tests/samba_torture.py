@@ -14,6 +14,8 @@ def main():
     p.add_argument('--bin', type=Path, required=True)
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--client', default='smbtorture')
+    p.add_argument('--timeout', type=int, default=300,
+                   help='Per-selector runtime; credit stress performs 8191 durable writes')
     p.add_argument('selectors', nargs='+')
     args = p.parse_args()
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -28,14 +30,15 @@ def main():
         for selector in args.selectors:
             log = args.output.parent / (args.output.stem + '-' + selector + '.log')
             cmd = [args.client, '//127.0.0.1/smb', '-p', str(f.smbport), '-A', str(credentials),
-                   '-s', str(config), '--use-kerberos=off', '--maximum-runtime=90', selector]
+                   '-s', str(config), '--use-kerberos=off', '--maximum-runtime='+str(args.timeout), selector]
             try:
                 with log.open('w') as out:
-                    result = subprocess.run(cmd, stdout=out, stderr=subprocess.STDOUT, timeout=100)
+                    result = subprocess.run(cmd, stdout=out, stderr=subprocess.STDOUT, timeout=args.timeout+10)
                 raw = log.read_text(errors='replace')
                 counts = {kind:len(re.findall('^'+kind+':', raw, re.MULTILINE))
                           for kind in ('success','failure','error','skip')}
                 state = 'failed' if result.returncode or counts['failure'] or counts['error'] else (
+                    'partial' if counts['success'] and counts['skip'] else
                     'passed' if counts['success'] else 'skipped' if counts['skip'] else 'unverified')
                 item = dict(selector=selector, returncode=result.returncode,
                             status=state, counts=counts, log=log.name)

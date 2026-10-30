@@ -117,7 +117,7 @@ def run(args):
         directory=create(t,'folder',options=1);child=create(t,'folder/child');child.close();denied(lambda:setinfo(directory,delete),0xc0000101);directory.close()
         h=create(t,'folder/child');setinfo(h,delete);h.close();directory=create(t,'folder',options=1);setinfo(directory,delete);directory.close();assert not (f.root/'smbdata/folder').exists()
         for name in ['../escape','bad:stream','e\u0301']:
-            denied(lambda name=name:create(t,name),0xc000000d)
+            denied(lambda name=name:create(t,name),0xc0000033)
         h=create(t,'中文.txt',access=0x120089,disposition=1);denied(lambda:query(h,0,info_type=3),0xc00000bb);h.close()
         passed('directory deletion is nonrecursive; traversal/ADS/non-NFC denied; unsupported persistent ACL query rejected')
         h=create(t,'large');chunk=bytes(range(256))*256;expected=hashlib.sha256();actual=hashlib.sha256();total=args.large_mib*1024*1024

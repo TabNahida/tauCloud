@@ -40,5 +40,6 @@ public:
   ~server();
   std::string dispatch(std::string_view record, std::string connection = "test");
   void disconnect(const std::string &connection);
+  void maintenance();
 };
 } // namespace tc::nfs_detail

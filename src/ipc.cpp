@@ -20,7 +20,7 @@ static bool allowed(const std::string &caller, const std::string &target, const 
             (op == "login" || op == "validate" || op == "logout" || op == "policy_list" ||
              op == "policy_write" || op == "authorize"));
   if (file_role(target))
-    return (caller == "nfs" && op == "nfs_file") || (caller == "smb" && op.starts_with("smb_")) ||
+    return (caller == "nfs" && (op == "nfs_file" || op == "nfs_reap")) || (caller == "smb" && op.starts_with("smb_")) ||
            (caller == "ftp" && op == "ftp_recover") ||
            (caller == "identity" && (op == "inspect" || op == "provision" || op == "revoke")) ||
            ((caller == "api" || caller == "webdav" || caller == "ftp") &&

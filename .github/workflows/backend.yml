@@ -35,6 +35,11 @@ jobs:
       - name: Kernel CIFS missing-MIC rejection (not compatibility)
         if: always() && matrix.compiler == 'gcc'
         run: python3 tests/native_clients.py --bin build/linux/x86_64/release --output build/acceptance/kernel-cifs-rejection.json --profiles kernel-cifs-2.1 kernel-cifs-3.0 kernel-cifs-3.02 kernel-cifs-3.1.1 --require-mic-rejection
+      - name: Unmodified Samba file, directory and credit tests
+        if: always() && matrix.compiler == 'gcc'
+        run: |
+          sudo apt-get install -y samba-testsuite
+          python3 tests/samba_torture.py --bin build/linux/x86_64/release --output build/acceptance/samba-native.json smb2.read.eof smb2.read.position smb2.read.dir smb2.read.access smb2.lock.rw-shared smb2.lock.rw-exclusive smb2.lock.auto-unlock smb2.lock.range smb2.compound.create-write-close smb2.rename.simple smb2.sharemode smb2.create_no_streams smb2.dir.find smb2.dir.fixed smb2.credits
       - name: Unmodified FileZilla GUI FTPS upload and download
         if: always() && matrix.compiler == 'gcc'
         run: |
@@ -58,6 +63,9 @@ jobs:
       - name: NFS native attributes and aliases
         if: always() && matrix.compiler == 'gcc'
         run: python3 tests/nfs_attributes_integration.py --bin build/linux/x86_64/release --output build/acceptance/nfs-attributes.json
+      - name: Upstream NFS replacement of open files and multiple sessions
+        if: always() && matrix.compiler == 'gcc'
+        run: python3 tests/pynfs_acceptance.py --bin build/linux/x86_64/release --output build/acceptance/pynfs-unlink.json RNM21 TRUNK1 TRUNK2
       - name: NFS creation attributes and safe truncation
         if: always() && matrix.compiler == 'gcc'
         run: python3 tests/nfs_create_integration.py --bin build/linux/x86_64/release --output build/acceptance/nfs-create.json

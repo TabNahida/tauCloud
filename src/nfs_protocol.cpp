@@ -36,6 +36,7 @@ uint32_t status(std::string_view code) {
     return 70;
   if (code == "nfs_share_denied") return 10015;
   if (code == "nfs_locked") return 10012;
+  if (code == "handle_limit") return 10018;
   if (code == "not_supported" || code == "stable_handles_unavailable")
     return 10004;
   if (code == "overloaded" || code == "directory_limit" || code == "operation_limit" ||
@@ -126,6 +127,9 @@ struct server::impl {
     json credential;
     std::string key;
   };
+  // MOUNT records are advisory and scoped to the mapped AUTH_SYS principal.
+  // Losing a transport does not unmount a client's export.
+  std::set<std::pair<std::string, std::string>> mounts;
   struct replay_authority {
     struct export_access {
       bool write = false;
@@ -192,8 +196,8 @@ struct server::impl {
       b["export"] = export_name;
     auto grant = authorize(b);
     if (op == "remove" || op == "rename") {
-      // This bounded profile does not retain unlinked native opens. Refuse to
-      // invalidate live state instead of acknowledging deletion of an open file.
+      // Keep the exact native incarnation alive when namespace replacement
+      // removes the last link of a file with outstanding NFS OPEN state.
       auto parent = op == "remove" ? handle : args.at("target").get<std::string>();
       auto name = op == "remove" ? args.at("name") : args.at("to");
       bool self = op == "rename" && parent == handle && name == args.at("name");
@@ -203,7 +207,8 @@ struct server::impl {
         catch (const error &e) { if (std::string_view(e.what()) != "not_found") throw; }
         if (!target.is_null())
           for (const auto &[id, state] : opens)
-            check(state.object != target.at("object").get<std::string>(), 10046);
+            if (state.object == target.at("object").get<std::string>())
+              args["retain"] = true;
       }
     }
     if (args.contains("uid")) {
@@ -478,6 +483,7 @@ struct server::impl {
   }
   std::string v3_error(uint32_t proc, uint32_t code) {
     if (code == 10012 || code == 10015) code = 13;
+    if (code == 10018) code = 10008;
     writer w;
     w.u32(code);
     if (proc == 2 || proc == 7 || proc == 8 || proc == 9 || proc == 12 || proc == 13 || proc == 21)
@@ -507,7 +513,8 @@ struct server::impl {
       auto vf = r.u32();
       auto vb = r.opaque(400);
       if (vf != 0 || !vb.empty() ||
-          (flavor != 1 && !(flavor == 0 && (proc == 0 || prog == 100000))))
+          (flavor != 1 && !(flavor == 0 && (proc == 0 || prog == 100000 ||
+              (prog == 100005 && (proc == 2 || proc == 5))))))
         return reply.u32(1).u32(1).u32(5).data;
       identity who;
       if (flavor == 1) {
@@ -527,6 +534,12 @@ struct server::impl {
         if (!credential.empty())
           throw xdr_error();
         who.credential = json::object();
+        if (prog == 100005 && (proc == 2 || proc == 5)) {
+          // Standard showmount discovery may use AUTH_NONE. Give it only the
+          // root-squashed namespace, never an unfiltered list of exports.
+          who.credential = {{"uid", 0}, {"gid", 0}, {"groups", json::array()}};
+          who.key = digest(who.credential.dump());
+        }
       }
       reply.u32(0).u32(0).u32(0); // accepted, AUTH_NONE verifier
       auto request =
@@ -595,20 +608,42 @@ struct server::impl {
           check(path.size() > 1 && path[0] == '/' && path.find('/', 1) == std::string::npos, 13);
           try {
             auto m = file(who, "", "root", json::object(), "", path.substr(1));
+            if (!mounts.contains({who.key, path}) && mounts.size() >= 1024)
+              return reply.u32(0).u32(10006).data; // MNT3ERR_SERVERFAULT
+            mounts.emplace(who.key, path);
             out.u32(0).opaque(decode_bytes(m.at("handle").get<std::string>())).u32(1).u32(1);
           } catch (const error &e) {
             out.u32(status(e.what()));
           }
           return reply.u32(0).fixed(out.data).data;
         }
-        if (proc == 3) {
-          r.opaque(1024);
+        if (proc == 2) { // DUMP: do not disclose other principals' mount paths.
           r.end();
+          auto visible = export_view(who).at("exports");
+          for (const auto &[principal, path] : mounts)
+            if (principal == who.key && std::any_of(visible.begin(), visible.end(),
+                [&](const json &e) { return path == "/" + e.at("id").get<std::string>(); }))
+              out.boolean(true).opaque("127.0.0.1").opaque(path);
+          return reply.u32(0).fixed(out.boolean(false).data).data;
+        }
+        if (proc == 3) {
+          auto path = r.opaque(1024);
+          r.end();
+          mounts.erase({who.key, path});
           return reply.u32(0).data;
         }
         if (proc == 4) {
           r.end();
+          std::erase_if(mounts, [&](const auto &m) { return m.first == who.key; });
           return reply.u32(0).data;
+        }
+        if (proc == 5) { // EXPORT: same policy-filtered namespace as v4.1.
+          r.end();
+          auto view = export_view(who);
+          for (const auto &e : view.at("exports"))
+            out.boolean(true).opaque("/" + e.at("id").get<std::string>())
+                .boolean(true).opaque("127.0.0.1").boolean(false);
+          return reply.u32(0).fixed(out.boolean(false).data).data;
         }
         return reply.u32(3).data;
       }
@@ -619,7 +654,22 @@ struct server::impl {
           r.end();
           return reply.u32(0).data;
         }
-        if (proc != 3)
+        if (proc == 4) { // DUMP only this server's bounded, read-only registrations.
+          r.end();
+          writer out;
+          for (auto [program, version] : {std::pair{100003u, 3u}, {100003u, 4u},
+                                         {100005u, 3u}, {100000u, 2u},
+                                         {100000u, 3u}, {100000u, 4u}}) {
+            out.boolean(true).u32(program).u32(version);
+            if (vers == 2)
+              out.u32(6).u32(cfg.nfs_port);
+            else
+              out.opaque("tcp").opaque("127.0.0.1." + std::to_string(cfg.nfs_port >> 8) +
+                  "." + std::to_string(cfg.nfs_port & 255)).opaque("tauCloud");
+          }
+          return reply.u32(0).fixed(out.boolean(false).data).data;
+        }
+        if (proc != 3 && !(vers == 4 && proc == 9))
           return reply.u32(3).data;
         auto p = r.u32(), v = r.u32();
         bool tcp;
@@ -660,5 +710,9 @@ std::string server::dispatch(std::string_view record, std::string connection) {
 void server::disconnect(const std::string &connection) {
   std::lock_guard guard(impl_->mutex);
   for (auto &[id, session] : impl_->sessions) session.connections.erase(connection);
+}
+void server::maintenance() {
+  std::lock_guard guard(impl_->mutex);
+  impl_->expire();
 }
 } // namespace tc::nfs_detail

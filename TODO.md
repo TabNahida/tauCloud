@@ -129,6 +129,8 @@ Selected-profile evidence: [M6 guide](docs/m6.md), [ADR 0009](docs/decisions/000
 - [x] Implement lock/open ownership, leases, recovery grace and reclaim persistence (bounded AUTH_SYS profile; cross-user, split-range and restart tests).
 - [x] Verify selected v4.1 FILE_SYNC, server reboot and retransmission paths with the Linux pynfs-codec client (kernel client and full recovery/conformance remain open).
 - [ ] Complete M7a conformance before publishing v4.1 compatibility.
+- [x] Add policy-filtered MOUNT discovery, bounded mount records and read-only rpcbind DUMP/GETVERSADDR.
+- [x] Retain unlinked/replaced OPEN objects across NFS-worker restart, charge their quota and release them after last CLOSE/lease expiry (file-domain/all-service restart remains a limitation).
 - [ ] Implement v3 operations, MOUNT/rpcbind and the selected NLM/NSM recovery profile.
 - [x] Verify FILE_SYNC upgrades of UNSTABLE requests, COMMIT, duplicate requests and reboot verifiers in the experimental profile.
 - [ ] Complete M7b Linux/macOS/eligible Windows client tests; publish client-version restrictions. Linux kernel v3/v4.1 and macOS 15.7.9 native v3 file roundtrips pass; v3 uses nolocks, and Windows Client for NFS remains unverified.

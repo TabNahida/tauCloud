@@ -53,7 +53,16 @@ std::string nfs_handle(const std::string &export_id, const std::string &id) {
   return encode_bytes(wire); // 50 bytes; UUIDs are never reused.
 }
 json nfs_meta(space_state &s, const json &g, const std::string &path, native_file &f) {
-  auto token = f.stable_identity();
+  auto info = f.info(true);
+  std::string token;
+  for (const auto &[key, retained] : nfs_retained)
+    if (retained.space == g.at("space").at("id").get<std::string>() &&
+        retained.file.info().at("object") == info.at("object")) {
+      token = key;
+      break;
+    }
+  bool unlinked = !token.empty();
+  if (!unlinked) token = f.stable_identity();
   auto export_id = g.at("export").at("uuid").get<std::string>();
   std::string id;
   {
@@ -63,7 +72,6 @@ json nfs_meta(space_state &s, const json &g, const std::string &path, native_fil
     if (q.row())
       id = q.text(0);
   }
-  auto info = f.info(true);
   auto stamp = info;
   stamp.erase("accessed_ns"); // Reading a file must not invalidate its data cache.
   if (id.empty()) {
@@ -84,7 +92,7 @@ json nfs_meta(space_state &s, const json &g, const std::string &path, native_fil
     q.bind(2, id);
     q.row();
   }
-  if (!path.empty())
+  if (!path.empty() && !unlinked)
     index(g.at("space").at("id"), path, info);
   info["handle"] = nfs_handle(export_id, id);
   info["fileid"] = id.substr(0, 16);
@@ -136,7 +144,11 @@ json nfs_meta(space_state &s, const json &g, const std::string &path, native_fil
 void nfs_apply_attrs(space_state &s, const json &g, const std::string &path, native_file &f,
                      const json &attrs) {
   auto meta = nfs_meta(s, g, path, f);
-  auto id = f.stable_identity();
+  auto raw = decode_bytes(meta.at("handle").get<std::string>());
+  statement native(*nfs_db, "SELECT token FROM objects WHERE id=?");
+  native.bind(1, encode_bytes(raw.substr(18, 16)));
+  require(native.row(), "stale_handle");
+  auto id = native.text(0);
   if (attrs.contains("atime_ns") || attrs.contains("mtime_ns"))
     f.set_times(attrs.contains("atime_ns") ? std::optional<uint64_t>(number(attrs, "atime_ns")) : std::nullopt,
                 attrs.contains("mtime_ns") ? std::optional<uint64_t>(number(attrs, "mtime_ns")) : std::nullopt);
@@ -153,7 +165,31 @@ void nfs_apply_attrs(space_state &s, const json &g, const std::string &path, nat
 struct nfs_object {
   std::string path;
   native_file file;
+  bool unlinked = false;
 };
+json nfs_reap(const json &body, const call_context &ctx) {
+  require(ctx.caller == "nfs", "forbidden");
+  const auto &live = body.at("handles");
+  require(live.is_array() && live.size() <= 4096, "invalid_request");
+  if (nfs_retained.empty()) return {{"retained", 0}};
+  nfs_init();
+  std::set<std::string> tokens;
+  for (const auto &encoded : live) {
+    auto h = decode_bytes(encoded.get<std::string>());
+    require(h.size() == 50, "invalid_request");
+    // The authenticated NFS worker supplies the complete live/reclaim set.
+    statement q(*nfs_db, "SELECT token FROM objects WHERE id=?");
+    q.bind(1, encode_bytes(h.substr(18, 16)));
+    if (q.row()) tokens.insert(q.text(0));
+  }
+  for (auto it = nfs_retained.begin(); it != nfs_retained.end();)
+    if (!tokens.contains(it->first)) {
+      statement q(*nfs_db, "UPDATE objects SET dead=1 WHERE token=?");
+      q.bind(1, it->first); q.row();
+      it = nfs_retained.erase(it);
+    } else ++it;
+  return {{"retained", nfs_retained.size()}};
+}
 nfs_object nfs_resolve(space_state &s, const json &g, const std::string &encoded, bool write,
                        const call_context &ctx) {
   auto h = decode_bytes(encoded);
@@ -169,12 +205,19 @@ nfs_object nfs_resolve(space_state &s, const json &g, const std::string &encoded
   {
     statement q(*nfs_db, "SELECT path,token,directory,dead FROM objects WHERE id=?");
     q.bind(1, id);
-    require(q.row() && !q.integer(3), "stale_handle");
+    require(q.row(), "stale_handle");
     path = q.text(0);
     token = q.text(1);
     dir = q.integer(2) != 0;
+    require(!q.integer(3) || nfs_retained.contains(token), "stale_handle");
   }
   auto prefix = g.at("path").get<std::string>();
+  if (auto retained = nfs_retained.find(token); retained != nfs_retained.end()) {
+    require(retained->second.space == g.at("space").at("id").get<std::string>() &&
+                retained->second.root == g.at("root").dump() &&
+                beneath(retained->second.path, prefix), "stale_handle");
+    return {retained->second.path, retained->second.file.retain(), true};
+  }
   auto attempt = [&](const std::string &p) -> std::optional<native_file> {
     if (!beneath(p, prefix))
       return {};
@@ -256,10 +299,12 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     hash = digest(stable.dump() + actor + g.at("export").dump());
     if (auto saved = replay(request, hash))
       return *saved;
-    dav_guard(s, p, actor, body, dir, op == "remove" || op == "rename");
-    smb_sharing(space, p, op == "remove" || op == "rename" ? 0x10000 : 2, 7);
+    if (!o.unlinked) {
+      dav_guard(s, p, actor, body, dir, op == "remove" || op == "rename");
+      smb_sharing(space, p, op == "remove" || op == "rename" ? 0x10000 : 2, 7);
+    }
     range_unlocked("", before.at("object"), 0, UINT64_MAX);
-  } else
+  } else if (!o.unlinked)
     smb_sharing(space, p, 1, 7);
   lease(g, ctx);
   auto change_before = mutation && dir ? nfs_meta(s, g, p, o.file).at("change").get<uint64_t>() : 0;
@@ -364,7 +409,7 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
       if (op == "setattr") nfs_apply_attrs(s, g, p, o.file, body);
       o.file.flush(); // All acknowledgements are FILE_SYNC, even for UNSTABLE requests.
     } catch (...) {
-      index(space, p, o.file.info());
+      if (!o.unlinked) index(space, p, o.file.info());
       throw;
     }
     auto meta = nfs_meta(s, g, p, o.file);
@@ -424,17 +469,22 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     unlocked(space, child);
     smb_sharing(space, child, 0x10000, 7);
     dav_guard(s, child, actor, body, meta->at("directory"), true);
-    auto f = nfs_open(s, child, meta->at("directory"));
+    bool retain = body.value("retain", false) && !meta->at("directory").get<bool>();
+    require(!retain || nfs_retained.size() < 128, "handle_limit");
+    auto f = nfs_open(s, child, meta->at("directory"), retain);
     auto token = f.stable_identity();
+    auto pinned = retain ? f.retain() : native_file();
     f = native_file();
     pending(request, hash);
     s.directory.remove(child, meta->at("directory"));
+    if (retain)
+      nfs_retained.emplace(token, retained_nfs_file{space, child, g.at("root").dump(), std::move(pinned)});
     o.file.flush();
     erase(space, child);
-    statement dead(*nfs_db, "UPDATE objects SET dead=1 WHERE export=? AND token=?");
-    dead.bind(1, g.at("export").at("uuid"));
-    dead.bind(2, token);
-    dead.row();
+    if (!retain) {
+      statement dead(*nfs_db, "UPDATE objects SET dead=1 WHERE token=?");
+      dead.bind(1, token); dead.row();
+    }
     return finish(json::object());
   }
   if (op == "rename") {
@@ -455,12 +505,17 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     case_check(s.directory, to);
     auto destination = dav_exists(s, to);
     std::string replaced;
+    native_file pinned;
+    bool retain = false;
     if (destination) {
       require(destination->at("directory") == meta->at("directory"),
               destination->at("directory").get<bool>() ? "is_directory" : "not_directory");
-      auto f = nfs_open(s, to, destination->at("directory"));
+      retain = body.value("retain", false) && !destination->at("directory").get<bool>();
+      require(!retain || nfs_retained.size() < 128, "handle_limit");
+      auto f = nfs_open(s, to, destination->at("directory"), retain);
       if (destination->at("directory")) require(f.list().empty(), "directory_not_empty");
       replaced = f.stable_identity();
+      if (retain) pinned = f.retain();
       unlocked(space, to);
       smb_sharing(space, to, 0x10000, 7);
     }
@@ -470,9 +525,11 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     dav_guard(s, to, actor, body);
     pending(request, hash);
     s.directory.rename(from, to, bool(destination), meta->at("directory"));
+    if (retain)
+      nfs_retained.emplace(replaced, retained_nfs_file{space, to, g.at("root").dump(), std::move(pinned)});
     o.file.flush();
     target.file.flush();
-    if (!replaced.empty()) {
+    if (!replaced.empty() && !retain) {
       statement dead(*nfs_db, "UPDATE objects SET dead=1 WHERE token=?");
       dead.bind(1, replaced); dead.row();
     }

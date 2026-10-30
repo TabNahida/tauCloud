@@ -142,8 +142,15 @@ int nfs(const config &c, const std::string &generation, std::atomic_bool &stoppi
     stopping = true;
   });
   log("nfs", "started");
-  while (!stopping)
+  auto next_maintenance = now() + 1000;
+  while (!stopping) {
+    if (now() >= next_maintenance) {
+      try { s.protocol.maintenance(); }
+      catch (...) { log("nfs", "maintenance_failed", "internal_error"); }
+      next_maintenance = now() + 1000;
+    }
     std::this_thread::sleep_for(20ms);
+  }
   s.io->post([&] {
     listener.close();
     for (auto *socket : s.sockets)

@@ -45,6 +45,31 @@ std::map<std::string, open_state> opens;
 std::map<std::string, lock_state> byte_locks;
 std::map<std::string, json> reclaim;
 int64_t grace_end = 0;
+std::map<std::string, std::string> retained_sets;
+void reap_retained() {
+  std::set<std::string> live;
+  for (const auto &[id, o] : opens) live.insert(o.fh);
+  for (const auto &[id, r] : reclaim)
+    if (r.contains("handle")) live.insert(r.at("handle"));
+  for (size_t i = 0; i < file_roles().size(); ++i) {
+    auto role = file_roles()[i];
+    json handles = json::array();
+    for (const auto &h : live) {
+      auto raw = decode_bytes(h);
+      if (raw.size() == 50 && static_cast<unsigned char>(raw[1]) == i)
+        handles.push_back(h);
+    }
+    auto signature = digest(handles.dump());
+    if (retained_sets[role] == signature) continue;
+    try {
+      call(role, "nfs_reap", {{"handles", handles}});
+      retained_sets[role] = signature;
+    } catch (const error &) {
+      // A failed cleanup is retried, never converted into successful release.
+      // Retained bytes remain charged until the file domain drops the handle.
+    }
+  }
+}
 const std::string pseudo = encode_bytes("tauCloud:nfs:root");
 void start_recovery() {
   statement q(db, "SELECT id,body FROM recovery");
@@ -95,6 +120,7 @@ void expire() {
   }
   std::erase_if(sessions, [](const auto &s) { return s.second.expires <= now(); });
   std::erase_if(client_ids, [](const auto &c) { return c.second.expires <= now(); });
+  reap_retained();
 }
 std::vector<uint32_t> bitmap(reader &r) {
   auto n = r.u32();
@@ -399,10 +425,12 @@ json parse4(reader &r) {
   case 31:
   case 32:
   case 16:
+  case 27: // READLINK is recognized; this filesystem profile has no symlinks.
     break;
   case 15:
   case 28:
   case 33:
+  case 11: // LINK is recognized even though hardlinks are not advertised.
     a["name"] = r.opaque(128 * 1024);
     break;
   case 52:
@@ -523,7 +551,10 @@ json parse4(reader &r) {
     break;
   case 6:
     a["type"] = r.u32();
-    check(a["type"] == 2, 10007);
+    if (a["type"] == 3 || a["type"] == 4) {
+      r.u32(); r.u32();
+    } else if (a["type"] == 5)
+      r.opaque(128 * 1024);
     a["name"] = r.opaque(128 * 1024);
     a["attrs"] = parse_attrs4(r);
     break;
@@ -1034,6 +1065,7 @@ std::string v4(const identity &who, reader &r) {
           std::erase_if(byte_locks, [&](const auto &l) { return l.second.open_other == id.substr(8); });
           remove_recovery(o.recovery);
           opens.erase(id);
+          reap_retained();
           current_state = next_state(id);
           body.fixed(decode_bytes(current_state));
         } else if (op == 21) {
@@ -1086,17 +1118,17 @@ std::string v4(const identity &who, reader &r) {
           file(who, current, "commit");
           body.fixed(verifier);
         } else if (op == 6) {
+          check(a.at("type") == 2, 10007);
           auto attrs = create_attrs4(a.at("attrs"), true);
           attrs["name"] = a.at("name");
           auto m = file(who, current, "mkdir", attrs, request);
           current = m.at("handle");
           change4(body, m.at("change_before"), m.at("change_after"));
           put_bitmap(body, a.at("attrs").at("bits").get<std::vector<uint32_t>>());
+        } else if (op == 11 || op == 27) {
+          check(!current.empty(), 10020);
+          check(false, 10004);
         } else if (op == 28) {
-          for (const auto &[id, o] : opens) {
-            auto m = file(who, current, "lookup", {{"name", a.at("name")}});
-            check(o.fh != m.at("handle").get<std::string>(), 10008);
-          }
           auto m = file(who, current, "remove", {{"name", a.at("name")}}, request);
           change4(body, m.at("change_before"), m.at("change_after"));
         } else if (op == 29) {
@@ -1196,6 +1228,7 @@ std::string v4(const identity &who, reader &r) {
     }
   }
   out.u32(final_status).opaque(tag).u32(done).fixed(results.data);
+  reap_retained();
   if (active) {
     active->reply = out.data;
     active->pending = false;

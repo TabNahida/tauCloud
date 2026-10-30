@@ -1,0 +1,392 @@
+{
+  "status": "partial_milestones",
+  "source_base": "bde9617",
+  "full_conformance": false,
+  "samba_client": "4.19.5-Ubuntu",
+  "samba": [
+    {
+      "selector": "smb2.read.eof",
+      "returncode": 0,
+      "status": "passed",
+      "counts": {
+        "success": 1,
+        "failure": 0,
+        "error": 0,
+        "skip": 0
+      },
+      "log": "samba-native-matrix-smb2.read.eof.log"
+    },
+    {
+      "selector": "smb2.read.position",
+      "returncode": 0,
+      "status": "passed",
+      "counts": {
+        "success": 1,
+        "failure": 0,
+        "error": 0,
+        "skip": 0
+      },
+      "log": "samba-native-matrix-smb2.read.position.log"
+    },
+    {
+      "selector": "smb2.read.dir",
+      "returncode": 0,
+      "status": "passed",
+      "counts": {
+        "success": 1,
+        "failure": 0,
+        "error": 0,
+        "skip": 0
+      },
+      "log": "samba-native-matrix-smb2.read.dir.log"
+    },
+    {
+      "selector": "smb2.read.access",
+      "returncode": 0,
+      "status": "passed",
+      "counts": {
+        "success": 1,
+        "failure": 0,
+        "error": 0,
+        "skip": 0
+      },
+      "log": "samba-native-matrix-smb2.read.access.log"
+    },
+    {
+      "selector": "smb2.lock.rw-shared",
+      "returncode": 0,
+      "status": "passed",
+      "counts": {
+        "success": 1,
+        "failure": 0,
+        "error": 0,
+        "skip": 0
+      },
+      "log": "samba-native-matrix-smb2.lock.rw-shared.log"
+    },
+    {
+      "selector": "smb2.lock.rw-exclusive",
+      "returncode": 0,
+      "status": "passed",
+      "counts": {
+        "success": 1,
+        "failure": 0,
+        "error": 0,
+        "skip": 0
+      },
+      "log": "samba-native-matrix-smb2.lock.rw-exclusive.log"
+    },
+    {
+      "selector": "smb2.lock.auto-unlock",
+      "returncode": 0,
+      "status": "passed",
+      "counts": {
+        "success": 1,
+        "failure": 0,
+        "error": 0,
+        "skip": 0
+      },
+      "log": "samba-native-matrix-smb2.lock.auto-unlock.log"
+    },
+    {
+      "selector": "smb2.lock.range",
+      "returncode": 0,
+      "status": "passed",
+      "counts": {
+        "success": 1,
+        "failure": 0,
+        "error": 0,
+        "skip": 0
+      },
+      "log": "samba-native-matrix-smb2.lock.range.log"
+    },
+    {
+      "selector": "smb2.compound.create-write-close",
+      "returncode": 0,
+      "status": "passed",
+      "counts": {
+        "success": 1,
+        "failure": 0,
+        "error": 0,
+        "skip": 0
+      },
+      "log": "samba-native-matrix-smb2.compound.create-write-close.log"
+    },
+    {
+      "selector": "smb2.rename.simple",
+      "returncode": 0,
+      "status": "passed",
+      "counts": {
+        "success": 1,
+        "failure": 0,
+        "error": 0,
+        "skip": 0
+      },
+      "log": "samba-native-matrix-smb2.rename.simple.log"
+    },
+    {
+      "selector": "smb2.sharemode",
+      "returncode": 0,
+      "status": "passed",
+      "counts": {
+        "success": 3,
+        "failure": 0,
+        "error": 0,
+        "skip": 0
+      },
+      "log": "samba-native-matrix-smb2.sharemode.log"
+    },
+    {
+      "selector": "smb2.create_no_streams",
+      "returncode": 0,
+      "status": "passed",
+      "counts": {
+        "success": 1,
+        "failure": 0,
+        "error": 0,
+        "skip": 0
+      },
+      "log": "samba-native-matrix-smb2.create_no_streams.log"
+    },
+    {
+      "selector": "smb2.dir.find",
+      "returncode": 0,
+      "status": "passed",
+      "counts": {
+        "success": 1,
+        "failure": 0,
+        "error": 0,
+        "skip": 0
+      },
+      "log": "samba-native-matrix-smb2.dir.find.log"
+    },
+    {
+      "selector": "smb2.dir.fixed",
+      "returncode": 0,
+      "status": "passed",
+      "counts": {
+        "success": 1,
+        "failure": 0,
+        "error": 0,
+        "skip": 0
+      },
+      "log": "samba-native-matrix-smb2.dir.fixed.log"
+    },
+    {
+      "selector": "smb2.credits",
+      "returncode": 0,
+      "status": "passed",
+      "counts": {
+        "success": 3,
+        "failure": 0,
+        "error": 0,
+        "skip": 0
+      },
+      "log": "samba-directory-smb2.credits.log"
+    }
+  ],
+  "smb2_regression": [
+    "verified repeated logins do not exhaust the failed-authentication budget",
+    "signed NTLMv2 MIC authentication, UTF-16 create/read/write/flush/query/directory/close",
+    "authenticated srvsvc NDR32 share enumeration filters inaccessible and non-SMB shares",
+    "SMB share lookup ignores case, preserves canonical grants and rejects ambiguous publication without non-SMB shadowing",
+    "share access conflicts, exclusive/shared byte locks, rename with live handles, truncate and last-close deletion",
+    "signed related compound CREATE/WRITE/READ/CLOSE and credit accounting",
+    "directory deletion is nonrecursive; traversal/ADS/non-NFC denied; unsupported persistent ACL query rejected",
+    "1 MiB streamed binary roundtrip with SHA-256",
+    "unknown-session LOGOFF preserves the valid session; client-clock NTLMv2 accepted; excessive skew, bad MIC/proof, unsigned/tampered signing and malformed packets rejected",
+    "SMB credential revocation invalidates live access; re-enrollment and SPNEGO reconnect succeed",
+    "SMB worker kill/restart reclaims handles and durable delete intent without restarting API, identity or files"
+  ],
+  "smb3_regression": [
+    "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+    "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+    "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+    "0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+    "0x300 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+    "0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+    "0x302 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+    "0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+    "0x311 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+    "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+    "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+    "leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent",
+    "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+    "unsupported signing/cipher/hash and malformed contexts fail without dialect fallback",
+    "independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+    "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+    "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+    "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+  ],
+  "nfs_regression": [
+    "TCP record fragmentation and MOUNT v3 with independent XDR codecs",
+    "unknown UID/GID/groups rejected; root squashed to explicitly unprivileged subject",
+    "root squash uses anonymous read rights, strips privileged groups and rejects writes/revoked rights",
+    "read-only TCP portmapper advertises NFS and does not advertise unsupported NLM",
+    "trailing XDR rejected before WRITE; previously persisted bytes remain intact",
+    "v3 guarded CREATE, 64 KiB UNSTABLE upgraded to FILE_SYNC, READ, COMMIT, exact duplicate WRITE",
+    "MAC tamper rejected; file handle survives external rename and all-service restart; durable v3 replay and new write verifier",
+    "deleted/recreated path cannot revive an old file handle",
+    "v3 MKDIR, cross-directory RENAME, READDIRPLUS, REMOVE/RMDIR type separation",
+    "pynfs v4.1 EXCHANGE_ID/CREATE_SESSION/SEQUENCE, guarded OPEN, WRITE/READ, exact slot replay",
+    "false slot replay and foreign stateid rejected; GETATTR subset independently decoded",
+    "old sessions/stateids invalidated on reboot; persisted owner can reclaim OPEN during grace; CLOSE releases recovery record",
+    "unrelated client cannot reclaim another owner after restart",
+    "export disable revokes existing handles through fresh identity grants",
+    "offline metadata backup strips NFS enrollment and excludes persistent capability/recovery databases"
+  ],
+  "pynfs_before_retained_opens": {
+    "selected": 166,
+    "passed": 139,
+    "failed": 27,
+    "failed_cases": [
+      {
+        "code": "PUTFH1s",
+        "name": "testSocket"
+      },
+      {
+        "code": "PUTFH1a",
+        "name": "testLink"
+      },
+      {
+        "code": "PUTFH1f",
+        "name": "testFifo"
+      },
+      {
+        "code": "PUTFH1c",
+        "name": "testChar"
+      },
+      {
+        "code": "PUTFH1b",
+        "name": "testBlock"
+      },
+      {
+        "code": "RNM1s",
+        "name": "testValidSocket"
+      },
+      {
+        "code": "RNM1a",
+        "name": "testValidLink"
+      },
+      {
+        "code": "RNM1f",
+        "name": "testValidFifo"
+      },
+      {
+        "code": "RNM1c",
+        "name": "testValidChar"
+      },
+      {
+        "code": "RNM1b",
+        "name": "testValidBlock"
+      },
+      {
+        "code": "RNM21",
+        "name": "testStaleRename"
+      },
+      {
+        "code": "RNM2s",
+        "name": "testSfhSocket"
+      },
+      {
+        "code": "RNM2a",
+        "name": "testSfhLink"
+      },
+      {
+        "code": "RNM2f",
+        "name": "testSfhFifo"
+      },
+      {
+        "code": "RNM2c",
+        "name": "testSfhChar"
+      },
+      {
+        "code": "RNM2b",
+        "name": "testSfhBlock"
+      },
+      {
+        "code": "RNM20",
+        "name": "testLinkRename"
+      },
+      {
+        "code": "RNM3s",
+        "name": "testCfhSocket"
+      },
+      {
+        "code": "RNM3a",
+        "name": "testCfhLink"
+      },
+      {
+        "code": "RNM3f",
+        "name": "testCfhFifo"
+      },
+      {
+        "code": "RNM3c",
+        "name": "testCfhChar"
+      },
+      {
+        "code": "RNM3b",
+        "name": "testCfhBlock"
+      },
+      {
+        "code": "LKPP1s",
+        "name": "testSock"
+      },
+      {
+        "code": "LKPP1a",
+        "name": "testLink"
+      },
+      {
+        "code": "LKPP1f",
+        "name": "testFifo"
+      },
+      {
+        "code": "LKPP1c",
+        "name": "testChar"
+      },
+      {
+        "code": "LKPP1b",
+        "name": "testBlock"
+      }
+    ]
+  },
+  "pynfs_after_retained_opens": {
+    "errors": 0,
+    "failures": 0,
+    "name": "all",
+    "skipped": 263,
+    "tests": 266,
+    "time": 0.4651603698730469,
+    "timestamp": "2026-10-30 22:05:36.366782"
+  },
+  "boundaries": [
+    "Persistent SMB ACL/attribute mutations remain unsupported.",
+    "Contended blocking SMB locks remain unsupported.",
+    "Samba tests using a 1 MiB QUERY_DIRECTORY output exceed the negotiated 64 KiB MaxTransactSize.",
+    "Kernel CIFS missing-MIC and Samba invalid-session/signing incompatibilities remain documented.",
+    "NFS retained unlinked objects survive protocol-worker restart, not file-domain/all-service restart.",
+    "NLM/NSM and eligible Windows NFS client verification remain unfinished."
+  ],
+  "nfs_discovery": {
+    "status": "passed",
+    "checks": [
+      "EXPORT and DUMP filter root-squashed/unmapped principals; duplicate MNT is idempotent",
+      "mount records survive reconnect; UMNT/UMNTALL affect only caller and preserve NFS filehandles",
+      "rpcbind v2/v3/v4 DUMP and v4 GETVERSADDR advertise only implemented TCP services",
+      "recognized unsupported file types return per-operation errors after successful SEQUENCE/PUTFH",
+      "export revocation immediately hides discovery and denies subsequent MNT"
+    ]
+  },
+  "nfs_unlink": {
+    "status": "passed",
+    "checks": [
+      "atomic rename preserves both old opens, isolates writes and charges retained data until last CLOSE",
+      "periodic lease expiry releases unlinked bytes without any NFS client traffic",
+      "unlink retains descriptor and quota across NFS worker crash; matching OPEN reclaim and last CLOSE release it"
+    ]
+  },
+  "native_checks": {
+    "m5": 85,
+    "m7": 61
+  }
+}

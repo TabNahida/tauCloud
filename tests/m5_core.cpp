@@ -66,10 +66,10 @@ int main() {
     auto store = std::make_unique<file_store>(cfg, "file", random_hex(16));
     space = store->dispatch("provision", {{"root", root}, {"space", space}}, ctx("identity"));
     auto grantkey = read_json(cfg.state / "ipc-keys.json").at("identity").get<std::string>();
-    auto grant = [&](std::string path, bool expired = false) {
+    auto grant = [&](std::string path, bool expired = false, bool writable = true) {
       json g = {{"actor", "alice"}, {"root", root},
                 {"space", space},   {"path", path},
-                {"write", true},    {"share", "smb"},
+                {"write", writable}, {"share", "smb"},
                 {"epoch", 2},       {"expires", now() + (expired ? -100 : 2000)},
                 {"protocol", "smb"}};
       g["signature"] = mac(grantkey, g.dump());
@@ -93,6 +93,20 @@ int main() {
     auto h = open("data", 0x13019f, 1);
     rejected([&] { open("data"); }, "sharing_violation");
     call("close", "data", {{"handle", h}});
+    h = open("data", 0x1f01ff);
+    call("close", "data", {{"handle", h}});
+    for (uint32_t access : {0x40u, 0x40000u, 0x80000u, 0x1f01ffu})
+      rejected([&] {
+        store->dispatch("smb_open", {{"grant", grant("data", false, false)},
+            {"write", false}, {"access", access}, {"sharing", 7},
+            {"disposition", 1}, {"options", 0x40}}, ctx("smb"));
+      }, "forbidden");
+    auto metadata = open("data", 0x80, 0, 1);
+    auto reader = open("data", 0x20, 7, 1);
+    ok(call("read", "data", {{"handle", reader}, {"offset", 0}, {"count", 1}})
+           .at("read") == 0);
+    call("close", "data", {{"handle", reader}});
+    call("close", "data", {{"handle", metadata}});
     h = open("data");
     auto second = open("data");
     call("write", "data",
@@ -123,7 +137,7 @@ int main() {
                 {"locks", json::array({{{"offset", 4}, {"length", 1}, {"flags", 0x12}},
                                        {{"offset", 1}, {"length", 1}, {"flags", 0x12}}})}});
         },
-        "locked");
+        "lock_not_granted");
     // The successful first item of a rejected lock vector must have rolled back.
     call(
         "lock", "data",

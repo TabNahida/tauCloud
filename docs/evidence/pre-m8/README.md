@@ -2,6 +2,12 @@
 
 M8 has not started. The M4 client gate is closed; full M5 and M7 conformance gates remain open. A passing selected-profile workflow does not establish complete SMB/NFS compatibility. All public pushes use the explicitly authorized `codex/pre-m8-acceptance` branch.
 
+## File semantics follow-up
+
+[Local evidence](file-semantics-local.json) records 14 passing Samba file/lock/directory selectors plus all three credit tests (including 8191 writes), 11 SMB2 and 18 SMB3 regression groups, and the original 15 NFS groups. The broad pre-fix pynfs diagnostic selected 166 cases: 139 passed and 27 failed; it is retained as a diagnostic, not a conformance pass. After native-descriptor retention, the original RNM21 replacement/CLOSE test and TRUNK1/TRUNK2 pass.
+
+MOUNT now supplies scoped DUMP/EXPORT/UMNT operations and rpcbind supplies bounded DUMP/GETVERSADDR. NFS REMOVE/RENAME retain active native descriptors, preserve old-object I/O, charge quota and release it after last CLOSE or expiry. NFS-worker crash/reclaim retains these objects while the file domain remains alive. File-domain/all-service restart still loses unlinked objects; persistent recovery, NLM/NSM and the Windows NFS-client gate remain open. M8 is not implemented yet.
+
 ## Current verification
 
 Commit `c180501` passes all four jobs in [run 41028021382](https://github.com/TabNahida/tauCloud/actions/runs/41028021382). [The downloaded fixed-commit reports](verified-namespace-c180501.json) confirm seven new namespace/revocation groups on GCC, Clang ASan/UBSan and MSVC, native Linux pseudo-root mounting and simultaneous opens across two exports, plus the existing native Linux/Windows/macOS and FileZilla checks. The selected upstream NFS groups remain 37 + 34 + 30 passes. [Local evidence](nfs-namespace-local.json) also records the old NOTSUPP reproduction and 14 additional upstream traversal/security-information checks.
