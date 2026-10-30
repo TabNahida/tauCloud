@@ -98,6 +98,7 @@ void retire_client(uint64_t client) {
   client_ids.erase(client);
 }
 void expire() {
+  nlm_expire();
   if (grace_end && now() >= grace_end) {
     for (auto &[id, b] : reclaim)
       remove_recovery(id);

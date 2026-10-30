@@ -14,9 +14,9 @@ import xdrlib3 as xdrlib
 op=NFS4ops()
 
 class Client:
-    def __init__(self,port,uid=1000,gid=1000,groups=()):
+    def __init__(self,port,uid=1000,gid=1000,groups=(),address='127.0.0.1'):
         self.port,self.uid,self.gid,self.groups=port,uid,gid,groups
-        self.sock=socket.create_connection(('127.0.0.1',port),timeout=10)
+        self.sock=socket.create_connection((address,port),timeout=10)
         self.xid=int.from_bytes(os.urandom(4),'big'); self.seq=0
     def close(self):self.sock.close()
     def packet(self,program,version,proc,body,xid=None):
@@ -117,7 +117,7 @@ def run(args):
             p=xdrlib.Packer()
             for value in (program,3,6,0):p.pack_uint(value)
             u=xdrlib.Unpacker(c.exchange(c.packet(100000,2,3,p.get_buffer())));assert u.unpack_uint()==expected;u.done()
-        checks.append('read-only TCP portmapper advertises NFS and does not advertise unsupported NLM')
+        checks.append('read-only TCP portmapper advertises NFS and does not advertise unsupported NLM version 3')
 
         attr=t3.sattr3(t3.set_mode3(False),t3.set_uid3(False),t3.set_gid3(False),t3.set_size3(False),t3.set_atime(0),t3.set_mtime(0))
         create=t3.CREATE3args(t3.diropargs3(t3.nfs_fh3(root),b'roundtrip'),t3.createhow3(1,attr))

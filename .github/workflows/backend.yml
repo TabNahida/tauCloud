@@ -32,6 +32,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y cifs-utils nfs-common smbclient
           python3 tests/native_clients.py --bin build/linux/x86_64/release --output build/acceptance/native-linux.json --profiles smbclient-2.1 smbclient-3.1.1 kernel-nfs-3 kernel-nfs-4.1 kernel-nfs-4.1-root
+      - name: Linux native NLM blocking locks and NSM restart recovery
+        if: always() && matrix.compiler == 'gcc'
+        run: python3 tests/linux_native_nlm.py --bin build/linux/x86_64/release --output build/acceptance/linux-native-nlm.json
       - name: Kernel CIFS missing-MIC rejection (not compatibility)
         if: always() && matrix.compiler == 'gcc'
         run: python3 tests/native_clients.py --bin build/linux/x86_64/release --output build/acceptance/kernel-cifs-rejection.json --profiles kernel-cifs-2.1 kernel-cifs-3.0 kernel-cifs-3.02 kernel-cifs-3.1.1 --require-mic-rejection

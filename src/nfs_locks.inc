@@ -62,6 +62,15 @@ std::vector<lock_range> without_range(const std::vector<lock_range> &ranges, loc
   return result;
 }
 void lock_conflict(const lock_state &candidate, lock_range range, writer &body) {
+  nlm_prune(candidate.object);
+  for (const auto &[key, held] : nlm_held)
+    if (held.object == candidate.object)
+      for (auto r : held.ranges)
+        if (nlm_overlap(r, range)) {
+          body.u64(r.start).u64(r.end == UINT64_MAX ? UINT64_MAX : r.end - r.start + 1)
+              .u32(r.type).u64(0).opaque(decode_bytes(held.owner));
+          check(false, 10010);
+        }
   for (const auto &[key, other] : byte_locks) {
     if (candidate.object != other.object ||
         (candidate.client == other.client && candidate.owner == other.owner && candidate.principal == other.principal))

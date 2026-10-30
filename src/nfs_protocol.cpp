@@ -119,6 +119,7 @@ json attrs3(reader &r) {
 struct server::impl {
   config cfg;
   domain_call call;
+  callback_call callback;
   database db;
   std::mutex mutex;
   std::string connection;
@@ -176,11 +177,13 @@ struct server::impl {
       check(false, 10008);
     }
   }
-  impl(const config &c, domain_call f) : cfg(c), call(std::move(f)), db(c.state / "nfs.db") {
+  impl(const config &c, domain_call f, callback_call cb)
+      : cfg(c), call(std::move(f)), callback(std::move(cb)), db(c.state / "nfs.db") {
     sql(db, "CREATE TABLE IF NOT EXISTS replay(id TEXT PRIMARY KEY,hash TEXT NOT NULL,result TEXT "
             "NOT NULL);"
             "CREATE TABLE IF NOT EXISTS recovery(id TEXT PRIMARY KEY,body TEXT NOT NULL);");
     start_recovery();
+    start_nlm();
   }
   json file(const identity &who, const std::string &handle, std::string op,
             json args = json::object(), std::string request = "", std::string export_name = "") {
@@ -496,6 +499,7 @@ struct server::impl {
     return w.data;
   }
 #include "nfs_v4.inc"
+#include "nfs_nlm.inc"
   std::string dispatch(std::string_view packet, std::string connection_id) {
     std::lock_guard guard(mutex);
     connection = std::move(connection_id);
@@ -513,7 +517,7 @@ struct server::impl {
       auto vf = r.u32();
       auto vb = r.opaque(400);
       if (vf != 0 || !vb.empty() ||
-          (flavor != 1 && !(flavor == 0 && (proc == 0 || prog == 100000 ||
+          (flavor != 1 && !(flavor == 0 && (proc == 0 || prog == 100000 || prog == 100024 ||
               (prog == 100005 && (proc == 2 || proc == 5))))))
         return reply.u32(1).u32(1).u32(5).data;
       identity who;
@@ -647,6 +651,17 @@ struct server::impl {
         }
         return reply.u32(3).data;
       }
+      if (prog == 100021) {
+        if (vers != 4) return reply.u32(2).u32(4).u32(4).data;
+        if (proc > 5) return reply.u32(3).data;
+        return reply.u32(0).fixed(nlm(who, proc, r)).data;
+      }
+      if (prog == 100024) {
+        if (vers != 1) return reply.u32(2).u32(1).u32(1).data;
+        // Remote crash simulation is not an administrative interface.
+        if (proc > 6 || proc == 5) return reply.u32(3).data;
+        return reply.u32(0).fixed(nsm(proc, r)).data;
+      }
       if (prog == 100000) { // Read-only rpcbind/portmapper. No arbitrary SET, UNSET or CALLIT.
         if (vers != 2 && vers != 3 && vers != 4)
           return reply.u32(2).u32(2).u32(4).data;
@@ -659,40 +674,47 @@ struct server::impl {
           writer out;
           for (auto [program, version] : {std::pair{100003u, 3u}, {100003u, 4u},
                                          {100005u, 3u}, {100000u, 2u},
-                                         {100000u, 3u}, {100000u, 4u}}) {
+                                         {100000u, 3u}, {100000u, 4u},
+                                         {100021u, 4u}, {100024u, 1u}}) {
             out.boolean(true).u32(program).u32(version);
             if (vers == 2)
               out.u32(6).u32(cfg.nfs_port);
             else
-              out.opaque("tcp").opaque("127.0.0.1." + std::to_string(cfg.nfs_port >> 8) +
+              out.opaque("tcp").opaque(cfg.nfs_address + "." + std::to_string(cfg.nfs_port >> 8) +
                   "." + std::to_string(cfg.nfs_port & 255)).opaque("tauCloud");
           }
+          out.boolean(true).u32(100024).u32(1);
+          if (vers == 2) out.u32(17).u32(cfg.nfs_port);
+          else out.opaque("udp").opaque(cfg.nfs_address + "." + std::to_string(cfg.nfs_port >> 8) +
+              "." + std::to_string(cfg.nfs_port & 255)).opaque("tauCloud");
           return reply.u32(0).fixed(out.boolean(false).data).data;
         }
         if (proc != 3 && !(vers == 4 && proc == 9))
           return reply.u32(3).data;
         auto p = r.u32(), v = r.u32();
-        bool tcp;
+        bool tcp, udp;
         if (vers == 2) {
-          tcp = r.u32() == 6;
+          auto transport = r.u32(); tcp = transport == 6; udp = transport == 17;
           r.u32();
         } else {
-          tcp = r.opaque(32) == "tcp";
+          auto transport = r.opaque(32); tcp = transport == "tcp"; udp = transport == "udp";
           r.opaque(256);
           r.opaque(256);
         }
         r.end();
-        bool supported = tcp && ((p == 100003 && (v == 3 || v == 4)) || (p == 100005 && v == 3) ||
-                                 (p == 100000 && (v >= 2 && v <= 4)));
+        bool supported = (tcp && ((p == 100003 && (v == 3 || v == 4)) || (p == 100005 && v == 3) ||
+                                 (p == 100021 && v == 4) || (p == 100024 && v == 1) ||
+                                 (p == 100000 && (v >= 2 && v <= 4)))) ||
+                         (udp && p == 100024 && v == 1);
         if (vers == 2)
           return reply.u32(0).u32(supported ? cfg.nfs_port : 0).data;
         return reply.u32(0)
-            .opaque(supported ? "127.0.0.1." + std::to_string(cfg.nfs_port >> 8) + "." +
+            .opaque(supported ? cfg.nfs_address + "." + std::to_string(cfg.nfs_port >> 8) + "." +
                                     std::to_string(cfg.nfs_port & 255)
                               : "")
             .data;
       }
-      return reply.u32(1).data; // PROG_UNAVAIL, including NLM and NSM.
+      return reply.u32(1).data;
     } catch (const xdr_error &) {
       writer w;
       return w.u32(xid).u32(1).u32(0).u32(0).u32(0).u32(4).data;
@@ -702,7 +724,8 @@ struct server::impl {
     }
   }
 };
-server::server(const config &c, domain_call f) : impl_(std::make_unique<impl>(c, std::move(f))) {}
+server::server(const config &c, domain_call f, callback_call cb)
+    : impl_(std::make_unique<impl>(c, std::move(f), std::move(cb))) {}
 server::~server() = default;
 std::string server::dispatch(std::string_view record, std::string connection) {
   return impl_->dispatch(record, std::move(connection));
@@ -714,5 +737,6 @@ void server::disconnect(const std::string &connection) {
 void server::maintenance() {
   std::lock_guard guard(impl_->mutex);
   impl_->expire();
+  impl_->nlm_maintenance();
 }
 } // namespace tc::nfs_detail

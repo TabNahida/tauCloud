@@ -130,13 +130,13 @@ Selected-profile evidence: [M6 guide](docs/m6.md), [ADR 0009](docs/decisions/000
 - [x] Verify selected v4.1 FILE_SYNC, server reboot and retransmission paths with the Linux pynfs-codec client (kernel client and full recovery/conformance remain open).
 - [ ] Complete M7a conformance before publishing v4.1 compatibility.
 - [x] Add policy-filtered MOUNT discovery, bounded mount records and read-only rpcbind DUMP/GETVERSADDR.
-- [x] Retain unlinked/replaced OPEN objects with durable private links and recovery journals; charge quota through file-domain/all-service restart and release it after last CLOSE/lease expiry (Linux verified; Windows acceptance pending).
+- [x] Retain unlinked/replaced OPEN objects with durable private links and recovery journals; charge quota through file-domain/all-service restart and release it after last CLOSE/lease expiry (Linux and Windows recovery assertions passed; Windows test cleanup correction awaits rerun).
 - [ ] Implement v3 operations, MOUNT/rpcbind and the selected NLM/NSM recovery profile.
 - [x] Verify FILE_SYNC upgrades of UNSTABLE requests, COMMIT, duplicate requests and reboot verifiers in the experimental profile.
 - [ ] Complete M7b Linux/macOS/eligible Windows client tests; publish client-version restrictions. Linux kernel v3/v4.1 and macOS 15.7.9 native v3 file roundtrips pass; v3 uses nolocks, and Windows Client for NFS remains unverified.
 - [x] Design RPCSEC_GSS/Kerberos as a later authenticated profile; do not conflate it with AUTH_SYS (ADR 0010).
 
-**Partial milestone:** [M7 preview](docs/m7.md), [中文](docs/m7.zh-CN.md), [ADR 0010](docs/decisions/0010-nfs-preview.md), [pre-M8 evidence](docs/evidence/pre-m8/README.md). Share-deny, byte locks/reclaim, OPEN upgrades, native timestamps, alias metadata and selected upstream conformance are now implemented/tested. Persistent change counters and actual namespace change_info now have alias/restart/restored-mtime tests. Complete mandatory-operation, unlink-open/full cache consistency and native-client gates remain open. NLM/NSM is absent. No complete NFS compatibility is published; passing selected upstream tests is not a full-suite result.
+**Partial milestone:** [M7 preview](docs/m7.md), [中文](docs/m7.zh-CN.md), [ADR 0010](docs/decisions/0010-nfs-preview.md), [pre-M8 evidence](docs/evidence/pre-m8/README.md). Share-deny, byte locks/reclaim, OPEN upgrades, native timestamps, alias metadata and selected upstream conformance are now implemented/tested. Persistent change counters and actual namespace change_info now have alias/restart/restored-mtime tests. Complete mandatory-operation, unlink-open/full cache consistency and native-client gates remain open. NLMv4 synchronous locks and NSMv1 recovery are implemented with wire/callback tests; native lock recovery acceptance is pending. No complete NFS compatibility is published; passing selected upstream tests is not a full-suite result.
 
 ## M8 — Plugins and Docker
 

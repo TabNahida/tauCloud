@@ -36,6 +36,8 @@ struct config {
   uint16_t port = 8443, dav_port = 0, smb_port = 0, nfs_port = 0, ftp_port = 0, ftp_passive_first = 50000,
            ftp_passive_last = 50031;
   bool ftp_plaintext = false;
+  std::string nfs_address = "127.0.0.1";
+  uint16_t nfs_peer_rpcbind_port = 111;
   int connections = 32, ipc_queue = 16, restart_limit = 5;
   int memory_mb = 512;
   std::string origin() const;

@@ -16,6 +16,7 @@ import threading
 import traceback
 
 from pynfs_acceptance import fixture
+from m7_integration import Client, t3
 
 
 class Relay:
@@ -50,7 +51,7 @@ class Relay:
                 client.close()
 
     def copy(self, source, target, trace):
-        first = True
+        pending = bytearray()
         try:
             while not self.stopped:
                 try:
@@ -59,11 +60,26 @@ class Relay:
                     continue
                 if not data:
                     break
-                # Record only RPC routing fields, never credential or file bytes.
-                if trace and first and len(data) >= 28:
-                    header = struct.unpack('>7I', data[:28])
-                    self.calls.append(dict(program=header[4], version=header[5], procedure=header[6]))
-                first = False
+                if trace:
+                    pending.extend(data)
+                    while len(pending) >= 4:
+                        marker = struct.unpack('>I', pending[:4])[0]
+                        length = marker & 0x7fffffff
+                        if length > 262144:
+                            pending.clear(); break
+                        if len(pending) < length + 4:
+                            break
+                        packet = bytes(pending[4:length + 4])
+                        del pending[:length + 4]
+                        if marker >> 31 and len(packet) >= 32 and len(self.calls) < 512:
+                            header = struct.unpack('>8I', packet[:32])
+                            entry = dict(program=header[3], version=header[4], procedure=header[5])
+                            if header[6] == 1 and len(packet) >= 40:
+                                name_length = struct.unpack('>I', packet[36:40])[0]
+                                offset = 40 + ((name_length + 3) & ~3)
+                                if offset + 12 <= 32 + header[7] <= len(packet):
+                                    entry['uid'], entry['gid'], entry['group_count'] = struct.unpack('>3I', packet[offset:offset + 12])
+                            self.calls.append(entry)
                 target.sendall(data)
         except OSError:
             pass
@@ -82,6 +98,7 @@ class Relay:
 
 SCRIPT = r'''
 $ErrorActionPreference = 'Stop'
+$WarningPreference = 'SilentlyContinue'
 Import-Module NFS
 if (-not (Get-WindowsFeature NFS-Client).Installed) { throw 'Client for NFS is not installed' }
 $old = Get-NfsClientConfiguration
@@ -138,6 +155,19 @@ def main():
               uids={'65534':'alice', '4294967294':'alice', '4294967295':'alice'},
               gids={'65534':'unix', '4294967294':'unix', '4294967295':'unix'}, update=True))
         f.api('grants', f.admin, dict(space='nfsdata', subject_type='user', subject='bob', rights='rw'))
+        # Windows anonymous mappings vary by host. The fixture grants access to
+        # those mapped principals and exposes matching POSIX traverse/write bits;
+        # production application ACLs remain authoritative on every RPC.
+        c = Client(port, uid=4294967294, gid=65534)
+        try:
+            status, root = c.mount()
+            assert status == 0
+            attrs = t3.sattr3(t3.set_mode3(True, 0o777), t3.set_uid3(False),
+                t3.set_gid3(False), t3.set_size3(False), t3.set_atime(0), t3.set_mtime(0))
+            result = c.v3('SETATTR', t3.SETATTR3args(t3.nfs_fh3(root), attrs, t3.sattrguard3(False)), 2)
+            assert result.status == 0, result
+        finally:
+            c.close()
         # Native Windows has no alternate rpcbind-port option. Use an unused
         # loopback address; fail on a listener collision instead of replacing it.
         for listen in sorted({111, 2049, port}):
@@ -178,10 +208,12 @@ if (Test-Path -LiteralPath $env:TC_NATIVE_CONFIG) {
             relay.close()
         f.log.flush()
         report['server_log'] = (f.base / 'supervisor.log').read_text()[-65536:]
+        report['worker_logs'] = {role: path.read_text()[-16384:] for role in ('nfs', 'file', 'identity')
+            if (path := f.state / 'logs' / (role + '.jsonl')).exists()}
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(report, indent=2) + '\n')
         f.close()
-    print(json.dumps({k:v for k,v in report.items() if k != 'server_log'}, indent=2))
+    print(json.dumps({k:v for k,v in report.items() if k not in ('server_log', 'worker_logs')}, indent=2))
     return int(report['status'] != 'passed')
 
 

@@ -80,24 +80,29 @@ def main():
         assert mounts(alice) == []
         checks.append('mount records survive reconnect; UMNT/UMNTALL affect only caller and preserve NFS filehandles')
 
-        expected = {(100003, 3), (100003, 4), (100005, 3),
-                    (100000, 2), (100000, 3), (100000, 4)}
+        expected = {(p, v, b'tcp') for p, v in ((100003, 3), (100003, 4), (100005, 3),
+                    (100000, 2), (100000, 3), (100000, 4), (100021, 4), (100024, 1))}
+        expected.add((100024, 1, b'udp'))
         address = ('127.0.0.1.%d.%d' % (port >> 8, port & 255)).encode()
         for version in (2, 3, 4):
             u = xdr.Unpacker(alice.exchange(alice.packet(100000, version, 4, b'')))
             registrations = set()
             while u.unpack_bool():
-                registrations.add((u.unpack_uint(), u.unpack_uint()))
+                program, version_number = u.unpack_uint(), u.unpack_uint()
                 if version == 2:
-                    assert (u.unpack_uint(), u.unpack_uint()) == (6, port)
+                    protocol = u.unpack_uint(); assert protocol in (6, 17)
+                    transport = b'tcp' if protocol == 6 else b'udp'
+                    assert u.unpack_uint() == port
                 else:
-                    assert (u.unpack_string(), u.unpack_string(), u.unpack_string()) == (
-                        b'tcp', address, b'tauCloud')
+                    transport = u.unpack_string()
+                    assert (u.unpack_string(), u.unpack_string()) == (address, b'tauCloud')
+                registrations.add((program, version_number, transport))
             u.done()
             assert registrations == expected
         for program, version, netid, wanted in ((100003, 4, b'tcp', address),
                 (100003, 2, b'tcp', b''), (100003, 3, b'udp', b''),
-                (100021, 4, b'tcp', b'')):
+                (100021, 4, b'tcp', address), (100021, 3, b'tcp', b''),
+                (100024, 1, b'udp', address)):
             body = xdr.Packer()
             body.pack_uint(program); body.pack_uint(version)
             for value in (netid, b'', b''):
@@ -105,7 +110,7 @@ def main():
             u = xdr.Unpacker(alice.exchange(alice.packet(100000, 4, 9, body.get_buffer())))
             assert u.unpack_string() == wanted
             u.done()
-        checks.append('rpcbind v2/v3/v4 DUMP and v4 GETVERSADDR advertise only implemented TCP services')
+        checks.append('rpcbind DUMP/GETVERSADDR advertise implemented TCP services plus UDP NSM; older NLM versions remain absent')
 
         alice.session()
         root_handle = alice.root()

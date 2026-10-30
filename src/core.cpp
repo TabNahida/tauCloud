@@ -198,7 +198,8 @@ config config::load(const fs::path &path) {
   for (auto &[key, value] : j.items())
     require(key == "schema" || key == "listen" || key == "port" || key == "connections" ||
                 key == "ipc_queue" || key == "restart_limit" || key == "memory_mb" ||
-                key == "nfs_port" || key == "smb_port" || key == "dav_port" || key == "ftp_port" ||
+                key == "nfs_port" || key == "nfs_address" || key == "nfs_peer_rpcbind_port" ||
+                key == "smb_port" || key == "dav_port" || key == "ftp_port" ||
                 key == "ftp_plaintext" || key == "ftp_passive_first" || key == "ftp_passive_last",
             "invalid_config");
   require(j.is_object() && j.at("schema") == 1 && j.at("listen") == "127.0.0.1", "invalid_config");
@@ -236,6 +237,12 @@ config config::load(const fs::path &path) {
                       nfs != ftp && nfs != smb && (!ftp || nfs < first || nfs > last)),
           "invalid_config");
   c.nfs_port = static_cast<uint16_t>(nfs);
+  c.nfs_address = j.value("nfs_address", std::string("127.0.0.1"));
+  require(c.nfs_address == "127.0.0.1" || c.nfs_address == "127.0.0.2", "invalid_config");
+  require(!j.contains("nfs_peer_rpcbind_port") || j.at("nfs_peer_rpcbind_port").is_number_integer(), "invalid_config");
+  auto peer_rpcbind = j.value("nfs_peer_rpcbind_port", int64_t(111));
+  require(peer_rpcbind == 111 || (peer_rpcbind >= 1024 && peer_rpcbind <= 65535), "invalid_config");
+  c.nfs_peer_rpcbind_port = uint16_t(peer_rpcbind);
   c.smb_port = static_cast<uint16_t>(smb);
   c.ftp_port = static_cast<uint16_t>(ftp);
   c.ftp_passive_first = static_cast<uint16_t>(first);

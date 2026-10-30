@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "checks": [
+    "NLM duplicate grants, holder information, partial unlock, shared locks, EOF ranges and overflow errors",
+    "exclusive locks require fresh write authority; NFSv4 byte locks conflict with NLM owners",
+    "blocking LOCK receives and acknowledges a real TCP GRANTED callback; CANCEL matches owner/range independently of cookie",
+    "rejected blocking upgrades restore prior shared locks; revoked owners cannot leave stale conflicts",
+    "wait-for cycles are rejected as deadlock without discarding existing locks",
+    "TCP/UDP NSM discovery, bounded MON callback and reboot notification release old locks; stale state cannot revoke current locks",
+    "server reboot advances NSM state, notifies peer and gates new locks; exact range reclaim survives a second crash, grace expires normally"
+  ],
+  "callbacks": [
+    {
+      "kind": "grant"
+    },
+    {
+      "kind": "grant"
+    },
+    {
+      "kind": "monitor"
+    },
+    {
+      "kind": "reboot"
+    }
+  ],
+  "scope": "Local Linux wire/callback/recovery checks; native kernel recovery and Windows acceptance pending"
+}

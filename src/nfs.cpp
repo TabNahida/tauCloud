@@ -2,6 +2,7 @@
 #include <taucloud/files.hpp>
 #include <taucloud/runtime/bounded_executor.hpp>
 #include <pace/tcp.hpp>
+#include <pace/udp.hpp>
 #include <set>
 namespace tc {
 namespace {
@@ -15,6 +16,8 @@ struct nfs_runtime {
   explicit nfs_runtime(const config &c)
       : cfg(c), protocol(c, [c](std::string target, std::string op, json body) {
           return rpc(c, "nfs", target, op, body);
+        }, [c](uint32_t program, uint32_t version, uint32_t procedure, std::string body) {
+          return nfs_detail::loopback_callback(c, program, version, procedure, body);
         }) {}
 };
 pace::task<std::string> process(nfs_runtime &s, std::string packet, std::string connection) {
@@ -105,6 +108,27 @@ pace::task<void> accept(nfs_runtime &s, pace::tcp::listener &listener, std::atom
       stopping = true;
   }
 }
+pace::task<void> status_datagrams(nfs_runtime &s, pace::udp::socket &socket,
+                                 std::atomic_bool &stopping) {
+  std::array<char, 4096> buffer{};
+  while (!stopping && socket.is_open()) {
+    try {
+      auto datagram = co_await socket.receive_from(buffer);
+      if (datagram.truncated || datagram.size < 24 ||
+          !datagram.sender.address.starts_with("127.")) continue;
+      std::string packet(buffer.data(), datagram.size);
+      nfs_detail::reader header(packet);
+      header.u32(); header.u32(); header.u32();
+      auto program = header.u32();
+      // UDP is exclusively NSM and read-only service discovery, never NFS I/O.
+      if (program != 100024 && program != 100000) continue;
+      auto reply = co_await process(s, std::move(packet), "nsm-udp");
+      if (reply.size() <= buffer.size()) co_await socket.send_to(reply, datagram.sender);
+    } catch (...) {
+      if (!socket.is_open() || stopping) break;
+    }
+  }
+}
 } // namespace
 int nfs(const config &c, const std::string &generation, std::atomic_bool &stopping) {
   if (!c.nfs_port)
@@ -112,7 +136,8 @@ int nfs(const config &c, const std::string &generation, std::atomic_bool &stoppi
   file_lock lock(c.state / "nfs.lock");
   apply_resource_budget(c);
   nfs_runtime s(c);
-  pace::tcp::listener listener(*s.io, {"127.0.0.1", c.nfs_port}, {false, 32});
+  pace::tcp::listener listener(*s.io, {c.nfs_address, c.nfs_port}, {false, 32});
+  pace::udp::socket status_socket(*s.io, {c.nfs_address, c.nfs_port});
   auto info = [&] {
     auto p = process_info(own_pid());
     p["role"] = "nfs";
@@ -134,6 +159,7 @@ int nfs(const config &c, const std::string &generation, std::atomic_bool &stoppi
                  });
   write_json(c.state / "nfs.instance.json", info());
   s.io->spawn(accept(s, listener, stopping));
+  s.io->spawn(status_datagrams(s, status_socket, stopping));
   std::jthread loop([&] {
     try {
       s.io->run();
@@ -153,6 +179,7 @@ int nfs(const config &c, const std::string &generation, std::atomic_bool &stoppi
   }
   s.io->post([&] {
     listener.close();
+    status_socket.close();
     for (auto *socket : s.sockets)
       socket->close();
   });

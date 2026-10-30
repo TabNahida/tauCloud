@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Recover durable NFS retention at interrupted link/create/remove boundaries."""
 import argparse
+from contextlib import closing
 import json
 import os
 from pathlib import Path
@@ -31,7 +32,7 @@ def main():
             handles[name] = handle
         owner = c.owner
         c.close(); f.stop()
-        with sqlite3.connect(f.state / 'file.nfs.db') as db:
+        with closing(sqlite3.connect(f.state / 'file.nfs.db')) as db:
             records = [(token, json.loads(body)) for token, body in db.execute('SELECT token,body FROM retained')]
             assert len(records) == 3
             for token, body in records:
@@ -60,7 +61,7 @@ def main():
         result = c.compound([op.putfh(handles['after-reap']), op.getattr([2])])
         assert result.status == 70, result
         assert not list((f.root / 'nfsdata').glob('.tc-nfs-*'))
-        with sqlite3.connect(f.state / 'file.nfs.db') as db:
+        with closing(sqlite3.connect(f.state / 'file.nfs.db')) as db:
             assert db.execute('SELECT count(*) FROM retained').fetchone()[0] == 0
         checks.extend(['journal before private link creation preserves original file and handle',
                        'private link before unlink is rolled back without deleting original data',
