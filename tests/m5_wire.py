@@ -1,6 +1,29 @@
 """Small hostile-wire probes; real NTLM tokens come from pyspnego."""
 import socket, struct, hmac, hashlib, uuid
 import spnego
+from spnego._ntlm_raw.crypto import ntowfv1, ntowfv2, rc4k
+
+def retime_authenticate(token, negotiate_token, challenge, session_key, user, password, delta_ms):
+    """Re-sign an independent client's response with a client-clock timestamp."""
+    token=bytearray(token)
+    size,_,off=struct.unpack_from('<HHI',token,20)
+    blob=bytearray(token[off+16:off+size])
+    stamp=struct.unpack_from('<Q',blob,8)[0]
+    struct.pack_into('<Q',blob,8,(stamp+delta_ms*10000)&((1<<64)-1))
+    response_key=ntowfv2(user,ntowfv1(password),'TAUCLOUD')
+    proof=hmac.new(response_key,challenge[24:32]+blob,hashlib.md5).digest()
+    token[off:off+size]=proof+blob
+    flags=struct.unpack_from('<I',token,60)[0]
+    if flags&0x40000000:
+        n,_,start=struct.unpack_from('<HHI',token,52);assert n==16
+        base=hmac.new(response_key,proof,hashlib.md5).digest()
+        token[start:start+n]=rc4k(base,session_key)
+    else:
+        session_key=hmac.new(response_key,proof,hashlib.md5).digest()
+    micpos=72 if flags&0x2000000 else 64
+    token[micpos:micpos+16]=bytes(16)
+    token[micpos:micpos+16]=hmac.new(session_key,negotiate_token+challenge+token,hashlib.md5).digest()
+    return token,session_key
 
 def header(cmd,mid=0,sid=0,tid=0,flags=0):
     return struct.pack('<4sHHIHHIIQIIQ16s',b'\xfeSMB',64,1,0,cmd,1,flags,0,mid,0,tid,sid,b'\0'*16)
@@ -20,20 +43,24 @@ def negotiate(sock):
     body=struct.pack('<HHHHI16sQH',36,1,3,0,0,uuid.uuid4().bytes,0,0x210)
     r=exchange(sock,header(0)+body);assert status(r)==0 and struct.unpack_from('<H',r,68)[0]==0x210
 
-def authenticate(port,user,password,tamper=None):
+def authenticate(port,user,password,tamper=None,timestamp_delta_ms=None):
     sock=socket.create_connection(('127.0.0.1',port),timeout=10);negotiate(sock)
     context=spnego.client(username='TAUCLOUD\\'+user,password=password,protocol='ntlm',hostname='127.0.0.1',service='cifs')
     def setup(token,mid,sid):return header(1,mid,sid)+struct.pack('<HBBIIHHQ',25,0,1,0,0,88,len(token),0)+token
-    r=exchange(sock,setup(context.step(),1,0));assert status(r)==0xc0000016
+    negotiate_token=context.step()
+    r=exchange(sock,setup(negotiate_token,1,0));assert status(r)==0xc0000016
     sid=struct.unpack_from('<Q',r,40)[0];off,n=struct.unpack_from('<HH',r,68);challenge=r[off:off+n]
     token=bytearray(context.step(challenge))
+    key=context.session_key
+    if timestamp_delta_ms is not None:
+        token,key=retime_authenticate(token,negotiate_token,challenge,key,user,password,timestamp_delta_ms)
     if tamper=='mic':
         flags=struct.unpack_from('<I',token,60)[0];token[72 if flags&0x2000000 else 64]^=1
     elif tamper=='proof':token[struct.unpack_from('<I',token,24)[0]]^=1
     r=exchange(sock,setup(token,2,sid))
     if tamper:
         assert status(r)==0xc000006d,hex(status(r));sock.close();return
-    assert status(r)==0,hex(status(r));key=context.session_key
+    assert status(r)==0,hex(status(r))
     assert hmac.new(key,r[:48]+b'\0'*16+r[64:],hashlib.sha256).digest()[:16]==r[48:64]
     return sock,sid,key
 
@@ -44,6 +71,14 @@ def rejected_connection(sock,packet):
     finally:sock.close()
 
 def hostile(port,password):
+    # Non-identical client clocks still authenticate with correct proof/MIC;
+    # excessive clock skew remains a failure, independently of cryptography.
+    for delta in (-1000,1000,-290000,290000):
+        sock,sid,key=authenticate(port,'wire',password,timestamp_delta_ms=delta)
+        reply=exchange(sock,signed(header(13,3,sid,flags=8)+struct.pack('<HH',4,0),key))
+        assert status(reply)==0;sock.close()
+    for delta in (-301000,301000):
+        authenticate(port,'wire',password,'clock',timestamp_delta_ms=delta)
     authenticate(port,'wire',password,'mic');authenticate(port,'wire',password,'proof')
     sock,sid,key=authenticate(port,'wire',password)
     rejected_connection(sock,header(13,3,sid)+struct.pack('<HH',4,0))

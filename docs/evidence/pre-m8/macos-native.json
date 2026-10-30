@@ -1,0 +1,42 @@
+{
+  "status": "failed",
+  "client_host": "macOS-15.7.9-x86_64-i386-64bit-Mach-O",
+  "server_host": "Ubuntu 24.04 QEMU guest",
+  "source_commit": "edbcbe3e944dbeba93d9fd5b53e2adf0efc4cb1a",
+  "harness_commit": "ab045cf06b1e39490f849a5906fc1dd7348457bd",
+  "server_archive_sha256": "dc11d5a7485742612fcea5e290ce54fb20ab25844a595ea4018257e2d53d3f09",
+  "accelerator": "hvf",
+  "guest_kernel": "Linux taucloud-acceptance 6.8.0-137-generic #137-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul 17 20:28:23 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+  "identity_setup": "offline disposable identity seed, native Argon2id 64 MiB/3/1; management login excluded; SMB authentication unchanged",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41004406480",
+  "profiles": [
+    {
+      "name": "macos-native-smb",
+      "status": "failed",
+      "error": "native mount_smbfs exit 77: Authentication error"
+    },
+    {
+      "name": "macos-native-nfs3",
+      "status": "passed",
+      "payload_sha256": "08e33aedf25337c87eb15e08c32a58f6f4caa21fe073d00b53014c57f8d148e0",
+      "payload_bytes": 1028096,
+      "checks": [
+        "mkdir",
+        "write",
+        "fsync",
+        "read verification",
+        "rename",
+        "truncate",
+        "enumerate",
+        "delete"
+      ],
+      "mount_profile": "NFSv3 TCP, explicit alternate ports, nolocks"
+    }
+  ],
+  "limitations": [
+    "NFSv3 NLM/NSM is absent and was not tested.",
+    "SMB authentication failed; no SMB file operations passed.",
+    "Management bootstrap/login excluded from offline guest identity setup.",
+    "Native mount tests do not validate Finder GUI or full protocol conformance."
+  ]
+}

@@ -330,7 +330,13 @@ json ntlm_exchange::verify(bytes type3, std::string_view hash) const {
           "unauthorized");
   if (entries.contains(10))
     require(entries[10] == bytes(16, '\0'), "unauthorized");
-  require(get(blob, 8, 8) == get(offered[7], 0, 8), "unauthorized");
+  // MS-NLMP 3.2.5.2.2 checks clock skew, not equality with MsvAvTimestamp.
+  // Heimdal clients use their own second-resolution clock in this field.
+  // The echoed target timestamp, proof and MIC still bind the fresh challenge.
+  auto timestamp = get(blob, 8, 8);
+  auto current = static_cast<uint64_t>(now() + 11644473600000ll) * 10000ull;
+  auto skew = timestamp > current ? timestamp - current : current - timestamp;
+  require(skew <= 300ull * 10000000ull, "unauthorized");
   auto key = hmac(hash, utf16(upper) + domain), proof = hmac(key, challenge.substr(24, 8) + blob);
   require(equal(proof, response.substr(0, 16)), "unauthorized");
   auto session = hmac(key, proof);

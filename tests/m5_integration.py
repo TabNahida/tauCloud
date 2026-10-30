@@ -113,7 +113,7 @@ def run(args):
         h.flush()
         for off in range(0,total,len(chunk)):actual.update(h.read(off,len(chunk)))
         assert actual.digest()==expected.digest();h.close();passed(f'{args.large_mib} MiB streamed binary roundtrip with SHA-256')
-        hostile(f.smbport,f.password);passed('bad MIC/proof, unsigned or tampered signing, oversized/truncated headers and invalid compound rejected')
+        hostile(f.smbport,f.password);passed('client-clock NTLMv2 with valid proof/MIC accepted; excessive skew, bad MIC/proof, unsigned/tampered signing and malformed packets rejected')
         # New credentials immediately invalidate existing SMB access, while management passwords remain separate.
         h=create(t,'revoked');f.api('smb/credentials',f.admin,dict(username='alice',enabled=False));denied(lambda:h.write(b'forbidden'),0xc000006d,0xc0000022)
         c.disconnect(close=False);f.api('smb/credentials',f.admin,dict(username='alice',password=f.password))

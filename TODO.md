@@ -130,7 +130,7 @@ Selected-profile evidence: [M6 guide](docs/m6.md), [ADR 0009](docs/decisions/000
 - [ ] Complete M7a conformance before publishing v4.1 compatibility.
 - [ ] Implement v3 operations, MOUNT/rpcbind and the selected NLM/NSM recovery profile.
 - [x] Verify FILE_SYNC upgrades of UNSTABLE requests, COMMIT, duplicate requests and reboot verifiers in the experimental profile.
-- [ ] Complete M7b Linux/macOS/eligible Windows client tests; publish client-version restrictions.
+- [ ] Complete M7b Linux/macOS/eligible Windows client tests; publish client-version restrictions. Linux kernel v3/v4.1 and macOS 15.7.9 native v3 file roundtrips pass; v3 uses nolocks, and Windows Client for NFS remains unverified.
 - [x] Design RPCSEC_GSS/Kerberos as a later authenticated profile; do not conflate it with AUTH_SYS (ADR 0010).
 
 **Partial milestone:** [M7 preview](docs/m7.md), [中文](docs/m7.zh-CN.md), [ADR 0010](docs/decisions/0010-nfs-preview.md), [pre-M8 evidence](docs/evidence/pre-m8/README.md). Share-deny, byte locks/reclaim, OPEN upgrades, native timestamps, alias metadata and selected upstream conformance are now implemented/tested. Persistent change counters and actual namespace change_info now have alias/restart/restored-mtime tests. Complete mandatory-operation, unlink-open/full cache consistency and native-client gates remain open. NLM/NSM is absent. No complete NFS compatibility is published; passing selected upstream tests is not a full-suite result.
