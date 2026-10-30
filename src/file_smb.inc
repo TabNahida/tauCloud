@@ -89,7 +89,8 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
   }
   bool cleanup = op == "smb_close";
   bool writing =
-      op == "smb_write" || op == "smb_resize" || op == "smb_rename" || op == "smb_disposition";
+      op == "smb_write" || op == "smb_resize" || op == "smb_allocation" ||
+      op == "smb_rename" || op == "smb_disposition";
   if (op == "smb_open")
     writing = body.value("write", false);
   auto grant = verify(body.at("grant"), writing, cleanup);
@@ -330,9 +331,16 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     auto data = h.file.read(offset, static_cast<size_t>(count));
     return {{"data", encode_bytes(data)}, {"read", data.size()}};
   }
-  if (op == "smb_resize") {
+  if (op == "smb_resize" || op == "smb_allocation") {
     require(h.access & 2, "forbidden");
     auto size = number(body, "size"), previous = meta.at("size").get<uint64_t>();
+    if (op == "smb_allocation") {
+      // Support truncation and the native Windows SetEndOfFile follow-up.
+      // Growing preallocation needs separate quota accounting; never claim it.
+      require(size <= (previous + 4095) / 4096 * 4096, "not_supported");
+      if (size >= previous)
+        return {{"size", previous}};
+    }
     range_unlocked(id, meta.at("object"), std::min(size, previous), UINT64_MAX);
     quota(s, size > previous ? size - previous : 0);
     dav_guard(s, path, actor, body);

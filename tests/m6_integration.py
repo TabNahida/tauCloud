@@ -10,6 +10,7 @@ from smbprotocol.session import Session
 from smbprotocol.tree import TreeConnect
 from smbprotocol.open import Open, ImpersonationLevel, SMB2CreateRequest, SMB2WriteRequest
 from smbprotocol.file_info import FileAttributes, FileDispositionInformation, FileRenameInformation, FileEndOfFileInformation
+from smbprotocol.structure import Structure, IntField
 from smbprotocol.ioctl import SMB2IOCTLRequest
 from smbprotocol.exceptions import SMBResponseException
 from smbprotocol.open import SMB2QueryInfoRequest, SMB2QueryInfoResponse
@@ -19,6 +20,13 @@ from cryptography.hazmat.primitives.ciphers.aead import AESCCM, AESGCM
 from cryptography.hazmat.primitives.cmac import CMAC
 from cryptography.hazmat.primitives.ciphers.algorithms import AES
 import spnego
+
+class FileAllocationInformation(Structure):
+    INFO_TYPE=1
+    INFO_CLASS=19
+    def __init__(self):
+        self.fields={'allocation_size':IntField(size=8)}
+        super().__init__()
 
 
 def negotiate_packet(dialect=0x311, signing=1, cipher=2, hash_id=1):
@@ -129,6 +137,14 @@ def run(args):
         assert old.recv(1)==b'';old.close()
         assert status(exchange(new,sign(header(13,3,sid,flags=8)+struct.pack('<HH',4,0),key)))==0
         new.close()
+        sock,sid,key,_,_,_=wire_auth(f.smbport,f.password,'alice')
+        for mid in range(4,132):
+            response=exchange(sock,sign(header(13,mid,sid,flags=8)+struct.pack('<HH',4,0),key))
+            assert status(response)==0 and struct.unpack_from('<H',response,14)[0]>=1
+        late=sign(header(13,3,sid,flags=8)+struct.pack('<HH',4,0),key)
+        assert status(exchange(sock,late))==0
+        rejected_connection(sock,late)
+        passed('bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay')
         for probe in (multiprotocol_packet(('NT LM 0.12',)),multiprotocol_packet()[:-1],
                       multiprotocol_packet().replace(b'\xffSMB\x72',b'\xffSMB\x73')):
             rejected_connection(socket.create_connection(('127.0.0.1',f.smbport),timeout=10),probe)
@@ -151,6 +167,13 @@ def run(args):
                 partial=response['buffer'].get_value();assert len(partial)==8 and int.from_bytes(partial[:4],'little')>4
             denied(lambda:query(h,48,limit=1),0xc0000004)
             h.close()
+            h=create(t,'allocation-'+hex(dialect));h.write(b'abcdefgh')
+            allocation=FileAllocationInformation();allocation['allocation_size']=8;setinfo(h,allocation)
+            assert h.read(0,8)==b'abcdefgh'
+            allocation['allocation_size']=3;setinfo(h,allocation);assert h.read(0,8)==b'abc'
+            allocation['allocation_size']=8192;denied(lambda:setinfo(h,allocation),0xc00000bb);h.close()
+            h=create(t,'allocation-'+hex(dialect),access=0x120089,disposition=1)
+            allocation['allocation_size']=1;denied(lambda:setinfo(h,allocation),0xc0000022);h.close()
             passed(f'{hex(dialect)} AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2')
             s.encrypt_data=True
             name='加密-'+hex(dialect);h=create(t,name);h.write(bytes(range(256))*256);h.flush();assert h.read(0,65536)==bytes(range(256))*256

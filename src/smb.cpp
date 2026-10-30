@@ -287,9 +287,9 @@ struct client {
   bool negotiated = false, authenticated = false, ending = false, raw_ntlm = false;
   bool multiprotocol = false;
   bool logged_off = false;
-  uint64_t session = 0, low = 0, high = 1;
+  uint64_t session = 0, high = 1;
   uint64_t previous_session = 0;
-  std::set<uint64_t> consumed;
+  std::set<uint64_t> credits_available{0};
   std::string exchange, token, username;
   bytes key, encryption_key, decryption_key;
   negotiation selected;
@@ -835,10 +835,10 @@ struct client {
       auto klass = get(p, 67, 1);
       auto input = slice(p, get(p, 72, 2), get(p, 68, 4), 96);
       json request;
-      if (klass == 20) {
+      if (klass == 20 || klass == 19) {
         check(input.size() == 8);
         request = {{"size", get(input, 0, 8)}};
-        co_await operation(h, "resize", true, request);
+        co_await operation(h, klass == 20 ? "resize" : "allocation", true, request);
       } else if (klass == 13) {
         check(input.size() == 1 && get(input, 0, 1) <= 1);
         request = {{"delete", bool(get(input, 0, 1))}};
@@ -877,7 +877,7 @@ struct client {
         if (packet.starts_with(std::string_view("\xffSMB", 4))) {
           // MS-SMB2 3.3.5.3: this is only the bootstrap into SMB2 negotiation,
           // never an SMB1 session or an SMB1 file operation.
-          check(!negotiated && !multiprotocol && low == 0 && packet.size() <= 4096 &&
+          check(!negotiated && !multiprotocol && high == 1 && packet.size() <= 4096 &&
                 get(packet, 4, 1) == 0x72 && !(get(packet, 9, 1) & 0x80) &&
                 get(packet, 32, 1) == 0 && get(packet, 33, 2) == packet.size() - 35);
           bool wildcard = false;
@@ -891,7 +891,7 @@ struct client {
           }
           check(wildcard, 0xc00000bb);
           multiprotocol = true;
-          low = 1;
+          credits_available = {1};
           high = 2;
           bytes response(128, '\0');
           response.replace(0, 4, "\xfeSMB", 4);
@@ -950,12 +950,7 @@ struct client {
                     0xc0000022);
           }
           auto id = get(p, 24, 8);
-          check(id >= low && id < high && !consumed.contains(id));
-          consumed.insert(id);
-          while (consumed.contains(low)) {
-            consumed.erase(low);
-            ++low;
-          }
+          check(credits_available.erase(id) == 1);
           requests.push_back(std::move(p));
           if (!next)
             break;
@@ -1008,8 +1003,14 @@ struct client {
           put(response, 6, 1, 2);
           put(response, 8, code, 4);
           put(response, 12, cmd, 2);
-          auto credits = std::min<uint64_t>(cmd == 0 ? 32 : 1, 64 - (high - low));
-          high += credits;
+          // Sequence IDs may arrive out of order or leave holes. Bound the
+          // unspent credits, not the numeric span, and honor bounded requests
+          // for more credits so native clients can issue compound operations.
+          auto credits = std::min<uint64_t>(std::max<uint64_t>(get(p, 14, 2), cmd == 0 ? 32 : 1),
+                                           64 - credits_available.size());
+          check(high < UINT64_MAX - credits);
+          for (size_t credit = 0; credit < credits; ++credit)
+            credits_available.insert(high++);
           put(response, 14, credits, 2);
           bool sign = authenticated && !encrypted;
           put(response, 16, 1 | (sign ? 8 : 0) | (related ? 4 : 0), 4);

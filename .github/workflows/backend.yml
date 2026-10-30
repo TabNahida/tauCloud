@@ -35,6 +35,12 @@ jobs:
       - name: Kernel CIFS missing-MIC rejection (not compatibility)
         if: always() && matrix.compiler == 'gcc'
         run: python3 tests/native_clients.py --bin build/linux/x86_64/release --output build/acceptance/kernel-cifs-rejection.json --profiles kernel-cifs-2.1 kernel-cifs-3.0 kernel-cifs-3.02 kernel-cifs-3.1.1 --require-mic-rejection
+      - name: Unmodified FileZilla GUI FTPS upload and download
+        if: always() && matrix.compiler == 'gcc'
+        run: |
+          sudo apt-get install -y filezilla xvfb xdotool
+          python3 -m pip install --break-system-packages pillow
+          python3 tests/filezilla_acceptance.py --bin build/linux/x86_64/release --output build/acceptance/filezilla-linux.json
       - name: Upstream pynfs client
         if: always() && matrix.compiler == 'gcc'
         run: |
@@ -107,6 +113,12 @@ jobs:
       - name: Windows native SMB redirector (signed and encrypted)
         if: always()
         run: python tests/windows_native_smb.py --bin build/windows/x64/release --output build/acceptance/windows-native-smb.json
+      - name: Unmodified FileZilla GUI FTPS upload and download
+        if: always()
+        run: |
+          choco install filezilla --no-progress -y
+          python -m pip install pywinauto pillow
+          python tests/filezilla_acceptance.py --bin build/windows/x64/release --filezilla "C:\Program Files\FileZilla FTP Client\filezilla.exe" --output build/acceptance/filezilla-windows.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:

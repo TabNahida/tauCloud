@@ -22,7 +22,8 @@ class HeaderProxy:
             if frame[:4]==b'\xfeSMB' and len(frame)>=64:
                 command=int.from_bytes(frame[12:14],'little')
                 item.update(command=command,flags=int.from_bytes(frame[16:20],'little'),
-                            message_id=int.from_bytes(frame[24:32],'little'))
+                            message_id=int.from_bytes(frame[24:32],'little'),
+                            credit_charge=int.from_bytes(frame[6:8],'little'),credits=int.from_bytes(frame[14:16],'little'))
                 if direction=='response':item['status']=hex(int.from_bytes(frame[8:12],'little'))
                 elif command==5 and len(frame)>=120:
                     item.update(access=hex(int.from_bytes(frame[88:92],'little')),
