@@ -11,8 +11,8 @@ from m3_integration import Fixture
 
 ROOT = Path(__file__).resolve().parents[1]
 
-def fixture(binary):
-    f = Fixture(binary)
+def fixture(binary, memory=256):
+    f = Fixture(binary, memory)
     try:
         f.stop()
         with socket.socket() as s:

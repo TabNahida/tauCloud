@@ -90,6 +90,26 @@ int64_t epoch(sqlite3 *db) {
   q.row();
   return q.integer(0);
 }
+std::string nfs_user(sqlite3 *db, const json &e, const json &cred) {
+  require(e.at("enabled").get<bool>() && e.at("trust") == "loopback-auth-sys", "forbidden");
+  auto uid = cred.at("uid").get<uint32_t>(), gid = cred.at("gid").get<uint32_t>();
+  require(cred.at("groups").is_array() && cred.at("groups").size() <= 16, "forbidden");
+  std::string user;
+  if (!uid)
+    user = e.at("anonymous"); // Root squash discards all supplied groups.
+  else {
+    user = e.at("uids").value(std::to_string(uid), "");
+    require(!user.empty(), "forbidden");
+    auto check_group = [&](uint32_t id) {
+      auto group = e.at("gids").value(std::to_string(id), "");
+      require(!group.empty() && member(db, user, group), "forbidden");
+    };
+    check_group(gid);
+    for (auto group : cred.at("groups")) check_group(group.get<uint32_t>());
+  }
+  require(exists_user(db, user), "forbidden");
+  return user;
+}
 void audit(sqlite3 *db, const std::string &actor, const std::string &action,
            const std::string &resource) {
   statement q(db, "INSERT INTO policy_audit(time,actor,action,resource) VALUES(?,?,?,?)");
@@ -137,6 +157,24 @@ void migrate_policy(sqlite3 *db) {
 json policy_dispatch(sqlite3 *db, const config &c, const std::string &operation, const json &body,
                      const call_context &ctx) {
   ctx.check();
+  if (operation == "nfs_exports") {
+    require(ctx.caller == "nfs" && body.value("peer", "") == "127.0.0.1", "forbidden");
+    json visible = json::array();
+    for (const auto &e : records(db, "nfs-exports")) {
+      ctx.check();
+      try {
+        auto user = nfs_user(db, e, body.at("credential"));
+        auto share = record(db, "shares", e.at("id"));
+        auto space = record(db, "spaces", share.at("space"));
+        if (!share.at("exposures").value("nfs", "").empty() && !access(db, space, user).empty())
+          visible.push_back({{"id", e.at("id")}, {"uuid", e.at("uuid")}});
+      } catch (const error &e) {
+        // Hide inaccessible/unpublished exports, but do not hide storage faults.
+        require(std::string_view(e.what()) == "forbidden" || std::string_view(e.what()) == "not_found", e.what());
+      }
+    }
+    return {{"exports", visible}, {"epoch", epoch(db)}};
+  }
   json who;
   json nfs_export;
   if (operation == "nfs_authorize") {
@@ -144,26 +182,8 @@ json policy_dispatch(sqlite3 *db, const config &c, const std::string &operation,
     for (const auto &e : records(db, "nfs-exports"))
       if (e.at("id") == body.value("export", "") || e.at("uuid") == body.value("uuid", ""))
         nfs_export = e;
-    require(!nfs_export.is_null() && nfs_export.at("enabled").get<bool>() &&
-                nfs_export.at("trust") == "loopback-auth-sys", "forbidden");
-    const auto &cred = body.at("credential");
-    auto uid = cred.at("uid").get<uint32_t>();
-    auto gid = cred.at("gid").get<uint32_t>();
-    require(cred.at("groups").is_array() && cred.at("groups").size() <= 16, "forbidden");
-    std::string user;
-    if (uid == 0)
-      user = nfs_export.at("anonymous"); // Root squash is mandatory, including all groups.
-    else {
-      user = nfs_export.at("uids").value(std::to_string(uid), "");
-      require(!user.empty(), "forbidden");
-      auto check_group = [&](uint32_t id) {
-        auto g = nfs_export.at("gids").value(std::to_string(id), "");
-        require(!g.empty() && member(db, user, g), "forbidden");
-      };
-      check_group(gid);
-      for (auto g : cred.at("groups")) check_group(g.get<uint32_t>());
-    }
-    require(exists_user(db, user), "forbidden");
+    require(!nfs_export.is_null(), "forbidden");
+    auto user = nfs_user(db, nfs_export, body.at("credential"));
     who = {{"username", user}, {"role", "member"}, {"scope", "files"}, {"expires", now()+2000}};
   } else
     who = subject(db, body);

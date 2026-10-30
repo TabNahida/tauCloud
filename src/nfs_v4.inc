@@ -11,6 +11,7 @@ struct slot {
   uint32_t seq = 0;
   std::string hash, reply;
   bool pending = false;
+  replay_authority authority;
 };
 struct session {
   uint64_t client;
@@ -125,15 +126,19 @@ std::vector<uint32_t> writable_attrs() {
 }
 json meta4(const identity &who, const std::string &h) {
   check(!h.empty(), 10020);
-  if (h == pseudo)
+  if (h == pseudo) {
+    auto view = export_view(who);
     return {{"directory", true},
             {"size", 0},
             {"fileid", "0000000000000001"},
             {"fsid", "0000000000000000"},
             {"modified_ns", 0},
+            {"change", view.at("epoch")},
+            {"mode", 0555},
             {"quota", 0},
             {"used", 0},
             {"handle", pseudo}};
+  }
   return file(who, h, "stat");
 }
 void attributes4(writer &out, const std::vector<uint32_t> &requested, const json &m) {
@@ -577,6 +582,10 @@ void change4(writer &w, uint64_t before, uint64_t after) {
   w.boolean(false).u64(before).u64(after);
 }
 std::string v4(const identity &who, reader &r) {
+  struct clear_authority {
+    impl &self;
+    ~clear_authority() { self.recording_authority = nullptr; }
+  } cleanup{*this};
   auto tag = r.opaque(1024);
   auto minor = r.u32(), count = r.u32();
   auto start = r.pos; // The diagnostic tag is not part of replay identity.
@@ -719,7 +728,10 @@ std::string v4(const identity &who, reader &r) {
           std::vector<uint32_t> back = {0, 4096, 4096, 0, 1, 1};
           auto idstr = random_hex(16);
           if (c.replaces) {
-            if (!sid.empty() && sessions.at(sid).client == c.replaces) active = nullptr;
+            if (!sid.empty() && sessions.at(sid).client == c.replaces) {
+              active = nullptr;
+              recording_authority = nullptr;
+            }
             retire_client(c.replaces);
             c.replaces = 0;
           }
@@ -745,19 +757,10 @@ std::string v4(const identity &who, reader &r) {
         check(a.at("highest").get<uint32_t>() >= n, 10077);
         auto &sl = s.slots[n];
         auto seq = a.at("seq").get<uint32_t>();
-        for (const auto &[id, o] : opens)
-          if (o.session == sid) {
-            try {
-              identity owner{o.credential, o.principal};
-              file(owner, o.fh, "stat");
-            } catch (...) {
-              check(false, 10008);
-            }
-            break;
-          }
         if (seq == sl.seq && sl.seq) {
           check(hash == sl.hash, 10076);
           check(!sl.pending && !sl.reply.empty(), 10008);
+          replay_authorized(who, sl.authority);
           s.expires = now() + 60000;
           client_ids.at(s.client).expires = s.expires;
           return sl.reply;
@@ -766,8 +769,10 @@ std::string v4(const identity &who, reader &r) {
         sl.seq = seq;
         sl.hash = hash;
         sl.reply.clear();
+        sl.authority = {};
         sl.pending = true;
         active = &sl;
+        recording_authority = &sl.authority;
         s.expires = now() + 60000;
         client_ids.at(s.client).expires = s.expires;
         body.fixed(decode_bytes(sid))
@@ -787,7 +792,7 @@ std::string v4(const identity &who, reader &r) {
         auto &s = session_check(target);
         check(s.connections.contains(connection), 10055);
         check(target != sid || index + 1 == ops.size(), 10081);
-        if (target == sid) active = nullptr;
+        if (target == sid) { active = nullptr; recording_authority = nullptr; }
         sessions.erase(target);
       } else if (op == 57) {
         auto id = a.at("client").get<uint64_t>();
@@ -881,7 +886,7 @@ std::string v4(const identity &who, reader &r) {
                         {"credential", who.credential},
                         {"uuid", encode_bytes(raw.substr(2, 16))},
                         {"write", true}};
-              call("identity", "nfs_authorize", b);
+              authorize(b);
               allowed = asked & 0x3f;
             } catch (...) {
             }
@@ -901,6 +906,8 @@ std::string v4(const identity &who, reader &r) {
               file(who, current, "parent");
             }
           }
+          else if (current == pseudo)
+            file(who, "", "root", json::object(), "", a.at("name"));
           else
             file(who, current, "lookup", {{"name", a.at("name")}});
           body.u32(1).u32(1);
@@ -965,16 +972,13 @@ std::string v4(const identity &who, reader &r) {
                       {"credential", who.credential},
                       {"uuid", encode_bytes(raw.substr(2, 16))},
                       {"write", true}};
-            call("identity", "nfs_authorize", b);
+            authorize(b);
           }
           auto owner = a.at("owner").get<std::string>();
           std::string previous;
           for (const auto &[id, o] : opens) {
             if (o.client == session.client && o.owner == owner && o.fh == target && o.principal == who.key)
               previous = id;
-            // One export per session bounds policy renewal work and keeps isolation explicit.
-            if (o.session == sid)
-              check(o.fh.substr(4, 32) == target.substr(4, 32), 10018);
           }
           if (!previous.empty()) {
             access |= opens.at(previous).access;
@@ -1102,24 +1106,41 @@ std::string v4(const identity &who, reader &r) {
           change4(body, m.at("change_before"), m.at("change_after"));
           change4(body, m.at("target_before"), m.at("target_after"));
         } else if (op == 26) {
-          check(current != pseudo, 10004);
-          auto m = file(who, current, "list");
+          check(!current.empty(), 10020);
+          auto bits = a.at("bits").get<std::vector<uint32_t>>();
+          check(!has(bits, 48) && !has(bits, 54));
+          auto m = current == pseudo ? export_view(who) : file(who, current, "list");
+          if (current == pseudo) {
+            m["verifier"] = digest(who.key + m.dump()).substr(0, 16);
+            m["entries"] = m.at("exports");
+          }
           auto cookie = a.at("cookie").get<uint64_t>();
           auto &entries = m.at("entries");
-          check(!cookie || a.at("verifier") == m.at("verifier"), 10003);
-          check(!cookie || (cookie >= 3 && cookie - 2 <= entries.size()), 10003);
+          check(!cookie || cookie >= 3, 10003);
+          check(!cookie || a.at("verifier") == m.at("verifier"), 10027);
+          check(!cookie || cookie - 2 <= entries.size(), 10003);
           auto budget = std::min(a.at("count").get<uint32_t>(), 65536u);
-          check(budget >= 512, 10005);
+          check(budget >= 20, 10005); // Status, verifier, list terminator and eof.
           body.fixed(decode_bytes(m.at("verifier").get<std::string>()));
           size_t i = cookie ? size_t(cookie - 2) : 0;
+          auto first = i;
           for (; i < entries.size(); ++i) {
-            auto &e = entries[i];
+            if (current == pseudo && i - first == 32) break;
+            auto e = entries[i];
+            if (current == pseudo) {
+              // Resolve only this page, using fresh authority for each export.
+              auto name = e.at("id").get<std::string>();
+              e = file(who, "", "root", json::object(), "", name);
+              e["name"] = name;
+            }
             writer item;
             // Cookies 1 and 2 are reserved by NFSv4 for client-side dot entries.
             item.boolean(true).u64(i + 3).opaque(e.at("name").get<std::string>());
-            attributes4(item, a.at("bits").get<std::vector<uint32_t>>(), e);
-            if (body.data.size() + item.data.size() + 8 > budget)
+            attributes4(item, bits, e);
+            if (body.data.size() + item.data.size() + 12 > budget) {
+              check(i != first, 10005); // Never return an empty non-final page.
               break;
+            }
             body.fixed(item.data);
           }
           body.boolean(false).boolean(i == entries.size());

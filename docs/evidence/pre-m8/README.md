@@ -4,6 +4,8 @@ M8 has not started. The M4 client gate is closed; full M5 and M7 conformance gat
 
 ## Current verification
 
+The follow-up namespace change implements authorized pseudo-root enumeration, multi-export sessions and per-reply authority checks. Local tests pass seven new namespace/revocation groups; remote validation of this later source is pending. The fixed-commit result below remains evidence for the earlier source only.
+
 Commit `b64bd47` passes all four jobs in [run 41009694197](https://github.com/TabNahida/tauCloud/actions/runs/41009694197). The downloaded reports confirm 11 SMB2 and 18 SMB3 regression groups on GCC, Clang and MSVC, including the credit/session-error corrections. See the [fixed-commit matrix](verified-matrix-b64bd47.json) and [macOS client report](macos-native-b64bd47.json).
 
 | Environment | Verified scope at `b64bd47` |
@@ -39,7 +41,7 @@ Expanded upstream control-plane diagnostics: **71 passed / 6 failed of 77 select
 - Kernel CIFS omits the mandatory NTLM MIC and is **incompatible**. Dedicated negative tests require `ntlm_mic_required` rejection for all selected dialects; they are not compatibility passes. MIC/signing requirements remain enforced.
 - Broader unmodified Samba torture remains incomplete, including full Windows security rights and session-error interoperability. Persistent Windows ACL changes and optional caching/durable handles are not granted by this preview.
 - NFSv3 **NLM/NSM is absent**. Native v3 evidence uses `nolocks`.
-- Full NFSv4.1 mandatory-operation conformance, unlink-open, complete cache/client consistency, multi-export sessions and full reboot/trunking remain open. Active destination OPENs currently cause FILE_OPEN on removal/replacement.
+- Full NFSv4.1 mandatory-operation conformance, unlink-open, complete cache/client consistency and full reboot/trunking remain open. Active destination OPENs currently cause FILE_OPEN on removal/replacement.
 - Special files, hardlinks and symlinks are outside the confined regular-file/directory profile. Tests requiring them are not relabeled as successful applicable cases.
 - Windows Client for NFS and Finder GUI remain unverified. Native Windows redirector tests require integrity and privacy; Windows reports `Encrypted=true, Signed=false` because AEAD supplies integrity for encrypted traffic.
 - Larger-than-RAM/soak, sudden power-loss, Windows namespace durability and persistent service registration require their own evidence.

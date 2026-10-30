@@ -64,6 +64,9 @@ def main():
                  [sys.executable, 'tests/m7_integration.py', '--bin', str(binary),
                   '--output', str(output.with_suffix('.nfs.json'))]
                  + (['--sanitizers'] if args.sanitizers else [])]
+    commands += [[sys.executable, 'tests/nfs_namespace_integration.py', '--bin', str(binary),
+                  '--output', str(output.with_suffix('.namespace.json'))]
+                 + (['--sanitizers'] if args.sanitizers else [])]
     digest = hashlib.sha256()
     sources = [ROOT / 'xmake.lua', ROOT / 'dependencies.lock.json']
     for directory in ('src', 'include', 'apps', 'tests', 'scripts', 'packaging'):

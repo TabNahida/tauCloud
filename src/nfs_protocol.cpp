@@ -126,6 +126,52 @@ struct server::impl {
     json credential;
     std::string key;
   };
+  struct replay_authority {
+    struct export_access {
+      bool write = false;
+      std::string scope;
+    };
+    std::map<std::string, export_access> exports;
+    std::string namespace_view;
+  };
+  replay_authority *recording_authority = nullptr;
+  std::string grant_scope(json grant) {
+    for (const char *field : {"signature", "epoch", "expires", "write"}) grant.erase(field);
+    return digest(grant.dump());
+  }
+  json authorize(const json &body) {
+    auto grant = call("identity", "nfs_authorize", body);
+    if (recording_authority) {
+      auto uuid = grant.at("export").at("uuid").get<std::string>();
+      auto &access = recording_authority->exports[uuid];
+      access.write |= body.value("write", false);
+      // Preserve the first scope if policy changes during a compound: a later
+      // rebind of the same export UUID must not authorize old cached bytes.
+      if (access.scope.empty()) access.scope = grant_scope(grant);
+      check(recording_authority->exports.size() <= 64, 10018);
+    }
+    return grant;
+  }
+  json export_view(const identity &who) {
+    auto view = call("identity", "nfs_exports", {{"peer", "127.0.0.1"}, {"credential", who.credential}});
+    if (recording_authority)
+      recording_authority->namespace_view = digest(view.at("exports").dump());
+    return view;
+  }
+  void replay_authorized(const identity &who, const replay_authority &authority) {
+    // Revalidate the reply's actual exports, including anonymous reads and
+    // operations whose OPEN has since closed. Never execute a mutation twice.
+    try {
+      for (const auto &[uuid, access] : authority.exports) {
+        auto grant = authorize({{"peer", "127.0.0.1"}, {"credential", who.credential}, {"uuid", uuid}, {"write", access.write}});
+        check(grant_scope(grant) == access.scope, 10008);
+      }
+      if (!authority.namespace_view.empty())
+        check(digest(export_view(who).at("exports").dump()) == authority.namespace_view, 10008);
+    } catch (const error &) {
+      check(false, 10008);
+    }
+  }
   impl(const config &c, domain_call f) : cfg(c), call(std::move(f)), db(c.state / "nfs.db") {
     sql(db, "CREATE TABLE IF NOT EXISTS replay(id TEXT PRIMARY KEY,hash TEXT NOT NULL,result TEXT "
             "NOT NULL);"
@@ -144,7 +190,7 @@ struct server::impl {
       b["uuid"] = encode_bytes(raw.substr(2, 16));
     } else
       b["export"] = export_name;
-    auto grant = call("identity", "nfs_authorize", b);
+    auto grant = authorize(b);
     if (op == "remove" || op == "rename") {
       // This bounded profile does not retain unlinked native opens. Refuse to
       // invalidate live state instead of acknowledging deletion of an open file.
@@ -333,7 +379,7 @@ struct server::impl {
                     {"credential", who.credential},
                     {"uuid", encode_bytes(raw.substr(2, 16))},
                     {"write", true}};
-          call("identity", "nfs_authorize", b);
+          authorize(b);
           allowed = mask & 0x3f;
         } catch (...) {
         }

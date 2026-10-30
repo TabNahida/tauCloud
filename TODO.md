@@ -125,6 +125,7 @@ Selected-profile evidence: [M6 guide](docs/m6.md), [ADR 0009](docs/decisions/000
 - [x] Implement export policy, UID/GID mapping, root squash and explicit AUTH_SYS trust restrictions.
 - [x] Implement stable file handles, filesystem identity and stale-handle detection on ext4 and NTFS (bounded native-incarnation lookup; ADR 0010).
 - [ ] Implement v4.1 mandatory operations, sessions/slots, state IDs and replay handling.
+- [x] Implement authorized pseudo-root enumeration/traversal, multi-export sessions and per-reply authorization checks on replay (selected profile; full conformance remains open).
 - [x] Implement lock/open ownership, leases, recovery grace and reclaim persistence (bounded AUTH_SYS profile; cross-user, split-range and restart tests).
 - [x] Verify selected v4.1 FILE_SYNC, server reboot and retransmission paths with the Linux pynfs-codec client (kernel client and full recovery/conformance remain open).
 - [ ] Complete M7a conformance before publishing v4.1 compatibility.

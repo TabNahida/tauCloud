@@ -218,7 +218,7 @@ struct identity_store::impl {
     ctx.check();
     if (op.starts_with("smb_"))
       return smb_dispatch(op, body, ctx);
-    if (op == "nfs_authorize" || op == "policy_list" || op == "policy_write" || op == "authorize")
+    if (op == "nfs_authorize" || op == "nfs_exports" || op == "policy_list" || op == "policy_write" || op == "authorize")
       return policy_dispatch(db, cfg, op, body, ctx);
     if (op == "bootstrap") {
       auto name = body.at("username").get<std::string>(),

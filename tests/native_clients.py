@@ -54,6 +54,11 @@ def main():
         groups={str(g):'unix' for g in set(os.getgroups()+[os.getgid()])}
         f.api('nfs-exports',f.admin,dict(id='nfs',trust='loopback-auth-sys',anonymous='bob',
                                        uids={str(os.getuid()):'alice'},gids=groups))
+        f.api('spaces',f.admin,dict(id='second',root='data',path='second',owner='alice',quota=2**31))
+        f.api('shares',f.admin,dict(id='second',space='second',exposures={'nfs':'rw'}))
+        f.api('grants',f.admin,dict(space='second',subject_type='user',subject='bob',rights='rw'))
+        f.api('nfs-exports',f.admin,dict(id='second',trust='loopback-auth-sys',anonymous='bob',
+                                       uids={str(os.getuid()):'alice'},gids=groups))
         credentials=f.base/'smb-credentials'
         credentials.write_text('username=alice\npassword='+f.password+'\ndomain=TAUCLOUD\n')
         credentials.chmod(0o600)
@@ -63,6 +68,7 @@ def main():
         profiles=[('smbclient-2.1','samba','SMB2_10'),('smbclient-3.1.1','samba','SMB3_11')]
         profiles += [('kernel-cifs-'+v,'cifs',v) for v in ('2.1','3.0','3.02','3.1.1')]
         profiles += [('kernel-nfs-'+v,'nfs',v) for v in ('3','4.1')]
+        profiles += [('kernel-nfs-4.1-root','nfs-root','4.1')]
         if args.profiles:
             assert set(args.profiles) <= {x[0] for x in profiles}, 'unknown profile'
             profiles=[x for x in profiles if x[0] in args.profiles]
@@ -92,8 +98,8 @@ def main():
                     else:
                         options=f'vers={version},proto=tcp,port={nfsport},sec=sys,soft,timeo=10,retrans=1'
                         if version=='3': options+=f',mountproto=tcp,mountport={nfsport},mountvers=3,nolock'
-                        remote='127.0.0.1:/nfs'
-                    run(['sudo','-n','mount','-t',kind,'-o',options,remote,str(mount)])
+                        remote='127.0.0.1:/' if kind=='nfs-root' else '127.0.0.1:/nfs'
+                    run(['sudo','-n','mount','-t','nfs' if kind=='nfs-root' else kind,'-o',options,remote,str(mount)])
                     mounted=True
                     # Bound filesystem operations too: a buggy server must not hang CI.
                     code = '''import os,sys,hashlib
@@ -109,7 +115,21 @@ assert f.read_bytes()==(data[:123]+b'changed'+data[130:])[:65537]
 assert [x.name for x in d.iterdir()]==['renamed']
 f.unlink();d.rmdir()
 '''
-                    run(['python3','-c',code,str(mount),str(source)])
+                    if kind=='nfs-root':
+                        root_code = '''import os,sys
+from pathlib import Path
+p=Path(sys.argv[1]);assert {x.name for x in p.iterdir()}=={'nfs','second'}
+first=p/'nfs'/'open-first';second=p/'second'/'open-second'
+with first.open('w+b') as a, second.open('w+b') as b:
+    a.write(b'first export');a.flush();os.fsync(a.fileno())
+    b.write(b'second export');b.flush();os.fsync(b.fileno())
+    a.seek(0);b.seek(0)
+    assert a.read()==b'first export' and b.read()==b'second export'
+first.unlink();second.unlink()
+'''
+                        run(['python3','-c',root_code,str(mount)])
+                        current['checks']=['native pseudo-root mount and enumeration','simultaneous opens in two exports','complete file roundtrip through pseudo-root']
+                    run(['python3','-c',code,str(mount/'nfs' if kind=='nfs-root' else mount),str(source)])
                 assert not args.require_mic_rejection, 'client unexpectedly authenticated without the required rejection'
                 current.update(status='passed',payload_sha256=hashlib.sha256(payload).hexdigest())
             except Exception:
