@@ -1,0 +1,59 @@
+{
+  "status": "passed",
+  "checks": [
+    "paged pseudo-root READDIR exposes only enabled, mapped and authorized exports; returned handles match LOOKUP and LOOKUPP",
+    "root-squashed, unmapped and invalid-group identities cannot enumerate protected names; invalid attributes reject even in empty directories",
+    "READDIR validates reserved cookies, changed verifiers, exact maxcount and forward progress; pseudo-root change and SECINFO work",
+    "one session holds simultaneous OPENs in distinct exports and executes cross-export compounds without accepting mismatched stateids",
+    "cached compound replies reauthorize every touched export, including READ without OPEN; revocation prevents data replay while other exports remain usable",
+    "cached pseudo-root listings are fenced when export visibility changes and the next slot sequence still progresses",
+    "retargeting a share with the same export UUID cannot authorize a cached response from the old space"
+  ],
+  "source_commit": "c1805013fe4868dd1167e084baa00eeb18c1a55a",
+  "environment": "Linux local / GCC release; disposable loopback fixture",
+  "test_sha256": "6628f63111a28f9ccf43521555c987525f134def79987ff41907c31941f9c7f4",
+  "baseline": {
+    "source_commit": "b64bd47e3a6a4e37b3ae9a233b6be959ac261d41",
+    "pseudo_root_readdir": "NFS4ERR_NOTSUPP reproduced before rebuild"
+  },
+  "related_regression": {
+    "nfs-protocol": {
+      "status": "passed",
+      "check_groups": 15
+    },
+    "nfs-attributes": {
+      "status": "passed",
+      "check_groups": 5
+    },
+    "nfs-state": {
+      "status": "passed",
+      "check_groups": 4
+    }
+  },
+  "upstream_pynfs": {
+    "selected": 14,
+    "failures": 0,
+    "errors": 0,
+    "selectors": [
+      "SEC1",
+      "SEC2",
+      "SECNN1",
+      "SECNN2",
+      "SECNN3",
+      "SECNN4",
+      "LKPP1r",
+      "LKPP1d",
+      "LKPP2",
+      "LKPP3",
+      "PUTFH1r",
+      "PUTFH1d",
+      "PUTFH2",
+      "VF1r"
+    ]
+  },
+  "limitations": [
+    "Selected namespace and replay profile, not full NFS conformance.",
+    "NLM/NSM, unlink-open and full reboot/trunking remain open.",
+    "Native Linux/Windows/macOS results are recorded separately for the tested commit."
+  ]
+}

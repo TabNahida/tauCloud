@@ -1,0 +1,223 @@
+{
+  "source_commit": "c1805013fe4868dd1167e084baa00eeb18c1a55a",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41028021382",
+  "workflow_conclusion": "success",
+  "scope": "selected M0-M7 regression and new NFS namespace/replay profile, not full conformance",
+  "jobs": {
+    "linux-gcc": {
+      "status": "passed",
+      "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+      "compiler": "gcc",
+      "sanitizers": false,
+      "sources_sha256": "ece5c8c73c05d61ab74e97cfcb2528ef0a21301192e570a20c365abc32f01047",
+      "job": "https://github.com/TabNahida/tauCloud/actions/runs/41028021382/job/123970702620",
+      "namespace": {
+        "status": "passed",
+        "checks": [
+          "paged pseudo-root READDIR exposes only enabled, mapped and authorized exports; returned handles match LOOKUP and LOOKUPP",
+          "root-squashed, unmapped and invalid-group identities cannot enumerate protected names; invalid attributes reject even in empty directories",
+          "READDIR validates reserved cookies, changed verifiers, exact maxcount and forward progress; pseudo-root change and SECINFO work",
+          "one session holds simultaneous OPENs in distinct exports and executes cross-export compounds without accepting mismatched stateids",
+          "cached compound replies reauthorize every touched export, including READ without OPEN; revocation prevents data replay while other exports remain usable",
+          "cached pseudo-root listings are fenced when export visibility changes and the next slot sequence still progresses",
+          "retargeting a share with the same export UUID cannot authorize a cached response from the old space"
+        ]
+      },
+      "smb_groups": {
+        "smb": {
+          "status": "passed",
+          "checks": 11
+        },
+        "smb3": {
+          "status": "passed",
+          "checks": 18
+        }
+      }
+    },
+    "linux-clang": {
+      "status": "passed",
+      "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+      "compiler": "clang",
+      "sanitizers": true,
+      "sources_sha256": "ece5c8c73c05d61ab74e97cfcb2528ef0a21301192e570a20c365abc32f01047",
+      "job": "https://github.com/TabNahida/tauCloud/actions/runs/41028021382/job/123970703095",
+      "namespace": {
+        "status": "passed",
+        "checks": [
+          "paged pseudo-root READDIR exposes only enabled, mapped and authorized exports; returned handles match LOOKUP and LOOKUPP",
+          "root-squashed, unmapped and invalid-group identities cannot enumerate protected names; invalid attributes reject even in empty directories",
+          "READDIR validates reserved cookies, changed verifiers, exact maxcount and forward progress; pseudo-root change and SECINFO work",
+          "one session holds simultaneous OPENs in distinct exports and executes cross-export compounds without accepting mismatched stateids",
+          "cached compound replies reauthorize every touched export, including READ without OPEN; revocation prevents data replay while other exports remain usable",
+          "cached pseudo-root listings are fenced when export visibility changes and the next slot sequence still progresses",
+          "retargeting a share with the same export UUID cannot authorize a cached response from the old space"
+        ]
+      },
+      "smb_groups": {
+        "smb": {
+          "status": "passed",
+          "checks": 11
+        },
+        "smb3": {
+          "status": "passed",
+          "checks": 18
+        }
+      }
+    },
+    "windows-msvc": {
+      "status": "passed",
+      "host": "Windows-2025Server-10.0.26100-SP0",
+      "compiler": "msvc",
+      "sanitizers": false,
+      "sources_sha256": "38441e09ddc938d2683a47e5464329c34b1e66e94f4c6b39cf880b39d97b583c",
+      "job": "https://github.com/TabNahida/tauCloud/actions/runs/41028021382/job/123970703159",
+      "namespace": {
+        "status": "passed",
+        "checks": [
+          "paged pseudo-root READDIR exposes only enabled, mapped and authorized exports; returned handles match LOOKUP and LOOKUPP",
+          "root-squashed, unmapped and invalid-group identities cannot enumerate protected names; invalid attributes reject even in empty directories",
+          "READDIR validates reserved cookies, changed verifiers, exact maxcount and forward progress; pseudo-root change and SECINFO work",
+          "one session holds simultaneous OPENs in distinct exports and executes cross-export compounds without accepting mismatched stateids",
+          "cached compound replies reauthorize every touched export, including READ without OPEN; revocation prevents data replay while other exports remain usable",
+          "cached pseudo-root listings are fenced when export visibility changes and the next slot sequence still progresses",
+          "retargeting a share with the same export UUID cannot authorize a cached response from the old space"
+        ]
+      },
+      "smb_groups": {
+        "smb": {
+          "status": "passed",
+          "checks": 11
+        },
+        "smb3": {
+          "status": "passed",
+          "checks": 18
+        }
+      }
+    }
+  },
+  "linux_native": {
+    "status": "passed",
+    "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+    "recorded_at": "2026-10-30T08:48:32.023524+00:00",
+    "profiles": [
+      {
+        "name": "smbclient-2.1",
+        "status": "passed",
+        "payload_sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83"
+      },
+      {
+        "name": "smbclient-3.1.1",
+        "status": "passed",
+        "payload_sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83"
+      },
+      {
+        "name": "kernel-nfs-3",
+        "status": "passed",
+        "payload_sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83"
+      },
+      {
+        "name": "kernel-nfs-4.1",
+        "status": "passed",
+        "payload_sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83"
+      },
+      {
+        "name": "kernel-nfs-4.1-root",
+        "status": "passed",
+        "checks": [
+          "native pseudo-root mount and enumeration",
+          "simultaneous opens in two exports",
+          "complete file roundtrip through pseudo-root"
+        ],
+        "payload_sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83"
+      }
+    ]
+  },
+  "upstream_pynfs": {
+    "pynfs": {
+      "selected": 37,
+      "failures": 0,
+      "errors": 0
+    },
+    "pynfs-control": {
+      "selected": 34,
+      "failures": 0,
+      "errors": 0
+    },
+    "pynfs-namespace": {
+      "selected": 30,
+      "failures": 0,
+      "errors": 0
+    }
+  },
+  "other_clients": {
+    "filezilla-linux": {
+      "status": "passed",
+      "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+      "client": "FileZilla 3.66.5",
+      "protocol": "explicit FTPS",
+      "checks": [
+        "pinned disposable server certificate",
+        "native GUI queue upload and download",
+        "binary source/server/download match"
+      ],
+      "payload_bytes": 1028096,
+      "sha256": "08e33aedf25337c87eb15e08c32a58f6f4caa21fe073d00b53014c57f8d148e0"
+    },
+    "filezilla-windows": {
+      "status": "passed",
+      "host": "Windows-2025Server-10.0.26100-SP0",
+      "client": "FileZilla 3.71.1",
+      "protocol": "explicit FTPS",
+      "checks": [
+        "pinned disposable server certificate",
+        "native GUI queue upload and download",
+        "binary source/server/download match"
+      ],
+      "payload_bytes": 1028096,
+      "sha256": "08e33aedf25337c87eb15e08c32a58f6f4caa21fe073d00b53014c57f8d148e0"
+    },
+    "windows-native-smb": {
+      "status": "passed",
+      "host": "Windows-2025Server-10.0.26100-SP0",
+      "client": "Windows native SMB redirector",
+      "connection": {
+        "ServerName": "127.0.0.1",
+        "ShareName": "smb",
+        "Dialect": "3.1.1",
+        "Encrypted": true,
+        "Signed": false
+      },
+      "payload_sha256": "631B84027D6B9E52B539C4E8373622D23032DFADC64D60AF87339C9037E4F769"
+    }
+  },
+  "macos_native": {
+    "status": "passed",
+    "client_host": "macOS-15.7.9-x86_64-i386-64bit-Mach-O",
+    "server_host": "Ubuntu 24.04 QEMU guest",
+    "source_commit": "c1805013fe4868dd1167e084baa00eeb18c1a55a",
+    "harness_commit": "c1805013fe4868dd1167e084baa00eeb18c1a55a",
+    "server_archive_sha256": "edf29c92c63ff6a86eca89c5e6f82786f432bd71e8d2bd47e11e56078fca8abc",
+    "accelerator": "hvf",
+    "guest_kernel": "Linux taucloud-acceptance 6.8.0-137-generic #137-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul 17 20:28:23 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "identity_setup": "offline disposable identity seed, native Argon2id 64 MiB/3/1; management login excluded; SMB authentication unchanged",
+    "job": "https://github.com/TabNahida/tauCloud/actions/runs/41028021382/job/123975143524",
+    "profiles": [
+      {
+        "name": "macos-native-smb",
+        "status": "passed",
+        "payload_sha256": "08e33aedf25337c87eb15e08c32a58f6f4caa21fe073d00b53014c57f8d148e0"
+      },
+      {
+        "name": "macos-native-nfs3",
+        "status": "passed",
+        "payload_sha256": "08e33aedf25337c87eb15e08c32a58f6f4caa21fe073d00b53014c57f8d148e0"
+      }
+    ]
+  },
+  "limitations": [
+    "NFSv3 NLM/NSM is absent; v3 native tests use nolocks.",
+    "Unlink-open, complete mandatory-operation/cache/reboot/trunking conformance and full Samba torture remain open.",
+    "Native macOS mounts do not validate Finder GUI; Windows Client for NFS remains unverified.",
+    "Fenced v4.1 replay returns DELAY without reexecution; this policy does not establish full session conformance."
+  ]
+}

@@ -4,7 +4,11 @@ M8 has not started. The M4 client gate is closed; full M5 and M7 conformance gat
 
 ## Current verification
 
-The follow-up namespace change implements authorized pseudo-root enumeration, multi-export sessions and per-reply authority checks. Local tests pass seven new namespace/revocation groups; remote validation of this later source is pending. The fixed-commit result below remains evidence for the earlier source only.
+Commit `c180501` passes all four jobs in [run 41028021382](https://github.com/TabNahida/tauCloud/actions/runs/41028021382). [The downloaded fixed-commit reports](verified-namespace-c180501.json) confirm seven new namespace/revocation groups on GCC, Clang ASan/UBSan and MSVC, native Linux pseudo-root mounting and simultaneous opens across two exports, plus the existing native Linux/Windows/macOS and FileZilla checks. The selected upstream NFS groups remain 37 + 34 + 30 passes. [Local evidence](nfs-namespace-local.json) also records the old NOTSUPP reproduction and 14 additional upstream traversal/security-information checks.
+
+This closes the selected pseudo-root and multi-export session gaps. READDIR enforces caller visibility, cookie/verifier validation, complete maxcount accounting and forward progress. Cached replies revalidate all touched export scopes, including reads without an OPEN, and fence revoked or retargeted authority without blocking new sequences on unaffected exports. Full M5/M7 gates below remain open.
+
+The earlier fixed-commit matrix follows for historical comparison.
 
 Commit `b64bd47` passes all four jobs in [run 41009694197](https://github.com/TabNahida/tauCloud/actions/runs/41009694197). The downloaded reports confirm 11 SMB2 and 18 SMB3 regression groups on GCC, Clang and MSVC, including the credit/session-error corrections. See the [fixed-commit matrix](verified-matrix-b64bd47.json) and [macOS client report](macos-native-b64bd47.json).
 
