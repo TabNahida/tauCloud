@@ -71,6 +71,14 @@ def rejected_connection(sock,packet):
     finally:sock.close()
 
 def hostile(port,password):
+    sock,sid,key=authenticate(port,'wire',password)
+    unknown=sid^0x100000000
+    reply=exchange(sock,signed(header(2,3,unknown,flags=8)+struct.pack('<HH',4,0),key))
+    assert status(reply)==0xc0000203 and struct.unpack_from('<Q',reply,40)[0]==unknown
+    assert not struct.unpack_from('<I',reply,16)[0]&8
+    # The rejected LOGOFF cannot affect the actual authenticated session.
+    reply=exchange(sock,signed(header(13,4,sid,flags=8)+struct.pack('<HH',4,0),key))
+    assert status(reply)==0 and signed(reply,key)[48:64]==reply[48:64];sock.close()
     # Non-identical client clocks still authenticate with correct proof/MIC;
     # excessive clock skew remains a failure, independently of cryptography.
     for delta in (-1000,1000,-290000,290000):

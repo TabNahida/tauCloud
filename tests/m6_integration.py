@@ -57,7 +57,10 @@ def wire_auth(port,password,user,dialect=0x311,alter_transcript=False,bootstrap=
         if bootstrap:
             resp=exchange(sock,multiprotocol_packet());assert status(resp)==0
             assert struct.unpack_from('<H',resp,68)[0]==0x2ff
-        req=bytearray(negotiate_packet(dialect));struct.pack_into('<Q',req,24,int(bootstrap));req=bytes(req)
+        req=bytearray(negotiate_packet(dialect));struct.pack_into('<Q',req,24,int(bootstrap))
+        # Later probes deliberately leave sequence holes: explicitly request
+        # enough credits instead of relying on an unsolicited server grant.
+        struct.pack_into('<H',req,14,32);req=bytes(req)
         resp=exchange(sock,req);assert status(resp)==0
         transcript=hashlib.sha512(bytes(64)+req).digest();transcript=hashlib.sha512(transcript+resp).digest()
         if alter_transcript:transcript=bytes(64)
@@ -129,6 +132,12 @@ def run(args):
         t=TreeConnect(s,r'\\127.0.0.1\SmB');t.connect()
         return c,s,t
     try:
+        for requested in (0,1,4,65535):
+            with socket.create_connection(('127.0.0.1',f.smbport),timeout=10) as probe:
+                req=bytearray(negotiate_packet());struct.pack_into('<H',req,14,requested)
+                response=exchange(probe,req);assert status(response)==0
+                assert struct.unpack_from('<H',response,14)[0]==max(1,min(requested,64))
+        passed('NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 64')
         sock,sid,key,_,_,_=wire_auth(f.smbport,f.password,'alice',bootstrap=True)
         assert status(exchange(sock,sign(header(13,4,sid,flags=8)+struct.pack('<HH',4,0),key)))==0
         sock.close()

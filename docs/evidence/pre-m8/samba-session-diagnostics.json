@@ -1,0 +1,124 @@
+{
+  "scope": "unmodified Samba 4.19.5-Ubuntu diagnostics; failures and skips are not compatibility passes",
+  "before_source": "c4f0f794cce307f5b689bfc0c781f4266a239abf",
+  "before": [
+    {
+      "selector": "smb2.tcon",
+      "status": "failed",
+      "counts": {
+        "success": 0,
+        "failure": 1,
+        "error": 0,
+        "skip": 0
+      }
+    },
+    {
+      "selector": "smb2.credits.session_setup_credits_granted",
+      "status": "failed",
+      "counts": {
+        "success": 0,
+        "failure": 1,
+        "error": 0,
+        "skip": 0
+      }
+    },
+    {
+      "selector": "smb2.credits.single_req_credits_granted",
+      "status": "failed",
+      "counts": {
+        "success": 0,
+        "failure": 1,
+        "error": 0,
+        "skip": 0
+      }
+    },
+    {
+      "selector": "smb2.credits.skipped_mid",
+      "status": "failed",
+      "counts": {
+        "success": 0,
+        "failure": 1,
+        "error": 0,
+        "skip": 0
+      }
+    },
+    {
+      "selector": "smb2.session.signing-hmac-sha-256",
+      "status": "skipped",
+      "counts": {
+        "success": 0,
+        "failure": 0,
+        "error": 0,
+        "skip": 1
+      }
+    },
+    {
+      "selector": "smb2.session.signing-aes-128-cmac",
+      "status": "skipped",
+      "counts": {
+        "success": 0,
+        "failure": 0,
+        "error": 0,
+        "skip": 1
+      }
+    },
+    {
+      "selector": "smb2.session.encryption-aes-128-ccm",
+      "status": "skipped",
+      "counts": {
+        "success": 0,
+        "failure": 0,
+        "error": 0,
+        "skip": 1
+      }
+    },
+    {
+      "selector": "smb2.session.encryption-aes-128-gcm",
+      "status": "skipped",
+      "counts": {
+        "success": 0,
+        "failure": 0,
+        "error": 0,
+        "skip": 1
+      }
+    }
+  ],
+  "after_corrections": [
+    {
+      "selector": "smb2.tcon",
+      "status": "failed",
+      "counts": {
+        "success": 0,
+        "failure": 1,
+        "error": 0,
+        "skip": 0
+      }
+    },
+    {
+      "selector": "smb2.credits.single_req_credits_granted",
+      "status": "failed",
+      "counts": {
+        "success": 0,
+        "failure": 1,
+        "error": 0,
+        "skip": 0
+      }
+    }
+  ],
+  "findings": [
+    "The one-credit assertion previously failed because NEGOTIATE granted 32 without request; after correction that assertion passes, but the full case still fails on a CREATE requesting unsupported rights.",
+    "The two large-window tests require more than the configured 64-credit cap and remain failed.",
+    "The tcon case still fails after an invalid VUID: the server now returns USER_SESSION_DELETED, but the client reports ACCESS_DENIED and disconnects before CLOSE.",
+    "Four algorithm cases skip because the upstream harness requires initial AES-GMAC negotiation, outside the AES-CMAC profile; these are not passes."
+  ],
+  "local_regression": {
+    "m5": {
+      "status": "passed",
+      "groups": 11
+    },
+    "m6": {
+      "status": "passed",
+      "groups": 18
+    }
+  }
+}

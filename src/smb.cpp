@@ -936,6 +936,7 @@ struct client {
         }
         check(packet.size() <= 1024 * 1024);
         std::vector<bytes> requests;
+        std::vector<uint64_t> request_sessions;
         size_t offset = 0;
         // Validate every segment and signature before any side effects in the compound.
         for (;;) {
@@ -953,15 +954,20 @@ struct client {
           check(!(flags & ~allowed_flags) && get(p, 6, 2) <= 1 && cmd <= 18);
           check(!(flags & 4) || !requests.empty());
           check(authenticated || (requests.empty() && !next));
+          auto request_session = (flags & 4) ? request_sessions.back() : get(p, 40, 8);
           if (authenticated) {
-            check(cmd != 0 && cmd != 1 && ((flags & 4) || get(p, 40, 8) == session), 0xc000035c);
-            if (!encrypted)
+            check(cmd != 0 && cmd != 1, 0xc000035c);
+            // An unknown session gets an unsigned USER_SESSION_DELETED reply.
+            // Never borrow this connection's session/key to execute its request.
+            // Known-session signatures still all validate before any side effects.
+            if (request_session == session && !encrypted)
               check((flags & 8) &&
                         equal(p.substr(48, 16), signature(key, p, selected.dialect >= 0x300)),
                     0xc0000022);
           }
           auto id = get(p, 24, 8);
           check(credits_available.erase(id) == 1);
+          request_sessions.push_back(request_session);
           requests.push_back(std::move(p));
           if (!next)
             break;
@@ -978,9 +984,12 @@ struct client {
           if (related)
             tid = inherited_tree;
           bytes body;
+          bool unknown_session = authenticated && request_sessions[i] != session;
           if (cmd == 0 || (cmd == 1 && selected.dialect == 0x311))
             transcript = preauth(transcript, p);
           try {
+            if (unknown_session)
+              throw status_error(0xc0000203);
             if (related && previous_status)
               throw status_error(0xc000000d);
             body = co_await command(p, tid, code);
@@ -1017,17 +1026,17 @@ struct client {
           // Sequence IDs may arrive out of order or leave holes. Bound the
           // unspent credits, not the numeric span, and honor bounded requests
           // for more credits so native clients can issue compound operations.
-          auto credits = std::min<uint64_t>(std::max<uint64_t>(get(p, 14, 2), cmd == 0 ? 32 : 1),
+          auto credits = std::min<uint64_t>(std::max<uint64_t>(get(p, 14, 2), 1),
                                            64 - credits_available.size());
           check(high < UINT64_MAX - credits);
           for (size_t credit = 0; credit < credits; ++credit)
             credits_available.insert(high++);
           put(response, 14, credits, 2);
-          bool sign = authenticated && !encrypted;
+          bool sign = authenticated && !encrypted && !unknown_session;
           put(response, 16, 1 | (sign ? 8 : 0) | (related ? 4 : 0), 4);
           put(response, 24, get(p, 24, 8), 8);
           put(response, 36, tid, 4);
-          put(response, 40, session, 8);
+          put(response, 40, unknown_session ? request_sessions[i] : session, 8);
           response += body;
           if (i + 1 < requests.size()) {
             response.resize((response.size() + 7) / 8 * 8, '\0');
