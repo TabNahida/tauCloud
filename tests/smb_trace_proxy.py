@@ -44,7 +44,7 @@ class HeaderProxy:
                                 length=int.from_bytes(token[index:index+2],'little');offset=int.from_bytes(token[index+4:index+8],'little')
                                 if length<=128 and offset>=64 and offset+length<=len(token):
                                     item[label]=token[offset:offset+length].decode('utf-16-le',errors='replace')
-                elif command==5 and len(frame)>=120:
+                elif direction=='request' and command==5 and len(frame)>=120:
                     item.update(access=hex(int.from_bytes(frame[88:92],'little')),
                                 attributes=hex(int.from_bytes(frame[92:96],'little')),
                                 disposition=int.from_bytes(frame[100:104],'little'),
@@ -53,7 +53,7 @@ class HeaderProxy:
                     off=int.from_bytes(frame[108:110],'little');n=item['name_bytes']
                     if n<=512 and off>=120 and off+n<=len(frame):
                         item['fixture_path']=frame[off:off+n].decode('utf-16-le',errors='replace')
-                elif command in (16,17) and len(frame)>=96:
+                elif direction=='request' and command in (16,17) and len(frame)>=96:
                     item.update(info_type=frame[66],info_class=frame[67],buffer_length=int.from_bytes(frame[68:72],'little'))
                 if command==0 and len(frame)>=100:
                     if direction=='request':
