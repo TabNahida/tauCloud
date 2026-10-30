@@ -958,6 +958,10 @@ struct client {
         auto timer = s.io->call_after(5s, [this] { close(); });
         co_await socket.write_all(header + output);
       }
+    } catch (const status_error &e) {
+      log("smb", "connection_rejected", std::to_string(e.status));
+    } catch (const error &e) {
+      log("smb", "connection_rejected", e.what());
     } catch (...) {
     }
     close();

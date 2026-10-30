@@ -30,7 +30,10 @@ jobs:
         if: always() && matrix.compiler == 'gcc'
         run: |
           python3 scripts/prepare_pynfs.py
-          python3 tests/pynfs_acceptance.py --bin build/linux/x86_64/release --output build/acceptance/pynfs.json OPEN1 SEQ1
+          python3 tests/pynfs_acceptance.py --bin build/linux/x86_64/release --output build/acceptance/pynfs.json OPEN1 OPEN2 OPEN6 OPEN7 OPEN8 OPEN30 OPEN31 CSID1 CSID2 CSID3 CSID4 CSID5 CSID6 CSID8 CSID9 CSID10 sequence reclaim_complete
+      - name: NFS competing clients and restart recovery
+        if: always() && matrix.compiler == 'gcc'
+        run: python3 tests/nfs_state_integration.py --bin build/linux/x86_64/release --output build/acceptance/nfs-state.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:

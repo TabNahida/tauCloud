@@ -9,7 +9,9 @@ void nfs_init() {
       "CREATE TABLE IF NOT EXISTS secret(value TEXT NOT NULL);"
       "CREATE TABLE IF NOT EXISTS objects(id TEXT PRIMARY KEY,export TEXT NOT NULL,"
       "token TEXT NOT NULL,path TEXT NOT NULL,directory INTEGER NOT NULL,dead INTEGER NOT NULL);"
-      "CREATE INDEX IF NOT EXISTS native ON objects(export,token,dead);");
+      "CREATE INDEX IF NOT EXISTS native ON objects(export,token,dead);"
+      "CREATE TABLE IF NOT EXISTS attributes(id TEXT PRIMARY KEY,mode INTEGER NOT NULL);"
+      "CREATE TABLE IF NOT EXISTS exclusive_create(id TEXT PRIMARY KEY,verifier TEXT NOT NULL);");
   statement q(*nfs_db, "SELECT value FROM secret");
   if (q.row())
     nfs_key = q.text(0);
@@ -71,6 +73,17 @@ json nfs_meta(space_state &s, const json &g, const std::string &path, native_fil
   info["quota"] = g.at("space").at("quota");
   info["used"] = used(g.at("space").at("id"));
   info["path"] = path;
+  info["uid"] = 65534;
+  info["gid"] = 65534;
+  if (g.at("export").contains("uids"))
+    for (const auto &[uid, user] : g.at("export").at("uids").items())
+      if (user == g.at("space").at("owner")) {
+        info["uid"] = std::stoull(uid);
+        break;
+      }
+  statement attrs(*nfs_db, "SELECT mode FROM attributes WHERE id=?");
+  attrs.bind(1, id);
+  info["mode"] = attrs.row() ? attrs.integer(0) : (info.at("directory").get<bool>() ? 0700 : 0600);
   (void)s;
   return info;
 }
@@ -202,6 +215,17 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
   };
   if (op == "stat")
     return nfs_meta(s, g, p, o.file);
+  if (op == "parent") {
+    require(dir, "not_directory");
+    auto prefix = g.at("path").get<std::string>();
+    if (p == prefix)
+      return {{"export_root", true}};
+    auto slash = p.rfind('/');
+    auto parent = slash == std::string::npos ? std::string() : p.substr(0, slash);
+    require(beneath(parent, prefix), "forbidden");
+    auto f = nfs_open(s, parent, true);
+    return nfs_meta(s, g, parent, f);
+  }
   if (op == "lookup") {
     require(dir, "not_directory");
     auto n = name("name");
@@ -280,13 +304,45 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
   if (op == "create" || op == "mkdir") {
     require(dir, "not_directory");
     auto n = name("name"), child = p.empty() ? n : p + "/" + n;
+    auto mode = body.value("create_mode", 1u);
+    require(mode <= 3, "invalid_request");
+    if (body.contains("mode")) require(number(body, "mode") <= 0777, "not_supported");
+    if (auto existing = dav_exists(s, child)) {
+      require(op == "create" && !existing->at("directory").get<bool>() && mode != 1, "already_exists");
+      auto f = nfs_open(s, child, false);
+      auto result = nfs_meta(s, g, child, f);
+      if (mode >= 2) {
+        auto raw = decode_bytes(result.at("handle").get<std::string>());
+        statement q(*nfs_db, "SELECT verifier FROM exclusive_create WHERE id=?");
+        q.bind(1, encode_bytes(raw.substr(18, 16)));
+        require(q.row() && q.text(0) == body.at("verifier").get<std::string>(), "already_exists");
+      }
+      pending(request, hash);
+      return finish(result);
+    }
     case_check(s.directory, child);
-    require(!dav_exists(s, child), "already_exists");
     pending(request, hash);
     auto f = s.directory.open(child, op == "mkdir", true, op == "create");
     f.flush();
     o.file.flush();
-    return finish(nfs_meta(s, g, child, f));
+    auto result = nfs_meta(s, g, child, f);
+    if (mode >= 2) {
+      auto raw = decode_bytes(result.at("handle").get<std::string>());
+      statement q(*nfs_db, "INSERT INTO exclusive_create VALUES(?,?)");
+      q.bind(1, encode_bytes(raw.substr(18, 16)));
+      q.bind(2, body.at("verifier")); q.row();
+    }
+    if (body.contains("mode")) {
+      auto mode = number(body, "mode");
+      require(mode <= 0777, "not_supported");
+      auto raw = decode_bytes(result.at("handle").get<std::string>());
+      statement attrs(*nfs_db, "INSERT OR REPLACE INTO attributes VALUES(?,?)");
+      attrs.bind(1, encode_bytes(raw.substr(18, 16)));
+      attrs.bind(2, int64_t(mode));
+      attrs.row();
+      result["mode"] = mode;
+    }
+    return finish(result);
   }
   if (op == "remove") {
     require(dir, "not_directory");

@@ -33,6 +33,8 @@ uint32_t status(std::string_view code) {
     return 69;
   if (code == "stale_handle" || code == "object_replaced")
     return 70;
+  if (code == "nfs_share_denied") return 10015;
+  if (code == "nfs_locked") return 10012;
   if (code == "not_supported" || code == "stable_handles_unavailable")
     return 10004;
   if (code == "overloaded" || code == "directory_limit" || code == "operation_limit" ||
@@ -51,10 +53,10 @@ void attr3(writer &w, const json &m) {
   bool d = m.at("directory");
   auto size = m.at("size").get<uint64_t>();
   w.u32(d ? 2 : 1)
-      .u32(d ? 0700 : 0600)
+      .u32(m.value("mode", d ? 0700u : 0600u))
       .u32(d ? 2 : 1)
-      .u32(65534)
-      .u32(65534)
+      .u32(m.value("uid", 65534u))
+      .u32(m.value("gid", 65534u))
       .u64(size)
       .u64(size)
       .u32(0)
@@ -139,6 +141,28 @@ struct server::impl {
     } else
       b["export"] = export_name;
     auto grant = call("identity", "nfs_authorize", b);
+    if (op == "read" || op == "write" || op == "resize") {
+      expire();
+      json stat = {{"grant", grant}, {"op", "stat"}, {"handle", handle}};
+      auto object = call(grant.at("root").at("worker"), "nfs_file", stat).at("object").get<std::string>();
+      auto owner = args.value("state_owner", std::string());
+      auto access = op == "read" ? 1u : 2u;
+      if (access == 2 && grace_end && owner.empty()) throw error("locked");
+      for (const auto &[id, opened] : opens)
+        if (opened.object == object && id.substr(8) != owner && (opened.deny & access))
+          throw error("nfs_share_denied");
+      auto begin = op == "resize" ? 0 : args.value("offset", uint64_t(0));
+      auto count = op == "resize" ? UINT64_MAX : op == "read" ? args.value("count", uint64_t(0))
+                            : uint64_t(decode_bytes(args.at("data").get<std::string>()).size());
+      check(count == UINT64_MAX || begin <= UINT64_MAX - count);
+      auto end = count == UINT64_MAX ? UINT64_MAX : begin + (count ? count - 1 : 0);
+      if (count)
+        for (const auto &[id, l] : byte_locks)
+          if (l.object == object && l.open_other != owner)
+            for (const auto &range : l.ranges)
+              if (begin <= range.end && end >= range.start && (access == 2 || range.type == 2))
+                throw error("nfs_locked");
+    }
     args["grant"] = grant;
     args["op"] = op;
     args["handle"] = handle;
@@ -252,8 +276,10 @@ struct server::impl {
         check(!attrs.contains("uid") && !attrs.contains("gid") && !attrs.contains("atime") &&
                   !attrs.contains("mtime") && attrs.value("size", uint64_t(0)) == 0,
               10004);
-        if (attrs.contains("mode"))
-          check((attrs.at("mode").get<uint32_t>() & 0777) == (proc == 9 ? 0700u : 0600u), 10004);
+        if (attrs.contains("mode")) {
+          check(attrs.at("mode").get<uint32_t>() <= 0777, 10004);
+          args["mode"] = attrs.at("mode");
+        }
       }
       meta = file(who, handle, op, args, request);
       w.u32(0);
@@ -376,6 +402,7 @@ struct server::impl {
     }
   }
   std::string v3_error(uint32_t proc, uint32_t code) {
+    if (code == 10012 || code == 10015) code = 13;
     writer w;
     w.u32(code);
     if (proc == 2 || proc == 7 || proc == 8 || proc == 9 || proc == 12 || proc == 13 || proc == 21)

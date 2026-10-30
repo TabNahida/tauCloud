@@ -104,11 +104,16 @@ f.unlink();d.rmdir()
             except Exception:
                 current['error']=traceback.format_exc()
             finally:
-                if mounted:
+                if mounted or os.path.ismount(mount):
                     try: run(['sudo','-n','umount',str(mount)])
                     except Exception:
                         current.update(status='failed',cleanup_error=traceback.format_exc())
                         subprocess.run(['sudo','-n','umount','-lf',str(mount)],timeout=20)
+                f.log.flush()
+                current['server_log']=(f.base/'supervisor.log').read_text()[-65536:]
+                kernel=subprocess.run(['sudo','-n','dmesg','--ctime'],capture_output=True,text=True,timeout=10)
+                current['kernel_log']='\n'.join(line for line in kernel.stdout.splitlines()
+                                                 if 'cifs' in line.lower() or 'nfs' in line.lower())[-32768:]
             print(name+': '+current['status'],flush=True)
         report['status']='passed' if all(x['status']=='passed' for x in report['profiles']) else 'failed'
     finally:

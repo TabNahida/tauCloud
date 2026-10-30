@@ -11,15 +11,8 @@ from m3_integration import Fixture
 
 ROOT = Path(__file__).resolve().parents[1]
 
-def main():
-    p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--bin', type=Path, required=True)
-    p.add_argument('--output', type=Path, required=True)
-    p.add_argument('selectors', nargs='+')
-    args = p.parse_args()
-    args.output = args.output.resolve()
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    f = Fixture(args.bin)
+def fixture(binary):
+    f = Fixture(binary)
     try:
         f.stop()
         with socket.socket() as s:
@@ -37,6 +30,21 @@ def main():
         f.api('nfs-exports', f.admin, dict(id='nfs', trust='loopback-auth-sys', anonymous='bob',
                                           uids={'1000':'alice'},
                                           gids={str(g):'unix' for g in (1000,3,17,100)}))
+        return f, port
+    except Exception:
+        f.close()
+        raise
+
+def main():
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--bin', type=Path, required=True)
+    p.add_argument('--output', type=Path, required=True)
+    p.add_argument('selectors', nargs='+')
+    args = p.parse_args()
+    args.output = args.output.resolve()
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    f, port = fixture(args.bin)
+    try:
         command = [sys.executable, 'testserver.py', f'127.0.0.1:{port}/nfs',
                    '--minorversion=1', '--uid=1000', '--gid=1000', '--noinit', '--nocleanup',
                    '--jsonout', str(args.output), '--verbose'] + args.selectors

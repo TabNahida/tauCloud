@@ -248,6 +248,8 @@ static pace::task<pace::http::server_response> handle(api_state &s, pace::http::
                                p.push_back("ftp");
                              if (s.cfg.smb_port)
                                p.push_back("smb");
+                             if (s.cfg.nfs_port)
+                               p.push_back("nfs");
                              return p;
                            }()},
                           {"storage_mutation", false},

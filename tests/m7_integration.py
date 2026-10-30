@@ -67,13 +67,15 @@ class Client:
         return self.decode4(self.exchange(packet))
     def decode4(self,body):
         u=p4.NFS4Unpacker(body);v=u.unpack_COMPOUND4res();u.done();return v
-    def session(self,owner=None):
+    def session(self,owner=None,reclaim=False):
         self.owner=owner or uuid.uuid4().hex.encode()
         r=self.compound([op.exchange_id(t4.client_owner4(b'12345678',self.owner),0,t4.state_protect4_a(0),[])],False)
         assert r.status==0,r;self.cid=r.resarray[0].opexchange_id.eir_resok4.eir_clientid
         channel=t4.channel_attrs4(0,262144,262144,262144,16,4,[])
         r=self.compound([op.create_session(self.cid,1,0,channel,channel,0,[])],False)
         assert r.status==0,r;self.sid=r.resarray[0].opcreate_session.csr_resok4.csr_sessionid
+        if not reclaim:
+            r=self.compound([op.reclaim_complete(False)]);assert r.status==0,r
     def root(self):
         r=self.compound([op.putrootfh(),op.lookup(b'nfs'),op.getfh()]);assert r.status==0,r
         return r.resarray[-1].opgetfh.resok4.object
@@ -167,13 +169,13 @@ def run(args):
         stranger=client();stranger.session();r=stranger.compound([op.putfh(h),op.read(state,0,4096)]);assert r.status==10025,r
         checks.append('false slot replay and foreign stateid rejected; GETATTR subset independently decoded')
         oldowner=v.owner
-        v.close();stranger.close();f.stop();f.start();v=client();v.session(oldowner)
+        v.close();stranger.close();f.stop();f.start();v=client();v.session(oldowner,reclaim=True)
         r=v.compound([op.putfh(h),op.read(state,0,4096)]);assert r.status==10025,r
         state,h=v.open(h,b'',claim=1)
         r=v.compound([op.putfh(h),op.read(state,0,4096)]);assert r.status==0 and r.resarray[-1].opread.resok4.data==payload,r
         r=v.compound([op.putfh(h),op.close(0,state)]);assert r.status==0,r
         checks.append('old sessions/stateids invalidated on reboot; persisted owner can reclaim OPEN during grace; CLOSE releases recovery record')
-        denied=client();denied.session();r=denied.compound([op.putfh(h),op.open(0,3,0,t4.open_owner4(denied.cid,b'writer'),t4.openflag4(0),t4.open_claim4(1,delegate_type=0))]);assert r.status==10034,r
+        denied=client();denied.session(reclaim=True);r=denied.compound([op.putfh(h),op.open(0,3,0,t4.open_owner4(denied.cid,b'writer'),t4.openflag4(0),t4.open_claim4(1,delegate_type=0))]);assert r.status==10034,r
         checks.append('unrelated client cannot reclaim another owner after restart')
         f.api('nfs-exports',f.admin,dict(export,update=True,enabled=False))
         assert client().mount()[0]==13

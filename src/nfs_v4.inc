@@ -2,6 +2,9 @@ struct client_id {
   std::string owner, principal, verifier;
   uint32_t sequence = 1;
   std::string create_hash, create_reply;
+  int64_t expires = now() + 60000;
+  bool reclaim_complete = false;
+  std::set<std::string> reclaimed_filesystems;
 };
 struct slot {
   uint32_t seq = 0;
@@ -18,10 +21,22 @@ struct session {
 struct open_state {
   std::string session, fh, owner, recovery;
   uint32_t access, deny;
+  uint64_t client;
+  std::string object;
+};
+struct lock_range {
+  uint64_t start, end;
+  uint32_t type;
+};
+struct lock_state {
+  uint64_t client;
+  std::string open_other, fh, object, owner;
+  std::vector<lock_range> ranges;
 };
 std::map<uint64_t, client_id> client_ids;
 std::map<std::string, session> sessions;
 std::map<std::string, open_state> opens;
+std::map<std::string, lock_state> byte_locks;
 std::map<std::string, json> reclaim;
 int64_t grace_end = 0;
 const std::string pseudo = encode_bytes("tauCloud:nfs:root");
@@ -44,15 +59,24 @@ void expire() {
     reclaim.clear();
     grace_end = 0;
   }
+  for (auto it = byte_locks.begin(); it != byte_locks.end();) {
+    auto c = client_ids.find(it->second.client);
+    if (c == client_ids.end() || c->second.expires <= now()) {
+      persist_locks(it->second, {});
+      it = byte_locks.erase(it);
+    } else
+      ++it;
+  }
   for (auto it = opens.begin(); it != opens.end();) {
-    auto s = sessions.find(it->second.session);
-    if (s == sessions.end() || s->second.expires <= now()) {
+    auto s = client_ids.find(it->second.client);
+    if (s == client_ids.end() || s->second.expires <= now()) {
       remove_recovery(it->second.recovery);
       it = opens.erase(it);
     } else
       ++it;
   }
   std::erase_if(sessions, [](const auto &s) { return s.second.expires <= now(); });
+  std::erase_if(client_ids, [](const auto &c) { return c.second.expires <= now(); });
 }
 std::vector<uint32_t> bitmap(reader &r) {
   auto n = r.u32();
@@ -156,14 +180,16 @@ void attributes4(writer &out, const std::vector<uint32_t> &requested, const json
         values.u64(65536);
         break;
       case 33:
-        values.u32(dir ? 0700 : 0600);
+        values.u32(m.value("mode", dir ? 0700u : 0600u));
         break;
       case 35:
         values.u32(dir ? 2 : 1);
         break;
       case 36:
+        values.opaque(std::to_string(m.value("uid", 65534u)));
+        break;
       case 37:
-        values.opaque("65534");
+        values.opaque(std::to_string(m.value("gid", 65534u)));
         break;
       case 42:
       case 43:
@@ -195,20 +221,26 @@ json parse_attrs4(reader &r) {
   auto bytes = r.opaque(4096);
   return {{"bits", bits}, {"bytes", encode_bytes(bytes)}};
 }
-void create_attrs4(const json &a, bool dir) {
+json create_attrs4(const json &a, bool dir) {
   auto bits = a.at("bits").get<std::vector<uint32_t>>();
   auto bytes = decode_bytes(a.at("bytes").get<std::string>());
   reader r(bytes);
+  json attrs = json::object();
   for (unsigned i = 0; i < bits.size() * 32; ++i)
     if (has(bits, i)) {
-      if (i == 33)
-        check((r.u32() & 07777) == (dir ? 0700u : 0600u), 10032);
+      if (i == 33) {
+        auto mode = r.u32();
+        check(mode <= 0777, 10032);
+        attrs["mode"] = mode;
+      }
       else if (i == 4)
         check(r.u64() == 0, 10032);
       else
         check(false, 10032);
     }
   r.end();
+  (void)dir;
+  return attrs;
 }
 std::vector<uint32_t> channel(reader &r) {
   std::vector<uint32_t> a;
@@ -308,13 +340,17 @@ json parse4(reader &r) {
   case 15:
   case 28:
   case 33:
-    a["name"] = component(r);
+    a["name"] = r.opaque(128 * 1024);
     break;
   case 52:
     a["style"] = r.u32();
     break;
   case 9:
     a["bits"] = bitmap(r);
+    break;
+  case 17:
+  case 37:
+    a["attrs"] = parse_attrs4(r);
     break;
   case 3:
     a["access"] = r.u32();
@@ -361,7 +397,7 @@ json parse4(reader &r) {
     auto claim = r.u32();
     a["claim"] = claim;
     if (claim == 0)
-      a["name"] = component(r);
+      a["name"] = r.opaque(128 * 1024);
     else if (claim == 1)
       a["delegation"] = r.u32();
     else
@@ -372,6 +408,47 @@ json parse4(reader &r) {
     a["seq"] = r.u32();
     a["state"] = encode_bytes(r.fixed(16));
     break;
+  case 21:
+    a["state"] = encode_bytes(r.fixed(16));
+    a["seq"] = r.u32();
+    a["access"] = r.u32();
+    a["deny"] = r.u32();
+    break;
+  case 12:
+    a["type"] = r.u32();
+    a["reclaim"] = r.boolean();
+    a["offset"] = r.u64();
+    a["length"] = r.u64();
+    a["new"] = r.boolean();
+    if (a.at("new").get<bool>()) {
+      r.u32();
+      a["state"] = encode_bytes(r.fixed(16));
+      r.u32();
+      a["client"] = r.u64();
+      a["owner"] = encode_bytes(r.opaque(1024));
+    } else {
+      a["state"] = encode_bytes(r.fixed(16));
+      r.u32();
+    }
+    break;
+  case 13:
+    a["type"] = r.u32();
+    a["offset"] = r.u64();
+    a["length"] = r.u64();
+    a["client"] = r.u64();
+    a["owner"] = encode_bytes(r.opaque(1024));
+    break;
+  case 14:
+    a["type"] = r.u32();
+    r.u32();
+    a["state"] = encode_bytes(r.fixed(16));
+    a["offset"] = r.u64();
+    a["length"] = r.u64();
+    break;
+  case 39:
+    a["client"] = r.u64();
+    a["owner"] = encode_bytes(r.opaque(1024));
+    break;
   case 34:
     a["state"] = encode_bytes(r.fixed(16));
     a["attrs"] = parse_attrs4(r);
@@ -379,12 +456,12 @@ json parse4(reader &r) {
   case 6:
     a["type"] = r.u32();
     check(a["type"] == 2, 10007);
-    a["name"] = component(r);
+    a["name"] = r.opaque(128 * 1024);
     a["attrs"] = parse_attrs4(r);
     break;
   case 29:
-    a["name"] = component(r);
-    a["to"] = component(r);
+    a["name"] = r.opaque(128 * 1024);
+    a["to"] = r.opaque(128 * 1024);
     break;
   case 45:
     a["state"] = encode_bytes(r.fixed(16));
@@ -404,18 +481,38 @@ json parse4(reader &r) {
   }
   return a;
 }
+std::string open_key(const std::string &id, const std::string &sid) {
+  check(id.size() == 32, 10025);
+  for (const auto &[key, o] : opens)
+    if (key.substr(8) == id.substr(8)) {
+      check(o.client == sessions.at(sid).client, 10025);
+      auto seq = uint32_t(std::stoul(id.substr(0, 8), nullptr, 16));
+      auto current_seq = uint32_t(std::stoul(key.substr(0, 8), nullptr, 16));
+      check(!seq || seq == current_seq, seq < current_seq ? 10024 : 10025);
+      return key;
+    }
+  check(false, 10025);
+  return {};
+}
+std::string next_state(const std::string &id) {
+  writer st;
+  auto seq = uint32_t(std::stoul(id.substr(0, 8), nullptr, 16));
+  st.u32(seq == UINT32_MAX ? 1 : seq + 1).fixed(decode_bytes(id).substr(4));
+  return encode_bytes(st.data);
+}
 open_state &state4(const std::string &id, const std::string &sid, const std::string &h,
                    uint32_t access) {
-  auto it = opens.find(id);
-  check(it != opens.end() && it->second.session == sid && it->second.fh == h, 10025);
+  auto it = opens.find(open_key(id, sid));
+  check(it->second.fh == h, 10025);
   check((it->second.access & access) == access, 10038);
   return it->second;
 }
+#include "nfs_locks.inc"
 void change4(writer &w) { w.boolean(false).u64(0).u64(0); } // No atomic change_info claim.
 std::string v4(const identity &who, reader &r) {
-  auto start = r.pos;
   auto tag = r.opaque(1024);
   auto minor = r.u32(), count = r.u32();
+  auto start = r.pos; // The diagnostic tag is not part of replay identity.
   writer out;
   if (minor != 1)
     return out.u32(10021).opaque(tag).u32(0).data;
@@ -435,7 +532,7 @@ std::string v4(const identity &who, reader &r) {
   }
   auto hash = digest(std::string(r.data.substr(start)));
   expire();
-  std::string sid, current, saved;
+  std::string sid, current, saved, current_state, saved_state;
   slot *active = nullptr;
   uint32_t final_status = 0, done = 0;
   writer results;
@@ -503,7 +600,7 @@ std::string v4(const identity &who, reader &r) {
           check(seq == c.sequence, 10063);
           check(sessions.size() < 32, 10018);
           auto fore = a.at("fore").get<std::vector<uint32_t>>();
-          check(fore[1] >= 1024 && fore[2] >= 1024 && fore[4] > 0 && fore[5] > 0,
+          check(fore[1] >= 512 && fore[2] >= 512 && fore[4] > 0 && fore[5] > 0,
                 10005);
           fore = {0, std::min(fore[1], 128 * 1024u), std::min(fore[2], 128 * 1024u),
                   std::min({fore[3], fore[2], 128 * 1024u}), std::min(fore[4], 16u),
@@ -543,6 +640,7 @@ std::string v4(const identity &who, reader &r) {
           check(hash == sl.hash, 10076);
           check(!sl.pending && !sl.reply.empty(), 10008);
           s.expires = now() + 60000;
+          client_ids.at(s.client).expires = s.expires;
           return sl.reply;
         }
         check(seq == sl.seq + 1 && !sl.pending, 10063);
@@ -552,6 +650,7 @@ std::string v4(const identity &who, reader &r) {
         sl.pending = true;
         active = &sl;
         s.expires = now() + 60000;
+        client_ids.at(s.client).expires = s.expires;
         body.fixed(decode_bytes(sid))
             .u32(seq)
             .u32(n)
@@ -567,8 +666,6 @@ std::string v4(const identity &who, reader &r) {
         auto target = a.at("session").get<std::string>();
         session_check(target);
         check(target != sid, 10016);
-        for (const auto &[id, o] : opens)
-          check(o.session != target, 10074);
         sessions.erase(target);
       } else if (op == 57) {
         auto id = a.at("client").get<uint64_t>();
@@ -576,17 +673,32 @@ std::string v4(const identity &who, reader &r) {
         check(i != client_ids.end() && i->second.principal == who.key, 10022);
         for (const auto &[n, s] : sessions)
           check(s.client != id, 10074);
+        for (const auto &[n, o] : opens)
+          check(o.client != id, 10074);
         client_ids.erase(i);
       } else {
         check(!sid.empty(), 10071);
         auto &session = session_check(sid);
         auto &client = client_ids.at(session.client);
+        for (const char *field : {"name", "to"})
+          if (a.contains(field)) {
+            auto name = a.at(field).get<std::string>();
+            check(name.size() <= 255, 63);
+            portable_path(name);
+            check(name.find('/') == std::string::npos);
+          }
         auto request =
             digest(sid + std::to_string(a.at("op").get<unsigned>()) + hash + std::to_string(index));
-        if (op == 24 || op == 23)
+        if (a.contains("state") && a.at("state") == "00000001000000000000000000000000") {
+          check(!current_state.empty(), 10025);
+          a["state"] = current_state;
+        }
+        if (op == 24 || op == 23) {
           current = pseudo;
-        else if (op == 22) {
+          current_state.clear();
+        } else if (op == 22) {
           current = a.at("handle");
+          current_state.clear();
           meta4(who, current);
         } else if (op == 10) {
           meta4(who, current);
@@ -594,17 +706,37 @@ std::string v4(const identity &who, reader &r) {
         } else if (op == 32) {
           meta4(who, current);
           saved = current;
+          saved_state = current_state;
         } else if (op == 31) {
           check(!saved.empty(), 10030);
           current = saved;
+          current_state = saved_state;
         } else if (op == 15) {
           check(!current.empty(), 10020);
           auto m = current == pseudo ? file(who, "", "root", json::object(), "", a.at("name"))
                                      : file(who, current, "lookup", {{"name", a.at("name")}});
           current = m.at("handle");
+          current_state.clear();
         } else if (op == 9) {
           auto m = meta4(who, current);
           attributes4(body, a.at("bits").get<std::vector<uint32_t>>(), m);
+        } else if (op == 16) {
+          check(!current.empty(), 10020);
+          check(current != pseudo, 2);
+          auto m = file(who, current, "parent");
+          current = m.value("export_root", false) ? pseudo : m.at("handle").get<std::string>();
+          current_state.clear();
+        } else if (op == 17 || op == 37) {
+          auto bits = a.at("attrs").at("bits").get<std::vector<uint32_t>>();
+          auto supported = supported_attrs();
+          for (size_t i = 0; i < bits.size(); ++i)
+            check((bits[i] & ~(i < supported.size() ? supported[i] : 0u)) == 0, 10032);
+          writer attrs;
+          attributes4(attrs, bits, meta4(who, current));
+          reader actual(attrs.data);
+          bitmap(actual);
+          bool same = encode_bytes(actual.opaque()) == a.at("attrs").at("bytes").get<std::string>();
+          check(op == 37 ? same : !same, op == 37 ? 10027 : 10009);
         } else if (op == 3) {
           meta4(who, current);
           auto asked = a.at("access").get<uint32_t>();
@@ -634,29 +766,39 @@ std::string v4(const identity &who, reader &r) {
           auto access = a.at("access").get<uint32_t>(), deny = a.at("deny").get<uint32_t>();
           check((access & 3) > 0 && (access & ~0x3ff03u) == 0 &&
                     (access & 0xff00u) <= 0x500 && deny <= 3);
-          check(deny == 0, 10004);
           access &= 3;
           // NFSv4.1 takes the client identity from SEQUENCE, not open_owner4.clientid.
           check(opens.size() < 1024, 10018);
           auto claim = a.at("claim").get<unsigned>();
           bool recovering = claim == 1;
+          check(recovering || client.reclaim_complete, 10013);
+          check(!recovering || !client.reclaim_complete, 10033);
           check(!grace_end || recovering, 10013);
           check(!recovering || grace_end, 10033);
           check(current != pseudo && !current.empty(), 10020);
           if (a.at("create") == 1) {
             check(claim == 0, 22);
-            check(a.at("mode") == 1, 10004);
-            create_attrs4(a.at("attrs"), false);
+            if (a.contains("attrs")) create_attrs4(a.at("attrs"), false);
           }
           auto target = current;
           if (claim == 0) {
             try {
               target = file(who, current, "lookup", {{"name", a.at("name")}}).at("handle");
-              check(a.at("create") == 0, 17);
+              check(a.at("create") == 0 || a.at("mode") != 1, 17);
+              if (a.at("create") == 1) {
+                auto attrs = a.contains("attrs") ? create_attrs4(a.at("attrs"), false) : json::object();
+                attrs["name"] = a.at("name"); attrs["create_mode"] = a.at("mode");
+                if (a.contains("verifier")) attrs["verifier"] = a.at("verifier");
+                target = file(who, current, "create", attrs, request).at("handle");
+              }
             } catch (const error &e) {
               if (std::string_view(e.what()) != "not_found" || a.at("create") != 1)
                 throw;
-              target = file(who, current, "create", {{"name", a.at("name")}}, request).at("handle");
+              auto attrs = a.contains("attrs") ? create_attrs4(a.at("attrs"), false) : json::object();
+              attrs["name"] = a.at("name");
+              attrs["create_mode"] = a.at("mode");
+              if (a.contains("verifier")) attrs["verifier"] = a.at("verifier");
+              target = file(who, current, "create", attrs, request).at("handle");
             }
           }
           auto m = meta4(who, target);
@@ -671,11 +813,17 @@ std::string v4(const identity &who, reader &r) {
             call("identity", "nfs_authorize", b);
           }
           auto owner = a.at("owner").get<std::string>();
+          std::string previous;
           for (const auto &[id, o] : opens) {
-            check(!(o.session == sid && o.owner == owner && o.fh == target), 10008);
+            if (o.client == session.client && o.owner == owner && o.fh == target)
+              previous = id;
             // One export per session bounds policy renewal work and keeps isolation explicit.
             if (o.session == sid)
               check(o.fh.substr(4, 32) == target.substr(4, 32), 10018);
+          }
+          if (!previous.empty()) {
+            access |= opens.at(previous).access;
+            deny |= opens.at(previous).deny;
           }
           auto rid = digest(client.owner + who.key + owner + target);
           json durable = {{"client", client.owner}, {"principal", who.key}, {"owner", owner},
@@ -685,42 +833,75 @@ std::string v4(const identity &who, reader &r) {
                   10034);
           }
           for (const auto &[id, o] : opens)
-            if (o.fh == target)
+            if (o.object == m.at("object").get<std::string>() && id != previous)
               check(!(o.deny & access) && !(deny & o.access), 10015);
           writer state;
           state.u32(1).fixed(decode_bytes(random_hex(12)));
           auto stateid = encode_bytes(state.data);
+          if (!previous.empty()) {
+            stateid = next_state(previous);
+            state.data = decode_bytes(stateid);
+          }
           statement persist(db, "INSERT OR REPLACE INTO recovery VALUES(?,?)");
           persist.bind(1, rid);
           persist.bind(2, durable.dump());
           persist.row();
-          opens.emplace(stateid, open_state{sid, target, owner, rid, access, deny});
+          if (!previous.empty()) opens.erase(previous);
+          opens.emplace(stateid, open_state{sid, target, owner, rid, access, deny, session.client, m.at("object")});
           reclaim.erase(rid);
           current = target;
+          current_state = stateid;
           body.fixed(state.data);
           change4(body);
           body.u32(0).u32(0).u32(0);
         } else if (op == 4) {
-          auto id = a.at("state").get<std::string>();
+          auto id = open_key(a.at("state"), sid);
           auto &o = state4(id, sid, current, 0);
+          for (const auto &[key, l] : byte_locks)
+            check(l.open_other != id.substr(8) || l.ranges.empty(), 10037);
+          std::erase_if(byte_locks, [&](const auto &l) { return l.second.open_other == id.substr(8); });
           remove_recovery(o.recovery);
           opens.erase(id);
-          writer st;
-          st.u32(2).fixed(decode_bytes(id).substr(4));
-          body.fixed(st.data);
+          current_state = next_state(id);
+          body.fixed(decode_bytes(current_state));
+        } else if (op == 21) {
+          auto id = open_key(a.at("state"), sid);
+          auto &o = state4(id, sid, current, 0);
+          auto access = a.at("access").get<uint32_t>(), deny = a.at("deny").get<uint32_t>();
+          check(access > 0 && access <= 3 && deny <= 3);
+          check((access & o.access) == access && (deny & o.deny) == deny);
+          o.access = access;
+          o.deny = deny;
+          statement q(db, "UPDATE recovery SET body=json_set(body,'$.access',?,'$.deny',?) WHERE id=?");
+          q.bind(1, int64_t(access)); q.bind(2, int64_t(deny)); q.bind(3, o.recovery); q.row();
+          auto node = opens.extract(id);
+          current_state = next_state(id);
+          node.key() = current_state;
+          opens.insert(std::move(node));
+          body.fixed(decode_bytes(current_state));
+        } else if (op == 12 || op == 13 || op == 14 || op == 39 || op == 45) {
+          lock_operation(who, a, sid, current, current_state, body);
         } else if (op == 25 || op == 38 || op == 34) {
           check(current != pseudo, 21);
           auto id = a.at("state").get<std::string>();
-          state4(id, sid, current, op == 25 ? 1 : 2);
+          auto io_args = json::object();
+          if (id != std::string(32, '0') && !(op == 25 && id == std::string(32, 'f'))) {
+            auto openid = io_state(id, sid);
+            state4(openid, sid, current, op == 25 ? 1 : 2);
+            io_args["state_owner"] = openid.substr(8);
+          }
           if (op == 25) {
+            io_args["offset"] = a.at("offset");
+            io_args["count"] = std::min(a.at("count").get<uint32_t>(), 65536u);
             auto m = file(who, current, "read",
-                          {{"offset", a.at("offset")},
-                           {"count", std::min(a.at("count").get<uint32_t>(), 65536u)}});
+                          io_args);
             body.boolean(m.at("eof")).opaque(decode_bytes(m.at("data").get<std::string>()));
           } else if (op == 38) {
             check(a.at("stable").get<uint32_t>() <= 2);
+            io_args["offset"] = a.at("offset");
+            io_args["data"] = a.at("data");
             auto m = file(who, current, "write",
-                          {{"offset", a.at("offset")}, {"data", a.at("data")}}, request);
+                          io_args, request);
             body.u32(m.at("count")).u32(2).fixed(verifier);
           } else {
             auto bits = a.at("attrs").at("bits").get<std::vector<uint32_t>>();
@@ -729,15 +910,17 @@ std::string v4(const identity &who, reader &r) {
             reader values(data);
             auto size = values.u64();
             values.end();
-            file(who, current, "resize", {{"size", size}}, request);
+            io_args["size"] = size;
+            file(who, current, "resize", io_args, request);
             put_bitmap(body, bits);
           }
         } else if (op == 5) {
           file(who, current, "commit");
           body.fixed(verifier);
         } else if (op == 6) {
-          create_attrs4(a.at("attrs"), true);
-          auto m = file(who, current, "mkdir", {{"name", a.at("name")}}, request);
+          auto attrs = create_attrs4(a.at("attrs"), true);
+          attrs["name"] = a.at("name");
+          auto m = file(who, current, "mkdir", attrs, request);
           current = m.at("handle");
           change4(body);
           body.u32(0);
@@ -778,20 +961,30 @@ std::string v4(const identity &who, reader &r) {
         } else if (op == 55) {
           body.u32(uint32_t(a.at("states").size()));
           for (auto &id : a.at("states")) {
-            auto i = opens.find(id);
-            body.u32(i != opens.end() && i->second.session == sid ? 0 : 10025);
+            try {
+              io_state(id, sid);
+              body.u32(0);
+            } catch (const failure &e) { body.u32(e.status); }
           }
         } else if (op == 58) {
-          check(!a.at("one_fs").get<bool>(), 10004);
+          std::string filesystem;
+          if (a.at("one_fs").get<bool>()) {
+            auto m = meta4(who, current);
+            filesystem = m.at("fsid");
+            check(!client.reclaim_complete && !client.reclaimed_filesystems.contains(filesystem), 10054);
+            client.reclaimed_filesystems.insert(filesystem);
+          } else {
+            check(!client.reclaim_complete, 10054);
+            client.reclaim_complete = true;
+          }
           for (auto it = reclaim.begin(); it != reclaim.end();)
-            if (it->second.at("client") == client.owner && it->second.at("principal") == who.key) {
+            if (it->second.at("client") == client.owner && it->second.at("principal") == who.key &&
+                (filesystem.empty() || it->second.at("handle").get<std::string>().substr(4, 16) == filesystem)) {
               remove_recovery(it->first);
               it = reclaim.erase(it);
             } else
               ++it;
-        } else if (op == 45)
-          check(false, 10037);
-        else
+        } else
           check(false, a.value("unknown", false) ? 10044 : 10004);
       }
     } catch (const failure &e) {
@@ -802,7 +995,9 @@ std::string v4(const identity &who, reader &r) {
       code = 10036;
     }
     if (code) {
-      body.data.clear();
+      log("nfs", "operation_" + std::to_string(op), std::to_string(code));
+      if (!((op == 12 || op == 13) && code == 10010))
+        body.data.clear();
       if (op == 34)
         body.u32(0);
     }
