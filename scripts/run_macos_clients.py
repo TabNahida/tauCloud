@@ -107,7 +107,7 @@ def main():
         run(ssh+['mkdir -p work/bin'])
         scp=['scp']+common+['-P',str(sshport)]
         run(scp+[str(a.archive.resolve()),'ubuntu@127.0.0.1:work/server.tgz'],timeout=180)
-        run(scp+[str(ROOT/'tests'/n) for n in ('m1_integration.py','m3_integration.py','mac_guest_fixture.py')]+['ubuntu@127.0.0.1:work/'])
+        run(scp+[str(ROOT/'tests'/n) for n in ('m1_integration.py','m3_integration.py','mac_guest_fixture.py','smb_trace_proxy.py')]+['ubuntu@127.0.0.1:work/'])
         run(ssh+['cd work && tar xzf server.tgz -C bin'])
         # Nested HVF and TCG can exceed the real server's IPC budget for Argon2.
         # Compute exactly the production parameters on the native host and
@@ -188,7 +188,7 @@ f.unlink();p.rmdir();print(hashlib.sha256(data).hexdigest())
             try:run(ssh+['kill -TERM '+str(guest['pid'])]);time.sleep(3)
             except Exception:pass
         if 'ssh' in locals():
-            for source in ('fixture.log','server.log'):
+            for source in ('fixture.log','server.log','smb-metadata.json'):
                 try:(a.output.parent/('mac-'+source)).write_text(run(ssh+['tail -c 65536 work/'+source]))
                 except Exception:pass
         for proc in reversed(processes):

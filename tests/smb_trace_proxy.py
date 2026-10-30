@@ -25,6 +25,25 @@ class HeaderProxy:
                             message_id=int.from_bytes(frame[24:32],'little'),
                             credit_charge=int.from_bytes(frame[6:8],'little'),credits=int.from_bytes(frame[14:16],'little'))
                 if direction=='response':item['status']=hex(int.from_bytes(frame[8:12],'little'))
+                if command==1:
+                    # Safe negotiation diagnostics only. Never retain the
+                    # challenge, response proof, session key or raw auth token.
+                    start=frame.find(b'NTLMSSP\0',64)
+                    if start>=0:
+                        token=frame[start:];kind=int.from_bytes(token[8:12],'little')
+                        item['ntlm_type']=kind
+                        flag_at={1:12,2:20,3:60}.get(kind)
+                        if flag_at is not None and len(token)>=flag_at+4:
+                            flags=int.from_bytes(token[flag_at:flag_at+4],'little');item['ntlm_flags']=hex(flags)
+                        if kind==3 and len(token)>=64:
+                            off=int.from_bytes(token[24:28],'little');size=int.from_bytes(token[20:22],'little')
+                            micpos=72 if flags&0x02000000 else 64
+                            item['ntlm_mic_present']=off>=micpos+16 and len(token)>=micpos+16 and any(token[micpos:micpos+16])
+                            item['ntlm_response_bytes']=size
+                            for label,index in [('fixture_domain',28),('fixture_user',36)]:
+                                length=int.from_bytes(token[index:index+2],'little');offset=int.from_bytes(token[index+4:index+8],'little')
+                                if length<=128 and offset>=64 and offset+length<=len(token):
+                                    item[label]=token[offset:offset+length].decode('utf-16-le',errors='replace')
                 elif command==5 and len(frame)>=120:
                     item.update(access=hex(int.from_bytes(frame[88:92],'little')),
                                 attributes=hex(int.from_bytes(frame[92:96],'little')),

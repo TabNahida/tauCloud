@@ -11,6 +11,7 @@ import sqlite3
 import threading
 import time
 from m3_integration import Fixture
+from smb_trace_proxy import HeaderProxy
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
@@ -32,7 +33,7 @@ def main():
                        (hashlib.sha256(data['token'].encode()).hexdigest(),'admin','cli','admin','',int(time.time()*1000)+3600000))
         (state/'bootstrap.json').unlink(missing_ok=True)
         return data['token']
-    f=Fixture.__new__(Fixture);stop=threading.Event()
+    f=Fixture.__new__(Fixture);stop=threading.Event();proxy=None
     signal.signal(signal.SIGTERM,lambda *_:stop.set())
     signal.signal(signal.SIGINT,lambda *_:stop.set())
     try:
@@ -51,9 +52,12 @@ def main():
         f.api('grants',f.admin,dict(space='nfsdata',subject_type='user',subject='bob',rights='rw'))
         f.api('nfs-exports',f.admin,dict(id='nfs',trust='loopback-auth-sys',anonymous='bob',
                  uids={str(a.uid):'alice'},gids={str(g):'unix' for g in json.loads(a.groups)}))
-        a.output.write_text(json.dumps(dict(pid=os.getpid(),smb_port=ports[0],nfs_port=ports[1])))
+        proxy=HeaderProxy(ports[0])
+        a.output.write_text(json.dumps(dict(pid=os.getpid(),smb_port=proxy.port,nfs_port=ports[1])))
         stop.wait(1200)
     finally:
+        if proxy:
+            proxy.close();Path('smb-metadata.json').write_text(json.dumps(proxy.trace,indent=2)+'\n')
         if hasattr(f,'log'):
             f.log.flush();Path('server.log').write_text((f.base/'supervisor.log').read_text()[-65536:]);f.close()
 
