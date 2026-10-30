@@ -13,6 +13,7 @@ struct session {
   std::string principal;
   int64_t expires;
   std::vector<slot> slots;
+  std::vector<uint32_t> channel;
 };
 struct open_state {
   std::string session, fh, owner, recovery;
@@ -447,7 +448,8 @@ std::string v4(const identity &who, reader &r) {
   size_t bound = tag.size() + 64;
   for (const auto &a : ops) {
     unsigned op = a.at("op");
-    bound += (op == 25 || op == 26) ? std::min(a.value("count", 0u), 65536u) + 512 : 4096;
+    bound += (op == 25 || op == 26) ? std::min(a.value("count", 0u), 65536u) + 64
+                                  : (op == 9 ? 1024 : 256);
   }
   if (bound > 120 * 1024) {
     if (!ops.empty())
@@ -501,16 +503,14 @@ std::string v4(const identity &who, reader &r) {
           check(seq == c.sequence, 10063);
           check(sessions.size() < 32, 10018);
           auto fore = a.at("fore").get<std::vector<uint32_t>>();
-          check(fore[1] >= 4096 && fore[2] >= 4096 && fore[3] >= 4096 && fore[4] > 0 && fore[5] > 0,
+          check(fore[1] >= 1024 && fore[2] >= 1024 && fore[4] > 0 && fore[5] > 0,
                 10005);
-          // Use fixed limits only when the client offered at least those limits.
-          check(fore[1] >= 128 * 1024 && fore[2] >= 128 * 1024 && fore[3] >= 128 * 1024 &&
-                    fore[4] >= 16,
-                10005);
-          fore = {0, 128 * 1024, 128 * 1024, 128 * 1024, 16, std::min(fore[5], 8u)};
+          fore = {0, std::min(fore[1], 128 * 1024u), std::min(fore[2], 128 * 1024u),
+                  std::min({fore[3], fore[2], 128 * 1024u}), std::min(fore[4], 16u),
+                  std::min(fore[5], 8u)};
           std::vector<uint32_t> back = {0, 4096, 4096, 0, 1, 1};
           auto idstr = random_hex(16);
-          sessions.emplace(idstr, session{id, who.key, now() + 60000, std::vector<slot>(fore[5])});
+          sessions.emplace(idstr, session{id, who.key, now() + 60000, std::vector<slot>(fore[5]), fore});
           body.fixed(decode_bytes(idstr)).u32(seq).u32(0);
           put_channel(body, fore);
           put_channel(body, back);
@@ -521,6 +521,10 @@ std::string v4(const identity &who, reader &r) {
       } else if (op == 53) {
         sid = a.at("session");
         auto &s = session_check(sid);
+        check(r.data.size() <= s.channel[1], 10065);
+        check(count <= s.channel[4], 10070);
+        check(bound <= s.channel[2], 10066);
+        check(!a.at("cache").get<bool>() || bound <= s.channel[3], 10067);
         auto n = a.at("slot").get<uint32_t>();
         check(n < s.slots.size(), 10053);
         check(a.at("highest").get<uint32_t>() >= n, 10077);
@@ -628,10 +632,11 @@ std::string v4(const identity &who, reader &r) {
           current.clear();
         } else if (op == 18) {
           auto access = a.at("access").get<uint32_t>(), deny = a.at("deny").get<uint32_t>();
-          check((access & 3) > 0 && (access & ~0x303u) == 0 && deny <= 3);
+          check((access & 3) > 0 && (access & ~0x3ff03u) == 0 &&
+                    (access & 0xff00u) <= 0x500 && deny <= 3);
           check(deny == 0, 10004);
           access &= 3;
-          check(a.at("client").get<uint64_t>() == session.client, 10022);
+          // NFSv4.1 takes the client identity from SEQUENCE, not open_owner4.clientid.
           check(opens.size() < 1024, 10018);
           auto claim = a.at("claim").get<unsigned>();
           bool recovering = claim == 1;

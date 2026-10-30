@@ -1,8 +1,11 @@
-name: Backend M7 experimental profile
-on: [push, pull_request]
+name: Backend pre-M8 acceptance
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
 jobs:
   linux:
     runs-on: ubuntu-24.04
+    timeout-minutes: 45
     strategy:
       matrix:
         compiler: [gcc, clang]
@@ -17,13 +20,27 @@ jobs:
       - run: python3 scripts/fetch_litmus.py
       - run: python3 -m pip install --break-system-packages -r tests/smb-requirements.txt -r tests/nfs-requirements.txt
       - run: python3 scripts/run_m7.py --compiler ${{ matrix.compiler }} ${{ matrix.compiler == 'clang' && '--mode debug --sanitizers' || '' }} --litmus build/litmus/installed/bin/litmus
+      - name: Independent native clients
+        if: always() && matrix.compiler == 'gcc'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cifs-utils nfs-common smbclient
+          python3 tests/native_clients.py --bin build/linux/x86_64/release --output build/acceptance/native-linux.json
+      - name: Upstream pynfs client
+        if: always() && matrix.compiler == 'gcc'
+        run: |
+          python3 scripts/prepare_pynfs.py
+          python3 tests/pynfs_acceptance.py --bin build/linux/x86_64/release --output build/acceptance/pynfs.json OPEN1 SEQ1
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: linux-${{ matrix.compiler }}
-          path: build/m7/*.json
+          path: |
+            build/m7/*.json
+            build/acceptance/*
   windows:
     runs-on: windows-2025
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: xmake-io/github-action-setup-xmake@v1

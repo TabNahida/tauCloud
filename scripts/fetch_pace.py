@@ -45,7 +45,10 @@ def main():
             source = str(temporary / 'repository')
             subprocess.run(['git', 'init', '--bare', source], check=True, capture_output=True)
             subprocess.run(['git', '-C', source, 'fetch', '--depth=1', lock['url'], lock['revision']], check=True)
-        archive = subprocess.check_output(['git', '-C', source, 'archive', '--format=tar', lock['revision']])
+        # git archive applies checkout conversion too. Hosted Windows runners set
+        # core.autocrlf=true globally; the locked export always uses Git's LF bytes.
+        archive = subprocess.check_output(['git', '-c', 'core.autocrlf=false', '-c', 'core.eol=lf',
+                                           '-C', source, 'archive', '--format=tar', lock['revision']])
         export = temporary / 'export'
         export.mkdir()
         with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
