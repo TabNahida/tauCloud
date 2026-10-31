@@ -615,6 +615,9 @@ void native_file::allocate(uint64_t size) {
 #ifdef _WIN32
   FILE_ALLOCATION_INFO value{};
   value.AllocationSize.QuadPart = static_cast<LONGLONG>(size);
+#ifdef TAUCLOUD_TEST_IO
+  require(!size || write_budget != 0, "disk_full");
+#endif
   if (!SetFileInformationByHandle(impl_->file->handle, FileAllocationInfo, &value, sizeof(value)))
     native_error();
 #else
@@ -627,14 +630,20 @@ void native_file::allocate(uint64_t size) {
     require(value <= uint64_t(INT64_MAX) - unit, "invalid_offset");
     return (value + unit - 1) / unit * unit;
   };
-  auto target = aligned(size);
-  // Linux hole punching ignores preallocated extents past EOF. Truncating to
-  // the current (or smaller) EOF releases that tail; then reserve the requested
-  // extent again without exposing unwritten bytes through a larger EOF.
-  truncate(std::min(info().at("size").get<uint64_t>(), target));
+  auto target = aligned(size), current = info().at("size").get<uint64_t>();
+  // Linux hole punching ignores preallocation past EOF. Same-size truncation
+  // frees that tail without discarding data. When shrinking EOF, allocate first
+  // so an allocation failure cannot discard the existing suffix.
+  if (target >= current)
+    truncate(current);
+#ifdef TAUCLOUD_TEST_IO
+  require(!target || write_budget != 0, "disk_full");
+#endif
   if (target &&
       fallocate(impl_->file->handle, FALLOC_FL_KEEP_SIZE, 0, static_cast<off_t>(target)) != 0)
     native_error();
+  if (target < current)
+    truncate(target);
 #endif
 }
 void native_file::flush() const {

@@ -26,6 +26,16 @@ int main() {
   try {
     auto state = temp / "state", root_path = temp / "root";
     fs::create_directories(root_path);
+    {
+      auto directory = native_file::root(root_path);
+      auto file = directory.open("allocation-failure", false, true, true);
+      std::string content(8192, 'a');
+      check(file.write(0, content) == content.size());
+      test_write_budget(0);
+      rejects([&] { file.allocate(4096); }, "disk_full");
+      test_write_budget(-1);
+      check(file.info().at("size") == content.size() && file.read(0, content.size()) == content);
+    }
     initialize(state, 38443);
     auto cfg = config::load(state);
     auto key = read_json(state / "ipc-keys.json").at("identity").get<std::string>();

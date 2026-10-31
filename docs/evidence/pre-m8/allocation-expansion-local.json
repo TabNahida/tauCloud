@@ -68,5 +68,20 @@
       "error": 0,
       "skip": 0
     }
+  },
+  "allocation_failure_safety": {
+    "status": "passed",
+    "test": "tests/m2_core.cpp / native adapter disk-full fault injection before allocation syscall",
+    "checks": 38,
+    "invariant": "A failed shrinking allocation preserves original EOF and bytes; native allocation precedes EOF reduction.",
+    "note": "RLIMIT_FSIZE was investigated but does not constrain KEEP_SIZE allocations; it is not claimed as fault evidence."
+  },
+  "post_fix_wire": {
+    "status": "passed",
+    "checks": [
+      "schema v4 migration preserves a pre-v5 backup before adding durable reservations",
+      "native space allocation preserves EOF, charges quota once, rejects over-quota growth before mutation and enforces WRITE_DATA",
+      "allocation and quota survive restart; EOF extension consumes reservations; allocation shrink truncates and frees storage; deletion and replacement release quota"
+    ]
   }
 }
