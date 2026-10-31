@@ -82,7 +82,7 @@ uint32_t status(std::string_view code) {
   if (code == "delete_pending")
     return 0xc0000056;
   if (code == "invalid_ea_name")
-    return 0xc0000050;
+    return 0x80000013;
   if (code == "ea_too_large")
     return 0xc0000050;
   if (code == "cannot_delete")
@@ -134,24 +134,23 @@ json ea_decode(std::string_view data) {
   json result = json::array();
   size_t offset = 0;
   while (offset < data.size()) {
-    check(result.size() < 256 && data.size() - offset >= 9, 0xc0000050);
+    check(result.size() < 256 && data.size() - offset >= 9, 0x80000014);
     auto next = get(data, offset, 4), flags = get(data, offset + 4, 1),
          n = get(data, offset + 5, 1), size = get(data, offset + 6, 2);
     size_t used = 9 + n + size;
-    check(n && used <= data.size() - offset && get(data, offset + 8 + n, 1) == 0 &&
-              (flags == 0 || flags == 128),
-          0xc0000050);
+    check(used <= data.size() - offset && get(data, offset + 8 + n, 1) == 0, 0x80000014);
+    check(n && (flags == 0 || flags == 128), 0x80000013);
     auto name = bytes(data.substr(offset + 8, n));
     for (unsigned char c : name)
       check(c >= 32 && c < 127 &&
                 std::string_view("\\/:*?\"<>|,+=[];").find(c) == std::string_view::npos,
-            0xc0000050);
+            0x80000013);
     result.push_back({{"name", name},
                       {"flags", flags},
                       {"value", encode_bytes(data.substr(offset + 9 + n, size))}});
     if (!next)
       break;
-    check(next >= used && next % 4 == 0 && next < data.size() - offset, 0xc0000050);
+    check(next >= used && next % 4 == 0 && next < data.size() - offset, 0x80000014);
     offset += next;
   }
   return result;

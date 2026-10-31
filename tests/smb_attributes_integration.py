@@ -80,9 +80,9 @@ def run():
         denied(lambda:create(t,'extended',options=0x240,disposition=1),0xc0000022)
         seteas(extended,ea(b'example',b'updated'));assert read_eas(extended)=={b'EXAMPLE':(0,b'updated')}
         no_ea=create(t,'extended',access=0x100080,disposition=1);denied(lambda:query(no_ea,15),0xc0000022);denied(lambda:seteas(no_ea,ea(b'x',b'y')),0xc0000022);no_ea.close()
-        denied(lambda:seteas(extended,ea(b'bad/name',b'value')),0xc0000050)
+        denied(lambda:seteas(extended,ea(b'bad/name',b'value')),0x80000013)
         malformed=bytearray(ea(b'x',b'y'));struct.pack_into('<I',malformed,0,4)
-        denied(lambda:seteas(extended,bytes(malformed)),0xc0000050)
+        denied(lambda:seteas(extended,bytes(malformed)),0x80000014)
         assert read_eas(extended)=={b'EXAMPLE':(0,b'updated')};extended.close()
         c.disconnect();f.stop();f.start();c,s,t=connect()
         h=create(t,'renamed',disposition=1);assert readattrs(h)==0x2002
@@ -119,6 +119,21 @@ def run():
         assert read_eas(paged,flags=0)=={b'C':(0,b'value')}
         independent=create(t,'paged-eas',disposition=1);assert read_eas(independent,flags=2)=={b'A':(0,b'value')};independent.close();paged.close()
         report['checks'].append('EA cursor paging, restart, single-entry and explicit indexes, independent opens, bounded whole-entry overflow and undersized-buffer retries')
+        metadata=create(t,'ea-times');attrs(metadata,0x80,timestamps)
+        seteas(metadata,ea(b'TIME',b'frozen'));assert struct.unpack_from('<QQQQ',query(metadata,4))==timestamps
+        assert readattrs(metadata)==0x20
+        attrs(metadata,0x80,(0,0,0,2**64-2));seteas(metadata,ea(b'TIME',b'changed'))
+        changed_times=struct.unpack_from('<QQQQ',query(metadata,4))
+        assert changed_times[:3]==timestamps[:3] and changed_times[3]!=timestamps[3] and readattrs(metadata)==0x20
+        snapshot=query(metadata,4)
+        denied(lambda:seteas(metadata,ea(b'BIG',b'x'*65524)),0xc0000050)
+        assert query(metadata,4)==snapshot and read_eas(metadata)=={b'TIME':(0,b'changed')}
+        boundary=create(t,'ea-boundary');seteas(boundary,ea(b'A',b'x'*65525))
+        assert struct.unpack('<I',query(boundary,7))[0]==65531 and read_eas(boundary)=={b'A':(0,b'x'*65525)}
+        denied(lambda:seteas(boundary,ea(b'A',b'x'*65526)),0xc0000050)
+        assert read_eas(boundary)=={b'A':(0,b'x'*65525)}
+        boundary.close();metadata.close()
+        report['checks'].append('EA writes atomically update change time/archive while respecting frozen timestamps; exact 65531-byte aggregate limit and standard invalid-name/list statuses')
         report['status']='passed'
     except Exception:report['error']=traceback.format_exc();raise
     finally:

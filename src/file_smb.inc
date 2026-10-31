@@ -88,8 +88,8 @@ void smb_update_eas(const json &info, const json &input) {
   }
   size_t total = 0;
   for (auto &[key, ea] : values.items())
-    total += (9 + key.size() + ea.at("value").get<std::string>().size() / 2 + 3) & ~size_t(3);
-  require(values.size() <= 256 && total <= 65536, "ea_too_large");
+    total += 5 + key.size() + ea.at("value").get<std::string>().size() / 2;
+  require(values.size() <= 256 && total <= 65531, "ea_too_large");
   statement q(
       db, "INSERT INTO smb_eas VALUES(?,?) ON CONFLICT(native) DO UPDATE SET body=excluded.body");
   q.bind(1, info.at("object"));
@@ -398,7 +398,20 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     if (op == "smb_set_eas") {
       dav_guard(s, path, actor, body);
       lease(grant, ctx);
+      auto directory = h.directory ? (path.empty() ? native_file() : s.directory.open(path, true))
+                                   : native_file();
+      auto &file = h.directory ? (path.empty() ? s.directory : directory) : h.file;
+      auto info = file.info(true);
+      require(info.at("object") == meta.at("object"), "object_replaced");
+      transaction tx(db);
       smb_update_eas(meta, body.at("eas"));
+      auto times = meta.at("times");
+      if (!h.user_change_time)
+        times[3] = uint64_t(now()) * 10000 + 116444736000000000ull;
+      smb_save_times(info, times);
+      smb_save_attributes(info, (meta.at("attributes").get<uint32_t>() & ~0x80u) | 0x20u);
+      audit(actor, "smb_extended_attributes", path);
+      tx.commit();
     }
     return smb_eas(meta);
   }
