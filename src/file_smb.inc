@@ -198,6 +198,7 @@ json smb_meta(space_state &s, const opened &h) {
   return {{"path", h.path},
           {"directory", h.directory},
           {"size", h.directory ? json(0) : info.at("size")},
+          {"allocated", info.at("allocated")},
           {"modified_ns", info.at("modified_ns")},
           {"object", info.at("object")},
           {"delete_pending", q.row()},
@@ -385,6 +386,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
       item["attributes"] = smb_attributes(info);
       item["times"] = smb_times(info);
       item["ea_size"] = smb_ea_size(info);
+      item["allocated"] = info.at("allocated");
       total += item.dump().size();
       require(entries.size() < 1024 && total <= 256 * 1024, "directory_limit");
       entries.push_back(item);
@@ -607,27 +609,33 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
   }
   if (op == "smb_resize" || op == "smb_allocation") {
     require(h.access & 2, "forbidden");
-    auto size = number(body, "size"), previous = meta.at("size").get<uint64_t>();
-    if (op == "smb_allocation") {
-      // Support truncation and the native Windows SetEndOfFile follow-up.
-      // Growing preallocation needs separate quota accounting; never claim it.
-      require(size <= (previous + 4095) / 4096 * 4096, "not_supported");
-      if (size >= previous)
-        return {{"size", previous}};
-    }
-    quota(s, size > previous ? size - previous : 0);
+    auto size = number(body, "size");
+    auto native = meta.at("object").get<std::string>();
+    auto reservation = allocation_reservation(native);
+    quota(s, growth(meta, size));
     dav_guard(s, path, actor, body);
     lease(grant, ctx);
     try {
-      h.file.truncate(size);
+      if (op == "smb_allocation") {
+        // Reserve before touching storage. Failure/crash retains the higher
+        // bound until a successful retry/shrink or object deletion releases it.
+        allocation_reservation(native, std::max(reservation, size));
+        h.file.allocate(size);
+      } else
+        h.file.truncate(size);
       smb_preserve_times(h.file, h, meta);
       h.file.flush();
     } catch (...) {
       index(space, path, h.file.info());
       throw;
     }
-    index(space, path, h.file.info());
-    return {{"size", size}};
+    auto current = h.file.info();
+    index(space, path, current);
+    if (op == "smb_allocation")
+      allocation_reservation(native, size);
+    else
+      shrink_reservation(meta, size);
+    return {{"size", current.at("size")}, {"allocated", current.at("allocated")}};
   }
   if (op == "smb_write") {
     require(h.access & 6, "forbidden");
@@ -638,7 +646,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     require((h.access & 2) || offset == previous, "forbidden");
     if (data.empty()) return {{"written", 0}};
     range_unlocked(id, meta.at("object"), offset, offset + data.size());
-    quota(s, offset + data.size() > previous ? offset + data.size() - previous : 0);
+    quota(s, growth(meta, offset + data.size()));
     dav_guard(s, path, actor, body);
     lease(grant, ctx);
     auto request = body.at("request_id").get<std::string>(),

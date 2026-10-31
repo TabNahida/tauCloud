@@ -508,8 +508,8 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     auto off = op == "write" ? number(body, "offset") : body.value("size", uint64_t(0));
     auto data = op == "write" ? decode_bytes(body.at("data").get<std::string>()) : std::string();
     require(data.size() <= 65536 && off <= uint64_t(INT64_MAX) - data.size(), "invalid_offset");
-    auto end = off + data.size(), old = before.at("size").get<uint64_t>();
-    quota(s, end > old ? end - old : 0);
+    auto end = off + data.size();
+    quota(s, growth(before, end));
     pending(request, hash);
     try {
       if (op == "write") {
@@ -520,8 +520,10 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
           require(n > 0 && n <= data.size() - written, "io_error");
           written += n;
         }
-      } else if (body.contains("size"))
+      } else if (body.contains("size")) {
         o.file.truncate(off);
+        shrink_reservation(before, off);
+      }
       if (op == "setattr") nfs_apply_attrs(s, g, p, o.file, body);
       o.file.flush(); // All acknowledgements are FILE_SYNC, even for UNSTABLE requests.
     } catch (...) {

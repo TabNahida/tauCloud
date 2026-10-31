@@ -82,6 +82,18 @@ def run():
         report['checks'].append('binary extended attributes on CREATE/QUERY/SET, case-insensitive updates, deletion, restart, NEED_EA and access rights; malformed chains reject atomically')
         setinfo(h,deletion);h.close();h=create(t,'renamed');assert readattrs(h)==0x20;h.close()
         report['checks'].append('attributes follow native object across rename/restart, directory invariants hold, replacement object does not inherit stale metadata')
+        def mode(handle,value):
+            q=SMB2SetInfoRequest();q['info_type']=1;q['file_info_class']=16;q['file_id']=handle.file_id;q['buffer']=struct.pack('<I',value)
+            handle.connection.receive(handle.connection.send(q,handle.tree_connect.session.session_id,handle.tree_connect.tree_connect_id))
+        h=create(t,'mode',options=0x42);other=create(t,'mode',disposition=1)
+        assert struct.unpack('<I',query(h,16))[0]==2 and struct.unpack('<I',query(other,16))[0]==0
+        mode(h,6);h.write(b'write through');assert struct.unpack_from('<I',query(h,18),88)[0]==6
+        for invalid in (8,16,32,48,0x1000,0xffffffff):denied(lambda:mode(h,invalid),0xc000000d)
+        assert struct.unpack('<I',query(h,16))[0]==6
+        mode(h,0);assert struct.unpack('<I',query(h,16))[0]==0
+        h.close();other.close()
+        ignored=create(t,'sync-flags-ignored',options=0x70);assert struct.unpack('<I',query(ignored,16))[0]==0;ignored.close()
+        report['checks'].append('per-open mode CREATE/QUERY/SET and FileAllInformation agreement, write-through writes, independent handles, invalid synchronous/immutable modes and SMB2 ignored synchronous CREATE flags')
         report['status']='passed'
     except Exception:report['error']=traceback.format_exc();raise
     finally:

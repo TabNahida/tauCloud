@@ -88,11 +88,12 @@ struct file_store::impl {
       q.row();
       version = q.integer(0);
     }
-    require(version <= 4, "schema_too_new");
-    if (version > 0 && version < 4)
+    require(version <= 5, "schema_too_new");
+    if (version > 0 && version < 5)
       backup_database(db, c.state / (role + (version == 1   ? ".pre-v2.db"
                                              : version == 2 ? ".pre-v3.db"
-                                                            : ".pre-v4.db")));
+                                             : version == 3 ? ".pre-v4.db"
+                                                            : ".pre-v5.db")));
     transaction migration(db);
     sql(db, "CREATE TABLE IF NOT EXISTS spaces(id TEXT PRIMARY KEY,request TEXT NOT NULL,body TEXT "
             "NOT NULL);"
@@ -117,6 +118,8 @@ struct file_store::impl {
             "NOT NULL); CREATE TABLE IF NOT EXISTS smb_times(native TEXT PRIMARY KEY,body TEXT NOT "
             "NULL); CREATE TABLE IF NOT EXISTS smb_eas(native TEXT PRIMARY KEY,body TEXT NOT "
             "NULL); PRAGMA user_version=4;");
+    sql(db, "CREATE TABLE IF NOT EXISTS allocations(native TEXT PRIMARY KEY,size INTEGER NOT "
+            "NULL); PRAGMA user_version=5;");
     migration.commit();
   }
   void audit(const std::string &actor, const std::string &action, const std::string &resource) {
@@ -213,14 +216,43 @@ struct file_store::impl {
       values.push_back(json::parse(q.text(0)));
     return values;
   }
+  uint64_t allocation_reservation(const std::string &native) {
+    statement q(db, "SELECT size FROM allocations WHERE native=?");
+    q.bind(1, native);
+    return q.row() ? static_cast<uint64_t>(q.integer(0)) : 0;
+  }
+  void allocation_reservation(const std::string &native, uint64_t size) {
+    require(size <= uint64_t(INT64_MAX), "invalid_offset");
+    statement q(
+        db,
+        "INSERT INTO allocations VALUES(?,?) ON CONFLICT(native) DO UPDATE SET size=excluded.size");
+    q.bind(1, native);
+    q.bind(2, static_cast<int64_t>(size));
+    q.row();
+  }
+  uint64_t growth(const json &info, uint64_t end) {
+    auto reserve = allocation_reservation(info.at("object"));
+    auto before = std::max(reserve, info.at("size").get<uint64_t>());
+    return end > before ? end - before : 0;
+  }
+  void shrink_reservation(const json &info, uint64_t end) {
+    auto native = info.at("object").get<std::string>();
+    auto old = allocation_reservation(native);
+    if (end < info.at("size").get<uint64_t>() && old > end)
+      allocation_reservation(native, end);
+  }
   uint64_t used(const std::string &space) {
-    statement q(db, "SELECT COALESCE(SUM(size),0) FROM objects WHERE space=?");
+    statement q(db, "SELECT COALESCE(SUM(MAX(o.size,COALESCE(a.size,0))),0) FROM objects o LEFT "
+                    "JOIN allocations a ON a.native=o.native WHERE o.space=?");
     q.bind(1, space);
     q.row();
     auto total = static_cast<uint64_t>(q.integer(0));
     for (const auto &[token, retained] : nfs_retained)
-      if (retained.space == space)
-        total += retained.file.info().at("size").get<uint64_t>();
+      if (retained.space == space) {
+        auto info = retained.file.info();
+        total +=
+            std::max(info.at("size").get<uint64_t>(), allocation_reservation(info.at("object")));
+      }
     return total;
   }
   uint64_t reserved(const std::string &space) {
@@ -695,8 +727,7 @@ struct file_store::impl {
                              .dump());
       if (auto previous = replay(request, hash))
         return *previous;
-      auto size = info.at("size").get<uint64_t>();
-      quota(s, offset + data.size() > size ? offset + data.size() - size : 0);
+      quota(s, growth(info, offset + data.size()));
       pending(request, hash);
       lease(grant, ctx);
       try {

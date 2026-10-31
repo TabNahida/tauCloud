@@ -1,0 +1,61 @@
+{
+  "status": "partial compatibility expansion; full SMB/NFS gate remains open",
+  "smb_allocation": {
+    "status": "passed",
+    "checks": [
+      "schema v4 migration preserves a pre-v5 backup before adding durable reservations",
+      "native space allocation preserves EOF, charges quota once, rejects over-quota growth before mutation and enforces WRITE_DATA",
+      "allocation and quota survive restart; EOF extension consumes reservations; allocation shrink truncates and frees storage; deletion and replacement release quota"
+    ]
+  },
+  "smb_metadata_and_modes": {
+    "status": "passed",
+    "checks": [
+      "CREATE/QUERY/SET persistent DOS attributes, zero/no-change and NORMAL semantics; readonly open/delete checks and granted-handle authority",
+      "four independent timestamps, native mtime, zero/no-change, per-handle explicit/-1 freeze and -2 re-enable; invalid times reject before attribute mutation",
+      "binary extended attributes on CREATE/QUERY/SET, case-insensitive updates, deletion, restart, NEED_EA and access rights; malformed chains reject atomically",
+      "attributes follow native object across rename/restart, directory invariants hold, replacement object does not inherit stale metadata",
+      "per-open mode CREATE/QUERY/SET and FileAllInformation agreement, write-through writes, independent handles, invalid synchronous/immutable modes and SMB2 ignored synchronous CREATE flags"
+    ]
+  },
+  "nfs_attributes": {
+    "status": "passed",
+    "checks": [
+      "v3 CREATE preserves mode, mapped ownership and explicit atime/mtime on native handles",
+      "v3 ctime differs from preserved mtime and advances for mode-only metadata changes across export aliases",
+      "v4 SETATTR updates aliases consistently; GETATTR rejects write-only time attributes",
+      "durable change counters detect equal-size writes with restored mtime, share alias state and return real namespace change_info; reads do not advance them",
+      "paged v4 READDIR skips reserved cookies 1/2 and resumes without duplicate or missing entries",
+      "mode/ownership and exact timestamps survive server restart through stable alias handles"
+    ]
+  },
+  "core_tests": {
+    "m2": 35,
+    "m5": 90,
+    "m7": 68,
+    "status": "passed"
+  },
+  "backup_restore": {
+    "status": "passed",
+    "test": "tests/m3_integration.py (1 MiB)"
+  },
+  "upstream_samba": {
+    "selector": "smb2.setinfo",
+    "status": "failed",
+    "progress": [
+      "basic information",
+      "disposition",
+      "allocation information",
+      "EOF",
+      "position",
+      "mode information"
+    ],
+    "remaining_failure": "SEC_DESC: STATUS_NOT_SUPPORTED (source4/torture/smb2/setinfo.c:281)"
+  },
+  "remote_allocation_validation": "pending",
+  "specifications": [
+    "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fsa/3820daf2-e512-4730-8cce-2d0435ae6ad2",
+    "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fsa/9bfb8ab2-9e37-4d03-9e4e-8bd166a26d31",
+    "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/e8fb45c1-a03d-44ca-b7ae-47385cfd7997"
+  ]
+}

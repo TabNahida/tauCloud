@@ -37,6 +37,7 @@ public:
   std::string read(uint64_t offset, size_t count) const;
   size_t write(uint64_t offset, std::string_view bytes);
   void truncate(uint64_t size);
+  void allocate(uint64_t size);
   void set_times(std::optional<uint64_t> accessed_ns, std::optional<uint64_t> modified_ns);
   void flush() const;
   void rename(const std::string &from, const std::string &to, bool replace = false,

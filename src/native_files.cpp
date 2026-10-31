@@ -11,6 +11,7 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <linux/openat2.h>
+#include <linux/falloc.h>
 #include <sys/stat.h>
 #include <sys/statvfs.h>
 #include <sys/syscall.h>
@@ -232,6 +233,11 @@ json native_file::info(bool change_stamp) const {
                               100 -
                           uint64_t(116444736000000000) * 100},
       {"size", (uint64_t(meta.nFileSizeHigh) << 32) | meta.nFileSizeLow}};
+  FILE_STANDARD_INFO storage{};
+  if (!GetFileInformationByHandleEx(impl_->file->handle, FileStandardInfo, &storage,
+                                    sizeof(storage)))
+    native_error();
+  result["allocated"] = directory ? uint64_t(0) : uint64_t(storage.AllocationSize.QuadPart);
   if (change_stamp) {
     FILE_BASIC_INFO basic{};
     if (!GetFileInformationByHandleEx(impl_->file->handle, FileBasicInfo, &basic, sizeof(basic)))
@@ -260,6 +266,7 @@ json native_file::info(bool change_stamp) const {
                  {"accessed_ns", int64_t(s.st_atim.tv_sec) * 1000000000 + s.st_atim.tv_nsec},
                  {"modified_ns", int64_t(s.st_mtim.tv_sec) * 1000000000 + s.st_mtim.tv_nsec},
                  {"size", s.st_size}};
+  result["allocated"] = S_ISDIR(s.st_mode) ? uint64_t(0) : uint64_t(s.st_blocks) * 512;
   if (change_stamp)
     result["changed_ns"] = int64_t(s.st_ctim.tv_sec) * 1000000000 + s.st_ctim.tv_nsec;
   return result;
@@ -600,6 +607,33 @@ void native_file::truncate(uint64_t size) {
     native_error();
 #else
   if (ftruncate(impl_->file->handle, static_cast<off_t>(size)) != 0)
+    native_error();
+#endif
+}
+void native_file::allocate(uint64_t size) {
+  require(size <= uint64_t(INT64_MAX), "invalid_offset");
+#ifdef _WIN32
+  FILE_ALLOCATION_INFO value{};
+  value.AllocationSize.QuadPart = static_cast<LONGLONG>(size);
+  if (!SetFileInformationByHandle(impl_->file->handle, FileAllocationInfo, &value, sizeof(value)))
+    native_error();
+#else
+  struct statvfs volume {};
+  if (fstatvfs(impl_->file->handle, &volume) != 0)
+    native_error();
+  uint64_t unit = volume.f_frsize;
+  require(unit > 0 && unit <= 1024 * 1024, "not_supported");
+  auto aligned = [&](uint64_t value) {
+    require(value <= uint64_t(INT64_MAX) - unit, "invalid_offset");
+    return (value + unit - 1) / unit * unit;
+  };
+  auto target = aligned(size);
+  // Linux hole punching ignores preallocated extents past EOF. Truncating to
+  // the current (or smaller) EOF releases that tail; then reserve the requested
+  // extent again without exposing unwritten bytes through a larger EOF.
+  truncate(std::min(info().at("size").get<uint64_t>(), target));
+  if (target &&
+      fallocate(impl_->file->handle, FALLOC_FL_KEEP_SIZE, 0, static_cast<off_t>(target)) != 0)
     native_error();
 #endif
 }

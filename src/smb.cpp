@@ -198,7 +198,7 @@ bytes basic(const json &m) {
 bytes standard(const json &m) {
   bytes b(24, '\0');
   auto size = m.at("size").get<uint64_t>();
-  put(b, 0, (size + 4095) / 4096 * 4096, 8);
+  put(b, 0, m.value("allocated", (size + 4095) / 4096 * 4096), 8);
   put(b, 8, size, 8);
   put(b, 16, m.value("delete_pending", false) ? 0 : 1, 4);
   b[20] = m.value("delete_pending", false);
@@ -225,6 +225,8 @@ bytes file_info(unsigned klass, const json &m, const std::string &name, uint32_t
     bytes value(4, '\0');
     if (klass == 7)
       put(value, 0, m.value("ea_size", 0u), 4);
+    if (klass == 16)
+      put(value, 0, m.value("mode", 0u), 4);
     return value;
   }
   if (klass == 8) {
@@ -244,7 +246,8 @@ bytes file_info(unsigned klass, const json &m, const std::string &name, uint32_t
   }
   if (klass == 18) {
     b = basic(m) + standard(m) + file_info(6, m, name, access) + file_info(7, m, name, access) +
-        file_info(8, m, name, access) + file_info(14, m, name, access) + bytes(8, '\0') +
+        file_info(8, m, name, access) + file_info(14, m, name, access) +
+        file_info(16, m, name, access) + file_info(17, m, name, access) +
         file_info(9, m, name, access);
     return b;
   }
@@ -267,7 +270,7 @@ bytes file_info(unsigned klass, const json &m, const std::string &name, uint32_t
     b.assign(24, '\0');
     put(b, 4, stream_name.size(), 4);
     put(b, 8, size, 8);
-    put(b, 16, (size + 4095) / 4096 * 4096, 8);
+    put(b, 16, m.value("allocated", (size + 4095) / 4096 * 4096), 8);
     return b + stream_name;
   } // Only the unnamed data stream exists.
   throw status_error(0xc00000bb);
@@ -326,7 +329,7 @@ bytes directory_entry(unsigned klass, const json &m) {
     times(b, 8, m);
     auto size = m.at("size").get<uint64_t>();
     put(b, 40, size, 8);
-    put(b, 48, (size + 4095) / 4096 * 4096, 8);
+    put(b, 48, m.value("allocated", (size + 4095) / 4096 * 4096), 8);
     put(b, 56, attributes(m), 4);
     put(b, 60, name.size(), 4);
     if (klass != 1)
@@ -354,6 +357,7 @@ struct opened {
   bytes pending;
   std::set<uint16_t> contexts;
   uint64_t position = 0;
+  uint32_t mode = 0;
 };
 struct client {
   smb_state &s;
@@ -690,12 +694,14 @@ struct client {
       files.emplace(
           fid,
           opened{tid, meta.at("handle"), name, grant, access, json::array(), 0, {}, false, {}, {}});
+      // SMB2 requires ignoring the synchronous-I/O CREATE flags.
+      files.at(fid).mode = static_cast<uint32_t>(options & 0x100e);
       related_file = fid;
       auto b = sized(88, 89);
       put(b, 4, meta.at("action").get<uint32_t>(), 4);
       times(b, 8, meta);
       auto size = meta.at("size").get<uint64_t>();
-      put(b, 40, (size + 4095) / 4096 * 4096, 8);
+      put(b, 40, meta.value("allocated", (size + 4095) / 4096 * 4096), 8);
       put(b, 48, size, 8);
       put(b, 56, attributes(meta), 4);
       b.replace(64, 16, fid);
@@ -734,7 +740,7 @@ struct client {
       put(b, 2, 1, 2);
       times(b, 8, meta);
       auto size = meta.at("size").get<uint64_t>();
-      put(b, 40, (size + 4095) / 4096 * 4096, 8);
+      put(b, 40, meta.value("allocated", (size + 4095) / 4096 * 4096), 8);
       put(b, 48, size, 8);
       put(b, 56, attributes(meta), 4);
       co_return b;
@@ -780,7 +786,7 @@ struct client {
       check(get(p, 96, 4) == 0 && get(p, 106, 2) == 0 && (get(p, 108, 4) & ~1ull) == 0);
       auto data = slice(p, get(p, 66, 2), length, 112);
       request["data"] = encode_bytes(data);
-      request["flush"] = bool(get(p, 108, 4) & 1);
+      request["flush"] = bool((get(p, 108, 4) & 1) || (h.mode & 0x2));
       request["request_id"] = random_hex(16);
       auto r = co_await operation(h, "write", true, request);
       h.position = get(p, 72, 8) + r.at("written").get<uint32_t>();
@@ -929,6 +935,7 @@ struct client {
       check(limit <= 65536 && get(p, 76, 4) == 0);
       auto meta = co_await operation(h, "stat", false);
       meta["position"] = h.position;
+      meta["mode"] = h.mode;
       bytes data;
       if (type == 1 && klass == 48)
         check(selected.dialect != 0x202 && selected.dialect != 0x210 && selected.dialect != 0x302,
@@ -1013,6 +1020,15 @@ struct client {
         check(input.size() == 8);
         request = {{"size", get(input, 0, 8)}};
         co_await operation(h, klass == 20 ? "resize" : "allocation", true, request);
+      } else if (klass == 16) {
+        check(input.size() >= 4, 0xc0000004);
+        auto mode = static_cast<uint32_t>(get(input, 0, 4));
+        // These SMB opens are asynchronous: synchronous modes cannot be
+        // introduced through SET_INFO. Preserve the immutable open flags.
+        check((mode & ~0x6u) == 0);
+        co_await operation(h, "stat", false);
+        auto mutable_flags = (h.mode & 0x8) ? 0x4u : 0x6u;
+        h.mode = (h.mode & ~mutable_flags) | (mode & mutable_flags);
       } else if (klass == 14) {
         check(input.size() == 8 && get(input, 0, 8) <= uint64_t(INT64_MAX));
         co_await operation(h, "stat", false);

@@ -105,7 +105,7 @@ Implementation and recorded scope: [M4 guide](docs/m4.md), [M4 evidence](docs/ev
 - [ ] Complete full SMB standards/client compatibility, including the additional feature gates below. The earlier ADR 0008/0009 matrix is passing: Native Windows encrypted SMB, macOS 15.7.9 signed SMB, Samba smbclient, independent wire clients and 60 torture selectors / 76 cases pass. Kernel CIFS without NTLM MIC remains explicitly incompatible; excluded feature groups are mapped in the applicability report.
 - [x] Document deployment conflicts, dialect limits and revocation/recovery behavior.
 
-Implementation scope and exclusions: [M5 guide](docs/m5.md), [ADR 0008](docs/decisions/0008-smb-profile.md), [evidence](docs/evidence/m5/README.md). Signed SMB 2.1 only; basic metadata is a conservative projection, persistent ACL/attribute writes are explicitly unsupported. The selected client evidence passes, but the full M5 compatibility gate is open; the user explicitly requires expanding beyond the earlier ADR exclusions before further M8 development. See [applicability](docs/smb-torture-coverage.md) and [fixed-commit evidence](docs/evidence/pre-m8/README.md).
+Implementation scope and exclusions: [M5 guide](docs/m5.md), [ADR 0008](docs/decisions/0008-smb-profile.md), [evidence](docs/evidence/m5/README.md). Signed SMB 2.1 only; DOS attributes, four timestamps, bounded EAs, native preallocation and per-open modes are implemented; persistent ACL writes remain unsupported. The selected client evidence passes, but the full M5 compatibility gate is open; the user explicitly requires expanding beyond the earlier ADR exclusions before further M8 development. See [applicability](docs/smb-torture-coverage.md) and [fixed-commit evidence](docs/evidence/pre-m8/README.md).
 
 ## M6 — SMB3
 
@@ -142,7 +142,7 @@ Selected-profile acceptance: [M7 guide](docs/m7.md), [中文](docs/m7.zh-CN.md),
 
 The earlier ADR exclusions describe the existing implementation, not permission to exclude features from this expanded goal. Preserve the passing limited-profile evidence while adding independent evidence for the following gates. Optional protocol facilities must be explicitly negotiated/refused according to the standards; refusal alone is not feature implementation.
 
-- [ ] Complete SMB metadata conformance. Persistent DOS attributes, distinct timestamps, per-handle freeze/re-enable, EAs and native-object rename/restart retention now pass local tests; full timestamp range, allocation, short names and remaining upstream cases are open.
+- [ ] Complete SMB metadata conformance. Persistent DOS attributes, distinct timestamps, per-handle freeze/re-enable, EAs and native-object rename/restart retention now pass local tests; native preallocation with durable quota reservations and per-open mode updates now pass local tests. Full timestamp range, allocation CREATE contexts, short names and remaining upstream cases are open.
 - [ ] Windows security descriptors/ACL inheritance, access checks, owner/group/SACL privilege boundaries and cross-protocol authority.
 - [ ] SMB asynchronous blocking lock queues, cancellation, disconnect/close races and fairness.
 - [ ] SMB named streams/EAs, broader names/directory enumeration, filesystem information and allocation semantics.
