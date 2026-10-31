@@ -142,7 +142,7 @@ Selected-profile acceptance: [M7 guide](docs/m7.md), [中文](docs/m7.zh-CN.md),
 
 The earlier ADR exclusions describe the existing implementation, not permission to exclude features from this expanded goal. Preserve the passing limited-profile evidence while adding independent evidence for the following gates. Optional protocol facilities must be explicitly negotiated/refused according to the standards; refusal alone is not feature implementation.
 
-- [ ] Complete SMB metadata conformance. Persistent DOS attributes, distinct timestamps, per-handle freeze/re-enable, EAs and native-object rename/restart retention now pass local tests; native preallocation with durable quota reservations and per-open mode updates now pass local tests. Full timestamp range, allocation CREATE contexts, short names and remaining upstream cases are open.
+- [ ] Complete SMB metadata conformance. Persistent DOS attributes, distinct timestamps, per-handle freeze/re-enable, EAs (pagination, change time, exact aggregate limit and status codes), native-object retention, preallocation with durable logical quota and per-open modes pass the targeted GCC/Clang ASan+UBSan/MSVC matrix at `e7388f2`. Full timestamp range, allocation CREATE contexts, short names and remaining upstream cases are open.
 - [ ] Windows security descriptors/ACL inheritance, access checks, owner/group/SACL privilege boundaries and cross-protocol authority.
 - [ ] SMB asynchronous blocking lock queues, cancellation, disconnect/close races and fairness.
 - [ ] SMB named streams/EAs, broader names/directory enumeration, filesystem information and allocation semantics.

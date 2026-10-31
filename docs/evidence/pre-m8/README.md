@@ -4,6 +4,14 @@
 
 The outstanding M5/M7 implementation and native-client gates are complete within the existing ADR 0008/0009/0010 contracts. This is the confined regular-file/directory profile documented in [M5](../../m5.md), [M7](../../m7.md), [SMB applicability](../../smb-torture-coverage.md) and [NFS operation coverage](../../nfs-operation-coverage.md); it does not claim complete Windows file-server or RFC 8881 compatibility.
 
+## Expanded compatibility progress
+
+At `e7388f2`, the [targeted GCC/Clang ASan+UBSan/MSVC matrix](https://github.com/TabNahida/tauCloud/actions/runs/41174934661) passes all three jobs: 38 native failure-safety checks, seven SMB metadata groups, three allocation/quota groups and 18 SMB3 regression groups. [Fixed-source reports](metadata-remote-e7388f2.json) retain all client results. Native preallocation, durable logical quota reservations, per-open modes, EA pagination/change times/limits/statuses and native close-time allocation reporting are now exercised on both hosts. NTFS trims the empty file's physical allocation on close; the explicit logical quota reservation persists until allocation SET/shrink or deletion, and the native QUERY_INFO value is independently checked.
+
+The [local Samba regression](allocation-expansion-local.json) at `63ae307` passes 60 selectors / 76 cases. The expanded `smb2.setinfo` diagnostic passes basic/disposition/allocation/EOF/position/mode checks and still fails at the unimplemented security descriptor. Full M5/M7 gates remain open, including ACLs, queued SMB locks, Kerberos/RPCSEC_GSS and the other TODO items.
+
+The [latest complete backend workflow](https://github.com/TabNahida/tauCloud/actions/runs/41174934668) remains in progress when recorded. The preceding `dedddc2` Windows full job failed on its first WebDAV PUT with `deadline_exceeded`; its native SMB/NFS/FileZilla steps passed, but the complete job is not a pass and its timeout cause is not established. Earlier metadata failures and fixes remain visible in [d5285ce evidence](metadata-remote-d5285ce.json) and [EA pagination evidence](ea-pagination-local.json).
+
 ## Fixed-source results
 
 - At `3e019a8`, [the recorded contract reports](verified-contract-3e019a8.json) show **60 Samba selectors / 76 cases passed**, **145 applicable upstream NFS cases passed / 121 visibly unselected**, Linux kernel NFSv3/v4.1 roundtrips, real NLM blocking/GRANTED callbacks and NSM-triggered kernel reclaim. GCC and Clang jobs passed in [run 41144873323](https://github.com/TabNahida/tauCloud/actions/runs/41144873323).
