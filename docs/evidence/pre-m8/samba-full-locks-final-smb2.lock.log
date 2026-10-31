@@ -1,0 +1,255 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793431008
+time: 2026-10-31 07:16:48.144859
+progress: 25
+test: valid-request
+time: 2026-10-31 07:16:48.145005
+Test request with 0 locks.
+Test >63-bit lock requests.
+Test basic lock stacking.
+Test flags field permutations.
+Test return error when 2 locks are requested
+time: 2026-10-31 07:16:48.384436
+success: valid-request
+test: rw-none
+time: 2026-10-31 07:16:48.384450
+time: 2026-10-31 07:16:48.443236
+skip: rw-none [
+source4/torture/smb2/lock.c:493: RW-NONE tests the behavior of a NONE-type lock, which is the same as a SHARED lock but is granted due to a bug in W2K8.  If target is not W2K8 we skip this test.
+]
+test: rw-shared
+time: 2026-10-31 07:16:48.443264
+time: 2026-10-31 07:16:48.621624
+success: rw-shared
+test: rw-exclusive
+time: 2026-10-31 07:16:48.621636
+time: 2026-10-31 07:16:48.837152
+success: rw-exclusive
+test: auto-unlock
+time: 2026-10-31 07:16:48.837250
+time: 2026-10-31 07:16:48.985618
+success: auto-unlock
+test: lock
+time: 2026-10-31 07:16:48.985636
+Trying 0/0 lock
+Trying 0/1 lock
+Trying 0xEEFFFFF lock
+Trying 0xEF00000 lock
+Trying (2^63 - 1)/1
+Trying 2^63/1
+Trying max/0 lock
+Trying max/1 lock
+Trying max/2 lock
+Trying wrong handle unlock
+time: 2026-10-31 07:16:49.565368
+success: lock
+test: async
+time: 2026-10-31 07:16:49.565391
+  Acquire first lock
+  Second lock should pend on first
+  Unlock first lock
+  Second lock should now succeed
+time: 2026-10-31 07:16:49.981252
+success: async
+test: cancel
+time: 2026-10-31 07:16:49.981271
+Testing basic cancel
+  Acquire first lock
+  Second lock should pend on first
+  Cancel the second lock
+  Unlock first lock
+Testing cancel by unlock
+  Acquire first lock
+  Second lock should pend on first
+  Attempt to unlock pending second lock
+  Now cancel the second lock
+  Unlock first lock
+Testing cancel by close
+  Acquire first lock
+  Second lock should pend on first
+  Close the second lock handle
+  Check pending lock reply
+  Unlock first lock
+time: 2026-10-31 07:16:50.336494
+success: cancel
+test: cancel-tdis
+time: 2026-10-31 07:16:50.336511
+Testing cancel by tree disconnect
+  Acquire first lock
+  Second lock should pend on first
+  Disconnect the tree
+  Check pending lock reply
+  Attempt to unlock first lock
+time: 2026-10-31 07:16:50.552670
+success: cancel-tdis
+test: cancel-logoff
+time: 2026-10-31 07:16:50.552681
+Testing cancel by ulogoff
+  Acquire first lock
+  Second lock should pend on first
+  Logoff user
+  Check pending lock reply
+  Attempt to unlock first lock
+time: 2026-10-31 07:16:50.723393
+success: cancel-logoff
+test: errorcode
+time: 2026-10-31 07:16:50.723401
+Testing LOCK_NOT_GRANTED vs. FILE_LOCK_CONFLICT
+time: 2026-10-31 07:16:51.144494
+success: errorcode
+test: zerobytelength
+time: 2026-10-31 07:16:51.144512
+Testing zero length byte range locks:
+  ... {10, 0} + {10, 0} = NT_STATUS_OK
+  ... {10, 0} + {9, 1} = NT_STATUS_OK
+  ... {10, 0} + {10, 1} = NT_STATUS_OK
+  ... {10, 0} + {11, 1} = NT_STATUS_OK
+  ... {10, 0} + {9, 2} = NT_STATUS_LOCK_NOT_GRANTED
+  ... {10, 0} + {10, 2} = NT_STATUS_OK
+  ... {10, 0} + {9, 3} = NT_STATUS_LOCK_NOT_GRANTED
+  ... {10, 0} + {10, 0} = NT_STATUS_OK
+  ... {9, 1} + {10, 0} = NT_STATUS_OK
+  ... {10, 1} + {10, 0} = NT_STATUS_OK
+  ... {11, 1} + {10, 0} = NT_STATUS_OK
+  ... {9, 2} + {10, 0} = NT_STATUS_LOCK_NOT_GRANTED
+  ... {10, 2} + {10, 0} = NT_STATUS_OK
+  ... {9, 3} + {10, 0} = NT_STATUS_LOCK_NOT_GRANTED
+  ... {0, 0} + {0, 0} = NT_STATUS_OK
+  ... {10, 0} + {10, 0} = NT_STATUS_OK
+  ... {10, 0} + {9, 1} = NT_STATUS_OK
+  ... {10, 0} + {10, 1} = NT_STATUS_OK
+  ... {10, 0} + {11, 1} = NT_STATUS_OK
+  ... {10, 0} + {9, 2} = NT_STATUS_LOCK_NOT_GRANTED
+  ... {10, 0} + {10, 2} = NT_STATUS_OK
+  ... {10, 0} + {9, 3} = NT_STATUS_LOCK_NOT_GRANTED
+  ... {10, 0} + {10, 0} = NT_STATUS_OK
+  ... {9, 1} + {10, 0} = NT_STATUS_OK
+  ... {10, 1} + {10, 0} = NT_STATUS_OK
+  ... {11, 1} + {10, 0} = NT_STATUS_OK
+  ... {9, 2} + {10, 0} = NT_STATUS_LOCK_NOT_GRANTED
+  ... {10, 2} + {10, 0} = NT_STATUS_OK
+  ... {9, 3} + {10, 0} = NT_STATUS_LOCK_NOT_GRANTED
+  ... {0, 0} + {0, 0} = NT_STATUS_OK
+time: 2026-10-31 07:16:51.980850
+success: zerobytelength
+test: zerobyteread
+time: 2026-10-31 07:16:51.980876
+Testing zero byte read on lock range:
+  taking exclusive lock.
+  reading 0 bytes.
+Testing zero byte read on zero byte lock range:
+  taking exclusive 0-byte lock.
+  reading 0 bytes before the lock.
+  reading 0 bytes on the lock.
+  reading 0 bytes after the lock.
+time: 2026-10-31 07:16:52.305191
+success: zerobyteread
+test: unlock
+time: 2026-10-31 07:16:52.305210
+Testing unlock exclusive with shared
+  taking exclusive lock.
+  try to unlock the exclusive with a shared unlock call.
+  try shared lock on h2, to test the unlock.
+  unlock the exclusive lock
+Testing unlock shared with exclusive
+  taking shared lock.
+  try to unlock the shared with an exclusive unlock call.
+  try exclusive lock on h2, to test the unlock.
+  unlock the exclusive lock
+Test unlocking stacked 0-byte locks
+Test unlocking stacked exclusive/shared locks
+time: 2026-10-31 07:16:52.777270
+success: unlock
+test: multiple-unlock
+time: 2026-10-31 07:16:52.777285
+Testing multiple unlocks:
+  unlock 2 locks, first one not locked. Expect no locks unlocked. 
+  unlock 2 locks, second one not locked. Expect first lock unlocked.
+  request 2 locks, second one will contend. Expect both to fail.
+  request unlock and lock, second one will error. Expect the unlock to succeed.
+  request unlock and lock.  Unlock will succeed, but lock will fail.
+  request lock and unlock.  Both will fail.
+time: 2026-10-31 07:16:53.252230
+success: multiple-unlock
+test: stacking
+time: 2026-10-31 07:16:53.252251
+Testing lock stacking:
+  stacking a shared on top of a sharedlock succeeds.
+  stacking a shared on top of an exclusive lock succeeds.
+  stacking a shared on top of an exclusive lock with different handles fails.
+  stacking an exclusive on top of a shared lock fails.
+  two exclusive locks do not stack.
+time: 2026-10-31 07:16:53.747574
+success: stacking
+test: contend
+time: 2026-10-31 07:16:53.747595
+Testing lock contention:
+  shared should contend on exclusive on different handle.
+time: 2026-10-31 07:16:54.070744
+success: contend
+test: context
+time: 2026-10-31 07:16:54.070762
+Testing locker context:
+  pid shouldn't affect locker context
+time: 2026-10-31 07:16:54.421116
+success: context
+test: range
+time: 2026-10-31 07:16:54.421144
+Testing locks spread across the 64-bit offset range
+  establishing 10 locks
+  testing 10 locks
+  removing 10 locks
+time: 2026-10-31 07:16:55.021402
+success: range
+test: overlap
+time: 2026-10-31 07:16:55.021423
+Testing overlapping locks:
+the same session/handle cannot set overlapping exclusive locks
+the same session/handle can set overlapping shared locks
+a different session cannot set overlapping exclusive locks
+a different session can set overlapping shared locks
+a different handle cannot set overlapping exclusive locks
+a different handle can set overlapping shared locks
+the same handle cannot coalesce read locks
+the server doesn't have the NT byte range lock bug
+time: 2026-10-31 07:16:55.459441
+success: overlap
+test: truncate
+time: 2026-10-31 07:16:55.459458
+Testing truncation of locked file:
+  overwrite disposition is allowed on a locked file.
+  supersede disposition is allowed on a locked file.
+time: 2026-10-31 07:16:55.840338
+success: truncate
+test: replay_broken_windows
+time: 2026-10-31 07:16:55.840360
+Testing Open File:
+Testing Lock Replay detection [ignored]:
+
+SMB3 Server implements LockSequence as SMB 2.1.0 LEGACY BROKEN Windows!!!
+
+Testing SMB 2.1.0 LockSequence for ResilientHandles
+Testing Set Resiliency:
+time: 2026-10-31 07:16:56.083493
+failure: replay_broken_windows [
+source4/torture/smb2/lock.c:2992: status was NT_STATUS_NOT_SUPPORTED, expected NT_STATUS_OK: (source4/torture/smb2/lock.c:2992)
+]
+test: replay_smb3_specification_durable
+time: 2026-10-31 07:16:56.083517
+replay_smb3_specification_durable: Testing Open File:
+time: 2026-10-31 07:16:56.320951
+failure: replay_smb3_specification_durable [
+source4/torture/smb2/lock.c:3205: io.out.oplock_level was 0 (0x0), expected 9 (0x9): (source4/torture/smb2/lock.c:3205)
+]
+test: replay_smb3_specification_multi
+time: 2026-10-31 07:16:56.320971
+time: 2026-10-31 07:16:56.369358
+skip: replay_smb3_specification_multi [
+source4/torture/smb2/lock.c:3398: MULTI_CHANNEL is 			required for Lock Replay tests on without durable handles
+]
+test: ctdb-delrec-deadlock
+time: 2026-10-31 07:16:56.369384
+time: 2026-10-31 07:16:56.434950
+skip: ctdb-delrec-deadlock [
+source4/torture/smb2/lock.c:3425: Test must be run on a ctdb cluster
+]

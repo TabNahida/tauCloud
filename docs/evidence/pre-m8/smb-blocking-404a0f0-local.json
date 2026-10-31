@@ -1,0 +1,897 @@
+{
+  "source_commit": "404a0f0913f25f6bebfc85a1021e0efbd4608c69",
+  "scope": "Asynchronous SMB blocking locks; not full SMB/NFS conformance",
+  "core": {
+    "status": "passed",
+    "checks": 113
+  },
+  "client": {
+    "status": "passed",
+    "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "recorded_at": "2026-10-31T07:14:09.682545+00:00",
+    "checks": [
+      "210: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+      "210: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+      "210: cross-connection FIFO for conflicts and queued writer fairness",
+      "210: CLOSE cancels waiting requests and releases held ranges to another connection",
+      "300: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+      "300: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+      "300: cross-connection FIFO for conflicts and queued writer fairness",
+      "300: CLOSE cancels waiting requests and releases held ranges to another connection",
+      "302: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+      "302: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+      "302: cross-connection FIFO for conflicts and queued writer fairness",
+      "302: CLOSE cancels waiting requests and releases held ranges to another connection",
+      "311: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+      "311: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+      "311: cross-connection FIFO for conflicts and queued writer fairness",
+      "311: CLOSE cancels waiting requests and releases held ranges to another connection",
+      "compound LOCK/ECHO and LOCK/CLOSE preserve interim/final ordering and connection progress",
+      "TREE_DISCONNECT cancels pending locks before removing the tree",
+      "session teardown cancels pending locks before discarding signing and encryption keys",
+      "peer disconnect removes a pending waiter before granting the next connection",
+      "holder disconnect releases locks and wakes the surviving client",
+      "32 concurrent CANCEL/unlock races produce one final result and no leaked lock or duplicate response",
+      "16 concurrent CLOSE/unlock races produce one final result and release every acquired range",
+      "bounded pending requests return INSUFFICIENT_RESOURCES and all cancelled capacity is reusable",
+      "credential revocation fails pending locks promptly and leaves no stale authority locks",
+      "pending lock survives 65 seconds without client traffic; normal idle expiry resumes after its final response"
+    ]
+  },
+  "samba_selection": {
+    "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "recorded_at": "2026-10-31T07:09:08.930627+00:00",
+    "tests": [
+      {
+        "selector": "smb2.read.eof",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.read.eof.log"
+      },
+      {
+        "selector": "smb2.read.position",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.read.position.log"
+      },
+      {
+        "selector": "smb2.read.dir",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.read.dir.log"
+      },
+      {
+        "selector": "smb2.lock.rw-shared",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.lock.rw-shared.log"
+      },
+      {
+        "selector": "smb2.lock.rw-exclusive",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.lock.rw-exclusive.log"
+      },
+      {
+        "selector": "smb2.lock.auto-unlock",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.lock.auto-unlock.log"
+      },
+      {
+        "selector": "smb2.lock.range",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.lock.range.log"
+      },
+      {
+        "selector": "smb2.compound.create-write-close",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.compound.create-write-close.log"
+      },
+      {
+        "selector": "smb2.sharemode",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 3,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.sharemode.log"
+      },
+      {
+        "selector": "smb2.create_no_streams",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.create_no_streams.log"
+      },
+      {
+        "selector": "smb2.dir.find",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.dir.find.log"
+      },
+      {
+        "selector": "smb2.dir.fixed",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.dir.fixed.log"
+      },
+      {
+        "selector": "smb2.credits",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 3,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.credits.log"
+      },
+      {
+        "selector": "smb2.lock.valid-request",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.lock.valid-request.log"
+      },
+      {
+        "selector": "smb2.lock.lock",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.lock.lock.log"
+      },
+      {
+        "selector": "smb2.lock.errorcode",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.lock.errorcode.log"
+      },
+      {
+        "selector": "smb2.lock.zerobytelength",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.lock.zerobytelength.log"
+      },
+      {
+        "selector": "smb2.lock.zerobyteread",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.lock.zerobyteread.log"
+      },
+      {
+        "selector": "smb2.lock.unlock",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.lock.unlock.log"
+      },
+      {
+        "selector": "smb2.lock.multiple-unlock",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.lock.multiple-unlock.log"
+      },
+      {
+        "selector": "smb2.lock.stacking",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.lock.stacking.log"
+      },
+      {
+        "selector": "smb2.lock.truncate",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.lock.truncate.log"
+      },
+      {
+        "selector": "smb2.create.brlocked",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.create.brlocked.log"
+      },
+      {
+        "selector": "smb2.read.access",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.read.access.log"
+      },
+      {
+        "selector": "smb2.getinfo.granted",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.getinfo.granted.log"
+      },
+      {
+        "selector": "smb2.compound.related1",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.compound.related1.log"
+      },
+      {
+        "selector": "smb2.compound.related2",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.compound.related2.log"
+      },
+      {
+        "selector": "smb2.compound.related5",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.compound.related5.log"
+      },
+      {
+        "selector": "smb2.compound.related6",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.compound.related6.log"
+      },
+      {
+        "selector": "smb2.compound.related8",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.compound.related8.log"
+      },
+      {
+        "selector": "smb2.compound.related9",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.compound.related9.log"
+      },
+      {
+        "selector": "smb2.compound.unrelated1",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.compound.unrelated1.log"
+      },
+      {
+        "selector": "smb2.compound.invalid1",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.compound.invalid1.log"
+      },
+      {
+        "selector": "smb2.compound.invalid3",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.compound.invalid3.log"
+      },
+      {
+        "selector": "smb2.compound.invalid4",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.compound.invalid4.log"
+      },
+      {
+        "selector": "smb2.create.leading-slash",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.create.leading-slash.log"
+      },
+      {
+        "selector": "smb2.create.impersonation",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.create.impersonation.log"
+      },
+      {
+        "selector": "smb2.rename",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 12,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.rename.log"
+      },
+      {
+        "selector": "smb2.compound.invalid2",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.compound.invalid2.log"
+      },
+      {
+        "selector": "smb2.session.two_logoff",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.session.two_logoff.log"
+      },
+      {
+        "selector": "smb2.session.ntlmssp_bug14932",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.session.ntlmssp_bug14932.log"
+      },
+      {
+        "selector": "smb2.connect",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.connect.log"
+      },
+      {
+        "selector": "smb2.session-require-signing",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.session-require-signing.log"
+      },
+      {
+        "selector": "smb2.lock.contend",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.lock.contend.log"
+      },
+      {
+        "selector": "smb2.lock.context",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.lock.context.log"
+      },
+      {
+        "selector": "smb2.lock.overlap",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.lock.overlap.log"
+      },
+      {
+        "selector": "smb2.create.multi",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.create.multi.log"
+      },
+      {
+        "selector": "smb2.create.mkdir-dup",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.create.mkdir-dup.log"
+      },
+      {
+        "selector": "smb2.compound_find.compound_find_related",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.compound_find.compound_find_related.log"
+      },
+      {
+        "selector": "smb2.compound_find.compound_find_unrelated",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.compound_find.compound_find_unrelated.log"
+      },
+      {
+        "selector": "smb2.charset.Testing naked diacritical (umlaut)",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.charset.Testing naked diacritical (umlaut).log"
+      },
+      {
+        "selector": "smb2.charset.Testing wide-a",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.charset.Testing wide-a.log"
+      },
+      {
+        "selector": "smb2.fileid.unique",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.fileid.unique.log"
+      },
+      {
+        "selector": "smb2.fileid.unique-dir",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.fileid.unique-dir.log"
+      },
+      {
+        "selector": "smb2.deny",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 2,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.deny.log"
+      },
+      {
+        "selector": "smb2.tcon",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.tcon.log"
+      },
+      {
+        "selector": "smb2.dir.file-index",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.dir.file-index.log"
+      },
+      {
+        "selector": "smb2.create.dir-alloc-size",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.create.dir-alloc-size.log"
+      },
+      {
+        "selector": "smb2.compound_async.flush_close",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.compound_async.flush_close.log"
+      },
+      {
+        "selector": "smb2.compound_async.flush_flush",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.compound_async.flush_flush.log"
+      },
+      {
+        "selector": "smb2.create.open",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.create.open.log"
+      },
+      {
+        "selector": "smb2.create.delete",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.create.delete.log"
+      },
+      {
+        "selector": "smb2.lock.async",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.lock.async.log"
+      },
+      {
+        "selector": "smb2.lock.cancel",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.lock.cancel.log"
+      },
+      {
+        "selector": "smb2.lock.cancel-tdis",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.lock.cancel-tdis.log"
+      },
+      {
+        "selector": "smb2.lock.cancel-logoff",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-blocking-regression-smb2.lock.cancel-logoff.log"
+      }
+    ],
+    "status": "passed"
+  },
+  "samba_source_note": "66-selector regression ran before the final idle-expiry-only follow-up; the 26 client groups including real idle expiry and the 113 core checks ran on final 404a0f0 source. Exact-commit Samba acceptance is also included in Actions.",
+  "full_lock_diagnostic": {
+    "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "recorded_at": "2026-10-31T07:16:39.204747+00:00",
+    "tests": [
+      {
+        "selector": "smb2.lock",
+        "returncode": 1,
+        "status": "failed",
+        "counts": {
+          "success": 20,
+          "failure": 2,
+          "error": 0,
+          "skip": 3
+        },
+        "log": "samba-full-locks-final-smb2.lock.log"
+      }
+    ],
+    "status": "failed",
+    "applicability": {
+      "replay_broken_windows": "Resilient-handle replay is not implemented; actual upstream failure retained.",
+      "replay_smb3_specification_durable": "Durable handle/BATCH oplock prerequisites are not implemented; actual upstream failure retained.",
+      "rw-none": "Upstream skips a Windows Server 2008 bug-specific behavior.",
+      "replay_smb3_specification_multi": "Upstream skips because MULTI_CHANNEL is not negotiated; feature remains unfinished.",
+      "ctdb-delrec-deadlock": "Upstream requires a CTDB cluster, absent from this standalone implementation."
+    }
+  },
+  "smb3_regression": {
+    "status": "passed",
+    "checks": [
+      "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+      "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+      "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+      "0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+      "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+      "0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+      "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+      "0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+      "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+      "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+      "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+      "leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent",
+      "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+      "unsupported signing/cipher/hash and malformed contexts fail without dialect fallback",
+      "independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+      "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+      "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+      "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+    ],
+    "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+    "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "authentication_provider": "pyspnego NTLM",
+    "large_mib": 1,
+    "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+    "port": 59969,
+    "sanitizers": false
+  }
+}
