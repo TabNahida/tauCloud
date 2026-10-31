@@ -6,13 +6,17 @@ on:
 permissions:
   contents: read
 jobs:
+  directory-handle:
+    runs-on: windows-2025
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: python tests/windows_directory_times.py
   native-nfs:
     runs-on: windows-2025
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
-      - name: Win32 directory handle diagnostic
-        run: python tests/windows_directory_times.py
       - uses: xmake-io/github-action-setup-xmake@v1
         with:
           xmake-version: '3.1.1'
