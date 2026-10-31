@@ -81,6 +81,12 @@ uint32_t status(std::string_view code) {
     return 0xc000007e;
   if (code == "delete_pending")
     return 0xc0000056;
+  if (code == "invalid_ea_name")
+    return 0xc0000050;
+  if (code == "ea_too_large")
+    return 0xc0000050;
+  if (code == "cannot_delete")
+    return 0xc0000121;
   if (code == "directory_not_empty")
     return 0xc0000101;
   if (code == "not_directory")
@@ -123,14 +129,65 @@ std::string path(std::string_view encoded) {
     portable_path(value);
   return value;
 }
+json ea_decode(std::string_view data) {
+  check(data.size() <= 65536, 0xc0000050);
+  json result = json::array();
+  size_t offset = 0;
+  while (offset < data.size()) {
+    check(result.size() < 256 && data.size() - offset >= 9, 0xc0000050);
+    auto next = get(data, offset, 4), flags = get(data, offset + 4, 1),
+         n = get(data, offset + 5, 1), size = get(data, offset + 6, 2);
+    size_t used = 9 + n + size;
+    check(n && used <= data.size() - offset && get(data, offset + 8 + n, 1) == 0 &&
+              (flags == 0 || flags == 128),
+          0xc0000050);
+    auto name = bytes(data.substr(offset + 8, n));
+    for (unsigned char c : name)
+      check(c >= 32 && c < 127 &&
+                std::string_view("\\/:*?\"<>|,+=[];").find(c) == std::string_view::npos,
+            0xc0000050);
+    result.push_back({{"name", name},
+                      {"flags", flags},
+                      {"value", encode_bytes(data.substr(offset + 9 + n, size))}});
+    if (!next)
+      break;
+    check(next >= used && next % 4 == 0 && next < data.size() - offset, 0xc0000050);
+    offset += next;
+  }
+  return result;
+}
+bytes ea_encode(const json &values, bool single) {
+  bytes out;
+  size_t previous = 0;
+  for (auto &[key, value] : values.items()) {
+    if (!out.empty()) {
+      out.resize((out.size() + 3) & ~size_t(3), '\0');
+      put(out, previous, out.size() - previous, 4);
+    }
+    previous = out.size();
+    auto name = value.at("name").get<std::string>(),
+         data = decode_bytes(value.at("value").get<std::string>());
+    auto record = sized(8, 0);
+    put(record, 4, value.at("flags").get<unsigned>(), 1);
+    put(record, 5, name.size(), 1);
+    put(record, 6, data.size(), 2);
+    out += record + name + bytes(1, '\0') + data;
+    if (single)
+      break;
+  }
+  return out;
+}
 uint64_t filetime(const json &meta) {
   auto n = meta.value("modified_ns", int64_t(0));
   return uint64_t(n / 100) + 116444736000000000ull;
 }
-uint32_t attributes(const json &meta) { return meta.at("directory").get<bool>() ? 0x10 : 0x20; }
+uint32_t attributes(const json &meta) {
+  return meta.value("attributes", meta.at("directory").get<bool>() ? 0x10u : 0x20u);
+}
 void times(bytes &b, size_t off, const json &meta) {
   for (size_t i = 0; i < 4; ++i)
-    put(b, off + 8 * i, filetime(meta), 8);
+    put(b, off + 8 * i,
+        meta.contains("times") ? meta.at("times").at(i).get<uint64_t>() : filetime(meta), 8);
 }
 bytes basic(const json &m) {
   bytes b(40, '\0');
@@ -143,7 +200,7 @@ bytes standard(const json &m) {
   auto size = m.at("size").get<uint64_t>();
   put(b, 0, (size + 4095) / 4096 * 4096, 8);
   put(b, 8, size, 8);
-  put(b, 16, 1, 4);
+  put(b, 16, m.value("delete_pending", false) ? 0 : 1, 4);
   b[20] = m.value("delete_pending", false);
   b[21] = m.at("directory").get<bool>();
   return b;
@@ -165,7 +222,10 @@ bytes file_info(unsigned klass, const json &m, const std::string &name, uint32_t
     return value;
   }
   if (klass == 7 || klass == 16 || klass == 17) {
-    return bytes(4, '\0');
+    bytes value(4, '\0');
+    if (klass == 7)
+      put(value, 0, m.value("ea_size", 0u), 4);
+    return value;
   }
   if (klass == 8) {
     b.assign(4, '\0');
@@ -183,9 +243,9 @@ bytes file_info(unsigned klass, const json &m, const std::string &name, uint32_t
     return b;
   }
   if (klass == 18) {
-    b = basic(m) + standard(m) + file_info(6, m, name, access) + bytes(4, '\0') +
-        file_info(8, m, name, access) + file_info(14, m, name, access) +
-        bytes(8, '\0') + file_info(9, m, name, access);
+    b = basic(m) + standard(m) + file_info(6, m, name, access) + file_info(7, m, name, access) +
+        file_info(8, m, name, access) + file_info(14, m, name, access) + bytes(8, '\0') +
+        file_info(9, m, name, access);
     return b;
   }
   if (klass == 34) {
@@ -269,6 +329,8 @@ bytes directory_entry(unsigned klass, const json &m) {
     put(b, 48, (size + 4095) / 4096 * 4096, 8);
     put(b, 56, attributes(m), 4);
     put(b, 60, name.size(), 4);
+    if (klass != 1)
+      put(b, 64, m.value("ea_size", 0u), 4);
     if (klass == 37 || klass == 38)
       b.replace(klass == 37 ? 96 : 72, 8,
                 decode_bytes(digest(m.at("object").get<std::string>()).substr(0, 16)));
@@ -551,6 +613,7 @@ struct client {
         co_return b;
       }
       bool query_disk_id = false;
+      std::optional<json> initial_eas;
       auto context_len = get(p, 116, 4);
       if (context_len) {
         auto contexts = slice(p, get(p, 112, 4), context_len, 120);
@@ -564,11 +627,15 @@ struct client {
           auto item = std::string_view(contexts).substr(pos, limit);
           auto tag = slice(item, get(item, 4, 2), get(item, 6, 2), 16);
           slice(item, get(item, 10, 2), get(item, 12, 4), 16);
+          if (tag == "ExtA") {
+            check(!initial_eas);
+            initial_eas = ea_decode(slice(item, get(item, 10, 2), get(item, 12, 4), 16));
+          }
           if (tag == "QFid") {
             check(!query_disk_id && get(item, 12, 4) == 0);
             query_disk_id = true;
           }
-          if (tag == "DHnC" || tag == "DH2C" || tag == "TWrp" || tag == "SecD" || tag == "ExtA") {
+          if (tag == "DHnC" || tag == "DH2C" || tag == "TWrp" || tag == "SecD") {
             log("smb", "unsupported_create_context", std::string(tag));
             throw status_error(0xc00000bb);
           }
@@ -588,27 +655,37 @@ struct client {
       if (access & 0x10000000)
         access |= 0x1f01ff;
       access &= 0x0fffffff;
+      auto explicit_access = access & ~0x02000000u;
       if (maximum)
         access = (access & ~0x02000000) | (trees.at(tid).writable ? 0x1f01ff : 0x1200a9);
       auto disposition = get(p, 100, 4), options = get(p, 104, 4);
       // MUST-ignore compatibility flags; NO_RECALL is a hint for HSM, which
       // this confined local-file profile does not implement.
-      if (options & ~uint64_t(0x1 | 0x2 | 0x4 | 0x8 | 0x10 | 0x20 | 0x40 | 0x800 | 0x1000 |
-                              0x400 | 0x2000 | 0x4000 | 0x10000 | 0x20000 | 0x200000 |
-                              0x400000 | 0x800000)) {
+      if (options &
+          ~uint64_t(0x1 | 0x2 | 0x4 | 0x8 | 0x10 | 0x20 | 0x40 | 0x800 | 0x1000 | 0x100 | 0x200 |
+                    0x400 | 0x2000 | 0x4000 | 0x10000 | 0x20000 | 0x200000 | 0x400000 | 0x800000)) {
         log("smb", "unsupported_create_options", std::to_string(options));
         throw status_error(0xc00000bb);
       }
-      if (get(p, 92, 4) & ~uint64_t(0x10 | 0x20 | 0x80)) {
+      if (get(p, 92, 4) & ~uint64_t(0x31b7)) {
         log("smb", "unsupported_create_attributes", std::to_string(get(p, 92, 4)));
         throw status_error(0xc00000bb);
       }
       bool writing = (access & (0xd0000 | 0x156)) || disposition != 1;
       auto grant = co_await authorize(tid, name, writing);
-      json request = {
-          {"grant", grant},           {"write", writing},           {"access", access},
-          {"sharing", get(p, 96, 4)}, {"disposition", disposition}, {"options", options}};
+      json request = {{"grant", grant},
+                      {"write", writing},
+                      {"access", access},
+                      {"sharing", get(p, 96, 4)},
+                      {"disposition", disposition},
+                      {"options", options},
+                      {"attributes", get(p, 92, 4)},
+                      {"maximum", maximum},
+                      {"explicit_access", explicit_access}};
+      if (initial_eas)
+        request["eas"] = *initial_eas;
       auto meta = co_await smb_rpc(s, grant.at("root").at("worker"), "smb_open", request);
+      access = meta.at("access");
       auto fid = decode_bytes(random_hex(16));
       files.emplace(
           fid,
@@ -856,7 +933,12 @@ struct client {
       if (type == 1 && klass == 48)
         check(selected.dialect != 0x202 && selected.dialect != 0x210 && selected.dialect != 0x302,
               0xc00000bb); // MS-SMB2 3.3.5.20.1 dialect restriction.
-      if (type == 1)
+      if (type == 1 && klass == 15) {
+        check((get(p, 84, 4) & ~1u) == 0, 0xc00000bb);
+        auto values = co_await operation(h, "eas", false);
+        check(!values.empty(), 0xc0000052);
+        data = ea_encode(values, false);
+      } else if (type == 1)
         data = file_info(static_cast<unsigned>(klass), meta, h.path, h.access);
       else if (type == 2) {
         if (klass == 5) {
@@ -917,7 +999,17 @@ struct client {
       auto klass = get(p, 67, 1);
       auto input = slice(p, get(p, 72, 2), get(p, 68, 4), 96);
       json request;
-      if (klass == 20 || klass == 19) {
+      if (klass == 4) {
+        check(input.size() >= 40, 0xc0000004);
+        json values = json::array();
+        for (size_t i = 0; i < 4; ++i)
+          values.push_back(get(input, i * 8, 8));
+        request = {{"attributes", get(input, 32, 4)}, {"times", values}};
+        co_await operation(h, "attributes", true, request);
+      } else if (klass == 15) {
+        request = {{"eas", ea_decode(input)}};
+        co_await operation(h, "set_eas", true, request);
+      } else if (klass == 20 || klass == 19) {
         check(input.size() == 8);
         request = {{"size", get(input, 0, 8)}};
         co_await operation(h, klass == 20 ? "resize" : "allocation", true, request);

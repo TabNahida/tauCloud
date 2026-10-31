@@ -67,7 +67,7 @@ void attr3(writer &w, const json &m) {
       .u64(hex64(m.at("fileid")));
   time3(w, m, "accessed_ns");
   time3(w, m);
-  time3(w, m);
+  time3(w, m, "changed_ns");
 }
 void post3(writer &w, const json &m) {
   w.boolean(!m.is_null());

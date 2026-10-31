@@ -35,7 +35,9 @@ void scrub(const fs::path &path, const std::string &name) {
   database db(path);
   {
     statement version(db, "PRAGMA user_version");
-    require(version.row() && version.integer(0) == (name == "identity.db" ? 4 : 3),
+    require(version.row() &&
+                (name == "identity.db" ? version.integer(0) == 4
+                                       : (version.integer(0) == 3 || version.integer(0) == 4)),
             "unsupported_backup_schema");
   }
   if (name == "identity.db") {

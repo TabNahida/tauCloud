@@ -8,7 +8,7 @@
 
 tauCloud 希望在 Windows 和 Linux 上统一提供文件共享、私人空间、系统监控与应用管理。它可以与已有应用和存储一起部署，后端能够脱离 WebPanel 独立运行。
 
-> **项目状态：M8 插件与 Docker 后端已实现，远程验收待完成。** [M8](docs/m8.zh-CN.md) 提供可信代码插件生命周期、显式权限审批和受限 Docker 操作；GCC 与 Clang sanitizer 本地测试通过，Windows 传输及真实引擎验收仍待完成。[M5/M7](docs/evidence/pre-m8/README.md) 已在既有受限配置内验收，排除项保持明确。安装器与 WebPanel 留待后续。
+> **项目状态：正在补齐完整 SMB/NFS 标准兼容。** 原有 [M5/M7 受限配置结果](docs/evidence/pre-m8/README.md) 仍有效，但不代表扩展后的完整兼容门槛完成。[M8](docs/m8.zh-CN.md) 已有插件/Docker 后端，正在执行获授权的远程验收；进一步开发须等待 [TODO](TODO.md) 中的 SMB/NFS 前置要求完成。安装器与 WebPanel 仍属后续阶段。
 
 ## 围绕你的存储构建
 
@@ -68,3 +68,5 @@ SMB 和 NFS 都是规模较大的协议工程，将按独立验证的阶段交�
 ## 许可证
 
 仓库包含 [GNU 通用公共许可证第 3 版](LICENSE)。M0 的依赖许可证与分发边界已记录在[基线决策](docs/decisions/0001-m0-baseline.zh-CN.md)中。
+
+用户已指定完整 SMB/NFS 标准兼容为继续开发 M8 的前置条件；原 ADR 受限配置通过不等于该门槛完成，详见 TODO。

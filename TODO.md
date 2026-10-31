@@ -102,10 +102,10 @@ Implementation and recorded scope: [M4 guide](docs/m4.md), [M4 evidence](docs/ev
 - [x] Evaluate and implement the minimal authenticated share-enumeration RPC surface required by clients.
 - [x] Pass the signed SMB 2.1 profile; add 2.0.2 only as explicit compatibility mode.
 - [x] Keep optional leases/oplocks/durable handles disabled until individually verified.
-- [x] Complete the Windows/Linux/macOS client and applicable Samba torture matrix for ADR 0008/0009. Native Windows encrypted SMB, macOS 15.7.9 signed SMB, Samba smbclient, independent wire clients and 60 torture selectors / 76 cases pass. Kernel CIFS without NTLM MIC remains explicitly incompatible; excluded feature groups are mapped in the applicability report.
+- [ ] Complete full SMB standards/client compatibility, including the additional feature gates below. The earlier ADR 0008/0009 matrix is passing: Native Windows encrypted SMB, macOS 15.7.9 signed SMB, Samba smbclient, independent wire clients and 60 torture selectors / 76 cases pass. Kernel CIFS without NTLM MIC remains explicitly incompatible; excluded feature groups are mapped in the applicability report.
 - [x] Document deployment conflicts, dialect limits and revocation/recovery behavior.
 
-Implementation scope and exclusions: [M5 guide](docs/m5.md), [ADR 0008](docs/decisions/0008-smb-profile.md), [evidence](docs/evidence/m5/README.md). Signed SMB 2.1 only; basic metadata is a conservative projection, persistent ACL/attribute writes are explicitly unsupported. The selected client gate is closed; this does not claim full Windows-server/Samba feature equivalence. See [applicability](docs/smb-torture-coverage.md) and [fixed-commit evidence](docs/evidence/pre-m8/README.md).
+Implementation scope and exclusions: [M5 guide](docs/m5.md), [ADR 0008](docs/decisions/0008-smb-profile.md), [evidence](docs/evidence/m5/README.md). Signed SMB 2.1 only; basic metadata is a conservative projection, persistent ACL/attribute writes are explicitly unsupported. The selected client evidence passes, but the full M5 compatibility gate is open; the user explicitly requires expanding beyond the earlier ADR exclusions before further M8 development. See [applicability](docs/smb-torture-coverage.md) and [fixed-commit evidence](docs/evidence/pre-m8/README.md).
 
 ## M6 — SMB3
 
@@ -128,7 +128,7 @@ Selected-profile evidence: [M6 guide](docs/m6.md), [ADR 0009](docs/decisions/000
 - [x] Implement authorized pseudo-root enumeration/traversal, multi-export sessions and per-reply authorization checks on replay (selected profile; full conformance remains open).
 - [x] Implement lock/open ownership, leases, recovery grace and reclaim persistence (bounded AUTH_SYS profile; cross-user, split-range and restart tests).
 - [x] Verify v4.1 FILE_SYNC, server reboot, retransmission, durable unlinked OPEN recovery and Linux kernel close-to-open cache revalidation, including equal-size external writes with restored mtime.
-- [x] Complete M7a conformance for the existing ADR 0010 profile before publishing that limited compatibility: 145 applicable upstream cases pass, 121 exclusions remain visible. Full RFC 8881 / RPCSEC_GSS conformance is not claimed.
+- [ ] Complete full M7a conformance, including authenticated security and the additional gates below. Earlier ADR 0010 profile evidence: 145 applicable upstream cases pass, 121 exclusions remain visible. Full RFC 8881 / RPCSEC_GSS conformance is not claimed.
 - [x] Add policy-filtered MOUNT discovery, bounded mount records and read-only rpcbind DUMP/GETVERSADDR.
 - [x] Retain unlinked/replaced OPEN objects with durable private links and recovery journals; charge quota through file-domain/all-service restart and release it after last CLOSE/lease expiry (Linux and Windows recovery assertions and corrected test cleanup pass).
 - [x] Implement v3 operations, MOUNT/rpcbind and the selected NLMv4/NSMv1 recovery profile; real Linux blocking locks, GRANTED callback and post-reboot kernel reclaim pass.
@@ -136,7 +136,22 @@ Selected-profile evidence: [M6 guide](docs/m6.md), [ADR 0009](docs/decisions/000
 - [x] Complete M7b Linux/macOS/eligible Windows client tests; publish restrictions. Linux kernel v3/v4.1, macOS 15.7.9 v3 and Windows Server 2025 Client for NFS v3 TCP roundtrips pass. macOS/Windows use nolock; Linux separately proves NLM/NSM recovery.
 - [x] Design RPCSEC_GSS/Kerberos as a later authenticated profile; do not conflate it with AUTH_SYS (ADR 0010).
 
-Selected-profile acceptance: [M7 guide](docs/m7.md), [中文](docs/m7.zh-CN.md), [ADR 0010](docs/decisions/0010-nfs-preview.md), [operation coverage](docs/nfs-operation-coverage.md), [fixed-commit evidence](docs/evidence/pre-m8/README.md). Share-deny, locks/reclaim, OPEN upgrades, native timestamps, durable unlink/replacement retention, alias metadata and persistent change counters are implemented and tested. Windows directory metadata handles and Linux zero-state NLM reclaim are corrected. This closes M7 within the existing confined regular-file/directory, loopback AUTH_SYS contract; full RFC compatibility, special files/links, Kerberos, power-loss durability and unrestricted load are separate future profiles.
+Selected-profile acceptance: [M7 guide](docs/m7.md), [中文](docs/m7.zh-CN.md), [ADR 0010](docs/decisions/0010-nfs-preview.md), [operation coverage](docs/nfs-operation-coverage.md), [fixed-commit evidence](docs/evidence/pre-m8/README.md). Share-deny, locks/reclaim, OPEN upgrades, native timestamps, durable unlink/replacement retention, alias metadata and persistent change counters are implemented and tested. Windows directory metadata handles and Linux zero-state NLM reclaim are corrected. This validates the earlier confined regular-file/directory AUTH_SYS contract only. The full M7 gate remains open and is a prerequisite to further M8 development.
+
+## Full SMB/NFS compatibility prerequisite (user decision, 2026-10-31)
+
+The earlier ADR exclusions describe the existing implementation, not permission to exclude features from this expanded goal. Preserve the passing limited-profile evidence while adding independent evidence for the following gates. Optional protocol facilities must be explicitly negotiated/refused according to the standards; refusal alone is not feature implementation.
+
+- [ ] Complete SMB metadata conformance. Persistent DOS attributes, distinct timestamps, per-handle freeze/re-enable, EAs and native-object rename/restart retention now pass local tests; full timestamp range, allocation, short names and remaining upstream cases are open.
+- [ ] Windows security descriptors/ACL inheritance, access checks, owner/group/SACL privilege boundaries and cross-protocol authority.
+- [ ] SMB asynchronous blocking lock queues, cancellation, disconnect/close races and fairness.
+- [ ] SMB named streams/EAs, broader names/directory enumeration, filesystem information and allocation semantics.
+- [ ] SMB session reauthentication/reconnect, Kerberos, advertised signing/encryption algorithms and Linux kernel-client compatibility.
+- [ ] Negotiate and validate leases/oplocks, notifications, durable/replay and multichannel behavior where implemented; retain explicit unsupported status elsewhere.
+- [ ] NFS RPCSEC_GSS/Kerberos authentication, integrity/privacy, replay windows, principal mapping and key/context lifecycle.
+- [ ] NFS link/symlink/special-file semantics with confinement, stable identity and quota safety across protocols.
+- [ ] NFS backchannel/delegation/session/trunking/recovery and complete mandatory security/operation behavior against RFC 8881 and NFSv3 specifications.
+- [ ] Run the expanded unmodified Samba/pynfs suites and native Linux/Windows/macOS matrix; retain every failure/exclusion with an explicit standards-based applicability reason.
 
 ## M8 — Plugins and Docker
 
@@ -145,14 +160,14 @@ Selected-profile acceptance: [M7 guide](docs/m7.md), [中文](docs/m7.zh-CN.md),
 - [x] Implement package validation, install/enable/disable/upgrade/rollback/uninstall with data preservation.
 - [x] Require explicit approval for increased plugin permissions in the management API flow.
 - [x] Enforce trusted-code-only mode with explicit administrator acceptance; OS confinement is not verified and untrusted native plugins are not accepted.
-- [x] Implement Docker API negotiation and approved Unix-socket/named-pipe/mutual-TLS transports. Unix and TLS are locally verified; Windows transport execution remains in the remote gate below.
+- [x] Implement Docker API negotiation and approved Unix-socket/named-pipe/mutual-TLS transports. Unix, Windows named pipe and mutual TLS fixtures pass the GCC/Clang/MSVC Actions matrix.
 - [x] Implement container/image/volume/network inventory, bounded stats/logs and authorized start/stop/restart/remove actions. Arbitrary create/exec/build/pull and daemon proxying are not exposed.
 - [x] Enforce engine OS/capability distinctions and return engine-side paths without Windows/VM/WSL host path translation.
 - [x] Prevent general daemon proxying and withhold daemon configuration/permissions from unrelated plugins at the IPC boundary. Trusted same-account native code is not an OS security boundary against direct socket access.
 - [x] Test missing/disconnected/malformed engines, unauthorized actions, permission changes, plugin crash loops and manager crash recovery with GCC and Clang ASan/UBSan.
-- [ ] Run the prepared MSVC/Windows named-pipe matrix and real Linux Docker Engine Actions job; record native Windows/VM/WSL deployment restrictions from actual evidence. M8 public-push approval is pending; local mocks do not establish this compatibility.
+- [x] Run the MSVC/Windows named-pipe matrix and real Linux Docker Engine Actions job: all three jobs pass at `8784ce8`. Native Windows-container/VM/WSL deployment compatibility remains unverified and is not inferred from protocol fixtures.
 
-Implementation and limits: [M8 API/SDK](docs/m8.md), [中文](docs/m8.zh-CN.md), [local validation](docs/evidence/m8/README.md). The implementation and Linux fault/transport tests pass locally; remote platform/real-engine acceptance remains open.
+Implementation and limits: [M8 API/SDK](docs/m8.md), [中文](docs/m8.zh-CN.md), [local validation](docs/evidence/m8/README.md). The existing implementation and Linux fault/transport tests pass locally; the prepared GCC/Clang/MSVC and real Linux engine matrix passes. Further M8 development is deferred until the expanded SMB/NFS prerequisite above passes.
 
 ## M8b — Disk and RAID administration
 

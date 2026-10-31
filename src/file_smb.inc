@@ -58,10 +58,138 @@ void smb_reap(space_state &s) {
     tx.commit();
   }
 }
+json smb_eas(const json &info) {
+  statement q(db, "SELECT body FROM smb_eas WHERE native=?");
+  q.bind(1, info.at("object"));
+  return q.row() ? json::parse(q.text(0)) : json::object();
+}
+void smb_update_eas(const json &info, const json &input) {
+  require(input.is_array() && input.size() <= 256, "invalid_request");
+  auto values = smb_eas(info);
+  for (auto ea : input) {
+    auto name = ea.at("name").get<std::string>(), key = name;
+    require(!name.empty() && name.size() <= 255, "invalid_ea_name");
+    for (auto &c : key) {
+      require(uint8_t(c) >= 32 && uint8_t(c) < 127 &&
+                  std::string_view("\\/:*?\"<>|,+=[];").find(c) == std::string_view::npos,
+              "invalid_ea_name");
+      if (c >= 'a' && c <= 'z')
+        c -= 'a' - 'A';
+    }
+    require(ea.at("flags") == 0 || ea.at("flags") == 128, "invalid_request");
+    auto bytes = decode_bytes(ea.at("value").get<std::string>());
+    require(bytes.size() <= 65535, "invalid_request");
+    if (bytes.empty())
+      values.erase(key);
+    else {
+      ea["name"] = key;
+      values[key] = ea;
+    }
+  }
+  size_t total = 0;
+  for (auto &[key, ea] : values.items())
+    total += (9 + key.size() + ea.at("value").get<std::string>().size() / 2 + 3) & ~size_t(3);
+  require(values.size() <= 256 && total <= 65536, "ea_too_large");
+  statement q(
+      db, "INSERT INTO smb_eas VALUES(?,?) ON CONFLICT(native) DO UPDATE SET body=excluded.body");
+  q.bind(1, info.at("object"));
+  q.bind(2, values.dump());
+  q.row();
+}
+uint32_t smb_ea_size(const json &info) {
+  uint32_t size = 0;
+  auto values = smb_eas(info);
+  for (auto &[name, ea] : values.items())
+    size += uint32_t(5 + name.size() + ea.at("value").get<std::string>().size() / 2);
+  return size;
+}
+// Persist portable DOS metadata by native incarnation, never by a reusable name.
+uint32_t smb_attributes(const json &info) {
+  statement q(db, "SELECT attributes FROM smb_attributes WHERE native=?");
+  q.bind(1, info.at("object"));
+  return q.row() ? static_cast<uint32_t>(q.integer(0))
+                 : (info.at("directory").get<bool>() ? 0x10u : 0x20u);
+}
+uint32_t smb_attribute_value(uint32_t value, bool directory) {
+  // Sparse/compressed/reparse/encrypted flags require their own filesystem ops.
+  require(!(value & ~0x31b7u), "not_supported");
+  require(!directory || !(value & 0x100), "invalid_request");
+  value &= ~(0x10u | 0x80u);
+  if (directory)
+    value |= 0x10;
+  return value ? value : 0x80u;
+}
+void smb_save_attributes(const json &info, uint32_t attributes) {
+  statement q(db, "INSERT INTO smb_attributes VALUES(?,?) ON CONFLICT(native) DO UPDATE SET "
+                  "attributes=excluded.attributes");
+  q.bind(1, info.at("object"));
+  q.bind(2, int64_t(attributes));
+  q.row();
+}
+static uint64_t smb_ticks(const json &info, const char *field) {
+  return uint64_t(info.at(field).get<int64_t>() / 100 + int64_t(116444736000000000));
+}
+json smb_times(const json &info) {
+  json result = json::array({smb_ticks(info, "created_ns"), smb_ticks(info, "accessed_ns"),
+                             smb_ticks(info, "modified_ns"), smb_ticks(info, "changed_ns")});
+  statement q(db, "SELECT body FROM smb_times WHERE native=?");
+  q.bind(1, info.at("object"));
+  if (q.row()) {
+    auto stored = json::parse(q.text(0));
+    result[0] = stored.at("times").at(0);
+    size_t i = 1;
+    for (auto field : {"accessed_ns", "modified_ns", "changed_ns"}) {
+      if (stored.at(field) == info.at(field))
+        result[i] = stored.at("times").at(i);
+      ++i;
+    }
+  }
+  return result;
+}
+void smb_save_times(const json &info, const json &times) {
+  json value = {{"times", times},
+                {"accessed_ns", info.at("accessed_ns")},
+                {"modified_ns", info.at("modified_ns")},
+                {"changed_ns", info.at("changed_ns")}};
+  statement q(
+      db, "INSERT INTO smb_times VALUES(?,?) ON CONFLICT(native) DO UPDATE SET body=excluded.body");
+  q.bind(1, info.at("object"));
+  q.bind(2, value.dump());
+  q.row();
+}
+static uint64_t smb_nanoseconds(uint64_t ticks) {
+  constexpr uint64_t epoch = 116444736000000000;
+  require(ticks >= epoch && ticks - epoch <= uint64_t(INT64_MAX) / 100, "invalid_timestamp");
+  return (ticks - epoch) * 100;
+}
+void smb_preserve_times(native_file &file, const opened &h, const json &before) {
+  if (!h.user_access_time && !h.user_write_time && !h.user_change_time)
+    return;
+  const auto &times = before.at("times");
+  auto info = file.info(true);
+  auto accessed = h.user_access_time && smb_ticks(info, "accessed_ns") != times[1]
+                      ? std::optional(smb_nanoseconds(times[1]))
+                      : std::nullopt;
+  auto modified = h.user_write_time && smb_ticks(info, "modified_ns") != times[2]
+                      ? std::optional(smb_nanoseconds(times[2]))
+                      : std::nullopt;
+  if (accessed || modified) {
+    file.set_times(accessed, modified);
+    info = file.info(true);
+  }
+  auto after = smb_times(info);
+  if (h.user_access_time)
+    after[1] = times[1];
+  if (h.user_write_time)
+    after[2] = times[2];
+  if (h.user_change_time)
+    after[3] = times[3];
+  smb_save_times(info, after);
+}
 json smb_meta(space_state &s, const opened &h) {
-  auto info = h.directory
-                  ? (h.path.empty() ? s.directory.info() : s.directory.open(h.path, true).info())
-                  : h.file.info();
+  auto info = h.directory ? (h.path.empty() ? s.directory.info(true)
+                                            : s.directory.open(h.path, true).info(true))
+                          : h.file.info(true);
   if (!h.path.empty())
     require(info.at("object") == object(h.space, h.path).at("native"), "object_replaced");
   statement q(db, "SELECT 1 FROM smb_pending WHERE space=? AND path=?");
@@ -73,7 +201,10 @@ json smb_meta(space_state &s, const opened &h) {
           {"modified_ns", info.at("modified_ns")},
           {"object", info.at("object")},
           {"delete_pending", q.row()},
-          {"access", h.access}};
+          {"access", h.access},
+          {"attributes", smb_attributes(info)},
+          {"times", smb_times(info)},
+          {"ea_size", smb_ea_size(info)}};
 }
 json smb_dispatch(const std::string &op, const json &body, const call_context &ctx) {
   require(ctx.caller == "smb", "forbidden");
@@ -91,9 +222,9 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     return {{"recovered", true}};
   }
   bool cleanup = op == "smb_close";
-  bool writing =
-      op == "smb_write" || op == "smb_resize" || op == "smb_allocation" ||
-      op == "smb_rename" || op == "smb_disposition";
+  bool writing = op == "smb_write" || op == "smb_resize" || op == "smb_allocation" ||
+                 op == "smb_rename" || op == "smb_disposition" || op == "smb_attributes" ||
+                 op == "smb_set_eas";
   if (op == "smb_open")
     writing = body.value("write", false);
   auto grant = verify(body.at("grant"), writing, cleanup);
@@ -118,12 +249,13 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     unsigned sharing = body.at("sharing"), disposition = body.at("disposition"),
              options = body.at("options");
     require(sharing <= 7 && disposition <= 5, "invalid_request");
+    require(!(options & 0x200) || !body.contains("eas"), "forbidden");
     // Standard file rights are valid even when an optional SET_INFO operation
     // is unavailable. Granting them never bypasses the space's write policy.
     require((access & ~0x001f01ffu) == 0, "not_supported");
     require(!(access & (0xd0000u | 0x156u)) || grant.at("write").get<bool>(), "forbidden");
-    smb_sharing(space, path, access, sharing);
     auto existing = dav_exists(s, path);
+    require(!existing || disposition != 2, "already_exists");
     bool directory = existing ? existing->at("directory").get<bool>() : bool(options & 1);
     require(!(options & 1) || directory, "not_directory");
     require(!(options & 0x40) || !directory, "is_directory");
@@ -131,6 +263,27 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
                 disposition == 5,
             "not_found");
     require(!existing || disposition != 2, "already_exists");
+    uint32_t requested_attributes = body.value("attributes", uint32_t(0));
+    auto normalized_attributes = smb_attribute_value(requested_attributes, directory);
+    if (existing) {
+      auto existing_file = path.empty() ? native_file() : s.directory.open(path, directory);
+      auto info = path.empty() ? s.directory.info() : existing_file.info();
+      auto attributes = smb_attributes(info);
+      if (options & 0x200) {
+        auto values = smb_eas(info);
+        for (auto &[name, ea] : values.items())
+          require(ea.at("flags") == 0, "forbidden");
+      }
+      if (!directory && (attributes & 1)) {
+        if (body.value("maximum", false)) {
+          require(!(body.value("explicit_access", uint32_t(0)) & 6), "forbidden");
+          access &= ~6u;
+        }
+        require(!(access & 6), "forbidden");
+        require(!(options & 0x1000), "cannot_delete");
+      }
+    }
+    smb_sharing(space, path, access, sharing);
     bool truncate = existing && (disposition == 0 || disposition == 4 || disposition == 5);
     require(!truncate || (!directory && (access & 2)), "forbidden");
     require(disposition != 0 || (access & 0x10000), "forbidden");
@@ -156,6 +309,15 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
       file.truncate(0);
       file.flush();
       index(space, path, file.info());
+    }
+    if (!existing || truncate) {
+      auto info = file.info();
+      auto attributes = normalized_attributes;
+      if (!directory)
+        attributes = (attributes & ~0x80u) | 0x20u;
+      smb_save_attributes(info, attributes);
+      if (!existing && body.contains("eas"))
+        smb_update_eas(info, body.at("eas"));
     }
     if (directory)
       file = native_file();
@@ -215,16 +377,87 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
         continue;
       portable_path(name);
       auto child = path.empty() ? name : path + "/" + name;
-      auto info = s.directory.open(child, value.at("directory")).info();
+      auto info = s.directory.open(child, value.at("directory")).info(true);
       index(space, child, info);
       auto item = dav_meta(s, child);
       item["name"] = name;
       item["object"] = info.at("object");
+      item["attributes"] = smb_attributes(info);
+      item["times"] = smb_times(info);
+      item["ea_size"] = smb_ea_size(info);
       total += item.dump().size();
       require(entries.size() < 1024 && total <= 256 * 1024, "directory_limit");
       entries.push_back(item);
     }
     return entries;
+  }
+  if (op == "smb_eas" || op == "smb_set_eas") {
+    require(h.access & (op == "smb_eas" ? 8 : 16), "forbidden");
+    if (op == "smb_set_eas") {
+      dav_guard(s, path, actor, body);
+      lease(grant, ctx);
+      smb_update_eas(meta, body.at("eas"));
+    }
+    return smb_eas(meta);
+  }
+  if (op == "smb_attributes") {
+    require(h.access & 0x100, "forbidden");
+    uint32_t requested = body.at("attributes");
+    require(h.directory || !(requested & 0x10), "invalid_request");
+    require(!h.directory || !(requested & 0x100), "invalid_request");
+    auto value = requested ? smb_attribute_value(requested & 0x31b7u, h.directory)
+                           : meta.at("attributes").get<uint32_t>();
+    if (path.empty())
+      value = (value & ~6u) | (meta.at("attributes").get<uint32_t>() & 6u);
+    auto input = body.value("times", json::array({0, 0, 0, 0}));
+    require(input.is_array() && input.size() == 4, "invalid_request");
+    auto times = meta.at("times");
+    bool user_access = h.user_access_time, user_write = h.user_write_time,
+         user_change = h.user_change_time;
+    bool changed = value != meta.at("attributes");
+    std::optional<uint64_t> access_time, write_time;
+    for (size_t i = 0; i < 4; ++i) {
+      require(input[i].is_number_unsigned() ||
+                  (input[i].is_number_integer() && input[i].get<int64_t>() >= 0),
+              "invalid_timestamp");
+      auto t = input[i].get<uint64_t>();
+      require(t <= uint64_t(INT64_MAX) || t >= UINT64_MAX - 1, "invalid_timestamp");
+      if (!t)
+        continue;
+      if (i == 1)
+        user_access = t != UINT64_MAX - 1;
+      if (i == 2)
+        user_write = t != UINT64_MAX - 1;
+      if (i == 3)
+        user_change = t != UINT64_MAX - 1;
+      if (t >= UINT64_MAX - 1)
+        continue;
+      changed = changed || times[i] != t;
+      times[i] = t;
+      if (i == 1)
+        access_time = smb_nanoseconds(t);
+      if (i == 2)
+        write_time = smb_nanoseconds(t);
+    }
+    if (changed && !user_change)
+      times[3] = uint64_t(now()) * 10000 + 116444736000000000ull;
+    dav_guard(s, path, actor, body);
+    lease(grant, ctx);
+    auto directory =
+        h.directory ? (path.empty() ? native_file() : s.directory.open(path, true)) : native_file();
+    auto &file = h.directory ? (path.empty() ? s.directory : directory) : h.file;
+    if (access_time || write_time)
+      file.set_times(access_time, write_time);
+    auto info = file.info(true);
+    transaction tx(db);
+    smb_save_attributes(info, value);
+    smb_save_times(info, times);
+    audit(actor, "smb_basic_information", path);
+    tx.commit();
+    h.user_access_time = user_access;
+    h.user_write_time = user_write;
+    h.user_change_time = user_change;
+    return smb_meta(s, h);
   }
   if (op == "smb_flush") {
     if (!h.directory)
@@ -282,6 +515,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
   if (op == "smb_disposition") {
     require(!path.empty() && (h.access & 0x10000), "forbidden");
     if (body.at("delete").get<bool>()) {
+      require(h.directory || !(meta.at("attributes").get<uint32_t>() & 1), "cannot_delete");
       for (auto &[other, x] : handles)
         if (other != id && x.space == space && x.path == path)
           require(x.protocol == "smb" && (x.sharing & 4), "sharing_violation");
@@ -351,6 +585,10 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     for (auto &[other, x] : handles)
       if (x.space == space && beneath(x.path, path))
         x.path = to + x.path.substr(path.size());
+    // A same-volume Windows rename preserves the file's basic timestamps;
+    // Linux ctime still changes, so anchor the SMB values to the new native stamp.
+    auto moved = h.directory ? s.directory.open(to, true) : native_file();
+    smb_save_times(h.directory ? moved.info(true) : h.file.info(true), meta.at("times"));
     scan(s, ctx);
     return {{"from", path}, {"path", to}, {"space", space}};
   }
@@ -364,6 +602,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
                   (!l.through_max && offset >= l.end) || offset + count <= l.start,
               "locked");
     auto data = h.file.read(offset, static_cast<size_t>(count));
+    smb_preserve_times(h.file, h, meta);
     return {{"data", encode_bytes(data)}, {"read", data.size()}};
   }
   if (op == "smb_resize" || op == "smb_allocation") {
@@ -381,6 +620,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     lease(grant, ctx);
     try {
       h.file.truncate(size);
+      smb_preserve_times(h.file, h, meta);
       h.file.flush();
     } catch (...) {
       index(space, path, h.file.info());
@@ -409,6 +649,8 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     pending(request, hash);
     try {
       auto written = h.file.write(offset, data);
+      smb_preserve_times(h.file, h, meta);
+      smb_save_attributes(meta, (meta.at("attributes").get<uint32_t>() & ~0x80u) | 0x20u);
       if (body.value("flush", false))
         h.file.flush();
       transaction tx(db);

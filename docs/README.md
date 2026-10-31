@@ -53,3 +53,5 @@ Specifications and upstream documentation are linked where they inform the desig
 - [M7 NFS experimental profile / NFS 实验配置](m7.md) — selected M7a/M7b profile and native-client acceptance complete; exclusions remain explicit.
 
 - [M8 plugins and Docker](m8.md) — trusted-code lifecycle and approved endpoints; remote acceptance pending.
+
+Full SMB/NFS compatibility is the prerequisite for further M8 development. Earlier ADR-profile acceptance does not close that expanded gate; see [TODO](../TODO.md).

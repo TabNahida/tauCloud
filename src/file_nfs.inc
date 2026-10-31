@@ -12,6 +12,7 @@ void nfs_init() {
       "CREATE INDEX IF NOT EXISTS native ON objects(export,token,dead);"
       "CREATE TABLE IF NOT EXISTS attributes(id TEXT PRIMARY KEY,mode INTEGER NOT NULL);"
       "CREATE TABLE IF NOT EXISTS ownership(id TEXT PRIMARY KEY,uid INTEGER,gid INTEGER);"
+      "CREATE TABLE IF NOT EXISTS metadata_times(token TEXT PRIMARY KEY,changed_ns INTEGER NOT NULL);"
       "CREATE TABLE IF NOT EXISTS exclusive_create(id TEXT PRIMARY KEY,verifier TEXT NOT NULL);"
       "CREATE TABLE IF NOT EXISTS change_clock(id INTEGER PRIMARY KEY,value INTEGER NOT NULL);"
       "INSERT OR IGNORE INTO change_clock VALUES(1,0);"
@@ -146,6 +147,11 @@ json nfs_meta(space_state &s, const json &g, const std::string &path, native_fil
     if (q.row())
       id = q.text(0);
   }
+  {
+    statement time(*nfs_db, "SELECT changed_ns FROM metadata_times WHERE token=?");
+    time.bind(1, token);
+    if (time.row()) info["changed_ns"] = std::max(info.at("changed_ns").get<int64_t>(), time.integer(0));
+  }
   auto stamp = info;
   stamp.erase("accessed_ns"); // Reading a file must not invalidate its data cache.
   if (id.empty()) {
@@ -234,6 +240,11 @@ void nfs_apply_attrs(space_state &s, const json &g, const std::string &path, nat
     statement q(*nfs_db, "INSERT OR REPLACE INTO ownership VALUES(?,?,?)");
     q.bind(1, id); q.bind(2, int64_t(attrs.value("uid", meta.at("uid").get<uint64_t>())));
     q.bind(3, int64_t(attrs.value("gid", meta.at("gid").get<uint64_t>()))); q.row();
+  }
+  if (attrs.contains("mode") || attrs.contains("uid") || attrs.contains("gid") ||
+      attrs.contains("atime_ns") || attrs.contains("mtime_ns")) {
+    statement q(*nfs_db, "INSERT INTO metadata_times VALUES(?,?) ON CONFLICT(token) DO UPDATE SET changed_ns=MAX(changed_ns,excluded.changed_ns)");
+    q.bind(1, id);q.bind(2, now() * int64_t(1000000));q.row();
   }
 }
 struct nfs_object {

@@ -1,0 +1,120 @@
+{
+  "commit": "8784ce80ef4f14da353117054e057bdc84b497d4",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41171103965",
+  "status": "passed",
+  "jobs": {
+    "gcc": {
+      "status": "passed",
+      "checks": [
+        "admin-only API, explicit hash/permission/trusted-code approval, private IPC keys, install/enable/upgrade/approved rollback and restart preserve data; manager crash adopts the same verified running or still-starting worker",
+        "invalid paths, changed hashes and platform-supported symlink escapes reject before activation",
+        "worker crash backoff/quarantine leaves management available; explicit recovery and uninstall preserve configuration/data",
+        "typed Docker API negotiation, four inventories, one-shot stats, bounded multiplexed logs and authorized lifecycle; increased grants require approval, arbitrary routes/create/paths reject",
+        "missing/disconnected/forbidden/malformed/oversized engines, chunked responses, API range and OS mismatch; engine-level permissions apply independently of plugin grants",
+        "mutually authenticated TLS, hostname verification, bounded cancellation deadline and endpoint revocation; Unix socket or Windows named pipe exercised on host"
+      ]
+    },
+    "clang": {
+      "status": "passed",
+      "checks": [
+        "admin-only API, explicit hash/permission/trusted-code approval, private IPC keys, install/enable/upgrade/approved rollback and restart preserve data; manager crash adopts the same verified running or still-starting worker",
+        "invalid paths, changed hashes and platform-supported symlink escapes reject before activation",
+        "worker crash backoff/quarantine leaves management available; explicit recovery and uninstall preserve configuration/data",
+        "typed Docker API negotiation, four inventories, one-shot stats, bounded multiplexed logs and authorized lifecycle; increased grants require approval, arbitrary routes/create/paths reject",
+        "missing/disconnected/forbidden/malformed/oversized engines, chunked responses, API range and OS mismatch; engine-level permissions apply independently of plugin grants",
+        "mutually authenticated TLS, hostname verification, bounded cancellation deadline and endpoint revocation; Unix socket or Windows named pipe exercised on host"
+      ]
+    },
+    "msvc": {
+      "status": "passed",
+      "checks": [
+        "admin-only API, explicit hash/permission/trusted-code approval, private IPC keys, install/enable/upgrade/approved rollback and restart preserve data; manager crash adopts the same verified running or still-starting worker",
+        "invalid paths, changed hashes and platform-supported symlink escapes reject before activation",
+        "worker crash backoff/quarantine leaves management available; explicit recovery and uninstall preserve configuration/data",
+        "typed Docker API negotiation, four inventories, one-shot stats, bounded multiplexed logs and authorized lifecycle; increased grants require approval, arbitrary routes/create/paths reject",
+        "missing/disconnected/forbidden/malformed/oversized engines, chunked responses, API range and OS mismatch; engine-level permissions apply independently of plugin grants",
+        "mutually authenticated TLS, hostname verification, bounded cancellation deadline and endpoint revocation; Unix socket or Windows named pipe exercised on host"
+      ]
+    }
+  },
+  "docker_native": {
+    "status": "passed",
+    "checks": [
+      "real engine version/platform negotiation",
+      "four inventories contain independently created objects",
+      "native logs and one-shot stats",
+      "start/restart/stop/remove container; remove dedicated image/volume/network"
+    ],
+    "engine": {
+      "Platform": {
+        "Name": "Docker Engine - Community"
+      },
+      "Components": [
+        {
+          "Name": "Engine",
+          "Version": "28.0.4",
+          "Details": {
+            "ApiVersion": "1.48",
+            "Arch": "amd64",
+            "BuildTime": "Tue Mar 25 15:07:16 2025",
+            "Experimental": "false",
+            "GitCommit": "6430e49",
+            "GoVersion": "go1.23.7",
+            "KernelVersion": "7.0.0-1017-azure",
+            "MinAPIVersion": "1.24",
+            "Os": "linux"
+          }
+        },
+        {
+          "Name": "containerd",
+          "Version": "v2.4.2",
+          "Details": {
+            "GitCommit": "b7a25261e029d68978bbf290df0a62fc819b3c51"
+          }
+        },
+        {
+          "Name": "runc",
+          "Version": "1.5.2",
+          "Details": {
+            "GitCommit": "v1.5.2-0-g29dd3dc2"
+          }
+        },
+        {
+          "Name": "docker-init",
+          "Version": "0.19.0",
+          "Details": {
+            "GitCommit": "de40ad0"
+          }
+        }
+      ],
+      "Version": "28.0.4",
+      "ApiVersion": "1.48",
+      "MinAPIVersion": "1.24",
+      "GitCommit": "6430e49",
+      "GoVersion": "go1.23.7",
+      "Os": "linux",
+      "Arch": "amd64",
+      "KernelVersion": "7.0.0-1017-azure",
+      "BuildTime": "2025-03-25T15:07:16.000000000+00:00"
+    },
+    "runtime_image": "sha256:aded1e1a5b3705116fa0a92ba074a5e0b0031647d9c315983ccba2ee5428ec8b",
+    "capabilities": {
+      "api_version": "1.48",
+      "bind_mount_creation": false,
+      "exec_attach_build_pull": false,
+      "host_path_translation": false,
+      "os": "linux",
+      "paths": "engine-filesystem",
+      "permissions": [
+        "docker.read",
+        "docker.logs",
+        "docker.control"
+      ],
+      "platform": "linux-native"
+    }
+  },
+  "limitations": [
+    "Windows pipe/engine-platform protocol fixtures passed; no live Windows-container or WSL Docker deployment claimed",
+    "trusted-code-only plugins, no OS sandbox"
+  ]
+}

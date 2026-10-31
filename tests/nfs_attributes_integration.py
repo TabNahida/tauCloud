@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """NFS attribute persistence, export aliases and native timestamp verification."""
 import argparse
+import time
 import json
 import os
 from pathlib import Path
@@ -50,6 +51,14 @@ def main():
         assert a.mode==0o600 and (a.mtime.seconds,a.mtime.nseconds)==(1700000002,123456700),a
         assert change(c,h)>initial_change and change(c,h)==change(c,alias_h)
         r=c.compound([op.putfh(h),op.getattr([0,1<<22])]);assert r.status==22,r
+        assert (a.ctime.seconds,a.ctime.nseconds)!=(a.mtime.seconds,a.mtime.nseconds),a
+        previous_ctime=(a.ctime.seconds,a.ctime.nseconds);time.sleep(0.02)
+        p=p4.NFS4Packer();p.pack_uint(0o600)
+        r=c.compound([op.putfh(h),op.setattr(state,t4.fattr4([0,1<<1],p.get_buffer()))]);assert r.status==0,r
+        a=getattr3(c,alias_h)
+        assert (a.ctime.seconds,a.ctime.nseconds)>previous_ctime,a
+        assert (a.mtime.seconds,a.mtime.nseconds)==(1700000002,123456700),a
+        checks.append('v3 ctime differs from preserved mtime and advances for mode-only metadata changes across export aliases')
         checks.append('v4 SETATTR updates aliases consistently; GETATTR rejects write-only time attributes')
         r=c.compound([op.putfh(h),op.close(0,state)]);assert r.status==0,r
         native=f.root/'nfsdata/attributes';times=native.stat()

@@ -53,3 +53,5 @@ M0 在[依赖锁文件](../dependencies.lock.json)中固定 PACE `d3842473b2bea6
 - [M7 NFS experimental profile / NFS 实验配置](m7.zh-CN.md) — M7a/M7b 选定配置和原生客户端已验收，排除项保持明确。
 
 - [M8 插件与 Docker](m8.zh-CN.md) — 可信代码生命周期和批准的端点；远程验收待完成。
+
+用户已指定完整 SMB/NFS 标准兼容为继续开发 M8 的前置条件；原 ADR 受限配置通过不等于该门槛完成，详见 TODO。

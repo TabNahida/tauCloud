@@ -55,6 +55,8 @@ def main():
                  [sys.executable, 'tests/m5_integration.py', '--bin', str(binary),
                   '--large-mib', str(args.large_mib), '--output', str(output.with_suffix('.smb.json'))]
                  + (['--sanitizers'] if args.sanitizers else [])]
+    commands += [[sys.executable, 'tests/smb_attributes_integration.py', '--bin', str(binary),
+                  '--output', str(output.with_suffix('.smb-attributes.json'))]]
     digest = hashlib.sha256()
     sources = [ROOT / 'xmake.lua', ROOT / 'dependencies.lock.json']
     for directory in ('src', 'include', 'apps', 'tests', 'scripts', 'packaging'):

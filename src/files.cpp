@@ -63,6 +63,7 @@ struct file_store::impl {
     uint32_t access = 0;
     unsigned sharing = 7;
     bool directory = false;
+    bool user_access_time = false, user_write_time = false, user_change_time = false;
   };
   struct byte_lock {
     std::string handle, object;
@@ -87,9 +88,11 @@ struct file_store::impl {
       q.row();
       version = q.integer(0);
     }
-    require(version <= 3, "schema_too_new");
-    if (version > 0 && version < 3)
-      backup_database(db, c.state / (role + (version == 1 ? ".pre-v2.db" : ".pre-v3.db")));
+    require(version <= 4, "schema_too_new");
+    if (version > 0 && version < 4)
+      backup_database(db, c.state / (role + (version == 1   ? ".pre-v2.db"
+                                             : version == 2 ? ".pre-v3.db"
+                                                            : ".pre-v4.db")));
     transaction migration(db);
     sql(db, "CREATE TABLE IF NOT EXISTS spaces(id TEXT PRIMARY KEY,request TEXT NOT NULL,body TEXT "
             "NOT NULL);"
@@ -110,6 +113,10 @@ struct file_store::impl {
     sql(db,
         "CREATE TABLE IF NOT EXISTS smb_pending(space TEXT NOT NULL,path TEXT NOT NULL,native TEXT "
         "NOT NULL,directory INTEGER NOT NULL,PRIMARY KEY(space,path)); PRAGMA user_version=3;");
+    sql(db, "CREATE TABLE IF NOT EXISTS smb_attributes(native TEXT PRIMARY KEY,attributes INTEGER "
+            "NOT NULL); CREATE TABLE IF NOT EXISTS smb_times(native TEXT PRIMARY KEY,body TEXT NOT "
+            "NULL); CREATE TABLE IF NOT EXISTS smb_eas(native TEXT PRIMARY KEY,body TEXT NOT "
+            "NULL); PRAGMA user_version=4;");
     migration.commit();
   }
   void audit(const std::string &actor, const std::string &action, const std::string &resource) {
