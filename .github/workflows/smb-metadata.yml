@@ -57,7 +57,7 @@ jobs:
       - name: Native allocation and durable quota
         run: python tests/smb_allocation_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/allocation.json
       - name: NFS attributes and native allocation
-        run: python tests/nfs_attributes_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/nfs-attributes.json
+        run: python tests/nfs_attributes_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/nfs-attributes.json
       - name: SMB3 dialects and encrypted allocation
         run: python tests/m6_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --large-mib 1 ${{ matrix.test_options }} --output build/acceptance/smb3.json
       - uses: actions/upload-artifact@v4

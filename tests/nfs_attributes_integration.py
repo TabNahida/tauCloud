@@ -13,7 +13,8 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--bin',type=Path,required=True)
     parser.add_argument('--output',type=Path,required=True)
-    args=parser.parse_args();f,port=fixture(args.bin);clients=[];checks=[]
+    parser.add_argument('--sanitizers',action='store_true')
+    args=parser.parse_args();f,port=fixture(args.bin,512 if args.sanitizers else 256);clients=[];checks=[]
     def connect():
         c=Client(port);clients.append(c);return c
     def getattr3(c,h):
@@ -125,7 +126,7 @@ def main():
         assert (a.mode,a.uid,a.gid)==(0o600,1000,1000),a
         assert (a.mtime.seconds,a.mtime.nseconds)==(1700000002,123456700),a
         checks.append('mode/ownership and exact timestamps survive server restart through stable alias handles')
-        report=dict(status='passed',checks=checks)
+        report=dict(status='passed',checks=checks,sanitizers=args.sanitizers)
         args.output.parent.mkdir(parents=True,exist_ok=True)
         args.output.write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))
     finally:

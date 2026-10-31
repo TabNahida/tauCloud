@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Disposable TLS WebDAV acceptance, optionally with independent litmus 0.18."""
+import sys
 import argparse, base64, shutil, sqlite3, threading, hashlib, http.client, json, os, signal, socket, ssl, subprocess, tempfile, time, uuid
 from pathlib import Path
 from m1_integration import wait
@@ -25,21 +26,33 @@ class Fixture:
         (self.state / 'config.json').write_text(json.dumps(config))
         self.context = ssl.create_default_context(cafile=str(self.state / 'tls-cert.pem'))
         self.log = (self.base / 'supervisor.log').open('w')
-        self.start()
-        if seed_identity is None:
-            self.ctl('bootstrap', '--username', 'admin', '--password-stdin', stdin=self.password+'\n')
-            self.admin = self.api('auth/login', data=dict(username='admin', password=self.password, scope='admin'))['token']
-            self.api('users', self.admin, dict(username='alice', password=self.password))
-            self.api('users', self.admin, dict(username='bob', password=self.password))
-        else:
-            # Test-only offline provisioning for an emulated native-client
-            # fixture. Ordinary acceptance always exercises bootstrap/login.
-            self.stop();self.admin=seed_identity(self.state);self.start()
-        self.api('storage-roots', self.admin, dict(id='data', path=str(self.root)))
-        self.api('spaces', self.admin, dict(id='alice', root='data', path='alice', owner='alice', quota=2*1024**3))
-        self.api('shares', self.admin, dict(id='dav', space='alice', exposures={'webdav':'rw'}))
-        self.auth = 'Basic ' + base64.b64encode(('alice:'+self.password).encode()).decode()
-        self.url = f'https://127.0.0.1:{self.davport}/dav/dav/'
+        try:
+            self.start()
+            if seed_identity is None:
+                self.ctl('bootstrap', '--username', 'admin', '--password-stdin', stdin=self.password+'\n')
+                self.admin = self.api('auth/login', data=dict(username='admin', password=self.password, scope='admin'))['token']
+                self.api('users', self.admin, dict(username='alice', password=self.password))
+                self.api('users', self.admin, dict(username='bob', password=self.password))
+            else:
+                # Test-only offline provisioning for an emulated native-client
+                # fixture. Ordinary acceptance always exercises bootstrap/login.
+                self.stop();self.admin=seed_identity(self.state);self.start()
+            self.api('storage-roots', self.admin, dict(id='data', path=str(self.root)))
+            self.api('spaces', self.admin, dict(id='alice', root='data', path='alice', owner='alice', quota=2*1024**3))
+            self.api('shares', self.admin, dict(id='dav', space='alice', exposures={'webdav':'rw'}))
+            self.auth = 'Basic ' + base64.b64encode(('alice:'+self.password).encode()).decode()
+            self.url = f'https://127.0.0.1:{self.davport}/dav/dav/'
+        except Exception:
+            self.log.flush()
+            print((self.base / 'supervisor.log').read_text(errors='replace')[-16384:], file=sys.stderr)
+            try:
+                if hasattr(self, 'process'):
+                    self.close()
+                else:
+                    self.log.close(); self.tmp.cleanup()
+            except Exception as cleanup_error:
+                print('Fixture cleanup after failed initialization:', cleanup_error, file=sys.stderr)
+            raise
     def ctl(self, *args, stdin=None, ok=True):
         p = subprocess.run([str(self.binary/('taucloud_ctl'+self.suffix)), '--state', str(self.state), *args],input=stdin,text=True,capture_output=True,timeout=30)
         assert (p.returncode == 0) == ok, (args,p.stdout,p.stderr)
