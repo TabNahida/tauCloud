@@ -1,0 +1,81 @@
+{
+  "source_commit": "03ca0f4392b8095ce2a6930abf694b4cb05747a3",
+  "production_code_since": "6e020a510f030ffaa7be27f64863ab3366696c76",
+  "scope": "Asynchronous SMB locks with frame-body and idle deadlines; full SMB/NFS remains unfinished",
+  "core": {
+    "checks": 113,
+    "status": "passed"
+  },
+  "independent_client": {
+    "status": "passed",
+    "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "recorded_at": "2026-10-31T07:24:55.569703+00:00",
+    "checks": [
+      "210: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+      "210: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+      "210: cross-connection FIFO for conflicts and queued writer fairness",
+      "210: CLOSE cancels waiting requests and releases held ranges to another connection",
+      "300: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+      "300: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+      "300: cross-connection FIFO for conflicts and queued writer fairness",
+      "300: CLOSE cancels waiting requests and releases held ranges to another connection",
+      "302: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+      "302: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+      "302: cross-connection FIFO for conflicts and queued writer fairness",
+      "302: CLOSE cancels waiting requests and releases held ranges to another connection",
+      "311: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+      "311: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+      "311: cross-connection FIFO for conflicts and queued writer fairness",
+      "311: CLOSE cancels waiting requests and releases held ranges to another connection",
+      "compound LOCK/ECHO and LOCK/CLOSE preserve interim/final ordering and connection progress",
+      "TREE_DISCONNECT cancels pending locks before removing the tree",
+      "session teardown cancels pending locks before discarding signing and encryption keys",
+      "peer disconnect removes a pending waiter before granting the next connection",
+      "holder disconnect releases locks and wakes the surviving client",
+      "32 concurrent CANCEL/unlock races produce one final result and no leaked lock or duplicate response",
+      "16 concurrent CLOSE/unlock races produce one final result and release every acquired range",
+      "bounded pending requests return INSUFFICIENT_RESOURCES and all cancelled capacity is reusable",
+      "credential revocation fails pending locks promptly and leaves no stale authority locks",
+      "a frame started before idle expiry retains its independent five-second body deadline",
+      "pending lock survives 65 seconds without client traffic; normal idle expiry resumes after its final response"
+    ]
+  },
+  "preceding_test_failure": {
+    "source_commit": "6e020a510f030ffaa7be27f64863ab3366696c76",
+    "run": "https://github.com/TabNahida/tauCloud/actions/runs/41180312745",
+    "job": 124476183703,
+    "report": {
+      "status": "failed",
+      "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+      "recorded_at": "2026-10-31T07:26:06.690776+00:00",
+      "checks": [
+        "210: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+        "210: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+        "210: cross-connection FIFO for conflicts and queued writer fairness",
+        "210: CLOSE cancels waiting requests and releases held ranges to another connection",
+        "300: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+        "300: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+        "300: cross-connection FIFO for conflicts and queued writer fairness",
+        "300: CLOSE cancels waiting requests and releases held ranges to another connection",
+        "302: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+        "302: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+        "302: cross-connection FIFO for conflicts and queued writer fairness",
+        "302: CLOSE cancels waiting requests and releases held ranges to another connection",
+        "311: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+        "311: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+        "311: cross-connection FIFO for conflicts and queued writer fairness",
+        "311: CLOSE cancels waiting requests and releases held ranges to another connection",
+        "compound LOCK/ECHO and LOCK/CLOSE preserve interim/final ordering and connection progress",
+        "TREE_DISCONNECT cancels pending locks before removing the tree",
+        "session teardown cancels pending locks before discarding signing and encryption keys",
+        "peer disconnect removes a pending waiter before granting the next connection",
+        "holder disconnect releases locks and wakes the surviving client",
+        "32 concurrent CANCEL/unlock races produce one final result and no leaked lock or duplicate response",
+        "16 concurrent CLOSE/unlock races produce one final result and release every acquired range",
+        "bounded pending requests return INSUFFICIENT_RESOURCES and all cancelled capacity is reusable"
+      ],
+      "error": "Traceback (most recent call last):\n  File \"/home/runner/work/tauCloud/tauCloud/tests/smb_blocking_locks.py\", line 247, in run\n    h = create(t, 'revoked-waiter'); lock(h, (0, 8, 0x12)); lock(h, (0, 8, 4)); h.close()\n                                     ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/tauCloud/tauCloud/tests/m5_integration.py\", line 59, in lock\n    q=Lock(h.file_id,items);return h.connection.receive(h.connection.send(q,h.tree_connect.session.session_id,h.tree_connect.tree_connect_id))\n                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/.local/lib/python3.12/site-packages/smbprotocol/connection.py\", line 1103, in receive\n    raise SMBResponseException(response)\nsmbprotocol.exceptions.SMBResponseException: Received unexpected status from the server: Unknown error. (3221225557) UNKNOWN_ENUM: 0xc0000055\n"
+    },
+    "cause": "Test transport passed SMB2TransformHeader directly to socket.sendall. 03ca0f4 packs the existing independent-client encrypted frame before fragmentation; production code is unchanged by that test fix."
+  }
+}

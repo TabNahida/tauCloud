@@ -1,0 +1,463 @@
+{
+  "source_commit": "404a0f0913f25f6bebfc85a1021e0efbd4608c69",
+  "workflow": "https://github.com/TabNahida/tauCloud/actions/runs/41179815795",
+  "status": "passed",
+  "scope": "Asynchronous SMB blocking locks and bounded protocol regressions; not full SMB/NFS conformance",
+  "jobs": {
+    "gcc": 124474739419,
+    "clang_asan_ubsan": 124474739344,
+    "windows_msvc": 124474739237
+  },
+  "core_checks": {
+    "native": 38,
+    "smb": 113
+  },
+  "hosts": {
+    "gcc": {
+      "allocation.json": {
+        "status": "passed",
+        "checks": [
+          "schema v4 migration preserves a pre-v5 backup before adding durable reservations",
+          "native space allocation preserves EOF, charges quota once, rejects over-quota growth before mutation and enforces WRITE_DATA",
+          "durable logical quota survives restart while allocation reports native close-time trimming; EOF extension consumes reservations; shrink and deletion release quota",
+          "AlSi CREATE/overwrite preallocation preserves zero EOF, charges durable quota, ignores existing opens/directories, validates context shape and fails over-quota before namespace/data mutation"
+        ],
+        "native_allocation_after_reopen": [
+          [
+            4096,
+            14
+          ],
+          [
+            4096,
+            0
+          ]
+        ]
+      },
+      "blocking-locks.json": {
+        "status": "passed",
+        "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+        "recorded_at": "2026-10-31T07:18:39.383656+00:00",
+        "checks": [
+          "210: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "210: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "210: cross-connection FIFO for conflicts and queued writer fairness",
+          "210: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "300: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "300: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "300: cross-connection FIFO for conflicts and queued writer fairness",
+          "300: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "302: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "302: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "302: cross-connection FIFO for conflicts and queued writer fairness",
+          "302: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "311: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "311: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "311: cross-connection FIFO for conflicts and queued writer fairness",
+          "311: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "compound LOCK/ECHO and LOCK/CLOSE preserve interim/final ordering and connection progress",
+          "TREE_DISCONNECT cancels pending locks before removing the tree",
+          "session teardown cancels pending locks before discarding signing and encryption keys",
+          "peer disconnect removes a pending waiter before granting the next connection",
+          "holder disconnect releases locks and wakes the surviving client",
+          "32 concurrent CANCEL/unlock races produce one final result and no leaked lock or duplicate response",
+          "16 concurrent CLOSE/unlock races produce one final result and release every acquired range",
+          "bounded pending requests return INSUFFICIENT_RESOURCES and all cancelled capacity is reusable",
+          "credential revocation fails pending locks promptly and leaves no stale authority locks",
+          "pending lock survives 65 seconds without client traffic; normal idle expiry resumes after its final response"
+        ]
+      },
+      "metadata.json": {
+        "status": "passed",
+        "checks": [
+          "CREATE/QUERY/SET persistent DOS attributes, zero/no-change and NORMAL semantics; readonly open/delete checks and granted-handle authority",
+          "four independent timestamps, native mtime, zero/no-change, per-handle explicit/-1 freeze and -2 re-enable; invalid times reject before attribute mutation",
+          "binary extended attributes on CREATE/QUERY/SET, case-insensitive updates, deletion, restart, NEED_EA and access rights; malformed chains reject atomically",
+          "attributes follow native object across rename/restart, directory invariants hold, replacement object does not inherit stale metadata",
+          "per-open mode CREATE/QUERY/SET and FileAllInformation agreement, write-through writes, independent handles, invalid synchronous/immutable modes and SMB2 ignored synchronous CREATE flags",
+          "EA cursor paging, restart, single-entry and explicit indexes, independent opens, bounded whole-entry overflow and undersized-buffer retries",
+          "selected-name EA queries preserve request order and scan cursor, ignore index/restart, match case-insensitively, return absent names, bound output and reject malformed chains without cursor changes",
+          "MxAc maximal access uses fresh policy and readonly restrictions, supports optional change-time comparison and chained QFid replies, rejects malformed/duplicate contexts before mutation",
+          "EA writes atomically update change time/archive while respecting frozen timestamps; exact 65531-byte aggregate limit and standard invalid-name/list statuses"
+        ]
+      },
+      "nfs-attributes.json": {
+        "status": "passed",
+        "checks": [
+          "v3 CREATE preserves mode, mapped ownership and explicit atime/mtime on native handles",
+          "v3 ctime differs from preserved mtime and advances for mode-only metadata changes across export aliases",
+          "v4 SETATTR updates aliases consistently; GETATTR rejects write-only time attributes",
+          "durable change counters detect equal-size writes with restored mtime, share alias state and return real namespace change_info; reads do not advance them",
+          "v3 used and v4 space_used match independent native allocation for empty, small, sparse/extended and truncated files, separately from logical size",
+          "paged v4 READDIR skips reserved cookies 1/2 and resumes without duplicate or missing entries",
+          "mode/ownership and exact timestamps survive server restart through stable alias handles"
+        ],
+        "sanitizers": false
+      },
+      "samba-async.json": {
+        "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+        "recorded_at": "2026-10-31T07:20:58.697330+00:00",
+        "tests": [
+          {
+            "selector": "smb2.lock.async",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-async-smb2.lock.async.log"
+          },
+          {
+            "selector": "smb2.lock.cancel",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-async-smb2.lock.cancel.log"
+          },
+          {
+            "selector": "smb2.lock.cancel-tdis",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-async-smb2.lock.cancel-tdis.log"
+          },
+          {
+            "selector": "smb2.lock.cancel-logoff",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-async-smb2.lock.cancel-logoff.log"
+          }
+        ],
+        "status": "passed"
+      },
+      "smb3.json": {
+        "status": "passed",
+        "checks": [
+          "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+          "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+          "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+          "0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+          "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+          "leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent",
+          "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+          "unsupported signing/cipher/hash and malformed contexts fail without dialect fallback",
+          "independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+          "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+          "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+          "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+        ],
+        "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+        "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+        "authentication_provider": "pyspnego NTLM",
+        "large_mib": 1,
+        "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+        "port": 41369,
+        "sanitizers": false
+      }
+    },
+    "clang": {
+      "allocation.json": {
+        "status": "passed",
+        "checks": [
+          "schema v4 migration preserves a pre-v5 backup before adding durable reservations",
+          "native space allocation preserves EOF, charges quota once, rejects over-quota growth before mutation and enforces WRITE_DATA",
+          "durable logical quota survives restart while allocation reports native close-time trimming; EOF extension consumes reservations; shrink and deletion release quota",
+          "AlSi CREATE/overwrite preallocation preserves zero EOF, charges durable quota, ignores existing opens/directories, validates context shape and fails over-quota before namespace/data mutation"
+        ],
+        "native_allocation_after_reopen": [
+          [
+            4096,
+            14
+          ],
+          [
+            4096,
+            0
+          ]
+        ]
+      },
+      "blocking-locks.json": {
+        "status": "passed",
+        "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+        "recorded_at": "2026-10-31T07:20:11.527644+00:00",
+        "checks": [
+          "210: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "210: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "210: cross-connection FIFO for conflicts and queued writer fairness",
+          "210: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "300: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "300: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "300: cross-connection FIFO for conflicts and queued writer fairness",
+          "300: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "302: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "302: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "302: cross-connection FIFO for conflicts and queued writer fairness",
+          "302: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "311: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "311: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "311: cross-connection FIFO for conflicts and queued writer fairness",
+          "311: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "compound LOCK/ECHO and LOCK/CLOSE preserve interim/final ordering and connection progress",
+          "TREE_DISCONNECT cancels pending locks before removing the tree",
+          "session teardown cancels pending locks before discarding signing and encryption keys",
+          "peer disconnect removes a pending waiter before granting the next connection",
+          "holder disconnect releases locks and wakes the surviving client",
+          "32 concurrent CANCEL/unlock races produce one final result and no leaked lock or duplicate response",
+          "16 concurrent CLOSE/unlock races produce one final result and release every acquired range",
+          "bounded pending requests return INSUFFICIENT_RESOURCES and all cancelled capacity is reusable",
+          "credential revocation fails pending locks promptly and leaves no stale authority locks"
+        ]
+      },
+      "metadata.json": {
+        "status": "passed",
+        "checks": [
+          "CREATE/QUERY/SET persistent DOS attributes, zero/no-change and NORMAL semantics; readonly open/delete checks and granted-handle authority",
+          "four independent timestamps, native mtime, zero/no-change, per-handle explicit/-1 freeze and -2 re-enable; invalid times reject before attribute mutation",
+          "binary extended attributes on CREATE/QUERY/SET, case-insensitive updates, deletion, restart, NEED_EA and access rights; malformed chains reject atomically",
+          "attributes follow native object across rename/restart, directory invariants hold, replacement object does not inherit stale metadata",
+          "per-open mode CREATE/QUERY/SET and FileAllInformation agreement, write-through writes, independent handles, invalid synchronous/immutable modes and SMB2 ignored synchronous CREATE flags",
+          "EA cursor paging, restart, single-entry and explicit indexes, independent opens, bounded whole-entry overflow and undersized-buffer retries",
+          "selected-name EA queries preserve request order and scan cursor, ignore index/restart, match case-insensitively, return absent names, bound output and reject malformed chains without cursor changes",
+          "MxAc maximal access uses fresh policy and readonly restrictions, supports optional change-time comparison and chained QFid replies, rejects malformed/duplicate contexts before mutation",
+          "EA writes atomically update change time/archive while respecting frozen timestamps; exact 65531-byte aggregate limit and standard invalid-name/list statuses"
+        ]
+      },
+      "nfs-attributes.json": {
+        "status": "passed",
+        "checks": [
+          "v3 CREATE preserves mode, mapped ownership and explicit atime/mtime on native handles",
+          "v3 ctime differs from preserved mtime and advances for mode-only metadata changes across export aliases",
+          "v4 SETATTR updates aliases consistently; GETATTR rejects write-only time attributes",
+          "durable change counters detect equal-size writes with restored mtime, share alias state and return real namespace change_info; reads do not advance them",
+          "v3 used and v4 space_used match independent native allocation for empty, small, sparse/extended and truncated files, separately from logical size",
+          "paged v4 READDIR skips reserved cookies 1/2 and resumes without duplicate or missing entries",
+          "mode/ownership and exact timestamps survive server restart through stable alias handles"
+        ],
+        "sanitizers": true
+      },
+      "samba-async.json": {
+        "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+        "recorded_at": "2026-10-31T07:20:36.246857+00:00",
+        "tests": [
+          {
+            "selector": "smb2.lock.async",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-async-smb2.lock.async.log"
+          },
+          {
+            "selector": "smb2.lock.cancel",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-async-smb2.lock.cancel.log"
+          },
+          {
+            "selector": "smb2.lock.cancel-tdis",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-async-smb2.lock.cancel-tdis.log"
+          },
+          {
+            "selector": "smb2.lock.cancel-logoff",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-async-smb2.lock.cancel-logoff.log"
+          }
+        ],
+        "status": "passed"
+      },
+      "smb3.json": {
+        "status": "passed",
+        "checks": [
+          "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+          "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+          "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+          "0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+          "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+          "leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent",
+          "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+          "unsupported signing/cipher/hash and malformed contexts fail without dialect fallback",
+          "independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+          "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+          "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+          "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+        ],
+        "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+        "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+        "authentication_provider": "pyspnego NTLM",
+        "large_mib": 1,
+        "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+        "port": 46089,
+        "sanitizers": true
+      }
+    },
+    "msvc": {
+      "allocation.json": {
+        "status": "passed",
+        "checks": [
+          "schema v4 migration preserves a pre-v5 backup before adding durable reservations",
+          "native space allocation preserves EOF, charges quota once, rejects over-quota growth before mutation and enforces WRITE_DATA",
+          "durable logical quota survives restart while allocation reports native close-time trimming; EOF extension consumes reservations; shrink and deletion release quota",
+          "AlSi CREATE/overwrite preallocation preserves zero EOF, charges durable quota, ignores existing opens/directories, validates context shape and fails over-quota before namespace/data mutation"
+        ],
+        "native_allocation_after_reopen": [
+          [
+            4096,
+            14
+          ],
+          [
+            0,
+            0
+          ]
+        ]
+      },
+      "blocking-locks.json": {
+        "status": "passed",
+        "host": "Windows-2025Server-10.0.26100-SP0",
+        "recorded_at": "2026-10-31T07:22:49.169843+00:00",
+        "checks": [
+          "210: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "210: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "210: cross-connection FIFO for conflicts and queued writer fairness",
+          "210: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "300: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "300: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "300: cross-connection FIFO for conflicts and queued writer fairness",
+          "300: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "302: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "302: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "302: cross-connection FIFO for conflicts and queued writer fairness",
+          "302: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "311: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "311: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "311: cross-connection FIFO for conflicts and queued writer fairness",
+          "311: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "compound LOCK/ECHO and LOCK/CLOSE preserve interim/final ordering and connection progress",
+          "TREE_DISCONNECT cancels pending locks before removing the tree",
+          "session teardown cancels pending locks before discarding signing and encryption keys",
+          "peer disconnect removes a pending waiter before granting the next connection",
+          "holder disconnect releases locks and wakes the surviving client",
+          "32 concurrent CANCEL/unlock races produce one final result and no leaked lock or duplicate response",
+          "16 concurrent CLOSE/unlock races produce one final result and release every acquired range",
+          "bounded pending requests return INSUFFICIENT_RESOURCES and all cancelled capacity is reusable",
+          "credential revocation fails pending locks promptly and leaves no stale authority locks"
+        ]
+      },
+      "metadata.json": {
+        "status": "passed",
+        "checks": [
+          "CREATE/QUERY/SET persistent DOS attributes, zero/no-change and NORMAL semantics; readonly open/delete checks and granted-handle authority",
+          "four independent timestamps, native mtime, zero/no-change, per-handle explicit/-1 freeze and -2 re-enable; invalid times reject before attribute mutation",
+          "binary extended attributes on CREATE/QUERY/SET, case-insensitive updates, deletion, restart, NEED_EA and access rights; malformed chains reject atomically",
+          "attributes follow native object across rename/restart, directory invariants hold, replacement object does not inherit stale metadata",
+          "per-open mode CREATE/QUERY/SET and FileAllInformation agreement, write-through writes, independent handles, invalid synchronous/immutable modes and SMB2 ignored synchronous CREATE flags",
+          "EA cursor paging, restart, single-entry and explicit indexes, independent opens, bounded whole-entry overflow and undersized-buffer retries",
+          "selected-name EA queries preserve request order and scan cursor, ignore index/restart, match case-insensitively, return absent names, bound output and reject malformed chains without cursor changes",
+          "MxAc maximal access uses fresh policy and readonly restrictions, supports optional change-time comparison and chained QFid replies, rejects malformed/duplicate contexts before mutation",
+          "EA writes atomically update change time/archive while respecting frozen timestamps; exact 65531-byte aggregate limit and standard invalid-name/list statuses"
+        ]
+      },
+      "nfs-attributes.json": {
+        "status": "passed",
+        "checks": [
+          "v3 CREATE preserves mode, mapped ownership and explicit atime/mtime on native handles",
+          "v3 ctime differs from preserved mtime and advances for mode-only metadata changes across export aliases",
+          "v4 SETATTR updates aliases consistently; GETATTR rejects write-only time attributes",
+          "durable change counters detect equal-size writes with restored mtime, share alias state and return real namespace change_info; reads do not advance them",
+          "v3 used and v4 space_used match independent native allocation for empty, small, sparse/extended and truncated files, separately from logical size",
+          "paged v4 READDIR skips reserved cookies 1/2 and resumes without duplicate or missing entries",
+          "mode/ownership and exact timestamps survive server restart through stable alias handles"
+        ],
+        "sanitizers": false
+      },
+      "smb3.json": {
+        "status": "passed",
+        "checks": [
+          "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+          "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+          "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+          "0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+          "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+          "leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent",
+          "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+          "unsupported signing/cipher/hash and malformed contexts fail without dialect fallback",
+          "independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+          "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+          "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+          "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+        ],
+        "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+        "host": "Windows-2025Server-10.0.26100-SP0",
+        "authentication_provider": "Windows SSPI (sspilib)",
+        "large_mib": 1,
+        "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+        "port": 62788,
+        "sanitizers": false
+      }
+    }
+  },
+  "limitations": [
+    "This precedes the final frame-body deadline follow-up at 6e020a5.",
+    "The full Samba lock group retains resilient/durable replay failures and explicit environment skips.",
+    "Full Windows ACL, RPCSEC_GSS/Kerberos, NFS links and other full-compatibility work remains open."
+  ]
+}
