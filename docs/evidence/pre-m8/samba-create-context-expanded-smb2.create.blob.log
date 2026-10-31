@@ -1,0 +1,12 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793427819
+time: 2026-10-31 06:23:39.462408
+test: blob
+time: 2026-10-31 06:23:39.462522
+Testing alloc size
+Testing durable open
+Testing query maximal access
+time: 2026-10-31 06:23:39.616585
+failure: blob [
+(source4/torture/smb2/create.c:422) Incorrect value for io.out.maximal_access 0x00000000 - should be 0x001f01ff
+]

@@ -1,0 +1,13 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793427966
+time: 2026-10-31 06:26:06.575901
+test: blob
+time: 2026-10-31 06:26:06.576014
+Testing alloc size
+Testing durable open
+Testing query maximal access
+Testing timewarp
+time: 2026-10-31 06:26:06.750360
+failure: blob [
+(source4/torture/smb2/create.c:430) Incorrect status NT_STATUS_NOT_SUPPORTED - should be NT_STATUS_OBJECT_NAME_NOT_FOUND
+]

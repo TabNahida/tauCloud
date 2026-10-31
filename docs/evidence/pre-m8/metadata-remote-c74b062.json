@@ -1,0 +1,213 @@
+{
+  "source_commit": "c74b062e80721c2a864c4435d14b6c21d1f54158",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41176265332",
+  "status": "failed",
+  "scope": "Targeted SMB allocation/EA and NFS allocation expansion, before MxAc follow-up; not full conformance",
+  "jobs": {
+    "gcc": {
+      "id": 124464350860,
+      "status": "passed",
+      "native_core_checks": 38,
+      "smb_core_checks": 100,
+      "reports": {
+        "metadata": {
+          "status": "passed",
+          "checks": [
+            "CREATE/QUERY/SET persistent DOS attributes, zero/no-change and NORMAL semantics; readonly open/delete checks and granted-handle authority",
+            "four independent timestamps, native mtime, zero/no-change, per-handle explicit/-1 freeze and -2 re-enable; invalid times reject before attribute mutation",
+            "binary extended attributes on CREATE/QUERY/SET, case-insensitive updates, deletion, restart, NEED_EA and access rights; malformed chains reject atomically",
+            "attributes follow native object across rename/restart, directory invariants hold, replacement object does not inherit stale metadata",
+            "per-open mode CREATE/QUERY/SET and FileAllInformation agreement, write-through writes, independent handles, invalid synchronous/immutable modes and SMB2 ignored synchronous CREATE flags",
+            "EA cursor paging, restart, single-entry and explicit indexes, independent opens, bounded whole-entry overflow and undersized-buffer retries",
+            "selected-name EA queries preserve request order and scan cursor, ignore index/restart, match case-insensitively, return absent names, bound output and reject malformed chains without cursor changes",
+            "EA writes atomically update change time/archive while respecting frozen timestamps; exact 65531-byte aggregate limit and standard invalid-name/list statuses"
+          ]
+        },
+        "nfs-attributes": {
+          "status": "passed",
+          "checks": [
+            "v3 CREATE preserves mode, mapped ownership and explicit atime/mtime on native handles",
+            "v3 ctime differs from preserved mtime and advances for mode-only metadata changes across export aliases",
+            "v4 SETATTR updates aliases consistently; GETATTR rejects write-only time attributes",
+            "durable change counters detect equal-size writes with restored mtime, share alias state and return real namespace change_info; reads do not advance them",
+            "v3 used and v4 space_used match independent native allocation for empty, small, sparse/extended and truncated files, separately from logical size",
+            "paged v4 READDIR skips reserved cookies 1/2 and resumes without duplicate or missing entries",
+            "mode/ownership and exact timestamps survive server restart through stable alias handles"
+          ]
+        },
+        "allocation": {
+          "status": "passed",
+          "checks": [
+            "schema v4 migration preserves a pre-v5 backup before adding durable reservations",
+            "native space allocation preserves EOF, charges quota once, rejects over-quota growth before mutation and enforces WRITE_DATA",
+            "durable logical quota survives restart while allocation reports native close-time trimming; EOF extension consumes reservations; shrink and deletion release quota",
+            "AlSi CREATE/overwrite preallocation preserves zero EOF, charges durable quota, ignores existing opens/directories, validates context shape and fails over-quota before namespace/data mutation"
+          ],
+          "native_allocation_after_reopen": [
+            [
+              4096,
+              14
+            ],
+            [
+              4096,
+              0
+            ]
+          ]
+        },
+        "smb3": {
+          "status": "passed",
+          "checks": [
+            "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+            "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+            "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+            "0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x300 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x302 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x311 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+            "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+            "leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent",
+            "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+            "unsupported signing/cipher/hash and malformed contexts fail without dialect fallback",
+            "independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+            "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+            "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+            "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+          ],
+          "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+          "authentication_provider": "pyspnego NTLM",
+          "large_mib": 1,
+          "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+          "port": 52201,
+          "sanitizers": false
+        }
+      }
+    },
+    "msvc": {
+      "id": 124464350753,
+      "status": "passed",
+      "native_core_checks": 38,
+      "smb_core_checks": 100,
+      "reports": {
+        "metadata": {
+          "status": "passed",
+          "checks": [
+            "CREATE/QUERY/SET persistent DOS attributes, zero/no-change and NORMAL semantics; readonly open/delete checks and granted-handle authority",
+            "four independent timestamps, native mtime, zero/no-change, per-handle explicit/-1 freeze and -2 re-enable; invalid times reject before attribute mutation",
+            "binary extended attributes on CREATE/QUERY/SET, case-insensitive updates, deletion, restart, NEED_EA and access rights; malformed chains reject atomically",
+            "attributes follow native object across rename/restart, directory invariants hold, replacement object does not inherit stale metadata",
+            "per-open mode CREATE/QUERY/SET and FileAllInformation agreement, write-through writes, independent handles, invalid synchronous/immutable modes and SMB2 ignored synchronous CREATE flags",
+            "EA cursor paging, restart, single-entry and explicit indexes, independent opens, bounded whole-entry overflow and undersized-buffer retries",
+            "selected-name EA queries preserve request order and scan cursor, ignore index/restart, match case-insensitively, return absent names, bound output and reject malformed chains without cursor changes",
+            "EA writes atomically update change time/archive while respecting frozen timestamps; exact 65531-byte aggregate limit and standard invalid-name/list statuses"
+          ]
+        },
+        "nfs-attributes": {
+          "status": "passed",
+          "checks": [
+            "v3 CREATE preserves mode, mapped ownership and explicit atime/mtime on native handles",
+            "v3 ctime differs from preserved mtime and advances for mode-only metadata changes across export aliases",
+            "v4 SETATTR updates aliases consistently; GETATTR rejects write-only time attributes",
+            "durable change counters detect equal-size writes with restored mtime, share alias state and return real namespace change_info; reads do not advance them",
+            "v3 used and v4 space_used match independent native allocation for empty, small, sparse/extended and truncated files, separately from logical size",
+            "paged v4 READDIR skips reserved cookies 1/2 and resumes without duplicate or missing entries",
+            "mode/ownership and exact timestamps survive server restart through stable alias handles"
+          ]
+        },
+        "allocation": {
+          "status": "passed",
+          "checks": [
+            "schema v4 migration preserves a pre-v5 backup before adding durable reservations",
+            "native space allocation preserves EOF, charges quota once, rejects over-quota growth before mutation and enforces WRITE_DATA",
+            "durable logical quota survives restart while allocation reports native close-time trimming; EOF extension consumes reservations; shrink and deletion release quota",
+            "AlSi CREATE/overwrite preallocation preserves zero EOF, charges durable quota, ignores existing opens/directories, validates context shape and fails over-quota before namespace/data mutation"
+          ],
+          "native_allocation_after_reopen": [
+            [
+              4096,
+              14
+            ],
+            [
+              0,
+              0
+            ]
+          ]
+        },
+        "smb3": {
+          "status": "passed",
+          "checks": [
+            "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+            "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+            "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+            "0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x300 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x302 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x311 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+            "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+            "leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent",
+            "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+            "unsupported signing/cipher/hash and malformed contexts fail without dialect fallback",
+            "independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+            "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+            "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+            "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+          ],
+          "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+          "host": "Windows-2025Server-10.0.26100-SP0",
+          "authentication_provider": "Windows SSPI (sspilib)",
+          "large_mib": 1,
+          "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+          "port": 58857,
+          "sanitizers": false
+        }
+      }
+    },
+    "clang": {
+      "id": 124464350844,
+      "status": "failed",
+      "passed": [
+        "38 native core checks",
+        "100 SMB core checks",
+        "8 SMB metadata groups",
+        "4 SMB allocation groups"
+      ],
+      "failed_step": "NFS attributes and native allocation",
+      "error": "Fixture users API initialization returned 503 transport_closed before NFS protocol tests",
+      "fixture_memory_mb": 256,
+      "follow_up": "39dda3c adds the existing sanitizer convention of 512 MiB, explicit --sanitizers propagation and fixture initialization failure logs/cleanup; verified by all three jobs in run 41176918352 at 39dda3c."
+    }
+  },
+  "diagnostic": [
+    {
+      "memory_mb": 256,
+      "binary": "build/linux/x86_64/debug (pre-existing diagnostic build, not current acceptance source)",
+      "status": "failed",
+      "error": "('users', 503, b'{\"error\":{\"code\":\"transport_closed\"}}')",
+      "resource_events": []
+    },
+    {
+      "memory_mb": 512,
+      "binary": "build/linux/x86_64/debug (pre-existing diagnostic build, not current acceptance source)",
+      "status": "passed",
+      "resource_events": []
+    }
+  ],
+  "superseded_backend_runs": [
+    {
+      "run": 41176265349,
+      "status": "cancelled",
+      "reason": "Replaced by final 39dda3c workflow 41176918336; cancelled checks are not passes."
+    },
+    {
+      "run": 41176685236,
+      "status": "cancelled",
+      "reason": "Replaced by final 39dda3c workflow 41176918336; cancelled checks are not passes."
+    }
+  ]
+}

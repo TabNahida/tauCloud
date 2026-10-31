@@ -142,7 +142,11 @@ Selected-profile acceptance: [M7 guide](docs/m7.md), [中文](docs/m7.zh-CN.md),
 
 The earlier ADR exclusions describe the existing implementation, not permission to exclude features from this expanded goal. Preserve the passing limited-profile evidence while adding independent evidence for the following gates. Optional protocol facilities must be explicitly negotiated/refused according to the standards; refusal alone is not feature implementation.
 
-- [ ] Complete SMB metadata conformance. Persistent DOS attributes, distinct timestamps, per-handle freeze/re-enable, EAs (pagination, change time, exact aggregate limit and status codes), native-object retention, preallocation with durable logical quota and per-open modes pass the targeted GCC/Clang ASan+UBSan/MSVC matrix at `e7388f2`. The next local expansion implements AlSi CREATE/overwrite allocation, failed-new-CREATE cleanup, initial EA prevalidation, selected-name EA queries and MxAc maximal-access responses with fresh policy and optional timestamps; cross-platform validation is pending. Full timestamp range, short names and remaining upstream cases are open.
+- [x] Implement AlSi CREATE/overwrite allocation with durable quota, initial EA prevalidation and failed-new-CREATE cleanup; targeted GCC/Clang ASan+UBSan/MSVC checks pass at `39dda3c`. The follow-up sparse-overwrite allocation correction at `fc28c4c` passes locally; remote verification is pending.
+- [x] Implement selected-name EA queries with bounded output and independent enumeration cursors; all three targeted jobs pass at `39dda3c`.
+- [x] Implement MxAc current-policy maximal-access responses, optional timestamps and chained QFid replies, including encrypted SMB3 contexts; all three targeted jobs pass at `39dda3c`.
+- [x] Report native allocated bytes in NFSv3 used/NFSv4 space_used, verified independently for empty/small/sparse-or-extended/truncated files on Linux and Windows; all three targeted jobs pass at `39dda3c`.
+- [ ] Complete SMB metadata conformance. Persistent DOS attributes, distinct timestamps, per-handle freeze/re-enable, EAs (pagination, change time, exact aggregate limit and status codes), native-object retention, preallocation with durable logical quota and per-open modes pass the targeted GCC/Clang ASan+UBSan/MSVC matrix at `e7388f2`. The additional CREATE/EA/maximal-access checks above pass at `39dda3c`. Full timestamp range, short names and remaining upstream cases are open.
 - [ ] Windows security descriptors/ACL inheritance, access checks, owner/group/SACL privilege boundaries and cross-protocol authority.
 - [ ] SMB asynchronous blocking lock queues, cancellation, disconnect/close races and fairness.
 - [ ] SMB named streams/EAs, broader names/directory enumeration, filesystem information and allocation semantics.
@@ -150,7 +154,7 @@ The earlier ADR exclusions describe the existing implementation, not permission 
 - [ ] Negotiate and validate leases/oplocks, notifications, durable/replay and multichannel behavior where implemented; retain explicit unsupported status elsewhere.
 - [ ] NFS RPCSEC_GSS/Kerberos authentication, integrity/privacy, replay windows, principal mapping and key/context lifecycle.
 - [ ] NFS link/symlink/special-file semantics with confinement, stable identity and quota safety across protocols.
-- [ ] NFS backchannel/delegation/session/trunking/recovery and complete mandatory security/operation behavior against RFC 8881 and NFSv3 specifications. Native allocated-byte reporting for v3 used/v4 space_used now passes local empty/small/sparse/truncate comparisons; cross-platform validation is pending.
+- [ ] NFS backchannel/delegation/session/trunking/recovery and complete mandatory security/operation behavior against RFC 8881 and NFSv3 specifications. Native allocated-byte reporting is verified by the checked subtask above; it does not close these remaining operation/security gates.
 - [ ] Run the expanded unmodified Samba/pynfs suites and native Linux/Windows/macOS matrix; retain every failure/exclusion with an explicit standards-based applicability reason.
 
 ## M8 — Plugins and Docker

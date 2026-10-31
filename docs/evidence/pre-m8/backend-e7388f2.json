@@ -1,0 +1,63 @@
+{
+  "source_commit": "e7388f23d627911af4215a4a581dc3734bd49232",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41174934668",
+  "status": "passed",
+  "scope": "Existing bounded M1-M7 profile and native-client regression before c74b062/9ff33d0 feature additions; not full SMB/NFS conformance",
+  "jobs": [
+    {
+      "id": 124460414061,
+      "name": "windows",
+      "status": "passed"
+    },
+    {
+      "id": 124460414198,
+      "name": "linux gcc",
+      "status": "passed"
+    },
+    {
+      "id": 124460414251,
+      "name": "linux clang ASan/UBSan",
+      "status": "passed"
+    },
+    {
+      "id": 124465325426,
+      "name": "macos-clients",
+      "status": "passed"
+    }
+  ],
+  "prior_failure": "dedddc2 run 41174549743 Windows initial WebDAV PUT returned deadline_exceeded. The later full e7388f2 run passes; the original timeout root cause remains unproven and is not claimed fixed.",
+  "samba": {
+    "status": "passed",
+    "selectors": 60,
+    "counts": {
+      "success": 76,
+      "failure": 0,
+      "error": 0,
+      "skip": 0
+    }
+  },
+  "pynfs_regular": {
+    "tests": 266,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 121,
+    "passed": 145
+  },
+  "native_reports": {
+    "linux-gcc/acceptance/nfs-create.json": "passed",
+    "linux-gcc/acceptance/linux-native-nlm.json": "passed",
+    "linux-gcc/acceptance/nfs-state.json": "passed",
+    "linux-gcc/acceptance/filezilla-linux.json": "passed",
+    "linux-gcc/acceptance/samba-native.json": "passed",
+    "linux-gcc/acceptance/native-linux.json": "passed",
+    "linux-gcc/acceptance/kernel-cifs-rejection.json": "passed",
+    "linux-gcc/acceptance/nfs-attributes.json": "passed",
+    "windows-msvc/acceptance/windows-native-smb.json": "passed",
+    "windows-msvc/acceptance/nfs-create.json": "passed",
+    "windows-msvc/acceptance/windows-native-nfs.json": "passed",
+    "windows-msvc/acceptance/nfs-state.json": "passed",
+    "windows-msvc/acceptance/filezilla-windows.json": "passed",
+    "windows-msvc/acceptance/nfs-attributes.json": "passed",
+    "macos-native/macos-native.json": "passed"
+  }
+}
