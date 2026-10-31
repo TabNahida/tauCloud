@@ -4,7 +4,8 @@ import argparse,json,struct,sys,traceback
 from pathlib import Path
 from m5_integration import Fixture,create,query,setinfo,denied
 from smbprotocol.create_contexts import SMB2CreateContextRequest
-from smbprotocol.open import SMB2SetInfoRequest,Open,ImpersonationLevel
+from smbprotocol.open import SMB2SetInfoRequest,SMB2QueryInfoRequest,SMB2QueryInfoResponse,Open,ImpersonationLevel
+from smbprotocol.exceptions import SMBResponseException
 from smbprotocol.file_info import FileRenameInformation,FileDispositionInformation
 
 def run():
@@ -19,8 +20,17 @@ def run():
     def seteas(h,raw):
         q=SMB2SetInfoRequest();q['info_type']=1;q['file_info_class']=15;q['file_id']=h.file_id;q['buffer']=raw
         r=h.connection.send(q,h.tree_connect.session.session_id,h.tree_connect.tree_connect_id);h.connection.receive(r)
-    def read_eas(h):
-        raw=query(h,15);items={};offset=0
+    def ea_query(h,flags=1,limit=65536,index=0):
+        q=SMB2QueryInfoRequest();q['info_type']=1;q['file_info_class']=15;q['file_id']=h.file_id;q['flags']=flags;q['additional_information']=index;q['output_buffer_length']=limit
+        request=h.connection.send(q,h.tree_connect.session.session_id,h.tree_connect.tree_connect_id)
+        try:response=h.connection.receive(request)
+        except SMBResponseException as error:
+            if error.status!=0x80000005:raise
+            response=error.header
+        result=SMB2QueryInfoResponse();result.unpack(response['data'].get_value())
+        return response['status'].get_value(),result['buffer'].get_value()
+    def read_eas(h,flags=1,limit=65536,index=0):
+        status,raw=ea_query(h,flags,limit,index);items={};offset=0
         while True:
             nxt,flags,n,size=struct.unpack_from('<IBBH',raw,offset);name=raw[offset+8:offset+8+n];value=raw[offset+9+n:offset+9+n+size];items[name]=(flags,value)
             if not nxt:return items
@@ -94,6 +104,21 @@ def run():
         h.close();other.close()
         ignored=create(t,'sync-flags-ignored',options=0x70);assert struct.unpack('<I',query(ignored,16))[0]==0;ignored.close()
         report['checks'].append('per-open mode CREATE/QUERY/SET and FileAllInformation agreement, write-through writes, independent handles, invalid synchronous/immutable modes and SMB2 ignored synchronous CREATE flags')
+        paged=create(t,'paged-eas')
+        for name in (b'A',b'B',b'C'):seteas(paged,ea(name,b'value'))
+        denied(lambda:ea_query(paged,flags=1,limit=14),0xc0000023)
+        assert read_eas(paged,flags=3)=={b'A':(0,b'value')}
+        assert read_eas(paged,flags=2)=={b'B':(0,b'value')}
+        assert read_eas(paged,flags=6,index=3)=={b'C':(0,b'value')}
+        assert read_eas(paged,flags=2)=={b'C':(0,b'value')}
+        denied(lambda:ea_query(paged,flags=0),0x80000012)
+        denied(lambda:ea_query(paged,flags=4,index=0),0xc0000051)
+        denied(lambda:ea_query(paged,flags=4,index=4),0xc0000051)
+        status,raw=ea_query(paged,flags=1,limit=31)
+        assert status==0x80000005 and len(raw)==31 and struct.unpack_from('<I',raw)[0]==16
+        assert read_eas(paged,flags=0)=={b'C':(0,b'value')}
+        independent=create(t,'paged-eas',disposition=1);assert read_eas(independent,flags=2)=={b'A':(0,b'value')};independent.close();paged.close()
+        report['checks'].append('EA cursor paging, restart, single-entry and explicit indexes, independent opens, bounded whole-entry overflow and undersized-buffer retries')
         report['status']='passed'
     except Exception:report['error']=traceback.format_exc();raise
     finally:

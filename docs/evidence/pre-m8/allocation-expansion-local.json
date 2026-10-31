@@ -57,5 +57,16 @@
     "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fsa/3820daf2-e512-4730-8cce-2d0435ae6ad2",
     "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fsa/9bfb8ab2-9e37-4d03-9e4e-8bd166a26d31",
     "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/e8fb45c1-a03d-44ca-b7ae-47385cfd7997"
-  ]
+  ],
+  "samba_profile_regression": {
+    "source_commit": "63ae307b97109ec0e262f390ca7e5ed853634227",
+    "status": "passed",
+    "selectors": 60,
+    "counts": {
+      "success": 76,
+      "failure": 0,
+      "error": 0,
+      "skip": 0
+    }
+  }
 }

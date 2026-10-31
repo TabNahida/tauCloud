@@ -1,0 +1,32 @@
+{
+  "status": "partial compatibility expansion; full SMB/NFS gate remains open",
+  "smb_metadata": {
+    "status": "passed",
+    "checks": [
+      "CREATE/QUERY/SET persistent DOS attributes, zero/no-change and NORMAL semantics; readonly open/delete checks and granted-handle authority",
+      "four independent timestamps, native mtime, zero/no-change, per-handle explicit/-1 freeze and -2 re-enable; invalid times reject before attribute mutation",
+      "binary extended attributes on CREATE/QUERY/SET, case-insensitive updates, deletion, restart, NEED_EA and access rights; malformed chains reject atomically",
+      "attributes follow native object across rename/restart, directory invariants hold, replacement object does not inherit stale metadata",
+      "per-open mode CREATE/QUERY/SET and FileAllInformation agreement, write-through writes, independent handles, invalid synchronous/immutable modes and SMB2 ignored synchronous CREATE flags",
+      "EA cursor paging, restart, single-entry and explicit indexes, independent opens, bounded whole-entry overflow and undersized-buffer retries"
+    ]
+  },
+  "ftp_regression": {
+    "status": "passed",
+    "test": "tests/m4_integration.py (1 MiB)",
+    "change": "Verify all four passive listeners before data transfers can leave Windows exclusive-bind ports in TIME_WAIT; exhaustion and ABOR/QUIT release assertions are retained."
+  },
+  "remote_failure": {
+    "source_commit": "ed10738d4cb741c9e25d65646eda18e14563140c",
+    "run": "https://github.com/TabNahida/tauCloud/actions/runs/41171958165",
+    "job": 124451620106,
+    "step": "run_m7.py / tests/m4_integration.py",
+    "error": "425 Passive ports exhausted during four-port capacity setup after completed data transfers",
+    "status": "failure retained; newer source requires remote rerun"
+  },
+  "specifications": [
+    "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/d64e0451-64a2-425a-848e-52a7dddab7b9",
+    "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/2e9a4f3a-6aa3-4e3a-a6a7-217dc974b4d0",
+    "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fsa/36660930-adcc-4145-a206-f38502e9eb79"
+  ]
+}

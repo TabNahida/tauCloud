@@ -82,6 +82,14 @@ def run(args):
         fails(lambda:c.sendcmd('USER anonymous'),530);fails(lambda:c.sendcmd('PROT P'),503)
         c.login('alice',f.password);c.prot_p();fails(lambda:c.sendcmd('PROT C'),536);fails(lambda:c.sendcmd('CCC'),534)
         passed('M3 state adds isolated FTP worker; plaintext default deny, anonymous/active/FXP/downgrade denied')
+        # Count the configured listeners before data connections can leave
+        # Windows exclusive-bind ports temporarily unavailable in TIME_WAIT.
+        held=[]
+        for _ in range(4):
+            item=f.connect();item.sendcmd('EPSV');held.append(item)
+        fails(lambda:c.sendcmd('EPSV'),425)
+        for item in held:item.quit()
+        c.sendcmd('EPSV');c.sendcmd('ABOR')
         feat=c.sendcmd('FEAT');assert 'REST STREAM' in feat and 'MLST' in feat
         assert c.pwd()=='/' and 'ftp' in c.nlst()
         c.cwd('/ftp');c.mkd('dir');c.cwd('dir');c.sendcmd('TYPE I')
@@ -125,12 +133,6 @@ def run(args):
         finally:bad.close()
         assert c.voidcmd('NOOP').startswith('200')
         passed('EPSV ALL and TLS certificate verification; fresh or different-control TLS sessions rejected on data channel')
-        held=[]
-        for _ in range(4):
-            item=f.connect();item.sendcmd('EPSV');held.append(item)
-        fails(lambda:c.sendcmd('EPSV'),425)
-        for item in held:item.quit()
-        c.sendcmd('EPSV');c.sendcmd('ABOR')
         # Wrong peer address, handshake timeout and oversized framing are bounded.
         port=int(c.sendcmd('EPSV').split('|')[-2])
         peer=socket.socket();peer.bind(('127.0.0.2',0));peer.connect(('127.0.0.1',port))

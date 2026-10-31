@@ -358,6 +358,7 @@ struct opened {
   std::set<uint16_t> contexts;
   uint64_t position = 0;
   uint32_t mode = 0;
+  size_t ea_cursor = 0;
 };
 struct client {
   smb_state &s;
@@ -941,10 +942,40 @@ struct client {
         check(selected.dialect != 0x202 && selected.dialect != 0x210 && selected.dialect != 0x302,
               0xc00000bb); // MS-SMB2 3.3.5.20.1 dialect restriction.
       if (type == 1 && klass == 15) {
-        check((get(p, 84, 4) & ~1u) == 0, 0xc00000bb);
+        auto flags = get(p, 84, 4);
+        check((flags & ~7u) == 0);
         auto values = co_await operation(h, "eas", false);
         check(!values.empty(), 0xc0000052);
-        data = ea_encode(values, false);
+        size_t start = (flags & 1) ? 0 : h.ea_cursor;
+        if (flags & 4) {
+          auto index = get(p, 80, 4);
+          check(index && index <= values.size(), 0xc0000051);
+          start = static_cast<size_t>(index - 1);
+        }
+        check(start < values.size(), 0x80000012); // STATUS_NO_MORE_EAS
+        size_t skipped = 0, returned = 0, previous = 0;
+        for (auto &[name, value] : values.items()) {
+          if (skipped++ < start)
+            continue;
+          auto record = ea_encode(json::array({value}), false);
+          auto offset = (data.size() + 3) & ~size_t(3);
+          if (offset + record.size() > limit) {
+            check(returned != 0, 0xc0000023);
+            code = 0x80000005;
+            break;
+          }
+          if (returned) {
+            data.resize(offset, '\0');
+            put(data, previous, offset - previous, 4);
+          }
+          previous = offset;
+          data += record;
+          ++returned;
+          if (flags & 2)
+            break;
+        }
+        if (!(flags & 4))
+          h.ea_cursor = start + returned;
       } else if (type == 1)
         data = file_info(static_cast<unsigned>(klass), meta, h.path, h.access);
       else if (type == 2) {
