@@ -1,0 +1,57 @@
+name: SMB metadata compatibility
+on:
+  push:
+    paths:
+      - '.github/workflows/smb-metadata.yml'
+      - 'src/smb.cpp'
+      - 'src/file_smb.inc'
+      - 'src/files.cpp'
+      - 'src/native_files.cpp'
+      - 'include/taucloud/files.hpp'
+      - 'tests/smb_attributes_integration.py'
+      - 'tests/smb_allocation_integration.py'
+      - 'tests/m6_integration.py'
+      - 'tests/m2_core.cpp'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  metadata:
+    name: ${{ matrix.compiler }} metadata
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {runner: ubuntu-24.04, compiler: gcc, platform: linux, arch: x86_64, mode: release, sanitizers: 'n', suffix: '', test_options: ''}
+          - {runner: ubuntu-24.04, compiler: clang, platform: linux, arch: x86_64, mode: debug, sanitizers: 'y', suffix: '', test_options: '--sanitizers'}
+          - {runner: windows-2025, compiler: msvc, platform: windows, arch: x64, mode: release, sanitizers: 'n', suffix: '.exe', test_options: ''}
+    env:
+      PYTHONUTF8: '1'
+      PIP_BREAK_SYSTEM_PACKAGES: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: '3.1.1'
+      - run: python scripts/fetch_pace.py
+      - run: python scripts/fetch_pace.py --dependency recipes
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libssl-dev libexpat1-dev
+      - run: python -m pip install -r tests/smb-requirements.txt
+      - run: xmake f -y -c -p ${{ matrix.platform }} -a ${{ matrix.arch }} -m ${{ matrix.mode }} --m0=n --m1=y --toolchain=${{ matrix.compiler }} --sanitizers=${{ matrix.sanitizers }}
+      - run: xmake -y -j 8
+      - name: Native allocation failure safety
+        run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_m2_tests${{ matrix.suffix }}
+      - name: DOS metadata, timestamps, EAs and modes
+        run: python tests/smb_attributes_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/metadata.json
+      - name: Native allocation and durable quota
+        run: python tests/smb_allocation_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/allocation.json
+      - name: SMB3 dialects and encrypted allocation
+        run: python tests/m6_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --large-mib 1 ${{ matrix.test_options }} --output build/acceptance/smb3.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smb-metadata-${{ matrix.compiler }}
+          path: build/acceptance/*.json

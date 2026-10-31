@@ -182,8 +182,14 @@ def run(args):
             h=create(t,'allocation-'+hex(dialect));h.write(b'abcdefgh')
             allocation=FileAllocationInformation();allocation['allocation_size']=8;setinfo(h,allocation)
             assert h.read(0,8)==b'abcdefgh'
-            allocation['allocation_size']=3;setinfo(h,allocation);assert h.read(0,8)==b'abc'
-            allocation['allocation_size']=8192;denied(lambda:setinfo(h,allocation),0xc00000bb);h.close()
+            # Allocation rounds to the native cluster; exact EOF changes use
+            # FileEndOfFileInformation. Growing preallocation is now supported.
+            allocation['allocation_size']=3;setinfo(h,allocation);assert h.read(0,8)==b'abcdefgh'
+            allocation['allocation_size']=8192;setinfo(h,allocation)
+            assert struct.unpack_from('<QQ',query(h,5))==(8192,8)
+            eof=FileEndOfFileInformation();eof['end_of_file']=3;setinfo(h,eof);assert h.read(0,8)==b'abc'
+            allocation['allocation_size']=0;setinfo(h,allocation)
+            assert struct.unpack_from('<QQ',query(h,5))==(0,0);h.close()
             h=create(t,'allocation-'+hex(dialect),access=0x120089,disposition=1)
             allocation['allocation_size']=1;denied(lambda:setinfo(h,allocation),0xc0000022);h.close()
             passed(f'{hex(dialect)} AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2')

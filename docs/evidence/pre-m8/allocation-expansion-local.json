@@ -83,5 +83,22 @@
       "native space allocation preserves EOF, charges quota once, rejects over-quota growth before mutation and enforces WRITE_DATA",
       "allocation and quota survive restart; EOF extension consumes reservations; allocation shrink truncates and frees storage; deletion and replacement release quota"
     ]
+  },
+  "smb3_dialects_regression": {
+    "status": "passed",
+    "test": "tests/m6_integration.py",
+    "checks": 18,
+    "dialects": [
+      "3.0",
+      "3.0.2",
+      "3.1.1"
+    ],
+    "change": "Replace old limited-profile assertions (unsupported growth and byte-exact allocation truncation) with native allocation growth/rounding and explicit EOF truncation checks."
+  },
+  "old_expectation_failure": {
+    "run": "https://github.com/TabNahida/tauCloud/actions/runs/41172882125",
+    "job": 124454390711,
+    "error": "m6_integration.py expected allocation_size=3 to truncate EOF to 3, before native cluster rounding was implemented",
+    "status": "failure retained; corrected test passes locally, remote rerun pending"
   }
 }
