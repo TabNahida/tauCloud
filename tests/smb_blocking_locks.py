@@ -258,6 +258,7 @@ def run():
             # fragment only its TCP transport at the frame/body boundary.
             original_send = c.transport.send
             def fragmented(frame):
+                frame = frame.pack() if hasattr(frame, 'pack') else bytes(frame)
                 with c.transport._sock_lock:
                     c.transport._sock.sendall(len(frame).to_bytes(4, 'big'))
                     time.sleep(3)
