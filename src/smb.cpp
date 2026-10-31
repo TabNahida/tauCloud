@@ -643,6 +643,8 @@ struct client {
         co_return b;
       }
       bool query_disk_id = false;
+      bool query_maximal_access = false;
+      std::optional<uint64_t> access_timestamp;
       std::optional<json> initial_eas;
       std::optional<uint64_t> initial_allocation;
       auto context_len = get(p, 116, 4);
@@ -670,6 +672,13 @@ struct client {
           if (tag == "QFid") {
             check(!query_disk_id && get(item, 12, 4) == 0);
             query_disk_id = true;
+          }
+          if (tag == "MxAc") {
+            auto size = get(item, 12, 4);
+            check(!query_maximal_access && (size == 0 || size == 8));
+            query_maximal_access = true;
+            if (size)
+              access_timestamp = get(slice(item, get(item, 10, 2), size, 16), 0, 8);
           }
           if (tag == "DHnC" || tag == "DH2C" || tag == "TWrp" || tag == "SecD") {
             log("smb", "unsupported_create_context", std::string(tag));
@@ -739,6 +748,14 @@ struct client {
       put(b, 48, size, 8);
       put(b, 56, attributes(meta), 4);
       b.replace(64, 16, fid);
+      bytes response_contexts;
+      size_t previous_context = 0;
+      auto append_context = [&](bytes context) {
+        if (!response_contexts.empty())
+          put(response_contexts, previous_context, response_contexts.size() - previous_context, 4);
+        previous_context = response_contexts.size();
+        response_contexts += context;
+      };
       if (query_disk_id) {
         bytes context(56, '\0');
         put(context, 4, 16, 2);
@@ -748,9 +765,43 @@ struct client {
         context.replace(16, 4, "QFid");
         context.replace(24, 8, decode_bytes(digest(meta.at("object").get<std::string>()).substr(0, 16)));
         context.replace(32, 8, decode_bytes(digest(grant.at("root").at("volume").dump()).substr(0, 16)));
+        append_context(std::move(context));
+      }
+      if (query_maximal_access) {
+        uint32_t query_status = 0, maximal_access = 0x1200a9;
+        if (access_timestamp && *access_timestamp == meta.at("times").at(3).get<uint64_t>()) {
+          query_status = 0xc0000073; // STATUS_NONE_MAPPED: client's metadata is unchanged.
+          maximal_access = 0;
+        } else {
+          try {
+            // Recheck current application policy; the tree's cached writable
+            // flag and this open's requested access are not maximal authority.
+            co_await authorize(tid, name, true);
+            maximal_access = 0x1f01ff;
+          } catch (const error &e) {
+            auto failure = status(e.what());
+            if (failure != 0xc0000022) {
+              query_status = failure;
+              maximal_access = 0;
+            }
+          }
+          if (!meta.at("directory").get<bool>() && (attributes(meta) & 1))
+            maximal_access &= ~6u;
+        }
+        bytes context(32, '\0');
+        put(context, 4, 16, 2);
+        put(context, 6, 4, 2);
+        put(context, 10, 24, 2);
+        put(context, 12, 8, 4);
+        context.replace(16, 4, "MxAc");
+        put(context, 24, query_status, 4);
+        put(context, 28, maximal_access, 4);
+        append_context(std::move(context));
+      }
+      if (!response_contexts.empty()) {
         put(b, 80, 152, 4);
-        put(b, 84, context.size(), 4);
-        b += context;
+        put(b, 84, response_contexts.size(), 4);
+        b += response_contexts;
       }
       co_return b;
     }

@@ -14,7 +14,7 @@ from smbprotocol.structure import Structure, IntField
 from smbprotocol.ioctl import SMB2IOCTLRequest
 from smbprotocol.exceptions import SMBResponseException
 from smbprotocol.open import SMB2QueryInfoRequest, SMB2QueryInfoResponse
-from smbprotocol.create_contexts import SMB2CreateDurableHandleRequestV2, SMB2CreateDurableHandleReconnectV2, SMB2CreateRequestLease
+from smbprotocol.create_contexts import SMB2CreateDurableHandleRequestV2, SMB2CreateDurableHandleReconnectV2, SMB2CreateRequestLease, SMB2CreateContextRequest
 from smbprotocol.change_notify import SMB2ChangeNotifyRequest
 from cryptography.hazmat.primitives.ciphers.aead import AESCCM, AESGCM
 from cryptography.hazmat.primitives.cmac import CMAC
@@ -194,6 +194,17 @@ def run(args):
             allocation['allocation_size']=1;denied(lambda:setinfo(h,allocation),0xc0000022);h.close()
             passed(f'{hex(dialect)} AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2')
             s.encrypt_data=True
+            contexts=[]
+            for tag,data in [(b'AlSi',struct.pack('<Q',4096)),(b'ExtA',struct.pack('<IBBH',0,0,1,3)+b'A\0one'),(b'MxAc',b''),(b'QFid',b'')]:
+                context=SMB2CreateContextRequest();context['buffer_name']=tag;context['buffer_data']=data;contexts.append(context)
+            h=Open(t,'encrypted-contexts-'+hex(dialect))
+            returned=h.create(ImpersonationLevel.Impersonation,0x13019f,0x80,7,3,0x40,create_contexts=contexts)
+            assert len(returned)==2 and struct.unpack_from('<QQ',query(h,5))==(4096,0)
+            maximal=next(item for item in returned if 'maximal_access' in item.fields)
+            assert maximal['query_status'].get_value()==0 and maximal['maximal_access'].get_value()==0x1f01ff
+            q=SMB2QueryInfoRequest();q['info_type']=1;q['file_info_class']=15;q['output_buffer_length']=65536;q['file_id']=h.file_id;q['buffer']=struct.pack('<IB',0,1)+b'a\0'
+            response=SMB2QueryInfoResponse();response.unpack(c.receive(c.send(q,s.session_id,t.tree_connect_id))['data'].get_value())
+            assert response['buffer'].get_value()==struct.pack('<IBBH',0,0,1,3)+b'A\0one';h.close()
             name='加密-'+hex(dialect);h=create(t,name);h.write(bytes(range(256))*256);h.flush();assert h.read(0,65536)==bytes(range(256))*256
             eof=FileEndOfFileInformation();eof['end_of_file']=8;setinfo(h,eof);assert len(h.read(0,100))==8
             rename=FileRenameInformation();rename['file_name']=name+'-renamed';setinfo(h,rename)
@@ -212,7 +223,7 @@ def run(args):
             expected=hashlib.sha256()
             for _ in range(args.large_mib*16):expected.update(chunk)
             assert digest.digest()==expected.digest();h.close()
-            passed(f'{hex(dialect)} encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and {args.large_mib} MiB SHA-256 stream')
+            passed(f'{hex(dialect)} encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and {args.large_mib} MiB SHA-256 stream')
             c.disconnect(close=False)
         c,s,t=connect(0x311,encrypted_session=True)
         s.disconnect()

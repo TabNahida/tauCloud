@@ -146,6 +146,35 @@ def run():
         no_ea=create(t,'paged-eas',access=0x100080,disposition=1)
         denied(lambda:ea_query(no_ea,names=names(b'A')),0xc0000022);no_ea.close()
         report['checks'].append('selected-name EA queries preserve request order and scan cursor, ignore index/restart, match case-insensitively, return absent names, bound output and reject malformed chains without cursor changes')
+        def maximal(name='maximal-access',stamp=b'',disk_id=False,duplicate=False,disposition=1):
+            context=SMB2CreateContextRequest();context['buffer_name']=b'MxAc';context['buffer_data']=stamp
+            contexts=[context,context] if duplicate else [context]
+            if disk_id:
+                disk=SMB2CreateContextRequest();disk['buffer_name']=b'QFid';disk['buffer_data']=b'';contexts.append(disk)
+            handle=Open(t,name)
+            result=handle.create(ImpersonationLevel.Impersonation,0x120089,0x80,7,disposition,0x40,create_contexts=contexts)
+            response=next(item for item in result if 'maximal_access' in item.fields)
+            return handle,response,result
+        original=create(t,'maximal-access');original.close()
+        handle,response,contexts=maximal(disk_id=True)
+        assert len(contexts)==2 and response['query_status'].get_value()==0 and response['maximal_access'].get_value()==0x1f01ff
+        changed=struct.unpack_from('<Q',query(handle,4),24)[0];handle.close()
+        handle,response,_=maximal(stamp=struct.pack('<Q',changed))
+        assert response['query_status'].get_value()==0xc0000073 and response['maximal_access'].get_value()==0;handle.close()
+        handle,response,_=maximal(stamp=struct.pack('<Q',changed-1))
+        assert response['query_status'].get_value()==0 and response['maximal_access'].get_value()==0x1f01ff;handle.close()
+        # Reuse the writable tree across a policy update: cached tree rights must not leak.
+        f.api('shares',f.admin,dict(id='smb',space='smbdata',exposures={'smb':'r'},update=True))
+        handle,response,_=maximal()
+        assert response['query_status'].get_value()==0 and response['maximal_access'].get_value()==0x1200a9;handle.close()
+        f.api('shares',f.admin,dict(id='smb',space='smbdata',exposures={'smb':'rw'},update=True))
+        original=create(t,'maximal-access',disposition=1);attrs(original,1);original.close()
+        handle,response,_=maximal();assert response['maximal_access'].get_value()==0x1f01f9;handle.close()
+        for malformed in (b'x',b'\0'*7,b'\0'*9):
+            denied(lambda:maximal('bad-maximal',stamp=malformed,disposition=3),0xc000000d)
+        denied(lambda:maximal('bad-maximal',duplicate=True,disposition=3),0xc000000d)
+        assert not (f.root/'smbdata/bad-maximal').exists()
+        report['checks'].append('MxAc maximal access uses fresh policy and readonly restrictions, supports optional change-time comparison and chained QFid replies, rejects malformed/duplicate contexts before mutation')
         metadata=create(t,'ea-times');attrs(metadata,0x80,timestamps)
         seteas(metadata,ea(b'TIME',b'frozen'));assert struct.unpack_from('<QQQQ',query(metadata,4))==timestamps
         assert readattrs(metadata)==0x20

@@ -61,6 +61,8 @@
     "smb2.dir.file-index",
     "smb2.create.dir-alloc-size",
     "smb2.compound_async.flush_close",
-    "smb2.compound_async.flush_flush"
+    "smb2.compound_async.flush_flush",
+    "smb2.create.open",
+    "smb2.create.delete"
   ]
 }

@@ -346,7 +346,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
           file = native_file();
           auto current = stat_path(s.directory, path);
           if (current && current->at("object") == native) {
-            s.directory.remove(path, false);
+            s.directory.remove(path, false, native);
             s.directory.flush();
             erase(space, path);
             allocation_reservation(native, 0);
