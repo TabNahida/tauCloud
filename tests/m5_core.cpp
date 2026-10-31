@@ -113,6 +113,45 @@ int main() {
     ok(call("write", "data", {{"handle", h}, {"offset", INT64_MAX},
         {"data", ""}, {"request_id", random_hex(16)}}).at("written") == 0);
     ok(call("stat", "data", {{"handle", h}}).at("size") == 0);
+    // Shared authority orders conflicting waiters independently of retry order.
+    auto third = open("data");
+    auto queue_lock = [&](const std::string &handle, unsigned flags, std::string token = "",
+                          uint64_t offset = 32) {
+      json body = {{"handle", handle},
+                   {"locks", json::array({{{"offset", offset}, {"length", 8}, {"flags", flags}}})}};
+      if (!token.empty())
+        body["waiter"] = token;
+      return call("lock", "data", body);
+    };
+    auto first_waiter = random_hex(16), second_waiter = random_hex(16);
+    queue_lock(h, 0x11);
+    ok(queue_lock(second, 2, first_waiter).at("pending"));
+    ok(queue_lock(third, 1, second_waiter).at("pending"));
+    rejected([&] { queue_lock(third, 0x11); }, "lock_not_granted");
+    // Invalid retries cannot mutate a queued range or steal another open's token.
+    rejected([&] { queue_lock(second, 2, first_waiter, 33); }, "invalid_request");
+    rejected([&] { queue_lock(third, 2, first_waiter); }, "invalid_request");
+    queue_lock(h, 4);
+    ok(queue_lock(third, 1, second_waiter).at("pending"));
+    ok(queue_lock(second, 2, first_waiter).at("locked"));
+    queue_lock(second, 4);
+    ok(queue_lock(third, 1, second_waiter).at("locked"));
+    queue_lock(third, 4);
+    queue_lock(h, 0x12);
+    first_waiter = random_hex(16);
+    second_waiter = random_hex(16);
+    ok(queue_lock(second, 2, first_waiter).at("pending"));
+    ok(queue_lock(third, 2, second_waiter).at("pending"));
+    call("lock_cancel", "data", {{"handle", second}, {"waiter", first_waiter}});
+    queue_lock(h, 4);
+    ok(queue_lock(third, 2, second_waiter).at("locked"));
+    queue_lock(third, 4);
+    queue_lock(h, 0x12);
+    ok(queue_lock(third, 2, random_hex(16)).at("pending"));
+    call("close", "data", {{"handle", third}});
+    queue_lock(h, 4);
+    ok(queue_lock(second, 0x12).at("locked"));
+    queue_lock(second, 4);
     // The uppermost byte is valid; only an end beyond UINT64_MAX overflows.
     call("lock", "data", {{"handle", h}, {"locks", json::array({
         {{"offset", UINT64_MAX}, {"length", 1}, {"flags", 0x12}}})}});

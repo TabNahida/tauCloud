@@ -61,6 +61,8 @@ def main():
                  + (['--sanitizers'] if args.sanitizers else [])]
     commands += [[sys.executable, 'tests/smb_attributes_integration.py', '--bin', str(binary),
                   '--output', str(output.with_suffix('.smb-attributes.json'))]]
+    commands += [[sys.executable, 'tests/smb_blocking_locks.py', '--bin', str(binary),
+                  '--output', str(output.with_suffix('.smb-blocking-locks.json'))]]
     commands += [[sys.executable, 'tests/smb_allocation_integration.py', '--bin', str(binary),
                   '--output', str(output.with_suffix('.smb-allocation.json'))]]
     digest = hashlib.sha256()

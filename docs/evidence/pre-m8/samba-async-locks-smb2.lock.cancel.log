@@ -1,0 +1,25 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793430405
+time: 2026-10-31 07:06:45.431745
+test: cancel
+time: 2026-10-31 07:06:45.431872
+Testing basic cancel
+  Acquire first lock
+  Second lock should pend on first
+  Cancel the second lock
+  Unlock first lock
+Testing cancel by unlock
+  Acquire first lock
+  Second lock should pend on first
+  Attempt to unlock pending second lock
+  Now cancel the second lock
+  Unlock first lock
+Testing cancel by close
+  Acquire first lock
+  Second lock should pend on first
+  Close the second lock handle
+  Check pending lock reply
+time: 2026-10-31 07:06:45.696085
+failure: cancel [
+source4/torture/smb2/lock.c:978: status was NT_STATUS_CANCELLED, expected NT_STATUS_RANGE_NOT_LOCKED: (source4/torture/smb2/lock.c:978)
+]

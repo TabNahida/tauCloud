@@ -215,6 +215,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
   if (op == "smb_recover") {
     std::erase_if(handles, [](const auto &entry) { return entry.second.protocol == "smb"; });
     std::erase_if(locks, [&](const auto &entry) { return !handles.contains(entry.handle); });
+    smb_waiters.clear();
     statement q(db, "SELECT body FROM spaces");
     std::vector<json> owned;
     while (q.row())
@@ -225,7 +226,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     }
     return {{"recovered", true}};
   }
-  bool cleanup = op == "smb_close";
+  bool cleanup = op == "smb_close" || op == "smb_lock_cancel";
   bool writing = op == "smb_write" || op == "smb_resize" || op == "smb_allocation" ||
                  op == "smb_rename" || op == "smb_disposition" || op == "smb_attributes" ||
                  op == "smb_set_eas";
@@ -404,10 +405,17 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
   require(h.protocol == "smb" && h.space == space && h.actor == actor &&
               (cleanup || h.path == path),
           "forbidden");
+  if (op == "smb_lock_cancel") {
+    const auto token = body.at("waiter").get<std::string>();
+    std::erase_if(smb_waiters,
+                  [&](const auto &w) { return w.token == token && w.range.handle == id; });
+    return {{"cancelled", true}};
+  }
   if (cleanup) {
     auto meta = smb_meta(s, h);
     handles.erase(it);
     std::erase_if(locks, [&](const auto &v) { return v.handle == id; });
+    std::erase_if(smb_waiters, [&](const auto &w) { return w.range.handle == id; });
     smb_reap(s);
     return meta;
   }
@@ -562,14 +570,43 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
                 "invalid_request");
         require(requested.size() == 1 || (flags & 0x10), "invalid_request");
         bool exclusive = (flags & 2) != 0;
-        for (const auto &l : candidate)
-          require(l.object != meta.at("object").get<std::string>() ||
-                      (!l.through_max && start >= l.end) ||
-                      (!through_max && start + length <= l.start) ||
-                      (!exclusive && (!l.exclusive || l.handle == id)),
-                  (flags & 0x10) ? "lock_not_granted" : "not_supported");
+        const auto token = body.value("waiter", std::string());
+        require(token.empty() || (token.size() == 32 && requested.size() == 1 && !(flags & 0x10)),
+                "invalid_request");
+        byte_lock range{id, meta.at("object"), start, start + length, exclusive, through_max};
+        auto conflicts = [&](const byte_lock &l) {
+          return l.object == range.object && (l.through_max || start < l.end) &&
+                 (through_max || start + length > l.start) &&
+                 (exclusive || (l.exclusive && l.handle != id));
+        };
+        bool blocked = std::any_of(candidate.begin(), candidate.end(), conflicts);
+        // Preserve arrival order for conflicting waiters in the authority shared
+        // by every connection. Disjoint ranges and compatible readers proceed.
+        for (const auto &w : smb_waiters) {
+          if (!token.empty() && w.token == token) {
+            require(w.range.handle == id && w.range.object == range.object &&
+                        w.range.start == start && w.range.end == range.end &&
+                        w.range.exclusive == exclusive && w.range.through_max == through_max,
+                    "invalid_request");
+            break;
+          }
+          blocked |= conflicts(w.range);
+        }
+        if (blocked) {
+          require(!(flags & 0x10), "lock_not_granted");
+          require(!token.empty(), "invalid_request");
+          if (std::none_of(smb_waiters.begin(), smb_waiters.end(),
+                           [&](const auto &w) { return w.token == token; })) {
+            require(smb_waiters.size() < 256, "lock_limit");
+            smb_waiters.push_back({token, range});
+          }
+          return {{"pending", true}};
+        }
         require(candidate.size() < 256, "lock_limit");
-        candidate.push_back({id, meta.at("object"), start, start + length, exclusive, through_max});
+        candidate.push_back(std::move(range));
+        if (!token.empty())
+          std::erase_if(smb_waiters,
+                        [&](const auto &w) { return w.token == token && w.range.handle == id; });
       }
     }
     locks = std::move(candidate);

@@ -63,6 +63,10 @@
     "smb2.compound_async.flush_close",
     "smb2.compound_async.flush_flush",
     "smb2.create.open",
-    "smb2.create.delete"
+    "smb2.create.delete",
+    "smb2.lock.async",
+    "smb2.lock.cancel",
+    "smb2.lock.cancel-tdis",
+    "smb2.lock.cancel-logoff"
   ]
 }

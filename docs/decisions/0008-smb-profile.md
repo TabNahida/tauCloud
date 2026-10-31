@@ -1,5 +1,7 @@
 # ADR 0008 — SMB 2.1 authority and credential boundary
 
+The original no-blocking-queue restriction below is superseded by the Full SMB/NFS expansion: bounded asynchronous lock queues, cancellation and lifecycle cleanup are now implemented; see the current M5 guide and fixed-source evidence. Other original exclusions are historical scope, not permission to omit the full-compatibility work.
+
 [简体中文](0008-smb-profile.zh-CN.md)
 
 Status: implemented as a bounded backend preview; complete client-matrix acceptance remains open.

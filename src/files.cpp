@@ -74,6 +74,11 @@ struct file_store::impl {
   std::map<std::string, std::unique_ptr<space_state>> spaces;
   std::map<std::string, opened> handles;
   std::vector<byte_lock> locks;
+  struct waiting_lock {
+    std::string token;
+    byte_lock range;
+  };
+  std::vector<waiting_lock> smb_waiters;
   struct retained_nfs_file {
     std::string space, path, root, pin, object;
     native_file file;
@@ -512,6 +517,7 @@ struct file_store::impl {
       minimum_epoch = std::max(minimum_epoch, body.at("epoch").get<int64_t>());
       handles.clear();
       locks.clear();
+      smb_waiters.clear();
       for (auto &[id, s] : spaces)
         smb_reap(*s);
       return {{"epoch", minimum_epoch}, {"drained", true}};

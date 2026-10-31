@@ -148,7 +148,7 @@ The earlier ADR exclusions describe the existing implementation, not permission 
 - [x] Report native allocated bytes in NFSv3 used/NFSv4 space_used, verified independently for empty/small/sparse-or-extended/truncated files on Linux and Windows; all three targeted jobs pass at `fc28c4c`.
 - [ ] Complete SMB metadata conformance. Persistent DOS attributes, distinct timestamps, per-handle freeze/re-enable, EAs (pagination, change time, exact aggregate limit and status codes), native-object retention, preallocation with durable logical quota and per-open modes pass the targeted GCC/Clang ASan+UBSan/MSVC matrix at `e7388f2`. The additional CREATE/EA/maximal-access checks above pass at `fc28c4c`. Full timestamp range, short names and remaining upstream cases are open.
 - [ ] Windows security descriptors/ACL inheritance, access checks, owner/group/SACL privilege boundaries and cross-protocol authority.
-- [ ] SMB asynchronous blocking lock queues, cancellation, disconnect/close races and fairness.
+- [ ] SMB asynchronous blocking lock queues, cancellation, disconnect/close races and fairness. Implementation and local independent-client/Samba checks are complete; fixed-source cross-platform acceptance is pending.
 - [ ] SMB named streams/EAs, broader names/directory enumeration, filesystem information and allocation semantics.
 - [ ] SMB session reauthentication/reconnect, Kerberos, advertised signing/encryption algorithms and Linux kernel-client compatibility.
 - [ ] Negotiate and validate leases/oplocks, notifications, durable/replay and multichannel behavior where implemented; retain explicit unsupported status elsewhere.

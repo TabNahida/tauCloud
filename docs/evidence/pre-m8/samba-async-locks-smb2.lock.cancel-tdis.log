@@ -1,0 +1,14 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793430405
+time: 2026-10-31 07:06:45.743947
+test: cancel-tdis
+time: 2026-10-31 07:06:45.744074
+Testing cancel by tree disconnect
+  Acquire first lock
+  Second lock should pend on first
+  Disconnect the tree
+  Check pending lock reply
+time: 2026-10-31 07:06:45.863836
+failure: cancel-tdis [
+source4/torture/smb2/lock.c:1064: status was NT_STATUS_CANCELLED, expected NT_STATUS_OK: (source4/torture/smb2/lock.c:1064)
+]

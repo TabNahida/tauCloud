@@ -406,6 +406,19 @@ struct client {
   std::map<bytes, opened> files;
   uint32_t next_tree = 1;
   bytes related_file;
+  struct pending_lock {
+    bytes fid;
+    uint64_t message_id;
+    std::string waiter;
+    json locks;
+    bool encrypted;
+    bool announced = false;
+    std::optional<uint32_t> completion;
+  };
+  std::map<uint64_t, pending_lock> pending_locks;
+  uint64_t next_async_id = 1;
+  bool dispatching = false, pump_done = false;
+  int64_t last_activity = now();
   client(smb_state &state, pace::tcp::stream tcp) : s(state), socket(std::move(tcp)) {
     socket.set_no_delay();
   }
@@ -431,6 +444,13 @@ struct client {
     auto it = files.find(fid);
     if (it == files.end())
       co_return;
+    std::vector<uint64_t> waiting;
+    for (const auto &[id, pending] : pending_locks)
+      if (pending.fid == fid)
+        waiting.push_back(id);
+    // Closing the local open abandons its ungranted ranges (distinct from CANCEL).
+    for (auto id : waiting)
+      co_await finish_lock(id, 0xc000007e);
     auto h = std::move(it->second);
     files.erase(it);
     if (h.pipe)
@@ -492,8 +512,9 @@ struct client {
         }
       }
   }
+#include "smb_async.inc"
 #include "smb_rpc.inc"
-  pace::task<bytes> command(std::string_view p, uint32_t &tid, uint32_t &code) {
+  pace::task<bytes> command(std::string_view p, uint32_t &tid, uint32_t &code, bool encrypted) {
     check(!logged_off, 0xc0000203);
     auto cmd = get(p, 12, 2);
     auto structure = get(p, 64, 2);
@@ -929,7 +950,20 @@ struct client {
             {{"offset", get(p, o, 8)}, {"length", get(p, o + 8, 8)}, {"flags", get(p, o + 16, 4)}});
       }
       json request = {{"locks", locks}};
-      co_await operation(h, "lock", false, request);
+      bool blocking = count == 1 && (get(p, 104, 4) == 1 || get(p, 104, 4) == 2);
+      auto waiter = blocking ? random_hex(16) : std::string();
+      if (blocking) {
+        check(pending_locks.size() < 16 && next_async_id != UINT64_MAX, 0xc000009a);
+        request["waiter"] = waiter;
+      }
+      auto result = co_await operation(h, "lock", false, request);
+      if (result.value("pending", false)) {
+        pending_locks.emplace(
+            next_async_id++,
+            pending_lock{fid_for(h), get(p, 24, 8), waiter, locks, encrypted, false, {}});
+        code = 0x103;
+        co_return sized(9, 9);
+      }
       co_return sized(4, 4);
     }
     if (cmd == 14) {
@@ -1179,11 +1213,15 @@ struct client {
   }
   pace::task<void> run() {
     s.clients.insert(this);
+    s.io->spawn(pump_locks());
     try {
       while (socket.is_open() && !ending) {
         bytes prefix;
         {
-          auto timer = s.io->call_after(authenticated ? 60s : 10s, [this] { close(); });
+          auto timer = s.io->call_after(authenticated ? 60s : 10s, [this] {
+            if (!authenticated || (pending_locks.empty() && now() - last_activity >= 60000))
+              close();
+          });
           prefix = co_await socket.read_exact(4, 4);
         }
         check(prefix[0] == 0);
@@ -1194,6 +1232,12 @@ struct client {
           auto timer = s.io->call_after(5s, [this] { close(); });
           packet = co_await socket.read_exact(length, 1024 * 1024 + 52);
         }
+        while (dispatching && socket.is_open())
+          co_await s.io->sleep_for(1ms);
+        if (!socket.is_open())
+          break;
+        dispatch_guard guard(dispatching);
+        last_activity = now();
         if (packet.starts_with(std::string_view("\xffSMB", 4))) {
           // MS-SMB2 3.3.5.3: this is only the bootstrap into SMB2 negotiation,
           // never an SMB1 session or an SMB1 file operation.
@@ -1260,7 +1304,10 @@ struct client {
           // SMB 3.1.1 clients (including Samba) set priority bits on SESSION_SETUP.
           // Priority affects scheduling, not authorization or signing.
           auto allowed_flags = selected.dialect == 0x311 || cmd == 0 ? 0x1000007cull : 0x1000000cull;
+          if (cmd == 12)
+            allowed_flags |= 2; // Only CANCEL may carry a client AsyncId.
           check(!(flags & ~allowed_flags) && get(p, 6, 2) <= 1);
+          check(cmd != 12 || (requests.empty() && !next));
           check(authenticated || (requests.empty() && !next));
           auto request_session = (flags & 4) && !requests.empty() ? request_sessions.back() : get(p, 40, 8);
           if (authenticated) {
@@ -1274,12 +1321,28 @@ struct client {
                     0xc0000022);
           }
           auto id = get(p, 24, 8);
-          check(credits_available.erase(id) == 1);
+          if (cmd != 12)
+            check(credits_available.erase(id) == 1);
           request_sessions.push_back(request_session);
           requests.push_back(std::move(p));
           if (!next)
             break;
           offset += next;
+        }
+        if (requests.size() == 1 && get(requests[0], 12, 2) == 12) {
+          auto &p = requests[0];
+          check(p.size() >= 68 && get(p, 64, 2) == 4);
+          if (authenticated && request_sessions[0] == session) {
+            uint64_t target = 0;
+            for (const auto &[id, pending] : pending_locks)
+              if ((get(p, 16, 4) & 2) ? id == get(p, 32, 8) : pending.message_id == get(p, 24, 8)) {
+                target = id;
+                break;
+              }
+            if (target)
+              co_await finish_lock(target, 0xc0000120);
+          }
+          continue; // CANCEL consumes no credit and never receives its own reply.
         }
         related_file.clear();
         uint32_t inherited_tree = 0, inherited_failure = 0;
@@ -1308,7 +1371,7 @@ struct client {
             if (unknown_session)
               throw status_error(0xc0000203);
             check(cmd <= 18);
-            body = co_await command(p, tid, code);
+            body = co_await command(p, tid, code, encrypted);
           } catch (const status_error &e) {
             code = e.status;
             log("smb", "command_" + std::to_string(cmd), std::to_string(code));
@@ -1348,7 +1411,8 @@ struct client {
           for (size_t credit = 0; credit < credits; ++credit)
             credits_available.insert(high++);
           put(response, 14, credits, 2);
-          bool sign = authenticated && !encrypted && !unknown_session && !connection_echo;
+          bool sign =
+              authenticated && !encrypted && !unknown_session && !connection_echo && code != 0x103;
           // Retain the request's SIGNED flag on a missing-session error so
           // signing-required clients can observe the status. No unrelated
           // session key is used and the signature bytes remain zero.
@@ -1357,6 +1421,10 @@ struct client {
           put(response, 24, get(p, 24, 8), 8);
           put(response, 36, tid, 4);
           put(response, 40, (unknown_session || connection_echo) ? request_sessions[i] : session, 8);
+          if (code == 0x103) {
+            put(response, 16, 3 | (related ? 4 : 0), 4);
+            put(response, 32, next_async_id - 1, 8);
+          }
           response += body;
           if (i + 1 < requests.size()) {
             response.resize((response.size() + 7) / 8 * 8, '\0');
@@ -1375,18 +1443,18 @@ struct client {
         }
         if (!socket.is_open())
           break;
-        if (encrypted) {
-          check(nonce_counter < 65536);
-          bytes nonce = nonce_prefix.substr(0, selected.cipher == 1 ? 3 : 4) + bytes(8, '\0');
-          put(nonce, nonce.size() - 8, ++nonce_counter, 8);
-          output = encrypt(encryption_key, selected.cipher, session, nonce, output);
+        if (!output.empty())
+          co_await send_packet(std::move(output), encrypted);
+        // A later CLOSE/TREE_DISCONNECT/LOGOFF in this compound can complete a
+        // lock before its interim response has left the socket. Send in order.
+        std::vector<std::pair<uint64_t, uint32_t>> completed;
+        for (auto &[id, pending] : pending_locks) {
+          pending.announced = true;
+          if (pending.completion)
+            completed.emplace_back(id, *pending.completion);
         }
-        bytes header(4, '\0');
-        header[1] = char(output.size() >> 16);
-        header[2] = char(output.size() >> 8);
-        header[3] = char(output.size());
-        auto timer = s.io->call_after(5s, [this] { close(); });
-        co_await socket.write_all(header + output);
+        for (auto [id, code] : completed)
+          co_await finish_lock(id, code);
         if (logged_off) {
           // LOGOFF ends the session, not the transport. Keeping the connection
           // alive also prevents EOF racing the client's receipt of this reply.
@@ -1410,6 +1478,8 @@ struct client {
     } catch (...) {
     }
     close();
+    while (!pump_done)
+      co_await s.io->sleep_for(1ms);
     co_await cleanup();
     if (!token.empty()) {
       try {

@@ -1,0 +1,4656 @@
+{
+  "source_commit": "fc28c4c8bce4e33853dad3f788c6c364c63c7818",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41177581113",
+  "status": "failed_windows_ftps",
+  "jobs": {
+    "gcc": "success",
+    "clang_asan_ubsan": "success",
+    "msvc": "failure at FileZilla FTPS queue timeout; M1-M7 runner and native SMB/NFS passed",
+    "macos": "success"
+  },
+  "reports": {
+    "linux-gcc": {
+      "nfs-create.json": {
+        "status": "passed",
+        "checks": [
+          "NFSv3 MKDIR accepts zero size hints without attempting to truncate a directory",
+          "required suppattr_exclcreat advertises actual writable creation attributes",
+          "exclusive verifier retry preserves content; mismatched verifier and unsupported exclusive attributes reject without creation",
+          "UNCHECKED ignores nonzero size and mode on existing files; zero size truncates only after share reservations permit it",
+          "CREATE and OPEN return the attributes actually applied"
+        ]
+      },
+      "linux-native-nlm.json": {
+        "status": "passed",
+        "checks": [
+          "native F_SETLKW blocks on an independent wire owner, receives GRANTED and retains a server-visible byte lock",
+          "NSM server-reboot notification makes the Linux kernel reclaim its lock; independent post-grace TEST observes it and native unlock releases it"
+        ]
+      },
+      "nfs-state.json": {
+        "status": "passed",
+        "checks": [
+          "BIND_CONN_TO_SESSION on a fresh connection, PUTPUBFH, TEST_STATEID old/current states, FREE_STATEID held/unlocked states and read-only OPEN_DOWNGRADE",
+          "one kernel-style session accepts multiple mapped users without sharing their open authority",
+          "exclusive lock conflicts, denied owner details, disjoint writes and CLOSE with held locks",
+          "partial unlock splits ranges and preserves neighboring conflicts",
+          "process restart persists split lock ranges; matching client reclaims OPEN and locks before RECLAIM_COMPLETE"
+        ]
+      },
+      "filezilla-linux.json": {
+        "status": "passed",
+        "checks": [
+          "pinned disposable server certificate",
+          "native GUI queue upload and download",
+          "binary source/server/download match"
+        ]
+      },
+      "samba-native.json": {
+        "status": "passed",
+        "tests": [
+          {
+            "selector": "smb2.read.eof",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.read.eof.log"
+          },
+          {
+            "selector": "smb2.read.position",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.read.position.log"
+          },
+          {
+            "selector": "smb2.read.dir",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.read.dir.log"
+          },
+          {
+            "selector": "smb2.lock.rw-shared",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.lock.rw-shared.log"
+          },
+          {
+            "selector": "smb2.lock.rw-exclusive",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.lock.rw-exclusive.log"
+          },
+          {
+            "selector": "smb2.lock.auto-unlock",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.lock.auto-unlock.log"
+          },
+          {
+            "selector": "smb2.lock.range",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.lock.range.log"
+          },
+          {
+            "selector": "smb2.compound.create-write-close",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.compound.create-write-close.log"
+          },
+          {
+            "selector": "smb2.sharemode",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 3,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.sharemode.log"
+          },
+          {
+            "selector": "smb2.create_no_streams",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.create_no_streams.log"
+          },
+          {
+            "selector": "smb2.dir.find",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.dir.find.log"
+          },
+          {
+            "selector": "smb2.dir.fixed",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.dir.fixed.log"
+          },
+          {
+            "selector": "smb2.credits",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 3,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.credits.log"
+          },
+          {
+            "selector": "smb2.lock.valid-request",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.lock.valid-request.log"
+          },
+          {
+            "selector": "smb2.lock.lock",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.lock.lock.log"
+          },
+          {
+            "selector": "smb2.lock.errorcode",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.lock.errorcode.log"
+          },
+          {
+            "selector": "smb2.lock.zerobytelength",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.lock.zerobytelength.log"
+          },
+          {
+            "selector": "smb2.lock.zerobyteread",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.lock.zerobyteread.log"
+          },
+          {
+            "selector": "smb2.lock.unlock",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.lock.unlock.log"
+          },
+          {
+            "selector": "smb2.lock.multiple-unlock",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.lock.multiple-unlock.log"
+          },
+          {
+            "selector": "smb2.lock.stacking",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.lock.stacking.log"
+          },
+          {
+            "selector": "smb2.lock.truncate",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.lock.truncate.log"
+          },
+          {
+            "selector": "smb2.create.brlocked",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.create.brlocked.log"
+          },
+          {
+            "selector": "smb2.read.access",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.read.access.log"
+          },
+          {
+            "selector": "smb2.getinfo.granted",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.getinfo.granted.log"
+          },
+          {
+            "selector": "smb2.compound.related1",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.compound.related1.log"
+          },
+          {
+            "selector": "smb2.compound.related2",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.compound.related2.log"
+          },
+          {
+            "selector": "smb2.compound.related5",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.compound.related5.log"
+          },
+          {
+            "selector": "smb2.compound.related6",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.compound.related6.log"
+          },
+          {
+            "selector": "smb2.compound.related8",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.compound.related8.log"
+          },
+          {
+            "selector": "smb2.compound.related9",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.compound.related9.log"
+          },
+          {
+            "selector": "smb2.compound.unrelated1",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.compound.unrelated1.log"
+          },
+          {
+            "selector": "smb2.compound.invalid1",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.compound.invalid1.log"
+          },
+          {
+            "selector": "smb2.compound.invalid3",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.compound.invalid3.log"
+          },
+          {
+            "selector": "smb2.compound.invalid4",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.compound.invalid4.log"
+          },
+          {
+            "selector": "smb2.create.leading-slash",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.create.leading-slash.log"
+          },
+          {
+            "selector": "smb2.create.impersonation",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.create.impersonation.log"
+          },
+          {
+            "selector": "smb2.rename",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 12,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.rename.log"
+          },
+          {
+            "selector": "smb2.compound.invalid2",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.compound.invalid2.log"
+          },
+          {
+            "selector": "smb2.session.two_logoff",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.session.two_logoff.log"
+          },
+          {
+            "selector": "smb2.session.ntlmssp_bug14932",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.session.ntlmssp_bug14932.log"
+          },
+          {
+            "selector": "smb2.connect",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.connect.log"
+          },
+          {
+            "selector": "smb2.session-require-signing",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.session-require-signing.log"
+          },
+          {
+            "selector": "smb2.lock.contend",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.lock.contend.log"
+          },
+          {
+            "selector": "smb2.lock.context",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.lock.context.log"
+          },
+          {
+            "selector": "smb2.lock.overlap",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.lock.overlap.log"
+          },
+          {
+            "selector": "smb2.create.multi",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.create.multi.log"
+          },
+          {
+            "selector": "smb2.create.mkdir-dup",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.create.mkdir-dup.log"
+          },
+          {
+            "selector": "smb2.compound_find.compound_find_related",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.compound_find.compound_find_related.log"
+          },
+          {
+            "selector": "smb2.compound_find.compound_find_unrelated",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.compound_find.compound_find_unrelated.log"
+          },
+          {
+            "selector": "smb2.charset.Testing naked diacritical (umlaut)",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.charset.Testing naked diacritical (umlaut).log"
+          },
+          {
+            "selector": "smb2.charset.Testing wide-a",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.charset.Testing wide-a.log"
+          },
+          {
+            "selector": "smb2.fileid.unique",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.fileid.unique.log"
+          },
+          {
+            "selector": "smb2.fileid.unique-dir",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.fileid.unique-dir.log"
+          },
+          {
+            "selector": "smb2.deny",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 2,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.deny.log"
+          },
+          {
+            "selector": "smb2.tcon",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.tcon.log"
+          },
+          {
+            "selector": "smb2.dir.file-index",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.dir.file-index.log"
+          },
+          {
+            "selector": "smb2.create.dir-alloc-size",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.create.dir-alloc-size.log"
+          },
+          {
+            "selector": "smb2.compound_async.flush_close",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.compound_async.flush_close.log"
+          },
+          {
+            "selector": "smb2.compound_async.flush_flush",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.compound_async.flush_flush.log"
+          },
+          {
+            "selector": "smb2.create.open",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.create.open.log"
+          },
+          {
+            "selector": "smb2.create.delete",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-native-smb2.create.delete.log"
+          }
+        ]
+      },
+      "native-linux.json": {
+        "status": "passed"
+      },
+      "kernel-cifs-rejection.json": {
+        "status": "passed"
+      },
+      "nfs-attributes.json": {
+        "status": "passed",
+        "checks": [
+          "v3 CREATE preserves mode, mapped ownership and explicit atime/mtime on native handles",
+          "v3 ctime differs from preserved mtime and advances for mode-only metadata changes across export aliases",
+          "v4 SETATTR updates aliases consistently; GETATTR rejects write-only time attributes",
+          "durable change counters detect equal-size writes with restored mtime, share alias state and return real namespace change_info; reads do not advance them",
+          "v3 used and v4 space_used match independent native allocation for empty, small, sparse/extended and truncated files, separately from logical size",
+          "paged v4 READDIR skips reserved cookies 1/2 and resumes without duplicate or missing entries",
+          "mode/ownership and exact timestamps survive server restart through stable alias handles"
+        ]
+      },
+      "linux-gcc.pin-recovery.json": {
+        "status": "passed",
+        "checks": [
+          "journal before private link creation preserves original file and handle",
+          "private link before unlink is rolled back without deleting original data",
+          "interrupted final reaping completes idempotently and leaves old handle STALE"
+        ]
+      },
+      "linux-gcc.smb-attributes.json": {
+        "status": "passed",
+        "checks": [
+          "CREATE/QUERY/SET persistent DOS attributes, zero/no-change and NORMAL semantics; readonly open/delete checks and granted-handle authority",
+          "four independent timestamps, native mtime, zero/no-change, per-handle explicit/-1 freeze and -2 re-enable; invalid times reject before attribute mutation",
+          "binary extended attributes on CREATE/QUERY/SET, case-insensitive updates, deletion, restart, NEED_EA and access rights; malformed chains reject atomically",
+          "attributes follow native object across rename/restart, directory invariants hold, replacement object does not inherit stale metadata",
+          "per-open mode CREATE/QUERY/SET and FileAllInformation agreement, write-through writes, independent handles, invalid synchronous/immutable modes and SMB2 ignored synchronous CREATE flags",
+          "EA cursor paging, restart, single-entry and explicit indexes, independent opens, bounded whole-entry overflow and undersized-buffer retries",
+          "selected-name EA queries preserve request order and scan cursor, ignore index/restart, match case-insensitively, return absent names, bound output and reject malformed chains without cursor changes",
+          "MxAc maximal access uses fresh policy and readonly restrictions, supports optional change-time comparison and chained QFid replies, rejects malformed/duplicate contexts before mutation",
+          "EA writes atomically update change time/archive while respecting frozen timestamps; exact 65531-byte aggregate limit and standard invalid-name/list statuses"
+        ]
+      },
+      "linux-gcc.files.json": {
+        "status": "passed",
+        "checks": [
+          "users/groups/membership; separate management roles; root, space and writer overlap rejected",
+          "two-user isolation and administrator has no implicit file grant; aliases charge quota once",
+          "portable names, traversal, case aliases, hard links and symlink rejection",
+          "random writes, explicit flush, range locks, stable open identity across rename",
+          "quota pre-reservation, staged visibility and cancellation releases capacity",
+          "acknowledged grant and group revocation; open handles cannot bypass policy",
+          "domain crash fencing, sibling continuity and durable staged upload recovery",
+          "bounded CPU/memory/network/capacity inventory, honest disk-health states and audit",
+          "bounded HTTPS CLI upload/download with SHA-256 match: 1048576 bytes; worker budget 512 MiB",
+          "clean stop, all owner databases consistent and logs exclude credentials"
+        ]
+      },
+      "linux-gcc.integration.json": {
+        "status": "passed",
+        "checks": [
+          "all service targets start and readiness resolves dependencies",
+          "single supervisor owner fence",
+          "one-use local administrator bootstrap",
+          "unauthenticated, incorrect password and untrusted TLS rejected",
+          "HTTP body limit, connection admission and idle TLS timeout",
+          "authenticated CLI and truthful capabilities; read scope cannot restart",
+          "read-scoped session logout and immediate revocation",
+          "browser secure cookies, exact-origin CORS, CSRF and revocation",
+          "idempotent restart and sibling continuity",
+          "supervisor crash verified adoption preserves workers and session",
+          "abrupt worker death recovers with backoff",
+          "persistent crash-loop limit",
+          "graceful dependency-ordered shutdown",
+          "abrupt migration transaction recovery and pre-upgrade backup",
+          "SQLite integrity, hashed tokens/passwords, redacted logs"
+        ]
+      },
+      "linux-gcc.ftp.json": {
+        "status": "passed",
+        "checks": [
+          "M3 state adds isolated FTP worker; plaintext default deny, anonymous/active/FXP/downgrade denied",
+          "stdlib FTP client: UTF-8, PASV, MLSD/MLST facts, directories/rename/delete, binary roundtrip and safe REST upload/download",
+          "EPSV ALL and TLS certificate verification; fresh or different-control TLS sessions rejected on data channel",
+          "configured passive port exhaustion returns 425 and releases listeners on ABOR/QUIT",
+          "in-band ABOR and missing TLS close_notify discard staging, preserve existing file, release quota",
+          "bounded malformed commands, mismatched data peer, stalled TLS, quota overflow and changed-source resume rejection",
+          "share revocation during STOR cleans unpublished data; disabled credentials invalidate existing control sessions",
+          "FTP kill/restart reclaims stages; API, identity, file and DAV processes survive; mixed writer gate retained",
+          "independent curl explicit FTPS probe (strict session binding retained)",
+          "bounded streaming upload/download 1 MiB with digest verification",
+          "explicit plaintext opt-in works after restart with stdlib and curl; default remains TLS only"
+        ]
+      },
+      "linux-gcc.unlink.json": {
+        "status": "passed",
+        "checks": [
+          "atomic rename preserves both old opens, isolates writes and charges retained data until last CLOSE",
+          "periodic lease expiry releases unlinked bytes without any NFS client traffic",
+          "unlink retains descriptor and quota across NFS worker crash; matching OPEN reclaim and last CLOSE release it",
+          "private links preserve data, identity and quota through file-domain kill and all-service restart; reclaim/CLOSE removes durable storage"
+        ]
+      },
+      "linux-gcc.smb.json": {
+        "status": "passed",
+        "checks": [
+          "verified repeated logins do not exhaust the failed-authentication budget",
+          "signed NTLMv2 MIC authentication, UTF-16 create/read/write/flush/query/directory/close",
+          "QFid CREATE context agrees with internal file IDs across opens and distinguishes objects on one volume",
+          "authenticated srvsvc NDR32 share enumeration filters inaccessible and non-SMB shares",
+          "SMB share lookup ignores case, preserves canonical grants and rejects ambiguous publication without non-SMB shadowing",
+          "share access conflicts, exclusive/shared byte locks, rename with live handles, truncate and last-close deletion",
+          "signed related compound CREATE/WRITE/READ/CLOSE and credit accounting",
+          "directory deletion is nonrecursive; traversal/ADS/non-NFC denied; unsupported persistent ACL query rejected",
+          "1 MiB streamed binary roundtrip with SHA-256",
+          "unknown-session LOGOFF preserves the valid session; client-clock NTLMv2 accepted; excessive skew, bad MIC/proof, unsigned/tampered signing and malformed packets rejected",
+          "SMB credential revocation invalidates live access; re-enrollment and SPNEGO reconnect succeed",
+          "SMB worker kill/restart reclaims handles and durable delete intent without restarting API, identity or files"
+        ]
+      },
+      "linux-gcc.discovery.json": {
+        "status": "passed",
+        "checks": [
+          "EXPORT and DUMP filter root-squashed/unmapped principals; duplicate MNT is idempotent",
+          "mount records survive reconnect; UMNT/UMNTALL affect only caller and preserve NFS filehandles",
+          "rpcbind DUMP/GETVERSADDR advertise implemented TCP services plus UDP NSM; older NLM versions remain absent",
+          "recognized unsupported file types return per-operation errors after successful SEQUENCE/PUTFH",
+          "BACKCHANNEL_CTL updates bounded callback configuration; unknown GSS, SP4_NONE SET_SSV and obsolete v4.0 operations return defined per-operation errors",
+          "optional pNFS/delegation/attribute operations are decoded and return NOTSUPP with their own operation number, not OP_ILLEGAL",
+          "export revocation immediately hides discovery and denies subsequent MNT"
+        ]
+      },
+      "linux-gcc.smb-allocation.json": {
+        "status": "passed",
+        "checks": [
+          "schema v4 migration preserves a pre-v5 backup before adding durable reservations",
+          "native space allocation preserves EOF, charges quota once, rejects over-quota growth before mutation and enforces WRITE_DATA",
+          "durable logical quota survives restart while allocation reports native close-time trimming; EOF extension consumes reservations; shrink and deletion release quota",
+          "AlSi CREATE/overwrite preallocation preserves zero EOF, charges durable quota, ignores existing opens/directories, validates context shape and fails over-quota before namespace/data mutation"
+        ]
+      },
+      "linux-gcc.nfs.json": {
+        "status": "passed",
+        "checks": [
+          "TCP record fragmentation and MOUNT v3 with independent XDR codecs",
+          "unknown UID/GID/groups rejected; root squashed to explicitly unprivileged subject",
+          "root squash uses anonymous read rights, strips privileged groups and rejects writes/revoked rights",
+          "read-only TCP portmapper advertises NFS and does not advertise unsupported NLM version 3",
+          "trailing XDR rejected before WRITE; previously persisted bytes remain intact",
+          "v3 guarded CREATE, 64 KiB UNSTABLE upgraded to FILE_SYNC, READ, COMMIT, exact duplicate WRITE",
+          "MAC tamper rejected; file handle survives external rename and all-service restart; durable v3 replay and new write verifier",
+          "deleted/recreated path cannot revive an old file handle",
+          "v3 MKDIR, cross-directory RENAME, READDIRPLUS, REMOVE/RMDIR type separation",
+          "pynfs v4.1 EXCHANGE_ID/CREATE_SESSION/SEQUENCE, guarded OPEN, WRITE/READ, exact slot replay",
+          "false slot replay and foreign stateid rejected; GETATTR subset independently decoded",
+          "old sessions/stateids invalidated on reboot; persisted owner can reclaim OPEN during grace; CLOSE releases recovery record",
+          "unrelated client cannot reclaim another owner after restart",
+          "export disable revokes existing handles through fresh identity grants",
+          "offline metadata backup strips NFS enrollment and excludes persistent capability/recovery databases"
+        ]
+      },
+      "linux-gcc.smb3.json": {
+        "status": "passed",
+        "checks": [
+          "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+          "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+          "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+          "0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+          "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+          "leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent",
+          "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+          "unsupported signing/cipher/hash and malformed contexts fail without dialect fallback",
+          "independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+          "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+          "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+          "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+        ]
+      },
+      "linux-gcc.dav.json": {
+        "status": "passed",
+        "checks": [
+          "M2 file schema migrates transactionally with backups; supervisor adds the new DAV role key",
+          "TLS Basic auth, UTF-8 names, recursive collection COPY/MOVE/DELETE and type-changing overwrite",
+          "independent curl TLS upload/download with certificate verification",
+          "litmus basic copymove props locks http",
+          "auth/condition before 100-continue; ranges, HEAD, 304/412/416; interrupted PUT releases quota",
+          "chunk framing, UTF-8/NFC and encoded traversal checks, bounded depth, DTD/entity rejection, destination origin confinement",
+          "durable recursive COPY journal resumes from pre-publication crash cut",
+          "persistent properties and exclusive lock survive file-worker crash; owner/token enforcement across DAV and core; expiry",
+          "share exposure updates revoke active DAV writes and cancellation releases reservations",
+          "streaming upload/download SHA-256 roundtrip",
+          "offline backup refuses running services; restore into new state rotates TLS/IPC, revokes sessions and preserves metadata/files"
+        ]
+      },
+      "linux-gcc.namespace.json": {
+        "status": "passed",
+        "checks": [
+          "paged pseudo-root READDIR exposes only enabled, mapped and authorized exports; returned handles match LOOKUP and LOOKUPP",
+          "root-squashed, unmapped and invalid-group identities cannot enumerate protected names; invalid attributes reject even in empty directories",
+          "READDIR validates reserved cookies, changed verifiers, exact maxcount and forward progress; pseudo-root change and SECINFO work",
+          "one session holds simultaneous OPENs in distinct exports and executes cross-export compounds without accepting mismatched stateids",
+          "cached compound replies reauthorize every touched export, including READ without OPEN; revocation prevents data replay while other exports remain usable",
+          "cached pseudo-root listings are fenced when export visibility changes and the next slot sequence still progresses",
+          "retargeting a share with the same export UUID cannot authorize a cached response from the old space"
+        ]
+      },
+      "linux-gcc.nlm.json": {
+        "status": "passed",
+        "checks": [
+          "NLM duplicate grants, holder information, partial unlock, shared locks, EOF ranges and overflow errors",
+          "exclusive locks require fresh write authority; NFSv4 byte locks conflict with NLM owners",
+          "blocking LOCK receives and acknowledges a real TCP GRANTED callback; CANCEL matches owner/range independently of cookie",
+          "rejected blocking upgrades restore prior shared locks; revoked owners cannot leave stale conflicts",
+          "wait-for cycles are rejected as deadlock without discarding existing locks",
+          "TCP/UDP NSM discovery, bounded MON callback and reboot notification release old locks; stale state cannot revoke current locks",
+          "server reboot advances NSM state, notifies peer and gates new locks; Linux-style zero-NSM-state reclaim matches persisted authority and ranges, survives a second crash, and grace expires normally"
+        ]
+      },
+      "linux-gcc.json": {
+        "status": "passed"
+      }
+    },
+    "linux-clang": {
+      "linux-clang.nlm.json": {
+        "status": "passed",
+        "checks": [
+          "NLM duplicate grants, holder information, partial unlock, shared locks, EOF ranges and overflow errors",
+          "exclusive locks require fresh write authority; NFSv4 byte locks conflict with NLM owners",
+          "blocking LOCK receives and acknowledges a real TCP GRANTED callback; CANCEL matches owner/range independently of cookie",
+          "rejected blocking upgrades restore prior shared locks; revoked owners cannot leave stale conflicts",
+          "wait-for cycles are rejected as deadlock without discarding existing locks",
+          "TCP/UDP NSM discovery, bounded MON callback and reboot notification release old locks; stale state cannot revoke current locks",
+          "server reboot advances NSM state, notifies peer and gates new locks; Linux-style zero-NSM-state reclaim matches persisted authority and ranges, survives a second crash, and grace expires normally"
+        ]
+      },
+      "linux-clang.unlink.json": {
+        "status": "passed",
+        "checks": [
+          "atomic rename preserves both old opens, isolates writes and charges retained data until last CLOSE",
+          "periodic lease expiry releases unlinked bytes without any NFS client traffic",
+          "unlink retains descriptor and quota across NFS worker crash; matching OPEN reclaim and last CLOSE release it",
+          "private links preserve data, identity and quota through file-domain kill and all-service restart; reclaim/CLOSE removes durable storage"
+        ]
+      },
+      "linux-clang.pin-recovery.json": {
+        "status": "passed",
+        "checks": [
+          "journal before private link creation preserves original file and handle",
+          "private link before unlink is rolled back without deleting original data",
+          "interrupted final reaping completes idempotently and leaves old handle STALE"
+        ]
+      },
+      "linux-clang.dav.json": {
+        "status": "passed",
+        "checks": [
+          "M2 file schema migrates transactionally with backups; supervisor adds the new DAV role key",
+          "TLS Basic auth, UTF-8 names, recursive collection COPY/MOVE/DELETE and type-changing overwrite",
+          "independent curl TLS upload/download with certificate verification",
+          "litmus basic copymove props locks http",
+          "auth/condition before 100-continue; ranges, HEAD, 304/412/416; interrupted PUT releases quota",
+          "chunk framing, UTF-8/NFC and encoded traversal checks, bounded depth, DTD/entity rejection, destination origin confinement",
+          "durable recursive COPY journal resumes from pre-publication crash cut",
+          "persistent properties and exclusive lock survive file-worker crash; owner/token enforcement across DAV and core; expiry",
+          "share exposure updates revoke active DAV writes and cancellation releases reservations",
+          "streaming upload/download SHA-256 roundtrip",
+          "offline backup refuses running services; restore into new state rotates TLS/IPC, revokes sessions and preserves metadata/files"
+        ]
+      },
+      "linux-clang.smb-allocation.json": {
+        "status": "passed",
+        "checks": [
+          "schema v4 migration preserves a pre-v5 backup before adding durable reservations",
+          "native space allocation preserves EOF, charges quota once, rejects over-quota growth before mutation and enforces WRITE_DATA",
+          "durable logical quota survives restart while allocation reports native close-time trimming; EOF extension consumes reservations; shrink and deletion release quota",
+          "AlSi CREATE/overwrite preallocation preserves zero EOF, charges durable quota, ignores existing opens/directories, validates context shape and fails over-quota before namespace/data mutation"
+        ]
+      },
+      "linux-clang.json": {
+        "status": "passed"
+      },
+      "linux-clang.nfs.json": {
+        "status": "passed",
+        "checks": [
+          "TCP record fragmentation and MOUNT v3 with independent XDR codecs",
+          "unknown UID/GID/groups rejected; root squashed to explicitly unprivileged subject",
+          "root squash uses anonymous read rights, strips privileged groups and rejects writes/revoked rights",
+          "read-only TCP portmapper advertises NFS and does not advertise unsupported NLM version 3",
+          "trailing XDR rejected before WRITE; previously persisted bytes remain intact",
+          "v3 guarded CREATE, 64 KiB UNSTABLE upgraded to FILE_SYNC, READ, COMMIT, exact duplicate WRITE",
+          "MAC tamper rejected; file handle survives external rename and all-service restart; durable v3 replay and new write verifier",
+          "deleted/recreated path cannot revive an old file handle",
+          "v3 MKDIR, cross-directory RENAME, READDIRPLUS, REMOVE/RMDIR type separation",
+          "pynfs v4.1 EXCHANGE_ID/CREATE_SESSION/SEQUENCE, guarded OPEN, WRITE/READ, exact slot replay",
+          "false slot replay and foreign stateid rejected; GETATTR subset independently decoded",
+          "old sessions/stateids invalidated on reboot; persisted owner can reclaim OPEN during grace; CLOSE releases recovery record",
+          "unrelated client cannot reclaim another owner after restart",
+          "export disable revokes existing handles through fresh identity grants",
+          "offline metadata backup strips NFS enrollment and excludes persistent capability/recovery databases"
+        ]
+      },
+      "linux-clang.integration.json": {
+        "status": "passed",
+        "checks": [
+          "all service targets start and readiness resolves dependencies",
+          "single supervisor owner fence",
+          "one-use local administrator bootstrap",
+          "unauthenticated, incorrect password and untrusted TLS rejected",
+          "HTTP body limit, connection admission and idle TLS timeout",
+          "authenticated CLI and truthful capabilities; read scope cannot restart",
+          "read-scoped session logout and immediate revocation",
+          "browser secure cookies, exact-origin CORS, CSRF and revocation",
+          "idempotent restart and sibling continuity",
+          "supervisor crash verified adoption preserves workers and session",
+          "abrupt worker death recovers with backoff",
+          "persistent crash-loop limit",
+          "graceful dependency-ordered shutdown",
+          "abrupt migration transaction recovery and pre-upgrade backup",
+          "SQLite integrity, hashed tokens/passwords, redacted logs"
+        ]
+      },
+      "linux-clang.smb-attributes.json": {
+        "status": "passed",
+        "checks": [
+          "CREATE/QUERY/SET persistent DOS attributes, zero/no-change and NORMAL semantics; readonly open/delete checks and granted-handle authority",
+          "four independent timestamps, native mtime, zero/no-change, per-handle explicit/-1 freeze and -2 re-enable; invalid times reject before attribute mutation",
+          "binary extended attributes on CREATE/QUERY/SET, case-insensitive updates, deletion, restart, NEED_EA and access rights; malformed chains reject atomically",
+          "attributes follow native object across rename/restart, directory invariants hold, replacement object does not inherit stale metadata",
+          "per-open mode CREATE/QUERY/SET and FileAllInformation agreement, write-through writes, independent handles, invalid synchronous/immutable modes and SMB2 ignored synchronous CREATE flags",
+          "EA cursor paging, restart, single-entry and explicit indexes, independent opens, bounded whole-entry overflow and undersized-buffer retries",
+          "selected-name EA queries preserve request order and scan cursor, ignore index/restart, match case-insensitively, return absent names, bound output and reject malformed chains without cursor changes",
+          "MxAc maximal access uses fresh policy and readonly restrictions, supports optional change-time comparison and chained QFid replies, rejects malformed/duplicate contexts before mutation",
+          "EA writes atomically update change time/archive while respecting frozen timestamps; exact 65531-byte aggregate limit and standard invalid-name/list statuses"
+        ]
+      },
+      "linux-clang.smb.json": {
+        "status": "passed",
+        "checks": [
+          "verified repeated logins do not exhaust the failed-authentication budget",
+          "signed NTLMv2 MIC authentication, UTF-16 create/read/write/flush/query/directory/close",
+          "QFid CREATE context agrees with internal file IDs across opens and distinguishes objects on one volume",
+          "authenticated srvsvc NDR32 share enumeration filters inaccessible and non-SMB shares",
+          "SMB share lookup ignores case, preserves canonical grants and rejects ambiguous publication without non-SMB shadowing",
+          "share access conflicts, exclusive/shared byte locks, rename with live handles, truncate and last-close deletion",
+          "signed related compound CREATE/WRITE/READ/CLOSE and credit accounting",
+          "directory deletion is nonrecursive; traversal/ADS/non-NFC denied; unsupported persistent ACL query rejected",
+          "1 MiB streamed binary roundtrip with SHA-256",
+          "unknown-session LOGOFF preserves the valid session; client-clock NTLMv2 accepted; excessive skew, bad MIC/proof, unsigned/tampered signing and malformed packets rejected",
+          "SMB credential revocation invalidates live access; re-enrollment and SPNEGO reconnect succeed",
+          "SMB worker kill/restart reclaims handles and durable delete intent without restarting API, identity or files"
+        ]
+      },
+      "linux-clang.discovery.json": {
+        "status": "passed",
+        "checks": [
+          "EXPORT and DUMP filter root-squashed/unmapped principals; duplicate MNT is idempotent",
+          "mount records survive reconnect; UMNT/UMNTALL affect only caller and preserve NFS filehandles",
+          "rpcbind DUMP/GETVERSADDR advertise implemented TCP services plus UDP NSM; older NLM versions remain absent",
+          "recognized unsupported file types return per-operation errors after successful SEQUENCE/PUTFH",
+          "BACKCHANNEL_CTL updates bounded callback configuration; unknown GSS, SP4_NONE SET_SSV and obsolete v4.0 operations return defined per-operation errors",
+          "optional pNFS/delegation/attribute operations are decoded and return NOTSUPP with their own operation number, not OP_ILLEGAL",
+          "export revocation immediately hides discovery and denies subsequent MNT"
+        ]
+      },
+      "linux-clang.namespace.json": {
+        "status": "passed",
+        "checks": [
+          "paged pseudo-root READDIR exposes only enabled, mapped and authorized exports; returned handles match LOOKUP and LOOKUPP",
+          "root-squashed, unmapped and invalid-group identities cannot enumerate protected names; invalid attributes reject even in empty directories",
+          "READDIR validates reserved cookies, changed verifiers, exact maxcount and forward progress; pseudo-root change and SECINFO work",
+          "one session holds simultaneous OPENs in distinct exports and executes cross-export compounds without accepting mismatched stateids",
+          "cached compound replies reauthorize every touched export, including READ without OPEN; revocation prevents data replay while other exports remain usable",
+          "cached pseudo-root listings are fenced when export visibility changes and the next slot sequence still progresses",
+          "retargeting a share with the same export UUID cannot authorize a cached response from the old space"
+        ]
+      },
+      "linux-clang.files.json": {
+        "status": "passed",
+        "checks": [
+          "users/groups/membership; separate management roles; root, space and writer overlap rejected",
+          "two-user isolation and administrator has no implicit file grant; aliases charge quota once",
+          "portable names, traversal, case aliases, hard links and symlink rejection",
+          "random writes, explicit flush, range locks, stable open identity across rename",
+          "quota pre-reservation, staged visibility and cancellation releases capacity",
+          "acknowledged grant and group revocation; open handles cannot bypass policy",
+          "domain crash fencing, sibling continuity and durable staged upload recovery",
+          "bounded CPU/memory/network/capacity inventory, honest disk-health states and audit",
+          "bounded HTTPS CLI upload/download with SHA-256 match: 1048576 bytes; worker budget 512 MiB",
+          "clean stop, all owner databases consistent and logs exclude credentials"
+        ]
+      },
+      "linux-clang.smb3.json": {
+        "status": "passed",
+        "checks": [
+          "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+          "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+          "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+          "0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+          "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+          "leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent",
+          "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+          "unsupported signing/cipher/hash and malformed contexts fail without dialect fallback",
+          "independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+          "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+          "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+          "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+        ]
+      },
+      "linux-clang.ftp.json": {
+        "status": "passed",
+        "checks": [
+          "M3 state adds isolated FTP worker; plaintext default deny, anonymous/active/FXP/downgrade denied",
+          "stdlib FTP client: UTF-8, PASV, MLSD/MLST facts, directories/rename/delete, binary roundtrip and safe REST upload/download",
+          "EPSV ALL and TLS certificate verification; fresh or different-control TLS sessions rejected on data channel",
+          "configured passive port exhaustion returns 425 and releases listeners on ABOR/QUIT",
+          "in-band ABOR and missing TLS close_notify discard staging, preserve existing file, release quota",
+          "bounded malformed commands, mismatched data peer, stalled TLS, quota overflow and changed-source resume rejection",
+          "share revocation during STOR cleans unpublished data; disabled credentials invalidate existing control sessions",
+          "FTP kill/restart reclaims stages; API, identity, file and DAV processes survive; mixed writer gate retained",
+          "independent curl explicit FTPS probe (strict session binding retained)",
+          "bounded streaming upload/download 1 MiB with digest verification",
+          "explicit plaintext opt-in works after restart with stdlib and curl; default remains TLS only"
+        ]
+      }
+    },
+    "windows-msvc": {
+      "windows-native-smb.json": {
+        "status": "passed"
+      },
+      "nfs-create.json": {
+        "status": "passed",
+        "checks": [
+          "NFSv3 MKDIR accepts zero size hints without attempting to truncate a directory",
+          "required suppattr_exclcreat advertises actual writable creation attributes",
+          "exclusive verifier retry preserves content; mismatched verifier and unsupported exclusive attributes reject without creation",
+          "UNCHECKED ignores nonzero size and mode on existing files; zero size truncates only after share reservations permit it",
+          "CREATE and OPEN return the attributes actually applied"
+        ]
+      },
+      "windows-native-nfs.json": {
+        "status": "passed",
+        "checks": [
+          "native MOUNT and NFSv3 over TCP",
+          "1 MiB flush and SHA256 readback",
+          "rename, truncate, enumeration and delete"
+        ]
+      },
+      "nfs-state.json": {
+        "status": "passed",
+        "checks": [
+          "BIND_CONN_TO_SESSION on a fresh connection, PUTPUBFH, TEST_STATEID old/current states, FREE_STATEID held/unlocked states and read-only OPEN_DOWNGRADE",
+          "one kernel-style session accepts multiple mapped users without sharing their open authority",
+          "exclusive lock conflicts, denied owner details, disjoint writes and CLOSE with held locks",
+          "partial unlock splits ranges and preserves neighboring conflicts",
+          "process restart persists split lock ranges; matching client reclaims OPEN and locks before RECLAIM_COMPLETE"
+        ]
+      },
+      "filezilla-windows.json": {
+        "status": "failed",
+        "error": "Traceback (most recent call last):\n  File \"D:\\a\\tauCloud\\tauCloud\\tests\\filezilla_acceptance.py\", line 123, in main\n    if time.monotonic()>deadline:raise RuntimeError('FileZilla FTPS queue timed out')\n                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: FileZilla FTPS queue timed out\n"
+      },
+      "nfs-attributes.json": {
+        "status": "passed",
+        "checks": [
+          "v3 CREATE preserves mode, mapped ownership and explicit atime/mtime on native handles",
+          "v3 ctime differs from preserved mtime and advances for mode-only metadata changes across export aliases",
+          "v4 SETATTR updates aliases consistently; GETATTR rejects write-only time attributes",
+          "durable change counters detect equal-size writes with restored mtime, share alias state and return real namespace change_info; reads do not advance them",
+          "v3 used and v4 space_used match independent native allocation for empty, small, sparse/extended and truncated files, separately from logical size",
+          "paged v4 READDIR skips reserved cookies 1/2 and resumes without duplicate or missing entries",
+          "mode/ownership and exact timestamps survive server restart through stable alias handles"
+        ]
+      },
+      "windows-msvc.discovery.json": {
+        "status": "passed",
+        "checks": [
+          "EXPORT and DUMP filter root-squashed/unmapped principals; duplicate MNT is idempotent",
+          "mount records survive reconnect; UMNT/UMNTALL affect only caller and preserve NFS filehandles",
+          "rpcbind DUMP/GETVERSADDR advertise implemented TCP services plus UDP NSM; older NLM versions remain absent",
+          "recognized unsupported file types return per-operation errors after successful SEQUENCE/PUTFH",
+          "BACKCHANNEL_CTL updates bounded callback configuration; unknown GSS, SP4_NONE SET_SSV and obsolete v4.0 operations return defined per-operation errors",
+          "optional pNFS/delegation/attribute operations are decoded and return NOTSUPP with their own operation number, not OP_ILLEGAL",
+          "export revocation immediately hides discovery and denies subsequent MNT"
+        ]
+      },
+      "windows-msvc.pin-recovery.json": {
+        "status": "passed",
+        "checks": [
+          "journal before private link creation preserves original file and handle",
+          "private link before unlink is rolled back without deleting original data",
+          "interrupted final reaping completes idempotently and leaves old handle STALE"
+        ]
+      },
+      "windows-msvc.smb.json": {
+        "status": "passed",
+        "checks": [
+          "verified repeated logins do not exhaust the failed-authentication budget",
+          "signed NTLMv2 MIC authentication, UTF-16 create/read/write/flush/query/directory/close",
+          "QFid CREATE context agrees with internal file IDs across opens and distinguishes objects on one volume",
+          "authenticated srvsvc NDR32 share enumeration filters inaccessible and non-SMB shares",
+          "SMB share lookup ignores case, preserves canonical grants and rejects ambiguous publication without non-SMB shadowing",
+          "share access conflicts, exclusive/shared byte locks, rename with live handles, truncate and last-close deletion",
+          "signed related compound CREATE/WRITE/READ/CLOSE and credit accounting",
+          "directory deletion is nonrecursive; traversal/ADS/non-NFC denied; unsupported persistent ACL query rejected",
+          "1 MiB streamed binary roundtrip with SHA-256",
+          "unknown-session LOGOFF preserves the valid session; client-clock NTLMv2 accepted; excessive skew, bad MIC/proof, unsigned/tampered signing and malformed packets rejected",
+          "SMB credential revocation invalidates live access; re-enrollment and SPNEGO reconnect succeed",
+          "SMB worker kill/restart reclaims handles and durable delete intent without restarting API, identity or files"
+        ]
+      },
+      "windows-msvc.nlm.json": {
+        "status": "passed",
+        "checks": [
+          "NLM duplicate grants, holder information, partial unlock, shared locks, EOF ranges and overflow errors",
+          "exclusive locks require fresh write authority; NFSv4 byte locks conflict with NLM owners",
+          "blocking LOCK receives and acknowledges a real TCP GRANTED callback; CANCEL matches owner/range independently of cookie",
+          "rejected blocking upgrades restore prior shared locks; revoked owners cannot leave stale conflicts",
+          "wait-for cycles are rejected as deadlock without discarding existing locks",
+          "TCP/UDP NSM discovery, bounded MON callback and reboot notification release old locks; stale state cannot revoke current locks",
+          "server reboot advances NSM state, notifies peer and gates new locks; Linux-style zero-NSM-state reclaim matches persisted authority and ranges, survives a second crash, and grace expires normally"
+        ]
+      },
+      "windows-msvc.ftp.json": {
+        "status": "passed",
+        "checks": [
+          "M3 state adds isolated FTP worker; plaintext default deny, anonymous/active/FXP/downgrade denied",
+          "stdlib FTP client: UTF-8, PASV, MLSD/MLST facts, directories/rename/delete, binary roundtrip and safe REST upload/download",
+          "EPSV ALL and TLS certificate verification; fresh or different-control TLS sessions rejected on data channel",
+          "configured passive port exhaustion returns 425 and releases listeners on ABOR/QUIT",
+          "in-band ABOR and missing TLS close_notify discard staging, preserve existing file, release quota",
+          "bounded malformed commands, mismatched data peer, stalled TLS, quota overflow and changed-source resume rejection",
+          "share revocation during STOR cleans unpublished data; disabled credentials invalidate existing control sessions",
+          "FTP kill/restart reclaims stages; API, identity, file and DAV processes survive; mixed writer gate retained",
+          "independent curl explicit FTPS probe (strict session binding retained)",
+          "bounded streaming upload/download 1 MiB with digest verification",
+          "explicit plaintext opt-in works after restart with stdlib and curl; default remains TLS only"
+        ]
+      },
+      "windows-msvc.nfs.json": {
+        "status": "passed",
+        "checks": [
+          "TCP record fragmentation and MOUNT v3 with independent XDR codecs",
+          "unknown UID/GID/groups rejected; root squashed to explicitly unprivileged subject",
+          "root squash uses anonymous read rights, strips privileged groups and rejects writes/revoked rights",
+          "read-only TCP portmapper advertises NFS and does not advertise unsupported NLM version 3",
+          "trailing XDR rejected before WRITE; previously persisted bytes remain intact",
+          "v3 guarded CREATE, 64 KiB UNSTABLE upgraded to FILE_SYNC, READ, COMMIT, exact duplicate WRITE",
+          "MAC tamper rejected; file handle survives external rename and all-service restart; durable v3 replay and new write verifier",
+          "deleted/recreated path cannot revive an old file handle",
+          "v3 MKDIR, cross-directory RENAME, READDIRPLUS, REMOVE/RMDIR type separation",
+          "pynfs v4.1 EXCHANGE_ID/CREATE_SESSION/SEQUENCE, guarded OPEN, WRITE/READ, exact slot replay",
+          "false slot replay and foreign stateid rejected; GETATTR subset independently decoded",
+          "old sessions/stateids invalidated on reboot; persisted owner can reclaim OPEN during grace; CLOSE releases recovery record",
+          "unrelated client cannot reclaim another owner after restart",
+          "export disable revokes existing handles through fresh identity grants",
+          "offline metadata backup strips NFS enrollment and excludes persistent capability/recovery databases"
+        ]
+      },
+      "windows-msvc.smb-allocation.json": {
+        "status": "passed",
+        "checks": [
+          "schema v4 migration preserves a pre-v5 backup before adding durable reservations",
+          "native space allocation preserves EOF, charges quota once, rejects over-quota growth before mutation and enforces WRITE_DATA",
+          "durable logical quota survives restart while allocation reports native close-time trimming; EOF extension consumes reservations; shrink and deletion release quota",
+          "AlSi CREATE/overwrite preallocation preserves zero EOF, charges durable quota, ignores existing opens/directories, validates context shape and fails over-quota before namespace/data mutation"
+        ]
+      },
+      "windows-msvc.dav.json": {
+        "status": "passed",
+        "checks": [
+          "M2 file schema migrates transactionally with backups; supervisor adds the new DAV role key",
+          "TLS Basic auth, UTF-8 names, recursive collection COPY/MOVE/DELETE and type-changing overwrite",
+          "independent curl TLS upload/download with certificate verification",
+          "auth/condition before 100-continue; ranges, HEAD, 304/412/416; interrupted PUT releases quota",
+          "chunk framing, UTF-8/NFC and encoded traversal checks, bounded depth, DTD/entity rejection, destination origin confinement",
+          "durable recursive COPY journal resumes from pre-publication crash cut",
+          "persistent properties and exclusive lock survive file-worker crash; owner/token enforcement across DAV and core; expiry",
+          "share exposure updates revoke active DAV writes and cancellation releases reservations",
+          "streaming upload/download SHA-256 roundtrip",
+          "offline backup refuses running services; restore into new state rotates TLS/IPC, revokes sessions and preserves metadata/files"
+        ]
+      },
+      "windows-msvc.unlink.json": {
+        "status": "passed",
+        "checks": [
+          "atomic rename preserves both old opens, isolates writes and charges retained data until last CLOSE",
+          "periodic lease expiry releases unlinked bytes without any NFS client traffic",
+          "unlink retains descriptor and quota across NFS worker crash; matching OPEN reclaim and last CLOSE release it",
+          "private links preserve data, identity and quota through file-domain kill and all-service restart; reclaim/CLOSE removes durable storage"
+        ]
+      },
+      "windows-msvc.integration.json": {
+        "status": "passed",
+        "checks": [
+          "all service targets start and readiness resolves dependencies",
+          "single supervisor owner fence",
+          "one-use local administrator bootstrap",
+          "unauthenticated, incorrect password and untrusted TLS rejected",
+          "HTTP body limit, connection admission and idle TLS timeout",
+          "authenticated CLI and truthful capabilities; read scope cannot restart",
+          "read-scoped session logout and immediate revocation",
+          "browser secure cookies, exact-origin CORS, CSRF and revocation",
+          "idempotent restart and sibling continuity",
+          "supervisor crash verified adoption preserves workers and session",
+          "abrupt worker death recovers with backoff",
+          "persistent crash-loop limit",
+          "graceful dependency-ordered shutdown",
+          "abrupt migration transaction recovery and pre-upgrade backup",
+          "SQLite integrity, hashed tokens/passwords, redacted logs"
+        ]
+      },
+      "windows-msvc.json": {
+        "status": "passed"
+      },
+      "windows-msvc.files.json": {
+        "status": "passed",
+        "checks": [
+          "users/groups/membership; separate management roles; root, space and writer overlap rejected",
+          "two-user isolation and administrator has no implicit file grant; aliases charge quota once",
+          "portable names, traversal, case aliases, hard links and symlink rejection",
+          "random writes, explicit flush, range locks, stable open identity across rename",
+          "quota pre-reservation, staged visibility and cancellation releases capacity",
+          "acknowledged grant and group revocation; open handles cannot bypass policy",
+          "domain crash fencing, sibling continuity and durable staged upload recovery",
+          "bounded CPU/memory/network/capacity inventory, honest disk-health states and audit",
+          "bounded HTTPS CLI upload/download with SHA-256 match: 1048576 bytes; worker budget 512 MiB",
+          "clean stop, all owner databases consistent and logs exclude credentials"
+        ]
+      },
+      "windows-msvc.smb3.json": {
+        "status": "passed",
+        "checks": [
+          "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+          "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+          "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+          "0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+          "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+          "leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent",
+          "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+          "unsupported signing/cipher/hash and malformed contexts fail without dialect fallback",
+          "independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+          "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+          "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+          "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+        ]
+      },
+      "windows-msvc.smb-attributes.json": {
+        "status": "passed",
+        "checks": [
+          "CREATE/QUERY/SET persistent DOS attributes, zero/no-change and NORMAL semantics; readonly open/delete checks and granted-handle authority",
+          "four independent timestamps, native mtime, zero/no-change, per-handle explicit/-1 freeze and -2 re-enable; invalid times reject before attribute mutation",
+          "binary extended attributes on CREATE/QUERY/SET, case-insensitive updates, deletion, restart, NEED_EA and access rights; malformed chains reject atomically",
+          "attributes follow native object across rename/restart, directory invariants hold, replacement object does not inherit stale metadata",
+          "per-open mode CREATE/QUERY/SET and FileAllInformation agreement, write-through writes, independent handles, invalid synchronous/immutable modes and SMB2 ignored synchronous CREATE flags",
+          "EA cursor paging, restart, single-entry and explicit indexes, independent opens, bounded whole-entry overflow and undersized-buffer retries",
+          "selected-name EA queries preserve request order and scan cursor, ignore index/restart, match case-insensitively, return absent names, bound output and reject malformed chains without cursor changes",
+          "MxAc maximal access uses fresh policy and readonly restrictions, supports optional change-time comparison and chained QFid replies, rejects malformed/duplicate contexts before mutation",
+          "EA writes atomically update change time/archive while respecting frozen timestamps; exact 65531-byte aggregate limit and standard invalid-name/list statuses"
+        ]
+      },
+      "windows-msvc.namespace.json": {
+        "status": "passed",
+        "checks": [
+          "paged pseudo-root READDIR exposes only enabled, mapped and authorized exports; returned handles match LOOKUP and LOOKUPP",
+          "root-squashed, unmapped and invalid-group identities cannot enumerate protected names; invalid attributes reject even in empty directories",
+          "READDIR validates reserved cookies, changed verifiers, exact maxcount and forward progress; pseudo-root change and SECINFO work",
+          "one session holds simultaneous OPENs in distinct exports and executes cross-export compounds without accepting mismatched stateids",
+          "cached compound replies reauthorize every touched export, including READ without OPEN; revocation prevents data replay while other exports remain usable",
+          "cached pseudo-root listings are fenced when export visibility changes and the next slot sequence still progresses",
+          "retargeting a share with the same export UUID cannot authorize a cached response from the old space"
+        ]
+      }
+    },
+    "macos": {
+      "mac-smb-metadata.json": [
+        {
+          "direction": "request",
+          "size": 69,
+          "magic": "ff534d42",
+          "time": 162.343254
+        },
+        {
+          "direction": "response",
+          "size": 158,
+          "magic": "fe534d42",
+          "time": 162.350346,
+          "command": 0,
+          "flags": 1,
+          "message_id": 0,
+          "credit_charge": 0,
+          "credits": 1,
+          "status": "0x0",
+          "dialect": "0x2ff"
+        },
+        {
+          "direction": "request",
+          "size": 250,
+          "magic": "fe534d42",
+          "time": 162.362123,
+          "command": 0,
+          "flags": 0,
+          "message_id": 1,
+          "credit_charge": 0,
+          "credits": 0,
+          "dialects": [
+            "0x202",
+            "0x210",
+            "0x300",
+            "0x302",
+            "0x311"
+          ]
+        },
+        {
+          "direction": "response",
+          "size": 236,
+          "magic": "fe534d42",
+          "time": 162.36853,
+          "command": 0,
+          "flags": 1,
+          "message_id": 1,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0",
+          "dialect": "0x311"
+        },
+        {
+          "direction": "request",
+          "size": 162,
+          "magic": "fe534d42",
+          "time": 162.760069,
+          "command": 1,
+          "flags": 0,
+          "message_id": 2,
+          "credit_charge": 1,
+          "credits": 256,
+          "ntlm_type": 1,
+          "ntlm_flags": "0x62888215"
+        },
+        {
+          "direction": "response",
+          "size": 243,
+          "magic": "fe534d42",
+          "time": 162.776335,
+          "command": 1,
+          "flags": 1,
+          "message_id": 2,
+          "credit_charge": 1,
+          "credits": 256,
+          "status": "0xc0000016",
+          "ntlm_type": 2,
+          "ntlm_flags": "0xe28a8215"
+        },
+        {
+          "direction": "request",
+          "size": 470,
+          "magic": "fe534d42",
+          "time": 162.805231,
+          "command": 1,
+          "flags": 0,
+          "message_id": 3,
+          "credit_charge": 1,
+          "credits": 256,
+          "ntlm_type": 3,
+          "ntlm_flags": "0x62888215",
+          "ntlm_mic_present": true,
+          "ntlm_response_bytes": 164,
+          "ntlm_target_echo": {
+            "1": true,
+            "2": true,
+            "7": true
+          },
+          "ntlm_av_mic_flag": true,
+          "ntlm_channel_bindings_zero": true,
+          "ntlm_clock_delta_ms": 501,
+          "fixture_domain": "TAUCLOUD",
+          "fixture_user": "alice"
+        },
+        {
+          "direction": "response",
+          "size": 81,
+          "magic": "fe534d42",
+          "time": 162.899527,
+          "command": 1,
+          "flags": 9,
+          "message_id": 3,
+          "credit_charge": 1,
+          "credits": 256,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 102,
+          "magic": "fe534d42",
+          "time": 162.915869,
+          "command": 3,
+          "flags": 8,
+          "message_id": 4,
+          "credit_charge": 1,
+          "credits": 256,
+          "fixture_share_path": "\\\\127.0.0.1\\SMB"
+        },
+        {
+          "direction": "response",
+          "size": 80,
+          "magic": "fe534d42",
+          "time": 162.944919,
+          "command": 3,
+          "flags": 9,
+          "message_id": 4,
+          "credit_charge": 1,
+          "credits": 256,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 163.119723,
+          "command": 5,
+          "flags": 8,
+          "message_id": 5,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100080",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 404,
+          "magic": "fe534d42",
+          "time": 163.383799,
+          "command": 5,
+          "flags": 9,
+          "message_id": 5,
+          "credit_charge": 1,
+          "credits": 256,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 392,
+          "magic": "fe534d42",
+          "time": 163.398825,
+          "command": 5,
+          "flags": 8,
+          "message_id": 8,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100080",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 412,
+          "magic": "fe534d42",
+          "time": 163.505096,
+          "command": 5,
+          "flags": 9,
+          "message_id": 8,
+          "credit_charge": 1,
+          "credits": 256,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 163.511953,
+          "command": 5,
+          "flags": 8,
+          "message_id": 11,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100080",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 484,
+          "magic": "fe534d42",
+          "time": 163.589801,
+          "command": 5,
+          "flags": 9,
+          "message_id": 11,
+          "credit_charge": 1,
+          "credits": 256,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 336,
+          "magic": "fe534d42",
+          "time": 163.596301,
+          "command": 5,
+          "flags": 8,
+          "message_id": 14,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x89",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 356,
+          "magic": "fe534d42",
+          "time": 163.65492,
+          "command": 5,
+          "flags": 9,
+          "message_id": 14,
+          "credit_charge": 1,
+          "credits": 256,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 163.661307,
+          "command": 5,
+          "flags": 8,
+          "message_id": 17,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100080",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 404,
+          "magic": "fe534d42",
+          "time": 163.764806,
+          "command": 5,
+          "flags": 9,
+          "message_id": 17,
+          "credit_charge": 1,
+          "credits": 256,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 320,
+          "magic": "fe534d42",
+          "time": 163.818177,
+          "command": 5,
+          "flags": 8,
+          "message_id": 20,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 356,
+          "magic": "fe534d42",
+          "time": 164.064175,
+          "command": 5,
+          "flags": 9,
+          "message_id": 20,
+          "credit_charge": 1,
+          "credits": 256,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 336,
+          "magic": "fe534d42",
+          "time": 164.073826,
+          "command": 5,
+          "flags": 8,
+          "message_id": 23,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 356,
+          "magic": "fe534d42",
+          "time": 164.172911,
+          "command": 5,
+          "flags": 9,
+          "message_id": 23,
+          "credit_charge": 1,
+          "credits": 256,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 280,
+          "magic": "fe534d42",
+          "time": 164.180987,
+          "command": 5,
+          "flags": 8,
+          "message_id": 26,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x81",
+          "attributes": "0x10",
+          "disposition": 2,
+          "options": "0x1",
+          "name_bytes": 24,
+          "fixture_path": "native-probe"
+        },
+        {
+          "direction": "response",
+          "size": 364,
+          "magic": "fe534d42",
+          "time": 164.365244,
+          "command": 5,
+          "flags": 9,
+          "message_id": 26,
+          "credit_charge": 1,
+          "credits": 256,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 164.375774,
+          "command": 5,
+          "flags": 8,
+          "message_id": 28,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 356,
+          "magic": "fe534d42",
+          "time": 164.607991,
+          "command": 5,
+          "flags": 9,
+          "message_id": 28,
+          "credit_charge": 1,
+          "credits": 256,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 164.616511,
+          "command": 5,
+          "flags": 8,
+          "message_id": 31,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100080",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 164.616581,
+          "command": 5,
+          "flags": 8,
+          "message_id": 34,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100080",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 164.616653,
+          "command": 5,
+          "flags": 8,
+          "message_id": 37,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100080",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 164.616781,
+          "command": 5,
+          "flags": 8,
+          "message_id": 40,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100080",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 164.616908,
+          "command": 5,
+          "flags": 8,
+          "message_id": 43,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100080",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 164.617008,
+          "command": 5,
+          "flags": 8,
+          "message_id": 46,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100080",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 404,
+          "magic": "fe534d42",
+          "time": 164.727174,
+          "command": 5,
+          "flags": 9,
+          "message_id": 31,
+          "credit_charge": 1,
+          "credits": 256,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 164.737285,
+          "command": 5,
+          "flags": 8,
+          "message_id": 49,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 24,
+          "fixture_path": "native-probe"
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 164.746714,
+          "command": 5,
+          "flags": 8,
+          "message_id": 52,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100080",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 484,
+          "magic": "fe534d42",
+          "time": 164.82957,
+          "command": 5,
+          "flags": 9,
+          "message_id": 34,
+          "credit_charge": 1,
+          "credits": 34,
+          "status": "0x0"
+        },
+        {
+          "direction": "response",
+          "size": 484,
+          "magic": "fe534d42",
+          "time": 164.936028,
+          "command": 5,
+          "flags": 9,
+          "message_id": 37,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "response",
+          "size": 484,
+          "magic": "fe534d42",
+          "time": 165.038321,
+          "command": 5,
+          "flags": 9,
+          "message_id": 40,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "response",
+          "size": 484,
+          "magic": "fe534d42",
+          "time": 165.115691,
+          "command": 5,
+          "flags": 9,
+          "message_id": 43,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "response",
+          "size": 484,
+          "magic": "fe534d42",
+          "time": 165.18863,
+          "command": 5,
+          "flags": 9,
+          "message_id": 46,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "response",
+          "size": 356,
+          "magic": "fe534d42",
+          "time": 165.338325,
+          "command": 5,
+          "flags": 9,
+          "message_id": 49,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 312,
+          "magic": "fe534d42",
+          "time": 165.350044,
+          "command": 5,
+          "flags": 8,
+          "message_id": 55,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x60087",
+          "attributes": "0xa0",
+          "disposition": 5,
+          "options": "0x0",
+          "name_bytes": 40,
+          "fixture_path": "native-probe\\payload"
+        },
+        {
+          "direction": "response",
+          "size": 484,
+          "magic": "fe534d42",
+          "time": 165.435465,
+          "command": 5,
+          "flags": 9,
+          "message_id": 52,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 320,
+          "magic": "fe534d42",
+          "time": 165.45843,
+          "command": 5,
+          "flags": 8,
+          "message_id": 57,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 313,
+          "magic": "fe534d42",
+          "time": 165.60013,
+          "command": 5,
+          "flags": 9,
+          "message_id": 55,
+          "credit_charge": 1,
+          "credits": 2,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 352,
+          "magic": "fe534d42",
+          "time": 165.609615,
+          "command": 5,
+          "flags": 8,
+          "message_id": 60,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 24,
+          "fixture_path": "native-probe"
+        },
+        {
+          "direction": "response",
+          "size": 356,
+          "magic": "fe534d42",
+          "time": 165.738417,
+          "command": 5,
+          "flags": 9,
+          "message_id": 57,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 165.776615,
+          "command": 5,
+          "flags": 8,
+          "message_id": 63,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100080",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "request",
+          "size": 336,
+          "magic": "fe534d42",
+          "time": 165.780048,
+          "command": 5,
+          "flags": 8,
+          "message_id": 66,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 356,
+          "magic": "fe534d42",
+          "time": 166.103194,
+          "command": 5,
+          "flags": 9,
+          "message_id": 60,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 336,
+          "magic": "fe534d42",
+          "time": 166.225332,
+          "command": 5,
+          "flags": 8,
+          "message_id": 69,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "request",
+          "size": 65648,
+          "magic": "fe534d42",
+          "time": 166.453699,
+          "command": 9,
+          "flags": 8,
+          "message_id": 72,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 404,
+          "magic": "fe534d42",
+          "time": 166.489589,
+          "command": 5,
+          "flags": 9,
+          "message_id": 63,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 65648,
+          "magic": "fe534d42",
+          "time": 166.644366,
+          "command": 9,
+          "flags": 8,
+          "message_id": 73,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "request",
+          "size": 65648,
+          "magic": "fe534d42",
+          "time": 166.649408,
+          "command": 9,
+          "flags": 8,
+          "message_id": 74,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "request",
+          "size": 65648,
+          "magic": "fe534d42",
+          "time": 166.651982,
+          "command": 9,
+          "flags": 8,
+          "message_id": 75,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 356,
+          "magic": "fe534d42",
+          "time": 166.877117,
+          "command": 5,
+          "flags": 9,
+          "message_id": 66,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 320,
+          "magic": "fe534d42",
+          "time": 167.38882,
+          "command": 5,
+          "flags": 8,
+          "message_id": 76,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 476,
+          "magic": "fe534d42",
+          "time": 167.50268,
+          "command": 5,
+          "flags": 9,
+          "message_id": 69,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "response",
+          "size": 80,
+          "magic": "fe534d42",
+          "time": 169.672612,
+          "command": 9,
+          "flags": 9,
+          "message_id": 72,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 65648,
+          "magic": "fe534d42",
+          "time": 169.705222,
+          "command": 9,
+          "flags": 8,
+          "message_id": 79,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 80,
+          "magic": "fe534d42",
+          "time": 169.868551,
+          "command": 9,
+          "flags": 9,
+          "message_id": 73,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 65648,
+          "magic": "fe534d42",
+          "time": 169.885597,
+          "command": 9,
+          "flags": 8,
+          "message_id": 80,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 80,
+          "magic": "fe534d42",
+          "time": 169.95308,
+          "command": 9,
+          "flags": 9,
+          "message_id": 74,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 65648,
+          "magic": "fe534d42",
+          "time": 169.969292,
+          "command": 9,
+          "flags": 8,
+          "message_id": 81,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 80,
+          "magic": "fe534d42",
+          "time": 170.053921,
+          "command": 9,
+          "flags": 9,
+          "message_id": 75,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 65648,
+          "magic": "fe534d42",
+          "time": 170.067787,
+          "command": 9,
+          "flags": 8,
+          "message_id": 82,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 356,
+          "magic": "fe534d42",
+          "time": 170.215282,
+          "command": 5,
+          "flags": 9,
+          "message_id": 76,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 170.226035,
+          "command": 5,
+          "flags": 8,
+          "message_id": 83,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100080",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 80,
+          "magic": "fe534d42",
+          "time": 170.457574,
+          "command": 9,
+          "flags": 9,
+          "message_id": 79,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 65648,
+          "magic": "fe534d42",
+          "time": 170.472989,
+          "command": 9,
+          "flags": 8,
+          "message_id": 86,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 80,
+          "magic": "fe534d42",
+          "time": 170.704496,
+          "command": 9,
+          "flags": 9,
+          "message_id": 80,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 65648,
+          "magic": "fe534d42",
+          "time": 170.748085,
+          "command": 9,
+          "flags": 8,
+          "message_id": 87,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 80,
+          "magic": "fe534d42",
+          "time": 170.809851,
+          "command": 9,
+          "flags": 9,
+          "message_id": 81,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 65648,
+          "magic": "fe534d42",
+          "time": 170.831825,
+          "command": 9,
+          "flags": 8,
+          "message_id": 88,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 80,
+          "magic": "fe534d42",
+          "time": 170.94639,
+          "command": 9,
+          "flags": 9,
+          "message_id": 82,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 65648,
+          "magic": "fe534d42",
+          "time": 170.968598,
+          "command": 9,
+          "flags": 8,
+          "message_id": 89,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 484,
+          "magic": "fe534d42",
+          "time": 171.100407,
+          "command": 5,
+          "flags": 9,
+          "message_id": 83,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 384,
+          "magic": "fe534d42",
+          "time": 171.107986,
+          "command": 5,
+          "flags": 8,
+          "message_id": 90,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "request",
+          "size": 336,
+          "magic": "fe534d42",
+          "time": 171.108633,
+          "command": 5,
+          "flags": 8,
+          "message_id": 93,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 80,
+          "magic": "fe534d42",
+          "time": 171.188218,
+          "command": 9,
+          "flags": 9,
+          "message_id": 86,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 65648,
+          "magic": "fe534d42",
+          "time": 171.200168,
+          "command": 9,
+          "flags": 8,
+          "message_id": 96,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 80,
+          "magic": "fe534d42",
+          "time": 171.291627,
+          "command": 9,
+          "flags": 9,
+          "message_id": 87,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 65648,
+          "magic": "fe534d42",
+          "time": 171.309485,
+          "command": 9,
+          "flags": 8,
+          "message_id": 97,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 80,
+          "magic": "fe534d42",
+          "time": 171.579137,
+          "command": 9,
+          "flags": 9,
+          "message_id": 88,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 45168,
+          "magic": "fe534d42",
+          "time": 171.637835,
+          "command": 9,
+          "flags": 8,
+          "message_id": 98,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 80,
+          "magic": "fe534d42",
+          "time": 172.281715,
+          "command": 9,
+          "flags": 9,
+          "message_id": 89,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 65648,
+          "magic": "fe534d42",
+          "time": 172.348701,
+          "command": 9,
+          "flags": 8,
+          "message_id": 99,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 356,
+          "magic": "fe534d42",
+          "time": 172.725196,
+          "command": 5,
+          "flags": 9,
+          "message_id": 90,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 360,
+          "magic": "fe534d42",
+          "time": 172.734725,
+          "command": 5,
+          "flags": 8,
+          "message_id": 100,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 476,
+          "magic": "fe534d42",
+          "time": 172.910636,
+          "command": 5,
+          "flags": 9,
+          "message_id": 93,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "response",
+          "size": 80,
+          "magic": "fe534d42",
+          "time": 172.997508,
+          "command": 9,
+          "flags": 9,
+          "message_id": 96,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "response",
+          "size": 80,
+          "magic": "fe534d42",
+          "time": 173.118602,
+          "command": 9,
+          "flags": 9,
+          "message_id": 97,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "response",
+          "size": 80,
+          "magic": "fe534d42",
+          "time": 173.219308,
+          "command": 9,
+          "flags": 9,
+          "message_id": 98,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "response",
+          "size": 80,
+          "magic": "fe534d42",
+          "time": 173.309298,
+          "command": 9,
+          "flags": 9,
+          "message_id": 99,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 104,
+          "magic": "fe534d42",
+          "time": 173.320146,
+          "command": 17,
+          "flags": 8,
+          "message_id": 103,
+          "credit_charge": 1,
+          "credits": 256,
+          "info_type": 1,
+          "info_class": 20,
+          "buffer_length": 8
+        },
+        {
+          "direction": "response",
+          "size": 356,
+          "magic": "fe534d42",
+          "time": 173.478683,
+          "command": 5,
+          "flags": 9,
+          "message_id": 100,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 368,
+          "magic": "fe534d42",
+          "time": 173.488178,
+          "command": 5,
+          "flags": 8,
+          "message_id": 104,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 66,
+          "magic": "fe534d42",
+          "time": 173.543831,
+          "command": 17,
+          "flags": 9,
+          "message_id": 103,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 88,
+          "magic": "fe534d42",
+          "time": 173.554019,
+          "command": 7,
+          "flags": 8,
+          "message_id": 107,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 356,
+          "magic": "fe534d42",
+          "time": 173.701465,
+          "command": 5,
+          "flags": 9,
+          "message_id": 104,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 173.713924,
+          "command": 5,
+          "flags": 8,
+          "message_id": 108,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100080",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 68,
+          "magic": "fe534d42",
+          "time": 173.727683,
+          "command": 7,
+          "flags": 9,
+          "message_id": 107,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 173.739135,
+          "command": 5,
+          "flags": 8,
+          "message_id": 111,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 24,
+          "fixture_path": "native-probe"
+        },
+        {
+          "direction": "response",
+          "size": 484,
+          "magic": "fe534d42",
+          "time": 173.832164,
+          "command": 5,
+          "flags": 9,
+          "message_id": 108,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 173.851784,
+          "command": 5,
+          "flags": 8,
+          "message_id": 114,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 468,
+          "magic": "fe534d42",
+          "time": 173.980732,
+          "command": 5,
+          "flags": 9,
+          "message_id": 111,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 88,
+          "magic": "fe534d42",
+          "time": 173.990452,
+          "command": 6,
+          "flags": 8,
+          "message_id": 117,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 356,
+          "magic": "fe534d42",
+          "time": 174.131276,
+          "command": 5,
+          "flags": 9,
+          "message_id": 114,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 174.206582,
+          "command": 5,
+          "flags": 8,
+          "message_id": 118,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100080",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 124,
+          "magic": "fe534d42",
+          "time": 174.230644,
+          "command": 6,
+          "flags": 9,
+          "message_id": 117,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 174.236976,
+          "command": 5,
+          "flags": 8,
+          "message_id": 121,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 24,
+          "fixture_path": "native-probe"
+        },
+        {
+          "direction": "response",
+          "size": 404,
+          "magic": "fe534d42",
+          "time": 174.351954,
+          "command": 5,
+          "flags": 9,
+          "message_id": 118,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 104,
+          "magic": "fe534d42",
+          "time": 174.365224,
+          "command": 3,
+          "flags": 8,
+          "message_id": 124,
+          "credit_charge": 1,
+          "credits": 256,
+          "fixture_share_path": "\\\\127.0.0.1\\IPC$"
+        },
+        {
+          "direction": "response",
+          "size": 468,
+          "magic": "fe534d42",
+          "time": 174.485049,
+          "command": 5,
+          "flags": 9,
+          "message_id": 121,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 184,
+          "magic": "fe534d42",
+          "time": 174.493706,
+          "command": 5,
+          "flags": 8,
+          "message_id": 125,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x20081",
+          "attributes": "0x80",
+          "disposition": 1,
+          "options": "0x0",
+          "name_bytes": 40,
+          "fixture_path": "native-probe\\payload"
+        },
+        {
+          "direction": "response",
+          "size": 80,
+          "magic": "fe534d42",
+          "time": 174.499167,
+          "command": 3,
+          "flags": 9,
+          "message_id": 124,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 160,
+          "magic": "fe534d42",
+          "time": 174.507931,
+          "command": 5,
+          "flags": 8,
+          "message_id": 126,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0xc0000000",
+          "attributes": "0x80",
+          "disposition": 1,
+          "options": "0x0",
+          "name_bytes": 12,
+          "fixture_path": "mdssvc"
+        },
+        {
+          "direction": "response",
+          "size": 184,
+          "magic": "fe534d42",
+          "time": 174.534189,
+          "command": 5,
+          "flags": 9,
+          "message_id": 125,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "response",
+          "size": 73,
+          "magic": "fe534d42",
+          "time": 174.539894,
+          "command": 5,
+          "flags": 9,
+          "message_id": 126,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0xc0000034"
+        },
+        {
+          "direction": "request",
+          "size": 120,
+          "magic": "fe534d42",
+          "time": 174.543017,
+          "command": 8,
+          "flags": 8,
+          "message_id": 127,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "request",
+          "size": 120,
+          "magic": "fe534d42",
+          "time": 174.543108,
+          "command": 8,
+          "flags": 8,
+          "message_id": 128,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "request",
+          "size": 120,
+          "magic": "fe534d42",
+          "time": 174.543175,
+          "command": 8,
+          "flags": 8,
+          "message_id": 129,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "request",
+          "size": 120,
+          "magic": "fe534d42",
+          "time": 174.543234,
+          "command": 8,
+          "flags": 8,
+          "message_id": 130,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "request",
+          "size": 68,
+          "magic": "fe534d42",
+          "time": 174.549858,
+          "command": 4,
+          "flags": 8,
+          "message_id": 131,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 65616,
+          "magic": "fe534d42",
+          "time": 174.588974,
+          "command": 8,
+          "flags": 9,
+          "message_id": 127,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 120,
+          "magic": "fe534d42",
+          "time": 174.619859,
+          "command": 8,
+          "flags": 8,
+          "message_id": 132,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 65616,
+          "magic": "fe534d42",
+          "time": 174.630535,
+          "command": 8,
+          "flags": 9,
+          "message_id": 128,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 120,
+          "magic": "fe534d42",
+          "time": 174.672834,
+          "command": 8,
+          "flags": 8,
+          "message_id": 133,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 65616,
+          "magic": "fe534d42",
+          "time": 174.689333,
+          "command": 8,
+          "flags": 9,
+          "message_id": 129,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 120,
+          "magic": "fe534d42",
+          "time": 174.717888,
+          "command": 8,
+          "flags": 8,
+          "message_id": 134,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 65616,
+          "magic": "fe534d42",
+          "time": 174.760378,
+          "command": 8,
+          "flags": 9,
+          "message_id": 130,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "response",
+          "size": 68,
+          "magic": "fe534d42",
+          "time": 174.760454,
+          "command": 4,
+          "flags": 9,
+          "message_id": 131,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 120,
+          "magic": "fe534d42",
+          "time": 174.794324,
+          "command": 8,
+          "flags": 8,
+          "message_id": 135,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "request",
+          "size": 104,
+          "magic": "fe534d42",
+          "time": 174.806129,
+          "command": 3,
+          "flags": 8,
+          "message_id": 136,
+          "credit_charge": 1,
+          "credits": 256,
+          "fixture_share_path": "\\\\127.0.0.1\\IPC$"
+        },
+        {
+          "direction": "response",
+          "size": 65616,
+          "magic": "fe534d42",
+          "time": 174.841615,
+          "command": 8,
+          "flags": 9,
+          "message_id": 132,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 120,
+          "magic": "fe534d42",
+          "time": 175.454757,
+          "command": 8,
+          "flags": 8,
+          "message_id": 137,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 65616,
+          "magic": "fe534d42",
+          "time": 175.516713,
+          "command": 8,
+          "flags": 9,
+          "message_id": 133,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 120,
+          "magic": "fe534d42",
+          "time": 175.525216,
+          "command": 8,
+          "flags": 8,
+          "message_id": 138,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 65616,
+          "magic": "fe534d42",
+          "time": 175.552811,
+          "command": 8,
+          "flags": 9,
+          "message_id": 134,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 120,
+          "magic": "fe534d42",
+          "time": 175.640627,
+          "command": 8,
+          "flags": 8,
+          "message_id": 139,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 65616,
+          "magic": "fe534d42",
+          "time": 175.833083,
+          "command": 8,
+          "flags": 9,
+          "message_id": 135,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "response",
+          "size": 80,
+          "magic": "fe534d42",
+          "time": 175.853581,
+          "command": 3,
+          "flags": 9,
+          "message_id": 136,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 120,
+          "magic": "fe534d42",
+          "time": 175.901847,
+          "command": 8,
+          "flags": 8,
+          "message_id": 140,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "request",
+          "size": 160,
+          "magic": "fe534d42",
+          "time": 175.902029,
+          "command": 5,
+          "flags": 8,
+          "message_id": 141,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x12019f",
+          "attributes": "0x80",
+          "disposition": 1,
+          "options": "0x40",
+          "name_bytes": 16,
+          "fixture_path": "MsFteWds"
+        },
+        {
+          "direction": "response",
+          "size": 65616,
+          "magic": "fe534d42",
+          "time": 176.050308,
+          "command": 8,
+          "flags": 9,
+          "message_id": 137,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 120,
+          "magic": "fe534d42",
+          "time": 176.308753,
+          "command": 8,
+          "flags": 8,
+          "message_id": 142,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 65616,
+          "magic": "fe534d42",
+          "time": 176.708769,
+          "command": 8,
+          "flags": 9,
+          "message_id": 138,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 120,
+          "magic": "fe534d42",
+          "time": 177.107626,
+          "command": 8,
+          "flags": 8,
+          "message_id": 143,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 65616,
+          "magic": "fe534d42",
+          "time": 177.238186,
+          "command": 8,
+          "flags": 9,
+          "message_id": 139,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 120,
+          "magic": "fe534d42",
+          "time": 177.309332,
+          "command": 8,
+          "flags": 8,
+          "message_id": 144,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 65616,
+          "magic": "fe534d42",
+          "time": 177.373282,
+          "command": 8,
+          "flags": 9,
+          "message_id": 140,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "response",
+          "size": 73,
+          "magic": "fe534d42",
+          "time": 177.400959,
+          "command": 5,
+          "flags": 9,
+          "message_id": 141,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0xc0000034"
+        },
+        {
+          "direction": "request",
+          "size": 120,
+          "magic": "fe534d42",
+          "time": 177.43883,
+          "command": 8,
+          "flags": 8,
+          "message_id": 145,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "request",
+          "size": 68,
+          "magic": "fe534d42",
+          "time": 177.450201,
+          "command": 4,
+          "flags": 8,
+          "message_id": 146,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 65616,
+          "magic": "fe534d42",
+          "time": 177.712165,
+          "command": 8,
+          "flags": 9,
+          "message_id": 142,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "response",
+          "size": 65616,
+          "magic": "fe534d42",
+          "time": 177.879218,
+          "command": 8,
+          "flags": 9,
+          "message_id": 143,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "response",
+          "size": 45136,
+          "magic": "fe534d42",
+          "time": 177.928447,
+          "command": 8,
+          "flags": 9,
+          "message_id": 144,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "response",
+          "size": 65616,
+          "magic": "fe534d42",
+          "time": 178.050905,
+          "command": 8,
+          "flags": 9,
+          "message_id": 145,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "response",
+          "size": 68,
+          "magic": "fe534d42",
+          "time": 178.050977,
+          "command": 4,
+          "flags": 9,
+          "message_id": 146,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 88,
+          "magic": "fe534d42",
+          "time": 178.351977,
+          "command": 6,
+          "flags": 8,
+          "message_id": 147,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 124,
+          "magic": "fe534d42",
+          "time": 178.407363,
+          "command": 6,
+          "flags": 9,
+          "message_id": 147,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 178.421561,
+          "command": 5,
+          "flags": 8,
+          "message_id": 148,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100080",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 484,
+          "magic": "fe534d42",
+          "time": 178.589174,
+          "command": 5,
+          "flags": 9,
+          "message_id": 148,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 336,
+          "magic": "fe534d42",
+          "time": 178.597041,
+          "command": 5,
+          "flags": 8,
+          "message_id": 151,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 476,
+          "magic": "fe534d42",
+          "time": 178.733295,
+          "command": 5,
+          "flags": 9,
+          "message_id": 151,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 178.744206,
+          "command": 5,
+          "flags": 8,
+          "message_id": 154,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 24,
+          "fixture_path": "native-probe"
+        },
+        {
+          "direction": "response",
+          "size": 468,
+          "magic": "fe534d42",
+          "time": 178.9268,
+          "command": 5,
+          "flags": 9,
+          "message_id": 154,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 178.934557,
+          "command": 5,
+          "flags": 8,
+          "message_id": 157,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 24,
+          "fixture_path": "native-probe"
+        },
+        {
+          "direction": "response",
+          "size": 356,
+          "magic": "fe534d42",
+          "time": 179.167865,
+          "command": 5,
+          "flags": 9,
+          "message_id": 157,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 352,
+          "magic": "fe534d42",
+          "time": 179.176276,
+          "command": 5,
+          "flags": 8,
+          "message_id": 160,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 24,
+          "fixture_path": "native-probe"
+        },
+        {
+          "direction": "response",
+          "size": 356,
+          "magic": "fe534d42",
+          "time": 179.330091,
+          "command": 5,
+          "flags": 9,
+          "message_id": 160,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 432,
+          "magic": "fe534d42",
+          "time": 179.338204,
+          "command": 5,
+          "flags": 8,
+          "message_id": 163,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x110080",
+          "attributes": "0x80",
+          "disposition": 1,
+          "options": "0x0",
+          "name_bytes": 40,
+          "fixture_path": "native-probe\\payload"
+        },
+        {
+          "direction": "response",
+          "size": 380,
+          "magic": "fe534d42",
+          "time": 179.592491,
+          "command": 5,
+          "flags": 9,
+          "message_id": 163,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 336,
+          "magic": "fe534d42",
+          "time": 179.601068,
+          "command": 5,
+          "flags": 8,
+          "message_id": 166,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 476,
+          "magic": "fe534d42",
+          "time": 179.706521,
+          "command": 5,
+          "flags": 9,
+          "message_id": 166,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 352,
+          "magic": "fe534d42",
+          "time": 179.714048,
+          "command": 5,
+          "flags": 8,
+          "message_id": 169,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 24,
+          "fixture_path": "native-probe"
+        },
+        {
+          "direction": "response",
+          "size": 356,
+          "magic": "fe534d42",
+          "time": 179.867221,
+          "command": 5,
+          "flags": 9,
+          "message_id": 169,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 179.883826,
+          "command": 5,
+          "flags": 8,
+          "message_id": 172,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 24,
+          "fixture_path": "native-probe"
+        },
+        {
+          "direction": "response",
+          "size": 468,
+          "magic": "fe534d42",
+          "time": 180.326653,
+          "command": 5,
+          "flags": 9,
+          "message_id": 172,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 184,
+          "magic": "fe534d42",
+          "time": 180.338433,
+          "command": 5,
+          "flags": 8,
+          "message_id": 175,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x20087",
+          "attributes": "0x80",
+          "disposition": 1,
+          "options": "0x0",
+          "name_bytes": 40,
+          "fixture_path": "native-probe\\renamed"
+        },
+        {
+          "direction": "response",
+          "size": 184,
+          "magic": "fe534d42",
+          "time": 180.371036,
+          "command": 5,
+          "flags": 9,
+          "message_id": 175,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 104,
+          "magic": "fe534d42",
+          "time": 180.378583,
+          "command": 17,
+          "flags": 8,
+          "message_id": 176,
+          "credit_charge": 1,
+          "credits": 256,
+          "info_type": 1,
+          "info_class": 20,
+          "buffer_length": 8
+        },
+        {
+          "direction": "response",
+          "size": 66,
+          "magic": "fe534d42",
+          "time": 180.504332,
+          "command": 17,
+          "flags": 9,
+          "message_id": 176,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 88,
+          "magic": "fe534d42",
+          "time": 180.691116,
+          "command": 7,
+          "flags": 8,
+          "message_id": 177,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 181.067786,
+          "command": 5,
+          "flags": 8,
+          "message_id": 178,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 24,
+          "fixture_path": "native-probe"
+        },
+        {
+          "direction": "response",
+          "size": 68,
+          "magic": "fe534d42",
+          "time": 181.505621,
+          "command": 7,
+          "flags": 9,
+          "message_id": 177,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 181.526327,
+          "command": 5,
+          "flags": 8,
+          "message_id": 181,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 24,
+          "fixture_path": "native-probe"
+        },
+        {
+          "direction": "response",
+          "size": 356,
+          "magic": "fe534d42",
+          "time": 181.717051,
+          "command": 5,
+          "flags": 9,
+          "message_id": 178,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 181.727324,
+          "command": 5,
+          "flags": 8,
+          "message_id": 184,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 24,
+          "fixture_path": "native-probe"
+        },
+        {
+          "direction": "response",
+          "size": 468,
+          "magic": "fe534d42",
+          "time": 181.852049,
+          "command": 5,
+          "flags": 9,
+          "message_id": 181,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "response",
+          "size": 468,
+          "magic": "fe534d42",
+          "time": 182.106216,
+          "command": 5,
+          "flags": 9,
+          "message_id": 184,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 88,
+          "magic": "fe534d42",
+          "time": 182.139604,
+          "command": 7,
+          "flags": 8,
+          "message_id": 187,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 68,
+          "magic": "fe534d42",
+          "time": 182.180613,
+          "command": 7,
+          "flags": 9,
+          "message_id": 187,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 88,
+          "magic": "fe534d42",
+          "time": 182.192806,
+          "command": 6,
+          "flags": 8,
+          "message_id": 188,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 124,
+          "magic": "fe534d42",
+          "time": 182.260428,
+          "command": 6,
+          "flags": 9,
+          "message_id": 188,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 182.274227,
+          "command": 5,
+          "flags": 8,
+          "message_id": 189,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 24,
+          "fixture_path": "native-probe"
+        },
+        {
+          "direction": "response",
+          "size": 468,
+          "magic": "fe534d42",
+          "time": 182.456761,
+          "command": 5,
+          "flags": 9,
+          "message_id": 189,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 184,
+          "magic": "fe534d42",
+          "time": 182.467258,
+          "command": 5,
+          "flags": 8,
+          "message_id": 192,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x20081",
+          "attributes": "0x80",
+          "disposition": 1,
+          "options": "0x0",
+          "name_bytes": 40,
+          "fixture_path": "native-probe\\renamed"
+        },
+        {
+          "direction": "response",
+          "size": 184,
+          "magic": "fe534d42",
+          "time": 182.571071,
+          "command": 5,
+          "flags": 9,
+          "message_id": 192,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 88,
+          "magic": "fe534d42",
+          "time": 182.583287,
+          "command": 6,
+          "flags": 8,
+          "message_id": 193,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 124,
+          "magic": "fe534d42",
+          "time": 182.632403,
+          "command": 6,
+          "flags": 9,
+          "message_id": 193,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 336,
+          "magic": "fe534d42",
+          "time": 182.643744,
+          "command": 5,
+          "flags": 8,
+          "message_id": 194,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "request",
+          "size": 336,
+          "magic": "fe534d42",
+          "time": 182.926367,
+          "command": 5,
+          "flags": 8,
+          "message_id": 197,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 476,
+          "magic": "fe534d42",
+          "time": 183.356903,
+          "command": 5,
+          "flags": 9,
+          "message_id": 194,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "response",
+          "size": 476,
+          "magic": "fe534d42",
+          "time": 183.660383,
+          "command": 5,
+          "flags": 9,
+          "message_id": 197,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 183.670307,
+          "command": 5,
+          "flags": 8,
+          "message_id": 200,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100080",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 404,
+          "magic": "fe534d42",
+          "time": 183.824914,
+          "command": 5,
+          "flags": 9,
+          "message_id": 200,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 248,
+          "magic": "fe534d42",
+          "time": 183.838558,
+          "command": 5,
+          "flags": 8,
+          "message_id": 203,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 24,
+          "fixture_path": "native-probe"
+        },
+        {
+          "direction": "response",
+          "size": 566,
+          "magic": "fe534d42",
+          "time": 183.936137,
+          "command": 5,
+          "flags": 9,
+          "message_id": 203,
+          "credit_charge": 1,
+          "credits": 2,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 98,
+          "magic": "fe534d42",
+          "time": 183.944455,
+          "command": 14,
+          "flags": 8,
+          "message_id": 205,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 73,
+          "magic": "fe534d42",
+          "time": 183.971417,
+          "command": 14,
+          "flags": 9,
+          "message_id": 205,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x80000006"
+        },
+        {
+          "direction": "request",
+          "size": 88,
+          "magic": "fe534d42",
+          "time": 183.978697,
+          "command": 6,
+          "flags": 8,
+          "message_id": 206,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 124,
+          "magic": "fe534d42",
+          "time": 184.04149,
+          "command": 6,
+          "flags": 9,
+          "message_id": 206,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 376,
+          "magic": "fe534d42",
+          "time": 184.054783,
+          "command": 5,
+          "flags": 8,
+          "message_id": 207,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x110080",
+          "attributes": "0x80",
+          "disposition": 1,
+          "options": "0x0",
+          "name_bytes": 40,
+          "fixture_path": "native-probe\\renamed"
+        },
+        {
+          "direction": "response",
+          "size": 380,
+          "magic": "fe534d42",
+          "time": 184.277368,
+          "command": 5,
+          "flags": 9,
+          "message_id": 207,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 352,
+          "magic": "fe534d42",
+          "time": 184.295204,
+          "command": 5,
+          "flags": 8,
+          "message_id": 210,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 24,
+          "fixture_path": "native-probe"
+        },
+        {
+          "direction": "response",
+          "size": 356,
+          "magic": "fe534d42",
+          "time": 184.45499,
+          "command": 5,
+          "flags": 9,
+          "message_id": 210,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 336,
+          "magic": "fe534d42",
+          "time": 184.463573,
+          "command": 5,
+          "flags": 8,
+          "message_id": 213,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 476,
+          "magic": "fe534d42",
+          "time": 184.619517,
+          "command": 5,
+          "flags": 9,
+          "message_id": 213,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 360,
+          "magic": "fe534d42",
+          "time": 184.627811,
+          "command": 5,
+          "flags": 8,
+          "message_id": 216,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x110080",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 24,
+          "fixture_path": "native-probe"
+        },
+        {
+          "direction": "response",
+          "size": 380,
+          "magic": "fe534d42",
+          "time": 184.850191,
+          "command": 5,
+          "flags": 9,
+          "message_id": 216,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 184.85778,
+          "command": 5,
+          "flags": 8,
+          "message_id": 219,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 184.857981,
+          "command": 5,
+          "flags": 8,
+          "message_id": 222,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 24,
+          "fixture_path": "native-probe"
+        },
+        {
+          "direction": "response",
+          "size": 356,
+          "magic": "fe534d42",
+          "time": 184.996218,
+          "command": 5,
+          "flags": 9,
+          "message_id": 219,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 344,
+          "magic": "fe534d42",
+          "time": 185.024408,
+          "command": 5,
+          "flags": 8,
+          "message_id": 225,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100080",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 233,
+          "magic": "fe534d42",
+          "time": 185.061365,
+          "command": 5,
+          "flags": 9,
+          "message_id": 222,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0xc0000034"
+        },
+        {
+          "direction": "response",
+          "size": 484,
+          "magic": "fe534d42",
+          "time": 185.188601,
+          "command": 5,
+          "flags": 9,
+          "message_id": 225,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 336,
+          "magic": "fe534d42",
+          "time": 185.366565,
+          "command": 5,
+          "flags": 8,
+          "message_id": 228,
+          "credit_charge": 1,
+          "credits": 256,
+          "access": "0x100081",
+          "attributes": "0x10",
+          "disposition": 1,
+          "options": "0x1",
+          "name_bytes": 0,
+          "fixture_path": ""
+        },
+        {
+          "direction": "response",
+          "size": 356,
+          "magic": "fe534d42",
+          "time": 185.595704,
+          "command": 5,
+          "flags": 9,
+          "message_id": 228,
+          "credit_charge": 1,
+          "credits": 3,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 68,
+          "magic": "fe534d42",
+          "time": 185.6052,
+          "command": 4,
+          "flags": 8,
+          "message_id": 231,
+          "credit_charge": 1,
+          "credits": 256
+        },
+        {
+          "direction": "response",
+          "size": 68,
+          "magic": "fe534d42",
+          "time": 185.608044,
+          "command": 4,
+          "flags": 9,
+          "message_id": 231,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        },
+        {
+          "direction": "request",
+          "size": 68,
+          "magic": "fe534d42",
+          "time": 185.61511,
+          "command": 2,
+          "flags": 8,
+          "message_id": 232,
+          "credit_charge": 1,
+          "credits": 1
+        },
+        {
+          "direction": "response",
+          "size": 68,
+          "magic": "fe534d42",
+          "time": 185.660442,
+          "command": 2,
+          "flags": 9,
+          "message_id": 232,
+          "credit_charge": 1,
+          "credits": 1,
+          "status": "0x0"
+        }
+      ],
+      "macos-native.json": {
+        "status": "passed",
+        "client_host": "macOS-15.7.9-x86_64-i386-64bit-Mach-O",
+        "server_host": "Ubuntu 24.04 QEMU guest",
+        "source_commit": "fc28c4c8bce4e33853dad3f788c6c364c63c7818",
+        "harness_commit": "fc28c4c8bce4e33853dad3f788c6c364c63c7818",
+        "image": "https://cloud-images.ubuntu.com/releases/noble/release-20260814/ubuntu-24.04-server-cloudimg-amd64.img",
+        "image_sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+        "server_archive_sha256": "ab18db0bba1b616e24eeb01fef0cfb3acd57ed9e7171d1852b3ebb9ef0f77a39",
+        "profiles": [
+          {
+            "name": "macos-native-smb",
+            "status": "passed",
+            "mount_output": "",
+            "payload_sha256": "08e33aedf25337c87eb15e08c32a58f6f4caa21fe073d00b53014c57f8d148e0"
+          },
+          {
+            "name": "macos-native-nfs3",
+            "status": "passed",
+            "mount_output": "",
+            "payload_sha256": "08e33aedf25337c87eb15e08c32a58f6f4caa21fe073d00b53014c57f8d148e0"
+          }
+        ],
+        "boot_files_sha256": {
+          "vmlinuz": "76a7f2ef15fcbd2f5c25cd7e7b413f903b2078396063557f1dffb4a0b089a964",
+          "initrd": "194f73c17ca4795f987f2e1713c7184f8d1bb88f063f79a753dada5da6a9987c"
+        },
+        "accelerator": "hvf",
+        "accelerator_probe": "qemu-system-x86_64: terminating on signal 15 from pid 4645 (<unknown process>)\n",
+        "guest_kernel": "Linux taucloud-acceptance 6.8.0-137-generic #137-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul 17 20:28:23 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "identity_setup": "offline disposable identity seed, native Argon2id 64 MiB/3/1; management login excluded; SMB authentication unchanged",
+        "guest_fixture_pid": 1636
+      }
+    }
+  },
+  "limitations": [
+    "The workflow is not a pass. Windows FileZilla FTPS timed out; root cause is unproven.",
+    "Kernel CIFS rejection is a negative security test, not a successful mount.",
+    "Full SMB/NFS compatibility remains unfinished."
+  ]
+}
