@@ -140,16 +140,19 @@ Selected-profile acceptance: [M7 guide](docs/m7.md), [中文](docs/m7.zh-CN.md),
 
 ## M8 — Plugins and Docker
 
-- [ ] Define manifests, IPC versions, bounded messages and explicit capability grants.
-- [ ] Implement worker supervision, health, crash backoff and isolated configuration/data directories.
-- [ ] Implement package validation, install/enable/disable/upgrade/rollback/uninstall with data preservation.
-- [ ] Require explicit approval for increased plugin permissions in the product flow.
-- [ ] Validate OS confinement before allowing untrusted plugins; otherwise enforce trusted-code-only mode.
-- [ ] Implement Docker API negotiation and approved Unix-socket/named-pipe/TLS transports.
-- [ ] Implement container/image/volume/network inventory, bounded stats/logs and authorized lifecycle actions.
-- [ ] Validate Windows-container versus VM/WSL2 Linux-engine path and capability differences.
-- [ ] Prevent general daemon proxying and broad socket access by unrelated plugins.
-- [ ] Test missing engines, engine disconnects, unauthorized actions and plugin crashes.
+- [x] Define manifests, IPC versions, bounded messages and explicit capability grants.
+- [x] Implement worker supervision, health, crash backoff and private configuration/data directories; recover the same verified worker across manager crashes, including startup.
+- [x] Implement package validation, install/enable/disable/upgrade/rollback/uninstall with data preservation.
+- [x] Require explicit approval for increased plugin permissions in the management API flow.
+- [x] Enforce trusted-code-only mode with explicit administrator acceptance; OS confinement is not verified and untrusted native plugins are not accepted.
+- [x] Implement Docker API negotiation and approved Unix-socket/named-pipe/mutual-TLS transports. Unix and TLS are locally verified; Windows transport execution remains in the remote gate below.
+- [x] Implement container/image/volume/network inventory, bounded stats/logs and authorized start/stop/restart/remove actions. Arbitrary create/exec/build/pull and daemon proxying are not exposed.
+- [x] Enforce engine OS/capability distinctions and return engine-side paths without Windows/VM/WSL host path translation.
+- [x] Prevent general daemon proxying and withhold daemon configuration/permissions from unrelated plugins at the IPC boundary. Trusted same-account native code is not an OS security boundary against direct socket access.
+- [x] Test missing/disconnected/malformed engines, unauthorized actions, permission changes, plugin crash loops and manager crash recovery with GCC and Clang ASan/UBSan.
+- [ ] Run the prepared MSVC/Windows named-pipe matrix and real Linux Docker Engine Actions job; record native Windows/VM/WSL deployment restrictions from actual evidence. M8 public-push approval is pending; local mocks do not establish this compatibility.
+
+Implementation and limits: [M8 API/SDK](docs/m8.md), [中文](docs/m8.zh-CN.md), [local validation](docs/evidence/m8/README.md). The implementation and Linux fault/transport tests pass locally; remote platform/real-engine acceptance remains open.
 
 ## M8b — Disk and RAID administration
 

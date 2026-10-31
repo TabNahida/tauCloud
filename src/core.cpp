@@ -186,7 +186,7 @@ void log(std::string_view role, std::string_view event, std::string_view code) {
 const std::vector<std::string> &roles() {
   static const std::vector<std::string> r = {
       "identity", "file",          "file_1", "file_2", "file_3", "protocol", "monitor",
-      "updater",  "storage_admin", "helper", "webdav", "ftp",    "smb",      "nfs", "api"};
+      "updater",  "storage_admin", "helper", "webdav", "ftp",    "smb",      "nfs", "plugins", "api"};
   return r;
 }
 std::string config::origin() const { return "https://127.0.0.1:" + std::to_string(port); }

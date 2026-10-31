@@ -2,9 +2,9 @@
 
 [简体中文](README.zh-CN.md) · [Project overview](../README.md)
 
-**Baseline: 2026-10-31. M0–M7 backend profiles are implemented and verified within their documented ADR limits. Full SMB/NFS standards conformance is not claimed.**
+**Baseline: 2026-10-31. M0–M7 profiles are verified within documented ADR limits. M8 is implemented and locally tested; Windows transport and real-engine acceptance remain open.**
 
-The [M7 guide](m7.md) describes the current experimental backend; [M6](m6.md) retains the SMB3 instructions. The architecture documents define the broader product and later delivery gates; they are not evidence of file-protocol compliance.
+The [M8 guide](m8.md) describes plugin/Docker APIs; [M7](m7.md) documents the NFS profile; [M6](m6.md) retains the SMB3 instructions. The architecture documents define the broader product and later delivery gates; they are not evidence of file-protocol compliance.
 
 ## Reading order
 
@@ -51,3 +51,5 @@ Specifications and upstream documentation are linked where they inform the desig
 14. [M6 SMB3](m6.md) · [M6 中文](m6.zh-CN.md) · [Evidence / 验证](evidence/m6/README.md)
 
 - [M7 NFS experimental profile / NFS 实验配置](m7.md) — selected M7a/M7b profile and native-client acceptance complete; exclusions remain explicit.
+
+- [M8 plugins and Docker](m8.md) — trusted-code lifecycle and approved endpoints; remote acceptance pending.

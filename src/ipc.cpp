@@ -7,9 +7,11 @@ namespace tc {
 static bool allowed(const std::string &caller, const std::string &target, const std::string &op) {
   if (op == "ping")
     return caller == "supervisor" || caller == "ctl" ||
+           (caller == "plugins" && target == "plugin") ||
            (caller == "api" && (target == "identity" || target == "supervisor"));
   if (op == "stop")
-    return caller == "supervisor" || (caller == "ctl" && target == "supervisor");
+    return caller == "supervisor" || (caller == "plugins" && target == "plugin") ||
+           (caller == "ctl" && target == "supervisor");
   if (op == "cancel")
     return true; // Additional ownership check against the active request.
   if (target == "identity")
@@ -34,6 +36,10 @@ static bool allowed(const std::string &caller, const std::string &target, const 
              op == "dav_delete"));
   if (target == "monitor")
     return caller == "api" && op == "inventory";
+  if (target == "plugins")
+    return caller == "api";
+  if (target == "plugin")
+    return caller == "plugins" && op == "invoke";
   if (target == "supervisor")
     return (caller == "api" && (op == "services" || op == "restart")) ||
            (caller == "ctl" && op == "services");

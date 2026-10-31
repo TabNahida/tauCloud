@@ -1,0 +1,29 @@
+{
+  "status": "passed",
+  "checks": [
+    "admin-only API, explicit hash/permission/trusted-code approval, private IPC keys, install/enable/upgrade/approved rollback and restart preserve data; manager crash adopts the same verified running or still-starting worker",
+    "invalid paths, changed hashes and platform-supported symlink escapes reject before activation",
+    "worker crash backoff/quarantine leaves management available; explicit recovery and uninstall preserve configuration/data",
+    "typed Docker API negotiation, four inventories, one-shot stats, bounded multiplexed logs and authorized lifecycle; increased grants require approval, arbitrary routes/create/paths reject",
+    "missing/disconnected/forbidden/malformed/oversized engines, chunked responses, API range and OS mismatch; engine-level permissions apply independently of plugin grants",
+    "mutually authenticated TLS, hostname verification, bounded cancellation deadline and endpoint revocation; Unix socket or Windows named pipe exercised on host"
+  ],
+  "compiler": "gcc",
+  "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "sanitizers": false,
+  "recorded_at": "2026-10-31T00:21:04.311036+00:00",
+  "tested_source_sha256": {
+    "src/plugins.cpp": "9df2567e71d34dbcf3528f35fa945c9a927b0c718a1c8ce18a3008ae78c8b2e5",
+    "src/docker.cpp": "2e02832a4220db00032e9bacbbf65e1d6ccfae2206e417874de2687daaba379e",
+    "src/api.cpp": "e1e7ae4d8ba43f7bd60285265e663ccbdc48033ce644c791ee8b5b96b0291139",
+    "src/core.cpp": "116b886c59c96780a2f29bf24f452f960bbdd23c771e48b97663b68c41365b2f",
+    "src/identity.cpp": "4cb2074dd566790d799ed939723bcf9690e3f4a630ef22670d6cb320f0f3d43d",
+    "src/ipc.cpp": "b4646664aca01edd628b28cff4eb9551e6a4c1586ac21dad2ecbd1cdf3788fba",
+    "include/taucloud/plugins.hpp": "6b654b16c268e847e5ef719637148c385008dcff89b5043c9af8e87004860f75",
+    "apps/main.cpp": "414b86d718edc5962228204664fb720bf3401d40420ada460ebe7947385f6e8b",
+    "xmake.lua": "3f643091ddb80e9a6b88e38efec6726e2b5314cf5194b9c56063e01e3e20fb7e",
+    "tests/m8_plugin.cpp": "e79ad644df703c9fadd0f4a8ba2a3c2b19692ed9c6984d08f091592cb3431da3",
+    "tests/m8_integration.py": "ad6cd1b61eac228ffdce5f085d2316b9da2ea26a3d2c7488c72478f08fcce1a0",
+    "scripts/run_m8.py": "6be407d169529ba2059b032dfa499a28b605094d23bf16f362db2ed2263ce01b"
+  }
+}

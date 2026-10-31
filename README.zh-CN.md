@@ -8,7 +8,7 @@
 
 tauCloud 希望在 Windows 和 Linux 上统一提供文件共享、私人空间、系统监控与应用管理。它可以与已有应用和存储一起部署，后端能够脱离 WebPanel 独立运行。
 
-> **项目状态：M0–M7 后端配置已实现并验证。** [M5](docs/m5.zh-CN.md) 与 [M7](docs/m7.zh-CN.md) 已在既有受限兼容性约定内验收，包括适用 Samba/pynfs 用例及 Linux、Windows、macOS 原生客户端。[固定提交证据与限制](docs/evidence/pre-m8/README.md) 明确区分这些结果与完整 SMB/NFS 合规。SMB3、FTP/FTPS、WebDAV 预览仍可用；安装器与 WebPanel 留待后续。
+> **项目状态：M8 插件与 Docker 后端已实现，远程验收待完成。** [M8](docs/m8.zh-CN.md) 提供可信代码插件生命周期、显式权限审批和受限 Docker 操作；GCC 与 Clang sanitizer 本地测试通过，Windows 传输及真实引擎验收仍待完成。[M5/M7](docs/evidence/pre-m8/README.md) 已在既有受限配置内验收，排除项保持明确。安装器与 WebPanel 留待后续。
 
 ## 围绕你的存储构建
 

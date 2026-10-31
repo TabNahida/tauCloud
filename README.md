@@ -8,7 +8,7 @@ A modular NAS and private cloud platform for the operating system you already ru
 
 tauCloud aims to bring file sharing, private user spaces, system monitoring, and application management together on Windows and Linux. Install it alongside your existing applications and storage, with a backend that can operate independently of the WebPanel.
 
-> **Project status: M0–M7 backend profiles implemented and verified.** [M5](docs/m5.md) and [M7](docs/m7.md) now pass their existing limited compatibility contracts, including applicable Samba/pynfs cases and native Linux, Windows and macOS clients. [Fixed-source evidence and exclusions](docs/evidence/pre-m8/README.md) distinguish these results from full SMB/NFS conformance. SMB3, FTP/FTPS and WebDAV previews remain available. Installers and WebPanel are later milestones; features below describe the intended product.
+> **Project status: M8 plugin/Docker backend implemented; remote acceptance pending.** [M8](docs/m8.md) adds trusted-code plugin lifecycle management and typed Docker operations with explicit approvals. GCC and Clang sanitizer tests pass locally; Windows transport and real-engine acceptance remain open. [M5/M7 acceptance](docs/evidence/pre-m8/README.md) closes their existing limited profiles, with exclusions retained. Installers and WebPanel are later milestones; features below describe the intended product.
 
 ## Built around your storage
 

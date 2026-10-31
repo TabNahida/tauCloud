@@ -2,9 +2,9 @@
 
 [English](README.md) · [项目介绍](../README.zh-CN.md)
 
-**基线：2026-10-31。M0–M7 后端配置已在文档所列 ADR 限制内实现并验证；不宣称完整 SMB/NFS 标准合规。**
+**基线：2026-10-31。M0–M7 已在 ADR 限制内验证；M8 已实现并通过本地测试，Windows 传输与真实引擎验收仍待完成。**
 
-[M7 指南](m7.zh-CN.md)说明当前实验后端；SMB3 操作仍见 [M6](m6.zh-CN.md)。架构文档定义完整产品目标与后续交付门槛，不作为文件协议合规证明。
+[M8 指南](m8.zh-CN.md)说明插件/Docker 接口；[M7](m7.zh-CN.md)说明 NFS 配置；SMB3 操作仍见 [M6](m6.zh-CN.md)。架构文档定义完整产品目标与后续交付门槛，不作为文件协议合规证明。
 
 ## 建议阅读顺序
 
@@ -51,3 +51,5 @@ M0 在[依赖锁文件](../dependencies.lock.json)中固定 PACE `d3842473b2bea6
 14. [M6 SMB3](m6.md) · [M6 中文](m6.zh-CN.md) · [Evidence / 验证](evidence/m6/README.md)
 
 - [M7 NFS experimental profile / NFS 实验配置](m7.zh-CN.md) — M7a/M7b 选定配置和原生客户端已验收，排除项保持明确。
+
+- [M8 插件与 Docker](m8.zh-CN.md) — 可信代码生命周期和批准的端点；远程验收待完成。

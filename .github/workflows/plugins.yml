@@ -1,0 +1,34 @@
+name: M8 Plugins and Docker
+on:
+  workflow_dispatch:
+  push:
+    paths: ['src/plugins.cpp', 'src/docker.cpp', 'src/ipc.cpp', 'src/identity.cpp', 'src/api.cpp', 'include/taucloud/plugins.hpp', 'tests/m8*', 'scripts/*m8*', 'scripts/package_plugin.py', '.github/workflows/plugins.yml']
+permissions:
+  contents: read
+jobs:
+  plugins:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-24.04, compiler: gcc, flags: ''}
+          - {os: ubuntu-24.04, compiler: clang, flags: '--sanitizers'}
+          - {os: windows-2025, compiler: msvc, flags: ''}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: '3.1.1'
+      - run: python scripts/fetch_pace.py
+      - run: python scripts/fetch_pace.py --dependency recipes
+      - run: python scripts/run_m8.py --compiler ${{ matrix.compiler }} ${{ matrix.flags }}
+      - name: Real Linux Docker Engine
+        if: matrix.compiler == 'gcc'
+        run: python tests/m8_docker_native.py --bin build/linux/x86_64/release --output build/m8/docker-native.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: m8-${{ matrix.compiler }}
+          path: build/m8/

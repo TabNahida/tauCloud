@@ -2,6 +2,7 @@
 #include <csignal>
 #include <iostream>
 #include <taucloud/core.hpp>
+#include <taucloud/plugins.hpp>
 #ifndef _WIN32
 #include <sys/stat.h>
 #endif
@@ -58,6 +59,10 @@ int main(int argc, char **argv) {
       return service ? tc::service_main(config, bin) : tc::supervisor(config, bin, stopping);
     }
     tc::require(generation.size() == 32, "generation_required");
+    if (role == "plugins")
+      return tc::plugins(config, generation, stopping);
+    if (role == "docker")
+      return tc::docker_plugin(config, generation, stopping);
     if (role == "nfs")
       return tc::nfs(config, generation, stopping);
     if (role == "smb")

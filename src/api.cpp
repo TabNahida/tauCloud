@@ -139,7 +139,10 @@ static pace::task<pace::http::server_response> handle(api_state &s, pace::http::
     if (!r.body.empty()) {
       require(r.header("Content-Type") == "application/json", "invalid_request");
       try {
-        body = json::parse(r.body);
+        body = json::parse(r.body, [](int depth, json::parse_event_t, json &) {
+          require(depth <= 64, "invalid_request");
+          return true;
+        });
       } catch (...) {
         throw error("invalid_request");
       }
@@ -171,11 +174,20 @@ static pace::task<pace::http::server_response> handle(api_state &s, pace::http::
     if (file_op == "open")
       file_write = body.value("write", false);
     auto auth = credentials(r, s.cfg, write);
-    auth["admin"] = r.target == "/api/v1/smb/credentials" ||
+    bool plugin_request = r.target.starts_with("/api/v1/plugins/");
+    auth["admin"] = plugin_request || r.target == "/api/v1/smb/credentials" ||
                     r.target == "/api/v1/services/restart" ||
                     (write && resources.contains(resource));
     auth["file_write"] = file_write;
     auto subject = co_await dispatch(s, "identity", "validate", auth);
+    if (plugin_request) {
+      auto operation = r.target.substr(16);
+      static const std::set<std::string> operations = {"plan", "install", "enable", "disable",
+          "rollback-plan", "rollback", "uninstall", "invoke", "engine-plan", "engine-approve", "engine-remove"};
+      require((r.method == "GET" && operation == "list") ||
+              (r.method == "POST" && operations.contains(operation)), "not_found");
+      co_return response(co_await dispatch(s, "plugins", operation, body));
+    }
     if (r.method == "POST" && r.target == "/api/v1/smb/credentials") {
       body["auth"] = auth;
       co_return response(co_await dispatch(s, "identity", "smb_enroll", body));
@@ -232,7 +244,11 @@ static pace::task<pace::http::server_response> handle(api_state &s, pace::http::
       co_return out;
     }
     if (r.method == "GET" && r.target == "/api/v1/capabilities")
-      co_return response({{"milestone", "M7-preview"},
+      co_return response({{"milestone", "M8-preview"},
+                          {"plugins", true},
+                          {"plugin_trust_mode", "trusted-code-only"},
+                          {"plugin_os_confinement_verified", false},
+                          {"docker", "typed-approved-endpoints"},
                           {"management", true},
                           {"file_service", true},
                           {"file_profile", "bounded-core-v1"},

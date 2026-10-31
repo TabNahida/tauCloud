@@ -303,9 +303,9 @@ struct identity_store::impl {
       require(get.row() && get.integer(4) > now() &&
                   get.text(1) == body.at("kind").get<std::string>(),
               "unauthorized");
+      if (body.value("admin", false))
+        require(get.text(2) == "admin" && get.text(5) == "admin", "forbidden");
       if (body.value("write", false)) {
-        if (body.value("admin", false))
-          require(get.text(2) == "admin" && get.text(5) == "admin", "forbidden");
         if (body.value("file_write", false))
           require(get.text(2) == "admin" || get.text(2) == "files", "forbidden");
         if (get.text(1) == "browser")

@@ -108,7 +108,12 @@ if has_config("m1") then
         add_deps("taucloud_core")
         add_tests("default", {run_timeout = 60})
     target_end()
-    for _, role in ipairs({"supervisor", "api", "webdav", "ftp", "smb", "nfs", "identity", "file", "file_1", "file_2", "file_3", "protocol", "monitor", "updater", "storage_admin", "helper", "ctl"}) do
+    target("taucloud_m8_plugin_fixture")
+        set_kind("binary")
+        add_files("tests/m8_plugin.cpp")
+        add_deps("taucloud_core")
+    target_end()
+    for _, role in ipairs({"supervisor", "api", "webdav", "ftp", "smb", "nfs", "plugins", "docker", "identity", "file", "file_1", "file_2", "file_3", "protocol", "monitor", "updater", "storage_admin", "helper", "ctl"}) do
         target("taucloud_" .. role)
             set_kind("binary")
             add_files("apps/main.cpp")
