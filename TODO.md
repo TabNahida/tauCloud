@@ -102,10 +102,10 @@ Implementation and recorded scope: [M4 guide](docs/m4.md), [M4 evidence](docs/ev
 - [x] Evaluate and implement the minimal authenticated share-enumeration RPC surface required by clients.
 - [x] Pass the signed SMB 2.1 profile; add 2.0.2 only as explicit compatibility mode.
 - [x] Keep optional leases/oplocks/durable handles disabled until individually verified.
-- [ ] Complete the full Windows/Linux/macOS client and applicable Samba torture matrix. Linux/Windows smbprotocol, Windows SSPI and hostile packet coverage are recorded; Windows native encrypted redirector, macOS 15.7.9 native SMB and Samba smbclient roundtrips now pass. Kernel CIFS is rejected for missing NTLM MIC; broader Samba torture gates remain open.
+- [x] Complete the Windows/Linux/macOS client and applicable Samba torture matrix for ADR 0008/0009. Native Windows encrypted SMB, macOS 15.7.9 signed SMB, Samba smbclient, independent wire clients and 60 torture selectors / 76 cases pass. Kernel CIFS without NTLM MIC remains explicitly incompatible; excluded feature groups are mapped in the applicability report.
 - [x] Document deployment conflicts, dialect limits and revocation/recovery behavior.
 
-Implementation scope and exclusions: [M5 guide](docs/m5.md), [ADR 0008](docs/decisions/0008-smb-profile.md), [evidence](docs/evidence/m5/README.md). Signed SMB 2.1 only; basic metadata is a conservative projection, persistent ACL/attribute writes are explicitly unsupported. The checked implementation items do not close the full client-matrix release gate.
+Implementation scope and exclusions: [M5 guide](docs/m5.md), [ADR 0008](docs/decisions/0008-smb-profile.md), [evidence](docs/evidence/m5/README.md). Signed SMB 2.1 only; basic metadata is a conservative projection, persistent ACL/attribute writes are explicitly unsupported. The selected client gate is closed; this does not claim full Windows-server/Samba feature equivalence. See [applicability](docs/smb-torture-coverage.md) and [fixed-commit evidence](docs/evidence/pre-m8/README.md).
 
 ## M6 — SMB3
 
@@ -124,19 +124,19 @@ Selected-profile evidence: [M6 guide](docs/m6.md), [ADR 0009](docs/decisions/000
 - [x] Implement bounded TCP ONC RPC record framing, XDR and authentication dispatch (loopback experimental profile).
 - [x] Implement export policy, UID/GID mapping, root squash and explicit AUTH_SYS trust restrictions.
 - [x] Implement stable file handles, filesystem identity and stale-handle detection on ext4 and NTFS (bounded native-incarnation lookup; ADR 0010).
-- [ ] Implement v4.1 mandatory operations, sessions/slots, state IDs and replay handling.
+- [x] Implement v4.1 required fore-channel operations, sessions/slots, state IDs and replay handling for the regular-file/directory AUTH_SYS profile; map supported/refused behavior and tests in the operation coverage report.
 - [x] Implement authorized pseudo-root enumeration/traversal, multi-export sessions and per-reply authorization checks on replay (selected profile; full conformance remains open).
 - [x] Implement lock/open ownership, leases, recovery grace and reclaim persistence (bounded AUTH_SYS profile; cross-user, split-range and restart tests).
-- [x] Verify selected v4.1 FILE_SYNC, server reboot and retransmission paths with the Linux pynfs-codec client (kernel client and full recovery/conformance remain open).
-- [ ] Complete M7a conformance before publishing v4.1 compatibility.
+- [x] Verify v4.1 FILE_SYNC, server reboot, retransmission, durable unlinked OPEN recovery and Linux kernel close-to-open cache revalidation, including equal-size external writes with restored mtime.
+- [x] Complete M7a conformance for the existing ADR 0010 profile before publishing that limited compatibility: 145 applicable upstream cases pass, 121 exclusions remain visible. Full RFC 8881 / RPCSEC_GSS conformance is not claimed.
 - [x] Add policy-filtered MOUNT discovery, bounded mount records and read-only rpcbind DUMP/GETVERSADDR.
-- [x] Retain unlinked/replaced OPEN objects with durable private links and recovery journals; charge quota through file-domain/all-service restart and release it after last CLOSE/lease expiry (Linux and Windows recovery assertions passed; Windows test cleanup correction awaits rerun).
-- [ ] Implement v3 operations, MOUNT/rpcbind and the selected NLM/NSM recovery profile.
+- [x] Retain unlinked/replaced OPEN objects with durable private links and recovery journals; charge quota through file-domain/all-service restart and release it after last CLOSE/lease expiry (Linux and Windows recovery assertions and corrected test cleanup pass).
+- [x] Implement v3 operations, MOUNT/rpcbind and the selected NLMv4/NSMv1 recovery profile; real Linux blocking locks, GRANTED callback and post-reboot kernel reclaim pass.
 - [x] Verify FILE_SYNC upgrades of UNSTABLE requests, COMMIT, duplicate requests and reboot verifiers in the experimental profile.
-- [ ] Complete M7b Linux/macOS/eligible Windows client tests; publish client-version restrictions. Linux kernel v3/v4.1 and macOS 15.7.9 native v3 file roundtrips pass; v3 uses nolocks, and Windows Client for NFS remains unverified.
+- [x] Complete M7b Linux/macOS/eligible Windows client tests; publish restrictions. Linux kernel v3/v4.1, macOS 15.7.9 v3 and Windows Server 2025 Client for NFS v3 TCP roundtrips pass. macOS/Windows use nolock; Linux separately proves NLM/NSM recovery.
 - [x] Design RPCSEC_GSS/Kerberos as a later authenticated profile; do not conflate it with AUTH_SYS (ADR 0010).
 
-**Partial milestone:** [M7 preview](docs/m7.md), [中文](docs/m7.zh-CN.md), [ADR 0010](docs/decisions/0010-nfs-preview.md), [pre-M8 evidence](docs/evidence/pre-m8/README.md). Share-deny, byte locks/reclaim, OPEN upgrades, native timestamps, alias metadata and selected upstream conformance are now implemented/tested. Persistent change counters and actual namespace change_info now have alias/restart/restored-mtime tests. Complete mandatory-operation, unlink-open/full cache consistency and native-client gates remain open. NLMv4 synchronous locks and NSMv1 recovery are implemented with wire/callback tests; native lock recovery acceptance is pending. No complete NFS compatibility is published; passing selected upstream tests is not a full-suite result.
+Selected-profile acceptance: [M7 guide](docs/m7.md), [中文](docs/m7.zh-CN.md), [ADR 0010](docs/decisions/0010-nfs-preview.md), [operation coverage](docs/nfs-operation-coverage.md), [fixed-commit evidence](docs/evidence/pre-m8/README.md). Share-deny, locks/reclaim, OPEN upgrades, native timestamps, durable unlink/replacement retention, alias metadata and persistent change counters are implemented and tested. Windows directory metadata handles and Linux zero-state NLM reclaim are corrected. This closes M7 within the existing confined regular-file/directory, loopback AUTH_SYS contract; full RFC compatibility, special files/links, Kerberos, power-loss durability and unrestricted load are separate future profiles.
 
 ## M8 — Plugins and Docker
 

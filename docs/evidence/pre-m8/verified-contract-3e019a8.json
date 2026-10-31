@@ -1,0 +1,2563 @@
+{
+  "commit": "3e019a8bebb2955a72f79ac6b5f9f369abbf32b7",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41144873323",
+  "gcc": "success",
+  "clang": "success",
+  "windows": "failure: MKDIR with timestamps",
+  "macos": "success on attempt 2; attempt 1 failed before protocol tests at guest boot",
+  "samba": {
+    "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+    "recorded_at": "2026-10-30T23:42:45.292528+00:00",
+    "tests": [
+      {
+        "selector": "smb2.read.eof",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.read.eof.log"
+      },
+      {
+        "selector": "smb2.read.position",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.read.position.log"
+      },
+      {
+        "selector": "smb2.read.dir",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.read.dir.log"
+      },
+      {
+        "selector": "smb2.lock.rw-shared",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.lock.rw-shared.log"
+      },
+      {
+        "selector": "smb2.lock.rw-exclusive",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.lock.rw-exclusive.log"
+      },
+      {
+        "selector": "smb2.lock.auto-unlock",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.lock.auto-unlock.log"
+      },
+      {
+        "selector": "smb2.lock.range",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.lock.range.log"
+      },
+      {
+        "selector": "smb2.compound.create-write-close",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.compound.create-write-close.log"
+      },
+      {
+        "selector": "smb2.sharemode",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 3,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.sharemode.log"
+      },
+      {
+        "selector": "smb2.create_no_streams",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.create_no_streams.log"
+      },
+      {
+        "selector": "smb2.dir.find",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.dir.find.log"
+      },
+      {
+        "selector": "smb2.dir.fixed",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.dir.fixed.log"
+      },
+      {
+        "selector": "smb2.credits",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 3,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.credits.log"
+      },
+      {
+        "selector": "smb2.lock.valid-request",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.lock.valid-request.log"
+      },
+      {
+        "selector": "smb2.lock.lock",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.lock.lock.log"
+      },
+      {
+        "selector": "smb2.lock.errorcode",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.lock.errorcode.log"
+      },
+      {
+        "selector": "smb2.lock.zerobytelength",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.lock.zerobytelength.log"
+      },
+      {
+        "selector": "smb2.lock.zerobyteread",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.lock.zerobyteread.log"
+      },
+      {
+        "selector": "smb2.lock.unlock",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.lock.unlock.log"
+      },
+      {
+        "selector": "smb2.lock.multiple-unlock",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.lock.multiple-unlock.log"
+      },
+      {
+        "selector": "smb2.lock.stacking",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.lock.stacking.log"
+      },
+      {
+        "selector": "smb2.lock.truncate",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.lock.truncate.log"
+      },
+      {
+        "selector": "smb2.create.brlocked",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.create.brlocked.log"
+      },
+      {
+        "selector": "smb2.read.access",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.read.access.log"
+      },
+      {
+        "selector": "smb2.getinfo.granted",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.getinfo.granted.log"
+      },
+      {
+        "selector": "smb2.compound.related1",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.compound.related1.log"
+      },
+      {
+        "selector": "smb2.compound.related2",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.compound.related2.log"
+      },
+      {
+        "selector": "smb2.compound.related5",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.compound.related5.log"
+      },
+      {
+        "selector": "smb2.compound.related6",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.compound.related6.log"
+      },
+      {
+        "selector": "smb2.compound.related8",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.compound.related8.log"
+      },
+      {
+        "selector": "smb2.compound.related9",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.compound.related9.log"
+      },
+      {
+        "selector": "smb2.compound.unrelated1",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.compound.unrelated1.log"
+      },
+      {
+        "selector": "smb2.compound.invalid1",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.compound.invalid1.log"
+      },
+      {
+        "selector": "smb2.compound.invalid3",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.compound.invalid3.log"
+      },
+      {
+        "selector": "smb2.compound.invalid4",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.compound.invalid4.log"
+      },
+      {
+        "selector": "smb2.create.leading-slash",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.create.leading-slash.log"
+      },
+      {
+        "selector": "smb2.create.impersonation",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.create.impersonation.log"
+      },
+      {
+        "selector": "smb2.rename",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 12,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.rename.log"
+      },
+      {
+        "selector": "smb2.compound.invalid2",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.compound.invalid2.log"
+      },
+      {
+        "selector": "smb2.session.two_logoff",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.session.two_logoff.log"
+      },
+      {
+        "selector": "smb2.session.ntlmssp_bug14932",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.session.ntlmssp_bug14932.log"
+      },
+      {
+        "selector": "smb2.connect",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.connect.log"
+      },
+      {
+        "selector": "smb2.session-require-signing",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.session-require-signing.log"
+      },
+      {
+        "selector": "smb2.lock.contend",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.lock.contend.log"
+      },
+      {
+        "selector": "smb2.lock.context",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.lock.context.log"
+      },
+      {
+        "selector": "smb2.lock.overlap",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.lock.overlap.log"
+      },
+      {
+        "selector": "smb2.create.multi",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.create.multi.log"
+      },
+      {
+        "selector": "smb2.create.mkdir-dup",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.create.mkdir-dup.log"
+      },
+      {
+        "selector": "smb2.compound_find.compound_find_related",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.compound_find.compound_find_related.log"
+      },
+      {
+        "selector": "smb2.compound_find.compound_find_unrelated",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.compound_find.compound_find_unrelated.log"
+      },
+      {
+        "selector": "smb2.charset.Testing naked diacritical (umlaut)",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.charset.Testing naked diacritical (umlaut).log"
+      },
+      {
+        "selector": "smb2.charset.Testing wide-a",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.charset.Testing wide-a.log"
+      },
+      {
+        "selector": "smb2.fileid.unique",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.fileid.unique.log"
+      },
+      {
+        "selector": "smb2.fileid.unique-dir",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.fileid.unique-dir.log"
+      },
+      {
+        "selector": "smb2.deny",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 2,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.deny.log"
+      },
+      {
+        "selector": "smb2.tcon",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.tcon.log"
+      },
+      {
+        "selector": "smb2.dir.file-index",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.dir.file-index.log"
+      },
+      {
+        "selector": "smb2.create.dir-alloc-size",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.create.dir-alloc-size.log"
+      },
+      {
+        "selector": "smb2.compound_async.flush_close",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.compound_async.flush_close.log"
+      },
+      {
+        "selector": "smb2.compound_async.flush_flush",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-native-smb2.compound_async.flush_flush.log"
+      }
+    ],
+    "status": "passed",
+    "cases_passed": 76
+  },
+  "pynfs_regular": {
+    "errors": 0,
+    "failures": 0,
+    "name": "all",
+    "skipped": 121,
+    "testcase": [
+      {
+        "classname": "st_callback",
+        "code": "CALLBACK1",
+        "name": "testCbNotifyLockExpiredClient",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_courtesy",
+        "code": "COUR6",
+        "name": "testShareReservationDB03",
+        "time": "70.11807155609131"
+      },
+      {
+        "classname": "st_courtesy",
+        "code": "COUR5",
+        "name": "testShareReservationDB02",
+        "time": "70.0620367527008"
+      },
+      {
+        "classname": "st_courtesy",
+        "code": "COUR4",
+        "name": "testShareReservationDB01",
+        "time": "0.06101536750793457"
+      },
+      {
+        "classname": "st_courtesy",
+        "code": "COUR3",
+        "name": "testShareReservation00",
+        "time": "70.08994555473328"
+      },
+      {
+        "classname": "st_courtesy",
+        "code": "COUR1",
+        "name": "testLockSleepLockU",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_courtesy",
+        "code": "COUR2",
+        "name": "testLockSleepLock",
+        "time": "70.06813359260559"
+      },
+      {
+        "classname": "st_courtesy",
+        "code": "COUR7",
+        "name": "testExpiringManyClients",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_xattr",
+        "code": "XATT5",
+        "name": "testUpdateOfMissingAttr",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_xattr",
+        "code": "XATT7",
+        "name": "testUpdateExistingAttr",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_xattr",
+        "code": "XATT8",
+        "name": "testRemoveNonExistingAttr",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_xattr",
+        "code": "XATT9",
+        "name": "testRemoveExistingAttr",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_xattr",
+        "code": "XATT10",
+        "name": "testListNoAttrs",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_xattr",
+        "code": "XATT11",
+        "name": "testListAttrs",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_xattr",
+        "code": "XATT1",
+        "name": "testGetXattrAttribute",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_xattr",
+        "code": "XATT2",
+        "name": "testGetMissingAttr",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_xattr",
+        "code": "XATT6",
+        "name": "testExclusiveCreateAttr",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_xattr",
+        "code": "XATT4",
+        "name": "testCreateNewIfMissingAttr",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_xattr",
+        "code": "XATT3",
+        "name": "testCreateNewAttr",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_flex",
+        "code": "FFST1",
+        "name": "testStateid1",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_flex",
+        "code": "FFLA1",
+        "name": "testFlexLayoutTestAccess",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_flex",
+        "code": "FFLG2",
+        "name": "testFlexLayoutStress",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_flex",
+        "code": "FFLS3",
+        "name": "testFlexLayoutStatsStraight",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_flex",
+        "code": "FFLS1",
+        "name": "testFlexLayoutStatsSmall",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_flex",
+        "code": "FFLS2",
+        "name": "testFlexLayoutStatsReset",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_flex",
+        "code": "FFLS4",
+        "name": "testFlexLayoutStatsOverflow",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_flex",
+        "code": "FFLORSTALEWRITE",
+        "name": "testFlexLayoutReturnStaleWrite",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_flex",
+        "code": "FFLORSTALEREAD",
+        "name": "testFlexLayoutReturnStaleRead",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_flex",
+        "code": "FFLORSERVERFAULTWRITE",
+        "name": "testFlexLayoutReturnServerFaultWrite",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_flex",
+        "code": "FFLORSERVERFAULTREAD",
+        "name": "testFlexLayoutReturnServerFaultRead",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_flex",
+        "code": "FFLORNXIOWRITE",
+        "name": "testFlexLayoutReturnNxioWrite",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_flex",
+        "code": "FFLORNXIOREAD",
+        "name": "testFlexLayoutReturnNxioRead",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_flex",
+        "code": "FFLORNOSPCWRITE",
+        "name": "testFlexLayoutReturnNospcWrite",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_flex",
+        "code": "FFLORNOSPC",
+        "name": "testFlexLayoutReturnNospcRead",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_flex",
+        "code": "FFLORIOWRITE",
+        "name": "testFlexLayoutReturnIoWrite",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_flex",
+        "code": "FFLORIOREAD",
+        "name": "testFlexLayoutReturnIoRead",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_flex",
+        "code": "FFLOR1",
+        "name": "testFlexLayoutReturnFile",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_flex",
+        "code": "FFLORFBIGWRITE",
+        "name": "testFlexLayoutReturnFbigWrite",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_flex",
+        "code": "FFLORFBIG",
+        "name": "testFlexLayoutReturnFbigRead",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_flex",
+        "code": "FFLORDELAYWRITE",
+        "name": "testFlexLayoutReturnDelayWrite",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_flex",
+        "code": "FFLORDELAYREAD",
+        "name": "testFlexLayoutReturnDelayRead",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_flex",
+        "code": "FFLORACCESSWRITE",
+        "name": "testFlexLayoutReturnAccessWrite",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_flex",
+        "code": "FFLORACCESSREAD",
+        "name": "testFlexLayoutReturnAccessRead",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_flex",
+        "code": "FFLOR100",
+        "name": "testFlexLayoutReturn100",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_flex",
+        "code": "FFLOOS",
+        "name": "testFlexLayoutOldSeqid",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_flex",
+        "code": "FFGDI1",
+        "name": "testFlexGetDevInfo",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_sparse",
+        "code": "ALLOC1",
+        "name": "testAllocateSupported",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_sparse",
+        "code": "ALLOC2",
+        "name": "testAllocateStateidZero",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_sparse",
+        "code": "ALLOC3",
+        "name": "testAllocateStateidOne",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_current_stateid",
+        "code": "CSID3",
+        "name": "testOpenWriteClose",
+        "time": "0.03507280349731445"
+      },
+      {
+        "classname": "st_current_stateid",
+        "code": "CSID8",
+        "name": "testOpenSetattr",
+        "time": "0.04029202461242676"
+      },
+      {
+        "classname": "st_current_stateid",
+        "code": "CSID10",
+        "name": "testOpenSaveFHLookupRestoreFHClose",
+        "time": "0.04000711441040039"
+      },
+      {
+        "classname": "st_current_stateid",
+        "code": "CSID5",
+        "name": "testOpenLookupClose",
+        "time": "0.03705430030822754"
+      },
+      {
+        "classname": "st_current_stateid",
+        "code": "CSID7",
+        "name": "testOpenLayoutGet",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_current_stateid",
+        "code": "CSID9",
+        "name": "testOpenFreestateidClose",
+        "time": "0.03473496437072754"
+      },
+      {
+        "classname": "st_current_stateid",
+        "code": "CSID1",
+        "name": "testOpenAndClose",
+        "time": "0.03106975555419922"
+      },
+      {
+        "classname": "st_current_stateid",
+        "code": "CSID4",
+        "name": "testLockWriteLocku",
+        "time": "0.042224884033203125"
+      },
+      {
+        "classname": "st_current_stateid",
+        "code": "CSID2",
+        "name": "testLockLockU",
+        "time": "0.04369997978210449"
+      },
+      {
+        "classname": "st_current_stateid",
+        "code": "CSID6",
+        "name": "testCloseNoStateid",
+        "time": "0.03886222839355469"
+      },
+      {
+        "classname": "st_block",
+        "code": "BLOCK2",
+        "name": "testStateid2",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_block",
+        "code": "BLOCK1",
+        "name": "testStateid1",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_block",
+        "code": "BLOCK4",
+        "name": "testSplitCommit",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_block",
+        "code": "BLOCK3",
+        "name": "testEmptyCommit",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_reboot",
+        "code": "REBT4c",
+        "name": "testRebootWithManyManyManyClientsDoubleReclaim",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_reboot",
+        "code": "REBT2c",
+        "name": "testRebootWithManyManyManyClients",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_reboot",
+        "code": "REBT4b",
+        "name": "testRebootWithManyManyClientsDoubleReclaim",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_reboot",
+        "code": "REBT2b",
+        "name": "testRebootWithManyManyClients",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_reboot",
+        "code": "REBT4a",
+        "name": "testRebootWithManyClientsDoubleReclaim",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_reboot",
+        "code": "REBT2a",
+        "name": "testRebootWithManyClients",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_reboot",
+        "code": "REBT5",
+        "name": "testRebootWithLateReclaim",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_reboot",
+        "code": "REBT1",
+        "name": "testRebootValid",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_reboot",
+        "code": "REBT3c",
+        "name": "testDoubleRebootWithManyManyManyClients",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_reboot",
+        "code": "REBT3b",
+        "name": "testDoubleRebootWithManyManyClients",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_reboot",
+        "code": "REBT3a",
+        "name": "testDoubleRebootWithManyClients",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_putfh",
+        "code": "PUTFH1s",
+        "name": "testSocket",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_putfh",
+        "code": "PUTFH1a",
+        "name": "testLink",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_putfh",
+        "code": "PUTFH1r",
+        "name": "testFile",
+        "time": "0.024856090545654297"
+      },
+      {
+        "classname": "st_putfh",
+        "code": "PUTFH1f",
+        "name": "testFifo",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_putfh",
+        "code": "PUTFH1d",
+        "name": "testDir",
+        "time": "0.02414393424987793"
+      },
+      {
+        "classname": "st_putfh",
+        "code": "PUTFH1c",
+        "name": "testChar",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_putfh",
+        "code": "PUTFH1b",
+        "name": "testBlock",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_putfh",
+        "code": "PUTFH2",
+        "name": "testBadHandle",
+        "time": "0.012006044387817383"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM6",
+        "name": "testZeroLengthOldname",
+        "time": "0.04724311828613281"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM7",
+        "name": "testZeroLengthNewname",
+        "time": "0.04640316963195801"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM1s",
+        "name": "testValidSocket",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM1a",
+        "name": "testValidLink",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM1r",
+        "name": "testValidFile",
+        "time": "0.12112617492675781"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM1f",
+        "name": "testValidFifo",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM1d",
+        "name": "testValidDir",
+        "time": "0.11308956146240234"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM1c",
+        "name": "testValidChar",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM1b",
+        "name": "testValidBlock",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM21",
+        "name": "testStaleRename",
+        "time": "0.11792469024658203"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM2s",
+        "name": "testSfhSocket",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM2a",
+        "name": "testSfhLink",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM2r",
+        "name": "testSfhFile",
+        "time": "0.04050922393798828"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM2f",
+        "name": "testSfhFifo",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM2c",
+        "name": "testSfhChar",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM2b",
+        "name": "testSfhBlock",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM19",
+        "name": "testSelfRenameFile",
+        "time": "0.06238150596618652"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM18",
+        "name": "testSelfRenameDir",
+        "time": "0.04867243766784668"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM5",
+        "name": "testNonExistent",
+        "time": "0.05724644660949707"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM4",
+        "name": "testNoSfh",
+        "time": "0.018466949462890625"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM20",
+        "name": "testLinkRename",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM17",
+        "name": "testFileToFullDir",
+        "time": "0.1244504451751709"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM15",
+        "name": "testFileToFile",
+        "time": "0.12432098388671875"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM14",
+        "name": "testFileToDir",
+        "time": "0.1085357666015625"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM10",
+        "name": "testDotsOldname",
+        "time": "0.09932446479797363"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM11",
+        "name": "testDotsNewname",
+        "time": "0.10148096084594727"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM12",
+        "name": "testDirToObj",
+        "time": "0.11778473854064941"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM16",
+        "name": "testDirToFullDir",
+        "time": "0.12638306617736816"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM13",
+        "name": "testDirToDir",
+        "time": "0.13729286193847656"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM3s",
+        "name": "testCfhSocket",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM3a",
+        "name": "testCfhLink",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM3r",
+        "name": "testCfhFile",
+        "time": "0.05849051475524902"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM3f",
+        "name": "testCfhFifo",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM3c",
+        "name": "testCfhChar",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM3b",
+        "name": "testCfhBlock",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM8",
+        "name": "testBadutf8Oldname",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_rename",
+        "code": "RNM9",
+        "name": "testBadutf8Newname",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_lookupp",
+        "code": "LKPP4",
+        "name": "testXdev",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_lookupp",
+        "code": "LKPP1s",
+        "name": "testSock",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_lookupp",
+        "code": "LKPP3",
+        "name": "testNoFH",
+        "time": "0.012781381607055664"
+      },
+      {
+        "classname": "st_lookupp",
+        "code": "LKPP2",
+        "name": "testLookuppRoot",
+        "time": "0.014780759811401367"
+      },
+      {
+        "classname": "st_lookupp",
+        "code": "LKPP1d",
+        "name": "testLookupp",
+        "time": "0.026335716247558594"
+      },
+      {
+        "classname": "st_lookupp",
+        "code": "LKPP1a",
+        "name": "testLink",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_lookupp",
+        "code": "LKPP1r",
+        "name": "testFile",
+        "time": "0.02274179458618164"
+      },
+      {
+        "classname": "st_lookupp",
+        "code": "LKPP1f",
+        "name": "testFifo",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_lookupp",
+        "code": "LKPP1c",
+        "name": "testChar",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_lookupp",
+        "code": "LKPP1b",
+        "name": "testBlock",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_getdevicelist",
+        "code": "LAYOUTRET2",
+        "name": "testLayoutReturnFsid",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_getdevicelist",
+        "code": "LAYOUTRET1",
+        "name": "testLayoutReturnFile",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_getdevicelist",
+        "code": "LAYOUTRET3",
+        "name": "testLayoutReturnAll",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_getdevicelist",
+        "code": "LAYOUTCOMMIT1",
+        "name": "testLayoutCommit",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_getdevicelist",
+        "code": "GETLAYOUT1",
+        "name": "testGetLayout",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_getdevicelist",
+        "code": "GETDLIST1",
+        "name": "testGetDevList",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_getdevicelist",
+        "code": "GETDINFO1",
+        "name": "testGetDevInfo",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_getdevicelist",
+        "code": "GETLAYOUT100",
+        "name": "testEMCGetLayout",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_verify",
+        "code": "VF1r",
+        "name": "testMandFile",
+        "time": "0.04754996299743652"
+      },
+      {
+        "classname": "st_delegation",
+        "code": "DELEG9",
+        "name": "testWriteOpenvsReadDeleg",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_delegation",
+        "code": "DELEG2",
+        "name": "testWriteDeleg",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_delegation",
+        "code": "DELEG23",
+        "name": "testServerSelfConflict3",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_delegation",
+        "code": "DELEG1",
+        "name": "testReadDeleg",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_delegation",
+        "code": "DELEG4",
+        "name": "testNoDeleg",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_delegation",
+        "code": "DELEG8",
+        "name": "testDelegRevocation",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_delegation",
+        "code": "DELEG26",
+        "name": "testDelegReadAfterClose",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_delegation",
+        "code": "DELEG25",
+        "name": "testCbGetattrWithChange",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_delegation",
+        "code": "DELEG24",
+        "name": "testCbGetattrNoChange",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_delegation",
+        "code": "DELEG6",
+        "name": "testCBSecParmsNull",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_delegation",
+        "code": "DELEG7",
+        "name": "testCBSecParmsChange",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_delegation",
+        "code": "DELEG5",
+        "name": "testCBSecParms",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_delegation",
+        "code": "DELEG3",
+        "name": "testAnyDeleg",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_open",
+        "code": "OPEN1",
+        "name": "testSupported",
+        "time": "0.042675018310546875"
+      },
+      {
+        "classname": "st_open",
+        "code": "OPEN2",
+        "name": "testServerStateSeqid",
+        "time": "0.059285640716552734"
+      },
+      {
+        "classname": "st_open",
+        "code": "OPEN30",
+        "name": "testReadWrite",
+        "time": "0.05487799644470215"
+      },
+      {
+        "classname": "st_open",
+        "code": "OPEN7",
+        "name": "testOPENClaimFH",
+        "time": "0.06601738929748535"
+      },
+      {
+        "classname": "st_open",
+        "code": "OPEN6",
+        "name": "testEXCLUSIVE4AtNameAttribute",
+        "time": "0.06144094467163086"
+      },
+      {
+        "classname": "st_open",
+        "code": "OPEN8",
+        "name": "testCloseWithZeroSeqid",
+        "time": "0.04106879234313965"
+      },
+      {
+        "classname": "st_open",
+        "code": "OPEN31",
+        "name": "testAnonReadWrite",
+        "time": "0.05475783348083496"
+      },
+      {
+        "classname": "st_trunking",
+        "code": "TRUNK2",
+        "name": "testUseTwoSessions",
+        "time": "0.022814273834228516"
+      },
+      {
+        "classname": "st_trunking",
+        "code": "TRUNK1",
+        "name": "testTwoSessions",
+        "time": "0.013717412948608398"
+      },
+      {
+        "classname": "st_sequence",
+        "code": "SEQ7",
+        "name": "testTooManyOps",
+        "time": "0.015227079391479492"
+      },
+      {
+        "classname": "st_sequence",
+        "code": "SEQ1",
+        "name": "testSupported",
+        "time": "0.011846303939819336"
+      },
+      {
+        "classname": "st_sequence",
+        "code": "SEQ12",
+        "name": "testSessionidSequenceidSlotid",
+        "time": "0.011838674545288086"
+      },
+      {
+        "classname": "st_sequence",
+        "code": "SEQ6",
+        "name": "testRequestTooBig",
+        "time": "0.011931896209716797"
+      },
+      {
+        "classname": "st_sequence",
+        "code": "SEQ10b",
+        "name": "testReplayCache007",
+        "time": "0.07291865348815918"
+      },
+      {
+        "classname": "st_sequence",
+        "code": "SEQ9f",
+        "name": "testReplayCache006",
+        "time": "0.013933658599853516"
+      },
+      {
+        "classname": "st_sequence",
+        "code": "SEQ9e",
+        "name": "testReplayCache005",
+        "time": "0.01437687873840332"
+      },
+      {
+        "classname": "st_sequence",
+        "code": "SEQ9d",
+        "name": "testReplayCache004",
+        "time": "0.02221989631652832"
+      },
+      {
+        "classname": "st_sequence",
+        "code": "SEQ9c",
+        "name": "testReplayCache003",
+        "time": "0.014313459396362305"
+      },
+      {
+        "classname": "st_sequence",
+        "code": "SEQ9b",
+        "name": "testReplayCache002",
+        "time": "0.07189822196960449"
+      },
+      {
+        "classname": "st_sequence",
+        "code": "SEQ9a",
+        "name": "testReplayCache001",
+        "time": "0.01426243782043457"
+      },
+      {
+        "classname": "st_sequence",
+        "code": "SEQ11",
+        "name": "testOpNotInSession",
+        "time": "0.0076770782470703125"
+      },
+      {
+        "classname": "st_sequence",
+        "code": "SEQ2",
+        "name": "testNotFirst",
+        "time": "0.012048006057739258"
+      },
+      {
+        "classname": "st_sequence",
+        "code": "SEQ4",
+        "name": "testImplicitBind",
+        "time": "0.01404428482055664"
+      },
+      {
+        "classname": "st_sequence",
+        "code": "SEQ8",
+        "name": "testBadSlot",
+        "time": "0.012111425399780273"
+      },
+      {
+        "classname": "st_sequence",
+        "code": "SEQ5",
+        "name": "testBadSession",
+        "time": "0.0036466121673583984"
+      },
+      {
+        "classname": "st_sequence",
+        "code": "SEQ13",
+        "name": "testBadSequenceidAtSlot",
+        "time": "0.016010761260986328"
+      },
+      {
+        "classname": "st_secinfo",
+        "code": "SEC2",
+        "name": "testSupported2",
+        "time": "0.06232595443725586"
+      },
+      {
+        "classname": "st_secinfo",
+        "code": "SEC1",
+        "name": "testSupported",
+        "time": "0.06213188171386719"
+      },
+      {
+        "classname": "st_secinfo_no_name",
+        "code": "SECNN4",
+        "name": "testSupported4",
+        "time": "0.020010948181152344"
+      },
+      {
+        "classname": "st_secinfo_no_name",
+        "code": "SECNN3",
+        "name": "testSupported3",
+        "time": "0.012302875518798828"
+      },
+      {
+        "classname": "st_secinfo_no_name",
+        "code": "SECNN2",
+        "name": "testSupported2",
+        "time": "0.012292146682739258"
+      },
+      {
+        "classname": "st_secinfo_no_name",
+        "code": "SECNN1",
+        "name": "testSupported",
+        "time": "0.012879371643066406"
+      },
+      {
+        "classname": "st_reclaim_complete",
+        "code": "RECC1",
+        "name": "testSupported",
+        "time": "0.015132427215576172"
+      },
+      {
+        "classname": "st_reclaim_complete",
+        "code": "RECC2",
+        "name": "testReclaimAfterRECC",
+        "time": "0.04665398597717285"
+      },
+      {
+        "classname": "st_reclaim_complete",
+        "code": "RECC3",
+        "name": "testOpenBeforeRECC",
+        "time": "0.018523454666137695"
+      },
+      {
+        "classname": "st_reclaim_complete",
+        "code": "RECC4",
+        "name": "testDoubleRECC",
+        "time": "0.014371871948242188"
+      },
+      {
+        "classname": "st_destroy_clientid",
+        "code": "DESCID1",
+        "name": "testSupported",
+        "time": "0.0076274871826171875"
+      },
+      {
+        "classname": "st_destroy_clientid",
+        "code": "DESCID2",
+        "name": "testDestroyCIDWS",
+        "time": "0.015820026397705078"
+      },
+      {
+        "classname": "st_destroy_clientid",
+        "code": "DESCID8",
+        "name": "testDestroyCIDTwice",
+        "time": "0.009933710098266602"
+      },
+      {
+        "classname": "st_destroy_clientid",
+        "code": "DESCID5",
+        "name": "testDestroyCIDSessionB",
+        "time": "0.011867761611938477"
+      },
+      {
+        "classname": "st_destroy_clientid",
+        "code": "DESCID7",
+        "name": "testDestroyCIDNotOnly",
+        "time": "0.003588438034057617"
+      },
+      {
+        "classname": "st_destroy_clientid",
+        "code": "DESCID6",
+        "name": "testDestroyCIDCSession",
+        "time": "0.012388229370117188"
+      },
+      {
+        "classname": "st_destroy_clientid",
+        "code": "DESCID3",
+        "name": "testDestroyBadCIDWS",
+        "time": "0.003673076629638672"
+      },
+      {
+        "classname": "st_destroy_clientid",
+        "code": "DESCID4",
+        "name": "testDestroyBadCIDIS",
+        "time": "0.012239694595336914"
+      },
+      {
+        "classname": "st_destroy_session",
+        "code": "DSESS9006",
+        "name": "testDestroyLockConfRace",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_destroy_session",
+        "code": "DSESS1",
+        "name": "testDestroyBasic",
+        "time": "0.05103421211242676"
+      },
+      {
+        "classname": "st_destroy_session",
+        "code": "DSESS9003",
+        "name": "testDestroy3",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_destroy_session",
+        "code": "DSESS9002",
+        "name": "testDestroy2",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_destroy_session",
+        "code": "DSESS9001",
+        "name": "testDestroy",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_destroy_session",
+        "code": "DSESS9005",
+        "name": "testDestoryNotSoleOps",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_destroy_session",
+        "code": "DSESS9004",
+        "name": "testDestoryNotFinalOps",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS28",
+        "name": "testTooSmallMaxReq",
+        "time": "0.007901906967163086"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS25",
+        "name": "testTooSmallMaxRS",
+        "time": "0.007693290710449219"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS2b",
+        "name": "testSupported2b",
+        "time": "0.02034163475036621"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS2",
+        "name": "testSupported2",
+        "time": "0.016967058181762695"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS1",
+        "name": "testSupported1",
+        "time": "0.00971841812133789"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS6",
+        "name": "testReplay2",
+        "time": "0.009974241256713867"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS5b",
+        "name": "testReplay1b",
+        "time": "0.014116048812866211"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS5a",
+        "name": "testReplay1a",
+        "time": "0.014475345611572266"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS5",
+        "name": "testReplay1",
+        "time": "0.009977340698242188"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS27",
+        "name": "testRepTooBigToCache",
+        "time": "0.009835481643676758"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS26",
+        "name": "testRepTooBig",
+        "time": "0.014015674591064453"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS19",
+        "name": "testRdmaArray2",
+        "time": "0.00726771354675293"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS18",
+        "name": "testRdmaArray1",
+        "time": "0.009680509567260742"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS17",
+        "name": "testRdmaArray0",
+        "time": "0.010068893432617188"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS10",
+        "name": "testPrincipalCollision2",
+        "time": "0.009969234466552734"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS9",
+        "name": "testPrincipalCollision1",
+        "time": "0.007799386978149414"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS23",
+        "name": "testNotOnlyOp",
+        "time": "0.00785207748413086"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS3",
+        "name": "testNoExchange",
+        "time": "0.0036301612854003906"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS22",
+        "name": "testMaxreqs",
+        "time": "0.009677886962890625"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS200",
+        "name": "testManyClients",
+        "time": "0.08509016036987305"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS29",
+        "name": "testDRCMemLeak",
+        "time": "22.10327386856079"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS24",
+        "name": "testCsr_sequence",
+        "time": "0.010058164596557617"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS4",
+        "name": "testContrivedReplay",
+        "time": "0.007860660552978516"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS16a",
+        "name": "testCbSecParmsDec",
+        "time": "0.009987592697143555"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS16",
+        "name": "testCbSecParms",
+        "time": "0.010037899017333984"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS21",
+        "name": "testCallbackVersion",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS20",
+        "name": "testCallbackProgram",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS8",
+        "name": "testBadSeqnum2",
+        "time": "0.010079383850097656"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS7",
+        "name": "testBadSeqnum1",
+        "time": "0.010126829147338867"
+      },
+      {
+        "classname": "st_create_session",
+        "code": "CSESS15",
+        "name": "testBadFlag",
+        "time": "0.007869482040405273"
+      },
+      {
+        "classname": "st_copy",
+        "code": "COPY5",
+        "name": "testZeroLengthCopy",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_compound",
+        "code": "COMP1",
+        "name": "testZeroOps",
+        "time": "0.003580331802368164"
+      },
+      {
+        "classname": "st_compound",
+        "code": "COMP5",
+        "name": "testUndefined",
+        "time": "0.011830568313598633"
+      },
+      {
+        "classname": "st_compound",
+        "code": "COMP4b",
+        "name": "testInvalidMinor2",
+        "time": "0.0034818649291992188"
+      },
+      {
+        "classname": "st_compound",
+        "code": "COMP4a",
+        "name": "testInvalidMinor",
+        "time": "0.0034775733947753906"
+      },
+      {
+        "classname": "st_compound",
+        "code": "COMP2",
+        "name": "testGoodTag",
+        "time": "0.0035648345947265625"
+      },
+      {
+        "classname": "st_compound",
+        "code": "COMP3",
+        "name": "testBadTags",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_exchange_id",
+        "code": "EID6",
+        "name": "testUpdateNonexistant",
+        "time": "0.0037500858306884766"
+      },
+      {
+        "classname": "st_exchange_id",
+        "code": "EID6h",
+        "name": "testUpdate111",
+        "time": "0.012148141860961914"
+      },
+      {
+        "classname": "st_exchange_id",
+        "code": "EID6g",
+        "name": "testUpdate110",
+        "time": "0.012009143829345703"
+      },
+      {
+        "classname": "st_exchange_id",
+        "code": "EID6f",
+        "name": "testUpdate101",
+        "time": "0.012725353240966797"
+      },
+      {
+        "classname": "st_exchange_id",
+        "code": "EID6e",
+        "name": "testUpdate100",
+        "time": "0.012023210525512695"
+      },
+      {
+        "classname": "st_exchange_id",
+        "code": "EID6d",
+        "name": "testUpdate011",
+        "time": "0.00764155387878418"
+      },
+      {
+        "classname": "st_exchange_id",
+        "code": "EID6c",
+        "name": "testUpdate010",
+        "time": "0.007800102233886719"
+      },
+      {
+        "classname": "st_exchange_id",
+        "code": "EID6b",
+        "name": "testUpdate001",
+        "time": "0.0077550411224365234"
+      },
+      {
+        "classname": "st_exchange_id",
+        "code": "EID6a",
+        "name": "testUpdate000",
+        "time": "0.008042335510253906"
+      },
+      {
+        "classname": "st_exchange_id",
+        "code": "EID1b",
+        "name": "testSupported2",
+        "time": "0.011677026748657227"
+      },
+      {
+        "classname": "st_exchange_id",
+        "code": "EID7",
+        "name": "testSupported1a",
+        "time": "0.003629446029663086"
+      },
+      {
+        "classname": "st_exchange_id",
+        "code": "EID1",
+        "name": "testSupported",
+        "time": "0.0035932064056396484"
+      },
+      {
+        "classname": "st_exchange_id",
+        "code": "EID50",
+        "name": "testSSV",
+        "skipped": 1,
+        "time": "0"
+      },
+      {
+        "classname": "st_exchange_id",
+        "code": "EID8",
+        "name": "testNotOnlyOp",
+        "time": "0.003601551055908203"
+      },
+      {
+        "classname": "st_exchange_id",
+        "code": "EID5h",
+        "name": "testNoUpdate111",
+        "time": "0.011967897415161133"
+      },
+      {
+        "classname": "st_exchange_id",
+        "code": "EID5g",
+        "name": "testNoUpdate110",
+        "time": "0.017984390258789062"
+      },
+      {
+        "classname": "st_exchange_id",
+        "code": "EID5fb",
+        "name": "testNoUpdate101b",
+        "time": "0.020085811614990234"
+      },
+      {
+        "classname": "st_exchange_id",
+        "code": "EID5f",
+        "name": "testNoUpdate101",
+        "time": "0.022223711013793945"
+      },
+      {
+        "classname": "st_exchange_id",
+        "code": "EID5e",
+        "name": "testNoUpdate100",
+        "time": "0.018100261688232422"
+      },
+      {
+        "classname": "st_exchange_id",
+        "code": "EID5d",
+        "name": "testNoUpdate011",
+        "time": "0.009819746017456055"
+      },
+      {
+        "classname": "st_exchange_id",
+        "code": "EID5c",
+        "name": "testNoUpdate010",
+        "time": "0.009720802307128906"
+      },
+      {
+        "classname": "st_exchange_id",
+        "code": "EID5b",
+        "name": "testNoUpdate001",
+        "time": "0.009900569915771484"
+      },
+      {
+        "classname": "st_exchange_id",
+        "code": "EID5a",
+        "name": "testNoUpdate000",
+        "time": "0.009809017181396484"
+      },
+      {
+        "classname": "st_exchange_id",
+        "code": "EID2",
+        "name": "testNoImplId",
+        "time": "0.0035753250122070312"
+      },
+      {
+        "classname": "st_exchange_id",
+        "code": "EID3",
+        "name": "testLongArray",
+        "time": "0.003481626510620117"
+      },
+      {
+        "classname": "st_exchange_id",
+        "code": "EID9",
+        "name": "testLeasePeriod",
+        "time": "71.02624154090881"
+      },
+      {
+        "classname": "st_exchange_id",
+        "code": "EID4",
+        "name": "testBadFlags",
+        "time": "0.003637552261352539"
+      }
+    ],
+    "tests": 266,
+    "time": 377.514527797699,
+    "timestamp": "2026-10-30 23:53:36.733865"
+  },
+  "nlm_native": {
+    "status": "passed",
+    "checks": [
+      "native F_SETLKW blocks on an independent wire owner, receives GRANTED and retains a server-visible byte lock",
+      "NSM server-reboot notification makes the Linux kernel reclaim its lock; independent post-grace TEST observes it and native unlock releases it"
+    ]
+  },
+  "native_linux": [
+    {
+      "name": "smbclient-2.1",
+      "status": "passed",
+      "version": "Version 4.19.5-Ubuntu",
+      "payload_sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83"
+    },
+    {
+      "name": "smbclient-3.1.1",
+      "status": "passed",
+      "version": "Version 4.19.5-Ubuntu",
+      "payload_sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83"
+    },
+    {
+      "name": "kernel-nfs-3",
+      "status": "passed",
+      "payload_sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83"
+    },
+    {
+      "name": "kernel-nfs-4.1",
+      "status": "passed",
+      "payload_sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83"
+    },
+    {
+      "name": "kernel-nfs-4.1-root",
+      "status": "passed",
+      "payload_sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83"
+    }
+  ],
+  "nfs-state": {
+    "status": "passed",
+    "checks": [
+      "BIND_CONN_TO_SESSION on a fresh connection, PUTPUBFH, TEST_STATEID old/current states, FREE_STATEID held/unlocked states and read-only OPEN_DOWNGRADE",
+      "one kernel-style session accepts multiple mapped users without sharing their open authority",
+      "exclusive lock conflicts, denied owner details, disjoint writes and CLOSE with held locks",
+      "partial unlock splits ranges and preserves neighboring conflicts",
+      "process restart persists split lock ranges; matching client reclaims OPEN and locks before RECLAIM_COMPLETE"
+    ]
+  },
+  "nfs-create": {
+    "status": "passed",
+    "checks": [
+      "NFSv3 MKDIR accepts zero size hints without attempting to truncate a directory",
+      "required suppattr_exclcreat advertises actual writable creation attributes",
+      "exclusive verifier retry preserves content; mismatched verifier and unsupported exclusive attributes reject without creation",
+      "UNCHECKED ignores nonzero size and mode on existing files; zero size truncates only after share reservations permit it",
+      "CREATE and OPEN return the attributes actually applied"
+    ]
+  },
+  "nfs-attributes": {
+    "status": "passed",
+    "checks": [
+      "v3 CREATE preserves mode, mapped ownership and explicit atime/mtime on native handles",
+      "v4 SETATTR updates aliases consistently; GETATTR rejects write-only time attributes",
+      "durable change counters detect equal-size writes with restored mtime, share alias state and return real namespace change_info; reads do not advance them",
+      "paged v4 READDIR skips reserved cookies 1/2 and resumes without duplicate or missing entries",
+      "mode/ownership and exact timestamps survive server restart through stable alias handles"
+    ]
+  },
+  "macos_report": {
+    "status": "passed",
+    "client_host": "macOS-15.7.9-x86_64-i386-64bit-Mach-O",
+    "server_host": "Ubuntu 24.04 QEMU guest",
+    "source_commit": "3e019a8bebb2955a72f79ac6b5f9f369abbf32b7",
+    "harness_commit": "3e019a8bebb2955a72f79ac6b5f9f369abbf32b7",
+    "image": "https://cloud-images.ubuntu.com/releases/noble/release-20260814/ubuntu-24.04-server-cloudimg-amd64.img",
+    "image_sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+    "server_archive_sha256": "abdd2d3fc30d8a7ce33e2c24052a83e0655a3a7b6e6a117207f2efe14a4bafd4",
+    "profiles": [
+      {
+        "name": "macos-native-smb",
+        "status": "passed",
+        "mount_output": "",
+        "payload_sha256": "08e33aedf25337c87eb15e08c32a58f6f4caa21fe073d00b53014c57f8d148e0"
+      },
+      {
+        "name": "macos-native-nfs3",
+        "status": "passed",
+        "mount_output": "",
+        "payload_sha256": "08e33aedf25337c87eb15e08c32a58f6f4caa21fe073d00b53014c57f8d148e0"
+      }
+    ],
+    "boot_files_sha256": {
+      "vmlinuz": "76a7f2ef15fcbd2f5c25cd7e7b413f903b2078396063557f1dffb4a0b089a964",
+      "initrd": "194f73c17ca4795f987f2e1713c7184f8d1bb88f063f79a753dada5da6a9987c"
+    },
+    "accelerator": "hvf",
+    "accelerator_probe": "qemu-system-x86_64: terminating on signal 15 from pid 8041 (<unknown process>)\n",
+    "guest_kernel": "Linux taucloud-acceptance 6.8.0-137-generic #137-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul 17 20:28:23 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "identity_setup": "offline disposable identity seed, native Argon2id 64 MiB/3/1; management login excluded; SMB authentication unchanged",
+    "guest_fixture_pid": 1662
+  }
+}

@@ -11,7 +11,8 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--bin',type=Path,required=True)
     p.add_argument('--output',type=Path,required=True)
-    a=p.parse_args();f,port=fixture(a.bin);clients=[];checks=[]
+    p.add_argument('--sanitizers',action='store_true')
+    a=p.parse_args();f,port=fixture(a.bin,512 if a.sanitizers else 256);clients=[];checks=[]
     def client():
         c=Client(port);clients.append(c);c.session();return c
     def call(c,ops,status=0):

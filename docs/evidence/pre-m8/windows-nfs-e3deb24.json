@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "host": "Windows-2025Server-10.0.26100-SP0",
+  "checks": [
+    "native MOUNT and NFSv3 over TCP",
+    "1 MiB flush and SHA256 readback",
+    "rename, truncate, enumeration and delete"
+  ],
+  "client": "Windows native Client for NFS",
+  "transport": "tcp",
+  "locking": "nolock",
+  "payload_sha256": "631B84027D6B9E52B539C4E8373622D23032DFADC64D60AF87339C9037E4F769",
+  "version": 3,
+  "commit": "e3deb24537f43b5a453dfc17f00bad8717bc7de4",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41148303426",
+  "creation": {
+    "status": "passed",
+    "checks": [
+      "NFSv3 MKDIR accepts zero size hints without attempting to truncate a directory",
+      "required suppattr_exclcreat advertises actual writable creation attributes",
+      "exclusive verifier retry preserves content; mismatched verifier and unsupported exclusive attributes reject without creation",
+      "UNCHECKED ignores nonzero size and mode on existing files; zero size truncates only after share reservations permit it",
+      "CREATE and OPEN return the attributes actually applied"
+    ]
+  }
+}

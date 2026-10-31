@@ -36,7 +36,9 @@ with tempfile.TemporaryDirectory(prefix='tc-time-') as temp:
                 results.append(dict(operation='relative pinned-parent metadata open',status=hex(code&0xffffffff)))
                 if code>=0:
                     ticks=116444736000000000+17000000007654321;t=w.FILETIME(ticks&0xffffffff,ticks>>32)
-                    ok=k.SetFileTime(metadata,None,None,ctypes.byref(t));results.append(dict(operation='relative directory SetFileTime',ok=bool(ok),error=ctypes.get_last_error()));k.CloseHandle(metadata)
+                    ok=k.SetFileTime(metadata,None,None,ctypes.byref(t));results.append(dict(operation='relative directory SetFileTime',ok=bool(ok),error=0 if ok else ctypes.get_last_error()));k.CloseHandle(metadata)
+                    assert ok, 'relative metadata SetFileTime failed'
+                assert code>=0, 'relative metadata open failed'
             finally:k.CloseHandle(handle)
     finally:k.CloseHandle(parent)
 print(json.dumps(results,indent=2))
