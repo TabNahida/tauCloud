@@ -162,6 +162,9 @@ struct resource {
 struct native_file::impl {
   std::shared_ptr<resource> file = std::make_shared<resource>();
   std::vector<std::shared_ptr<resource>> parents;
+#ifdef _WIN32
+  std::wstring leaf;
+#endif
   bool allow_unlinked = false;
   bool private_pin = false;
 };
@@ -292,6 +295,7 @@ native_file native_file::root(const fs::path &path) {
       native_error();
     }
     next.info();
+    next.impl_->leaf = name;
     next.impl_->parents = result.impl_->parents;
     next.impl_->parents.push_back(result.impl_->file);
     result = std::move(next);
@@ -365,6 +369,7 @@ native_file native_file::open_impl(const std::string &path, bool directory, bool
     parent = next;
     if (last) {
       result.impl_->file = next;
+      result.impl_->leaf = name;
       break;
     }
     start = end + 1;
@@ -609,11 +614,44 @@ void native_file::set_times(std::optional<uint64_t> accessed, std::optional<uint
   for (auto value : {accessed, modified})
     require(!value || *value <= uint64_t(INT64_MAX), "invalid_timestamp");
 #ifdef _WIN32
-  // Reopen by the pinned object handle, never by pathname. Attribute-only
-  // access also works for directories whose traversal handles deny DELETE.
-  auto handle = ReOpenFile(impl_->file->handle, FILE_WRITE_ATTRIBUTES,
-                           FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                           FILE_FLAG_BACKUP_SEMANTICS);
+  resource attributes;
+  if (info().at("directory").get<bool>()) {
+    // ReOpenFile rejects directory metadata handles on supported Windows hosts.
+    // Our original directory and all its parents deny DELETE, pinning the name.
+    // Reopen only that component beneath the retained parent; verify the native
+    // identity before changing attributes. Never resolve an absolute pathname.
+    require(!impl_->parents.empty() && !impl_->leaf.empty(), "not_supported");
+    using nt_open = NTSTATUS(NTAPI *)(PHANDLE, ACCESS_MASK, POBJECT_ATTRIBUTES, PIO_STATUS_BLOCK,
+                                     PLARGE_INTEGER, ULONG, ULONG, ULONG, ULONG, PVOID, ULONG);
+    auto open = reinterpret_cast<nt_open>(GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtCreateFile"));
+    require(open, "not_supported");
+    UNICODE_STRING name{static_cast<USHORT>(impl_->leaf.size() * 2),
+                        static_cast<USHORT>(impl_->leaf.size() * 2), impl_->leaf.data()};
+    OBJECT_ATTRIBUTES object{};
+    InitializeObjectAttributes(&object, &name, OBJ_CASE_INSENSITIVE, impl_->parents.back()->handle, nullptr);
+    IO_STATUS_BLOCK io{};
+    auto status = open(&attributes.handle, FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES | SYNCHRONIZE,
+                       &object, &io, nullptr, 0, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                       1, 0x00200000 | 0x20 | 1, nullptr, 0);
+    if (status < 0) {
+      auto convert = reinterpret_cast<ULONG(WINAPI *)(NTSTATUS)>(
+          GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "RtlNtStatusToDosError"));
+      SetLastError(convert(status));native_error();
+    }
+    BY_HANDLE_FILE_INFORMATION before{}, after{};
+    if (!GetFileInformationByHandle(impl_->file->handle, &before) ||
+        !GetFileInformationByHandle(attributes.handle, &after)) native_error();
+    require((after.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) &&
+                !(after.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) &&
+                before.dwVolumeSerialNumber == after.dwVolumeSerialNumber &&
+                before.nFileIndexHigh == after.nFileIndexHigh && before.nFileIndexLow == after.nFileIndexLow,
+            "object_replaced");
+  } else {
+    attributes.handle = ReOpenFile(impl_->file->handle, FILE_WRITE_ATTRIBUTES,
+                                   FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                                   FILE_FLAG_BACKUP_SEMANTICS);
+  }
+  auto handle = attributes.handle;
   if (handle == INVALID_HANDLE_VALUE) {
     auto saved = GetLastError();
     log("native", "reopen_attributes_failed", std::to_string(saved));
@@ -627,7 +665,6 @@ void native_file::set_times(std::optional<uint64_t> accessed, std::optional<uint
   auto a = convert(accessed.value_or(0)), m = convert(modified.value_or(0));
   bool ok = SetFileTime(handle, nullptr, accessed ? &a : nullptr, modified ? &m : nullptr);
   auto saved = GetLastError();
-  CloseHandle(handle);
   SetLastError(saved);
   if (!ok) {
     log("native", "set_times_failed", std::to_string(saved));
