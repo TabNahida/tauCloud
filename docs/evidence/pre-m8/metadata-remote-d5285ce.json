@@ -1,0 +1,155 @@
+{
+  "source_commit": "d5285ce4a73fb66b1b1896e89f22a2d068d18dbc",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41173681466",
+  "status": "partial; MSVC allocation reopen assertion failed",
+  "jobs": {
+    "gcc": {
+      "id": 124456718217,
+      "status": "passed"
+    },
+    "clang_asan_ubsan": {
+      "id": 124456718194,
+      "status": "passed"
+    },
+    "msvc": {
+      "id": 124456718022,
+      "status": "failed",
+      "passed": [
+        "native failure safety, 38 checks",
+        "DOS metadata/timestamps/EAs/modes, 6 groups"
+      ],
+      "failure": "Linux allocation-retention assertion after close/reopen is not portable to NTFS; SQLite test connection also stayed open and obscured cleanup."
+    }
+  },
+  "linux_reports": {
+    "gcc": {
+      "metadata": {
+        "status": "passed",
+        "checks": [
+          "CREATE/QUERY/SET persistent DOS attributes, zero/no-change and NORMAL semantics; readonly open/delete checks and granted-handle authority",
+          "four independent timestamps, native mtime, zero/no-change, per-handle explicit/-1 freeze and -2 re-enable; invalid times reject before attribute mutation",
+          "binary extended attributes on CREATE/QUERY/SET, case-insensitive updates, deletion, restart, NEED_EA and access rights; malformed chains reject atomically",
+          "attributes follow native object across rename/restart, directory invariants hold, replacement object does not inherit stale metadata",
+          "per-open mode CREATE/QUERY/SET and FileAllInformation agreement, write-through writes, independent handles, invalid synchronous/immutable modes and SMB2 ignored synchronous CREATE flags",
+          "EA cursor paging, restart, single-entry and explicit indexes, independent opens, bounded whole-entry overflow and undersized-buffer retries"
+        ]
+      },
+      "allocation": {
+        "status": "passed",
+        "checks": [
+          "schema v4 migration preserves a pre-v5 backup before adding durable reservations",
+          "native space allocation preserves EOF, charges quota once, rejects over-quota growth before mutation and enforces WRITE_DATA",
+          "allocation and quota survive restart; EOF extension consumes reservations; allocation shrink truncates and frees storage; deletion and replacement release quota"
+        ]
+      },
+      "smb3": {
+        "status": "passed",
+        "checks": [
+          "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+          "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+          "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+          "0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x300 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x302 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x311 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+          "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+          "leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent",
+          "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+          "unsupported signing/cipher/hash and malformed contexts fail without dialect fallback",
+          "independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+          "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+          "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+          "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+        ],
+        "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+        "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+        "authentication_provider": "pyspnego NTLM",
+        "large_mib": 1,
+        "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+        "port": 54483,
+        "sanitizers": false
+      }
+    },
+    "clang": {
+      "metadata": {
+        "status": "passed",
+        "checks": [
+          "CREATE/QUERY/SET persistent DOS attributes, zero/no-change and NORMAL semantics; readonly open/delete checks and granted-handle authority",
+          "four independent timestamps, native mtime, zero/no-change, per-handle explicit/-1 freeze and -2 re-enable; invalid times reject before attribute mutation",
+          "binary extended attributes on CREATE/QUERY/SET, case-insensitive updates, deletion, restart, NEED_EA and access rights; malformed chains reject atomically",
+          "attributes follow native object across rename/restart, directory invariants hold, replacement object does not inherit stale metadata",
+          "per-open mode CREATE/QUERY/SET and FileAllInformation agreement, write-through writes, independent handles, invalid synchronous/immutable modes and SMB2 ignored synchronous CREATE flags",
+          "EA cursor paging, restart, single-entry and explicit indexes, independent opens, bounded whole-entry overflow and undersized-buffer retries"
+        ]
+      },
+      "allocation": {
+        "status": "passed",
+        "checks": [
+          "schema v4 migration preserves a pre-v5 backup before adding durable reservations",
+          "native space allocation preserves EOF, charges quota once, rejects over-quota growth before mutation and enforces WRITE_DATA",
+          "allocation and quota survive restart; EOF extension consumes reservations; allocation shrink truncates and frees storage; deletion and replacement release quota"
+        ]
+      },
+      "smb3": {
+        "status": "passed",
+        "checks": [
+          "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+          "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+          "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+          "0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x300 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x302 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x311 encrypted Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+          "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+          "leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent",
+          "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+          "unsupported signing/cipher/hash and malformed contexts fail without dialect fallback",
+          "independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+          "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+          "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+          "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+        ],
+        "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+        "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+        "authentication_provider": "pyspnego NTLM",
+        "large_mib": 1,
+        "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+        "port": 53283,
+        "sanitizers": true
+      }
+    }
+  },
+  "correction": {
+    "local_test": {
+      "status": "passed",
+      "checks": [
+        "schema v4 migration preserves a pre-v5 backup before adding durable reservations",
+        "native space allocation preserves EOF, charges quota once, rejects over-quota growth before mutation and enforces WRITE_DATA",
+        "durable logical quota survives restart while allocation reports native close-time trimming; EOF extension consumes reservations; shrink and deletion release quota"
+      ],
+      "native_allocation_after_reopen": [
+        [
+          4096,
+          14
+        ],
+        [
+          4096,
+          0
+        ]
+      ]
+    },
+    "changes": [
+      "Compare Windows reopened allocation with independent native FileStandardInfo; physical tail retention is not a cross-platform guarantee. Logical quota reservation remains persistent until allocation update/shrink/delete.",
+      "Close SQLite migration-test connections explicitly and write reports before cleanup.",
+      "Round Windows allocation requests using the pinned handle volume allocation unit before the native call."
+    ],
+    "remote_status": "pending",
+    "specification": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fsa/d142c93a-72bc-4b05-9d96-8e00371c3308"
+  }
+}

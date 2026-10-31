@@ -613,8 +613,30 @@ void native_file::truncate(uint64_t size) {
 void native_file::allocate(uint64_t size) {
   require(size <= uint64_t(INT64_MAX), "invalid_offset");
 #ifdef _WIN32
+  // Query the pinned file's volume, without reopening any path, and round
+  // before the native call so its EOF adjustment follows SMB cluster semantics.
+  struct volume_size_info {
+    LARGE_INTEGER total, available;
+    ULONG sectors, bytes_per_sector;
+  } volume{};
+  using nt_query_volume = NTSTATUS(NTAPI *)(HANDLE, PIO_STATUS_BLOCK, PVOID, ULONG, int);
+  auto query = reinterpret_cast<nt_query_volume>(
+      GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtQueryVolumeInformationFile"));
+  require(query != nullptr, "not_supported");
+  IO_STATUS_BLOCK status_block{};
+  auto status = query(impl_->file->handle, &status_block, &volume, sizeof(volume), 3);
+  if (status < 0) {
+    using convert = ULONG(WINAPI *)(NTSTATUS);
+    auto dos = reinterpret_cast<convert>(
+        GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "RtlNtStatusToDosError"));
+    SetLastError(dos ? dos(status) : ERROR_INVALID_FUNCTION);
+    native_error();
+  }
+  auto unit = uint64_t(volume.sectors) * volume.bytes_per_sector;
+  require(unit > 0 && unit <= 1024 * 1024, "not_supported");
+  require(size <= uint64_t(INT64_MAX) - unit, "invalid_offset");
   FILE_ALLOCATION_INFO value{};
-  value.AllocationSize.QuadPart = static_cast<LONGLONG>(size);
+  value.AllocationSize.QuadPart = static_cast<LONGLONG>((size + unit - 1) / unit * unit);
 #ifdef TAUCLOUD_TEST_IO
   require(!size || write_budget != 0, "disk_full");
 #endif

@@ -42,8 +42,11 @@ def main():
     try:
         fixture.stop()
         for role in ('file', 'file_1', 'file_2', 'file_3'):
-            with sqlite3.connect(fixture.state / (role + '.db')) as db:
+            db = sqlite3.connect(fixture.state / (role + '.db'))
+            try:
                 db.executescript('DROP TABLE allocations; PRAGMA user_version=4;')
+            finally:
+                db.close()
         fixture.start()
         assert all((fixture.state / (role + '.pre-v5.db')).exists()
                    for role in ('file', 'file_1', 'file_2', 'file_3'))
@@ -86,7 +89,32 @@ def main():
         connection, tree = connect()
         first = create(tree, 'first', disposition=1)
         second = create(tree, 'second', disposition=1)
-        assert sizes(first) == (4096, 14) and sizes(second) == (4096, 0)
+        reopened = [sizes(first), sizes(second)]
+        report['native_allocation_after_reopen'] = reopened
+        assert reopened[0][1] == 14 and reopened[1][1] == 0, reopened
+        if os.name == 'nt':
+            # NTFS can trim preallocation at close (MS-FSA 2.1.5.4 phase 4).
+            # Check the actual native values instead of assuming Linux retention.
+            import ctypes
+            from ctypes import wintypes
+            kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+            kernel.CreateFileW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD,
+                                           wintypes.LPVOID, wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE]
+            kernel.CreateFileW.restype = wintypes.HANDLE
+            kernel.GetFileInformationByHandleEx.argtypes = [wintypes.HANDLE, ctypes.c_int, wintypes.LPVOID, wintypes.DWORD]
+            kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+            for name, expected in zip(('first', 'second'), reopened):
+                handle = kernel.CreateFileW(str(fixture.root / ('allocation/' + name)), 0x80, 7, None, 3, 0, None)
+                assert handle != ctypes.c_void_p(-1).value, ctypes.get_last_error()
+                try:
+                    info = ctypes.create_string_buffer(24)
+                    assert kernel.GetFileInformationByHandleEx(handle, 1, info, len(info)), ctypes.get_last_error()
+                    assert struct.unpack_from('<QQ', info.raw) == expected
+                    assert 0 <= expected[0] <= 4096
+                finally:
+                    kernel.CloseHandle(handle)
+        else:
+            assert reopened == [(4096, 14), (4096, 0)], reopened
         assert used() == 8192
         assert first.read(0, 14) == b'allocated data'
         allocate(second, 0)
@@ -117,7 +145,7 @@ def main():
         allocate(replacement, 0)
         replacement.close()
         first.close()
-        report['checks'].append('allocation and quota survive restart; EOF extension consumes reservations; allocation shrink truncates and frees storage; deletion and replacement release quota')
+        report['checks'].append('durable logical quota survives restart while allocation reports native close-time trimming; EOF extension consumes reservations; shrink and deletion release quota')
         report['status'] = 'passed'
     except Exception:
         report['error'] = traceback.format_exc()
@@ -128,9 +156,9 @@ def main():
                 connection.disconnect(close=False)
             except Exception:
                 pass
-        fixture.close()
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(report, indent=2) + '\n')
+        fixture.close()
     print(json.dumps(report))
 
 
