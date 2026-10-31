@@ -1224,6 +1224,8 @@ struct client {
           });
           prefix = co_await socket.read_exact(4, 4);
         }
+        // A newly started frame owns the separate five-second body deadline.
+        last_activity = now();
         check(prefix[0] == 0);
         size_t length = (get(prefix, 1, 1) << 16) | (get(prefix, 2, 1) << 8) | get(prefix, 3, 1);
         check(length >= 35 && length <= 1024 * 1024 + 52);

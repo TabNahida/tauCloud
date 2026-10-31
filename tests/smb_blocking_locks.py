@@ -253,7 +253,22 @@ def run():
             pending(req)
             lock(h, (0, 8, 4)); completed(c, req); lock(other, (0, 8, 4))
             h.close(); other.close()
-            print('PASS pending lock survives the 60-second read timeout; checking resumed idle expiry', flush=True)
+            print('PASS pending lock survives the 60-second read timeout; checking a late fragmented request', flush=True)
+            # Keep the independent client's encoding, signing and encryption;
+            # fragment only its TCP transport at the frame/body boundary.
+            original_send = c.transport.send
+            def fragmented(frame):
+                with c.transport._sock_lock:
+                    c.transport._sock.sendall(len(frame).to_bytes(4, 'big'))
+                    time.sleep(3)
+                    c.transport._sock.sendall(frame)
+            time.sleep(58)
+            c.transport.send = fragmented
+            try:
+                c.echo(sid=s.session_id, timeout=10)
+            finally:
+                c.transport.send = original_send
+            passed('a frame started before idle expiry retains its independent five-second body deadline')
             deadline = time.monotonic() + 70
             while c.transport.connected and time.monotonic() < deadline:
                 time.sleep(0.1)
