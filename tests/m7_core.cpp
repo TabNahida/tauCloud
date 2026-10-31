@@ -59,6 +59,16 @@ int main() {
     fs::create_directories(root);
     {
       auto dir = native_file::root(root);
+      auto timed_directory = dir.open("timed-directory", true, true);
+      timed_directory.flush();
+      timed_directory.set_times(uint64_t(1700000000123456700), uint64_t(1700000000765432100));
+      ok(timed_directory.info().at("modified_ns") == uint64_t(1700000000765432100));
+      timed_directory = native_file();
+      auto reopened_directory = dir.open("timed-directory", true);
+      reopened_directory.set_times(std::nullopt, uint64_t(1700000000765432200));
+      ok(reopened_directory.info().at("modified_ns") == uint64_t(1700000000765432200));
+      reopened_directory = native_file();
+      dir.remove("timed-directory", true);
       auto f = dir.open("before", false, true, true);
       f.write(0, "payload");
       f.flush();

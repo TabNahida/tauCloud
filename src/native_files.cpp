@@ -286,8 +286,9 @@ native_file native_file::root(const fs::path &path) {
     if (code < 0) {
       auto convert = reinterpret_cast<ULONG(WINAPI *)(NTSTATUS)>(
           GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "RtlNtStatusToDosError"));
-      SetLastError(convert(code));
-      log("native", "open_failed", std::to_string(GetLastError()));
+      auto saved = convert(code);
+      log("native", "open_failed", std::to_string(saved));
+      SetLastError(saved);
       native_error();
     }
     next.info();

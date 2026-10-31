@@ -2,6 +2,7 @@
 """NFSv4.1 exclusive creation, returned attributes and safe unchecked truncation."""
 import argparse
 import json
+import traceback
 from pathlib import Path
 from pynfs_acceptance import fixture
 from m7_integration import Client, op, t4, p4, t3
@@ -68,6 +69,13 @@ def main():
         report=dict(status='passed',checks=checks)
         a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_text(json.dumps(report,indent=2)+'\n')
         print(json.dumps(report,indent=2))
+    except Exception:
+        report=dict(status='failed',checks=checks,error=traceback.format_exc(),
+            worker_logs={role:path.read_text()[-16384:] for role in ('native','nfs','file')
+                         if (path:=f.state/'logs'/(role+'.jsonl')).exists()})
+        a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_text(json.dumps(report,indent=2)+'\n')
+        print(json.dumps(report,indent=2),flush=True)
+        raise
     finally:
         for c in clients:c.close()
         f.close()

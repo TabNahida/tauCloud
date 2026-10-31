@@ -20,11 +20,18 @@ jobs:
       - run: python scripts/fetch_nfs_client.py
       - run: xmake f -y -c -p windows -a x64 -m release --m0=n --m1=y --toolchain=msvc --sanitizers=n
       - run: xmake -y -j 8
+      - name: Native directory timestamps
+        run: build/windows/x64/release/taucloud_m7_tests.exe
       - name: NFS creation attributes
+        if: always()
         run: python tests/nfs_create_integration.py --bin build/windows/x64/release --output build/acceptance/nfs-create.json
       - name: Native Client for NFS
         if: always()
-        run: python tests/windows_native_nfs.py --bin build/windows/x64/release --output build/acceptance/windows-native-nfs.json
+        run: |
+          $feature = Install-WindowsFeature -Name NFS-Client -IncludeManagementTools
+          $feature | Format-List
+          if (-not $feature.Success -or $feature.RestartNeeded -eq 'Yes') { throw 'NFS-Client is unavailable without reboot' }
+          python tests/windows_native_nfs.py --bin build/windows/x64/release --output build/acceptance/windows-native-nfs.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
