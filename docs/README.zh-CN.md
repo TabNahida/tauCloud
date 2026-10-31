@@ -2,7 +2,7 @@
 
 [English](README.md) · [项目介绍](../README.zh-CN.md)
 
-**基线：2026-10-30。M0 已验收，M7 NFS 实验配置部分实现，完整 M7a/M7b 与系统客户端验收待完成。**
+**基线：2026-10-31。M0–M7 后端配置已在文档所列 ADR 限制内实现并验证；不宣称完整 SMB/NFS 标准合规。**
 
 [M7 指南](m7.zh-CN.md)说明当前实验后端；SMB3 操作仍见 [M6](m6.zh-CN.md)。架构文档定义完整产品目标与后续交付门槛，不作为文件协议合规证明。
 
@@ -50,4 +50,4 @@ M0 在[依赖锁文件](../dependencies.lock.json)中固定 PACE `d3842473b2bea6
 
 14. [M6 SMB3](m6.md) · [M6 中文](m6.zh-CN.md) · [Evidence / 验证](evidence/m6/README.md)
 
-- [M7 NFS experimental profile / NFS 实验配置](m7.zh-CN.md) — partial milestone; full M7a/M7b conformance pending.
+- [M7 NFS experimental profile / NFS 实验配置](m7.zh-CN.md) — M7a/M7b 选定配置和原生客户端已验收，排除项保持明确。

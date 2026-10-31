@@ -8,7 +8,7 @@ A modular NAS and private cloud platform for the operating system you already ru
 
 tauCloud aims to bring file sharing, private user spaces, system monitoring, and application management together on Windows and Linux. Install it alongside your existing applications and storage, with a backend that can operate independently of the WebPanel.
 
-> **Project status: M7 experimental NFS backend (partial milestone).** [M7](docs/m7.md) adds bounded TCP RPC/XDR, explicit AUTH_SYS exports, persistent handles and selected NFS v4.1/v3 file and recovery paths. Full M7a/M7b compatibility remains blocked on mandatory operations, lock recovery, NLM/NSM and the native-client matrix. Existing [SMB3](docs/m6.md), FTP/FTPS and WebDAV previews remain available. Installers and WebPanel are later milestones; features below describe the intended product.
+> **Project status: M0–M7 backend profiles implemented and verified.** [M5](docs/m5.md) and [M7](docs/m7.md) now pass their existing limited compatibility contracts, including applicable Samba/pynfs cases and native Linux, Windows and macOS clients. [Fixed-source evidence and exclusions](docs/evidence/pre-m8/README.md) distinguish these results from full SMB/NFS conformance. SMB3, FTP/FTPS and WebDAV previews remain available. Installers and WebPanel are later milestones; features below describe the intended product.
 
 ## Built around your storage
 

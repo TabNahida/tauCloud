@@ -2,7 +2,7 @@
 
 [简体中文](README.zh-CN.md) · [Project overview](../README.md)
 
-**Baseline: 2026-10-30. M0 accepted; M7 NFS experimental profile partially implemented; full M7a/M7b and native-client conformance pending.**
+**Baseline: 2026-10-31. M0–M7 backend profiles are implemented and verified within their documented ADR limits. Full SMB/NFS standards conformance is not claimed.**
 
 The [M7 guide](m7.md) describes the current experimental backend; [M6](m6.md) retains the SMB3 instructions. The architecture documents define the broader product and later delivery gates; they are not evidence of file-protocol compliance.
 
@@ -50,4 +50,4 @@ Specifications and upstream documentation are linked where they inform the desig
 
 14. [M6 SMB3](m6.md) · [M6 中文](m6.zh-CN.md) · [Evidence / 验证](evidence/m6/README.md)
 
-- [M7 NFS experimental profile / NFS 实验配置](m7.md) — partial milestone; full M7a/M7b conformance pending.
+- [M7 NFS experimental profile / NFS 实验配置](m7.md) — selected M7a/M7b profile and native-client acceptance complete; exclusions remain explicit.
