@@ -324,7 +324,10 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
         // Establish capacity before destroying the old contents. The final
         // allocation below is still needed because native truncation can free
         // preallocated extents; an overwrite is not an atomic replacement.
-        file.allocate(std::max(allocation, before.at("size").get<uint64_t>()));
+        // Native allocation only shrinks EOF after successfully reserving the
+        // requested extent. Allocating the old EOF would materialize a sparse
+        // file and could reject a small overwrite for lack of disk space.
+        file.allocate(allocation);
       }
       file.truncate(0);
       file.flush();

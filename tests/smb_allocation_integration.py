@@ -166,6 +166,11 @@ def main():
             ignored=initial('created-allocation',16384,disposition=disposition,access=0x120089)
             assert sizes(ignored)==(4096,24) and used()==4096
             ignored.close()
+        eof['end_of_file']=8192;setinfo(preallocated,eof)
+        assert used()==8192
+        smaller=initial('created-allocation',4096,disposition=4)
+        assert sizes(smaller)==(4096,0) and used()==4096
+        smaller.close()
         for disposition in (4,5,0):
             overwritten=initial('created-allocation',4096,disposition=disposition)
             assert sizes(overwritten)==(4096,0) and used()==4096
