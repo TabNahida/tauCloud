@@ -289,6 +289,7 @@ struct manager {
         auto stage = parent / ("stage-" + random_hex(8));
         secure_directory(stage);
         try {
+          {
           auto input = native_file::root(source), output = native_file::root(stage);
           for (auto &[name, want] : m["files"].items()) {
             auto relative = fs::path(name).parent_path();
@@ -300,6 +301,7 @@ struct manager {
             auto in = input.open(name), out = output.open(name, false, true, true);
             require(file_hash(in, &out, &ctx) == want.get<std::string>(), "package_changed");
           }
+          } // Release pinned directory handles before publishing by rename on Windows.
           write_json(stage / "manifest.json", m);
 #ifndef _WIN32
           fs::permissions(stage / m.at("entry").get<std::string>(), fs::perms::owner_exec,
