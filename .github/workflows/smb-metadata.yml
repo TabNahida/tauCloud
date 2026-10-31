@@ -12,6 +12,11 @@ on:
       - 'tests/smb_allocation_integration.py'
       - 'tests/m6_integration.py'
       - 'tests/m2_core.cpp'
+      - 'tests/m5_core.cpp'
+      - 'src/nfs_protocol.cpp'
+      - 'src/nfs_v4.inc'
+      - 'tests/nfs_attributes_integration.py'
+      - 'tests/native_allocation.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -39,15 +44,20 @@ jobs:
       - run: python scripts/fetch_pace.py --dependency recipes
       - if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libssl-dev libexpat1-dev
-      - run: python -m pip install -r tests/smb-requirements.txt
+      - run: python -m pip install -r tests/smb-requirements.txt -r tests/nfs-requirements.txt
+      - run: python scripts/fetch_nfs_client.py
       - run: xmake f -y -c -p ${{ matrix.platform }} -a ${{ matrix.arch }} -m ${{ matrix.mode }} --m0=n --m1=y --toolchain=${{ matrix.compiler }} --sanitizers=${{ matrix.sanitizers }}
       - run: xmake -y -j 8
       - name: Native allocation failure safety
         run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_m2_tests${{ matrix.suffix }}
+      - name: SMB authority and failed CREATE cleanup
+        run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_m5_tests${{ matrix.suffix }}
       - name: DOS metadata, timestamps, EAs and modes
         run: python tests/smb_attributes_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/metadata.json
       - name: Native allocation and durable quota
         run: python tests/smb_allocation_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/allocation.json
+      - name: NFS attributes and native allocation
+        run: python tests/nfs_attributes_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/nfs-attributes.json
       - name: SMB3 dialects and encrypted allocation
         run: python tests/m6_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --large-mib 1 ${{ matrix.test_options }} --output build/acceptance/smb3.json
       - uses: actions/upload-artifact@v4

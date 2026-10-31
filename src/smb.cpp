@@ -129,6 +129,35 @@ std::string path(std::string_view encoded) {
     portable_path(value);
   return value;
 }
+std::string ea_name(std::string_view name) {
+  check(!name.empty() && name.size() <= 255, 0x80000013);
+  std::string key(name);
+  for (auto &c : key) {
+    check(uint8_t(c) >= 32 && uint8_t(c) < 127 &&
+              std::string_view("\\/:*?\"<>|,+=[];").find(c) == std::string_view::npos,
+          0x80000013);
+    if (c >= 'a' && c <= 'z')
+      c -= 'a' - 'A';
+  }
+  return key;
+}
+std::vector<std::string> ea_names_decode(std::string_view data) {
+  check(data.size() <= 65536, 0xc0000050);
+  std::vector<std::string> names;
+  size_t offset = 0;
+  while (offset < data.size()) {
+    check(names.size() < 256 && data.size() - offset >= 6, 0x80000014);
+    auto next = get(data, offset, 4), n = get(data, offset + 4, 1);
+    auto used = 6 + n;
+    check(used <= data.size() - offset && get(data, offset + 5 + n, 1) == 0, 0x80000014);
+    names.push_back(ea_name(data.substr(offset + 5, n)));
+    if (!next)
+      break;
+    check(next >= used && next % 4 == 0 && next < data.size() - offset, 0x80000014);
+    offset += next;
+  }
+  return names;
+}
 json ea_decode(std::string_view data) {
   check(data.size() <= 65536, 0xc0000050);
   json result = json::array();
@@ -141,10 +170,7 @@ json ea_decode(std::string_view data) {
     check(used <= data.size() - offset && get(data, offset + 8 + n, 1) == 0, 0x80000014);
     check(n && (flags == 0 || flags == 128), 0x80000013);
     auto name = bytes(data.substr(offset + 8, n));
-    for (unsigned char c : name)
-      check(c >= 32 && c < 127 &&
-                std::string_view("\\/:*?\"<>|,+=[];").find(c) == std::string_view::npos,
-            0x80000013);
+    ea_name(name);
     result.push_back({{"name", name},
                       {"flags", flags},
                       {"value", encode_bytes(data.substr(offset + 9 + n, size))}});
@@ -618,6 +644,7 @@ struct client {
       }
       bool query_disk_id = false;
       std::optional<json> initial_eas;
+      std::optional<uint64_t> initial_allocation;
       auto context_len = get(p, 116, 4);
       if (context_len) {
         auto contexts = slice(p, get(p, 112, 4), context_len, 120);
@@ -634,6 +661,11 @@ struct client {
           if (tag == "ExtA") {
             check(!initial_eas);
             initial_eas = ea_decode(slice(item, get(item, 10, 2), get(item, 12, 4), 16));
+          }
+          if (tag == "AlSi") {
+            check(!initial_allocation && get(item, 12, 4) == 8);
+            initial_allocation = get(slice(item, get(item, 10, 2), 8, 16), 0, 8);
+            check(*initial_allocation <= uint64_t(INT64_MAX));
           }
           if (tag == "QFid") {
             check(!query_disk_id && get(item, 12, 4) == 0);
@@ -688,6 +720,8 @@ struct client {
                       {"explicit_access", explicit_access}};
       if (initial_eas)
         request["eas"] = *initial_eas;
+      if (initial_allocation)
+        request["allocation"] = *initial_allocation;
       auto meta = co_await smb_rpc(s, grant.at("root").at("worker"), "smb_open", request);
       access = meta.at("access");
       auto fid = decode_bytes(random_hex(16));
@@ -932,7 +966,9 @@ struct client {
       check(structure == 41 && p.size() >= 104);
       auto &h = handle(p, 88, tid);
       auto type = get(p, 66, 1), klass = get(p, 67, 1), limit = get(p, 68, 4);
-      check(limit <= 65536 && get(p, 76, 4) == 0);
+      check(limit <= 65536);
+      auto input_length = get(p, 76, 4);
+      check(input_length == 0 || (type == 1 && klass == 15));
       auto meta = co_await operation(h, "stat", false);
       meta["position"] = h.position;
       meta["mode"] = h.mode;
@@ -943,10 +979,19 @@ struct client {
       if (type == 1 && klass == 15) {
         auto flags = get(p, 84, 4);
         check((flags & ~7u) == 0);
+        auto names = ea_names_decode(slice(p, get(p, 72, 2), input_length, 104));
         auto values = co_await operation(h, "eas", false);
         check(!values.empty(), 0xc0000052);
-        size_t start = (flags & 1) ? 0 : h.ea_cursor;
-        if (flags & 4) {
+        if (!names.empty()) {
+          json selected_eas = json::array();
+          for (const auto &name : names)
+            selected_eas.push_back(values.contains(name)
+                                       ? values.at(name)
+                                       : json{{"name", name}, {"flags", 0}, {"value", ""}});
+          values = std::move(selected_eas);
+        }
+        size_t start = !names.empty() || (flags & 1) ? 0 : h.ea_cursor;
+        if (names.empty() && (flags & 4)) {
           auto index = get(p, 80, 4);
           check(index && index <= values.size(), 0xc0000051);
           start = static_cast<size_t>(index - 1);
@@ -973,7 +1018,7 @@ struct client {
           if (flags & 2)
             break;
         }
-        if (!(flags & 4))
+        if (names.empty() && !(flags & 4))
           h.ea_cursor = start + returned;
       } else if (type == 1)
         data = file_info(static_cast<unsigned>(klass), meta, h.path, h.access);

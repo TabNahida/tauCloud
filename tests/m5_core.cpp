@@ -194,6 +194,56 @@ int main() {
     rejected([&] { call("write", "short-write", failed_body); }, "uncertain_write");
     ok(call("stat", "short-write", {{"handle", short_handle}}).at("size") == 2);
     call("close", "short-write", {{"handle", short_handle}});
+    auto before_failed_create = call("quota", "").at("used");
+    test_write_budget(0);
+    for (int attempt = 0; attempt < 2; ++attempt) {
+      rejected(
+          [&] {
+            call("open", "failed-allocation",
+                 {{"write", true},
+                  {"access", 0x13019f},
+                  {"sharing", 7},
+                  {"disposition", 3},
+                  {"options", 0x40},
+                  {"allocation", 512}});
+          },
+          "disk_full");
+      ok(!fs::exists(base / "files/alice/failed-allocation"));
+      ok(call("quota", "").at("used") == before_failed_create);
+    }
+    test_write_budget(-1);
+    auto allocated = call("open", "failed-allocation",
+                          {{"write", true},
+                           {"access", 0x13019f},
+                           {"sharing", 7},
+                           {"disposition", 3},
+                           {"options", 0x40},
+                           {"allocation", 512}});
+    ok(allocated.at("size") == 0 && allocated.at("allocated").get<uint64_t>() >= 512);
+    ok(call("quota", "").at("used").get<uint64_t>() == before_failed_create.get<uint64_t>() + 512);
+    call("close", "failed-allocation", {{"handle", allocated.at("handle")}});
+    auto overwrite_handle = open("failed-overwrite");
+    call("write", "failed-overwrite",
+         {{"handle", overwrite_handle},
+          {"offset", 0},
+          {"data", encode_bytes("preserved")},
+          {"request_id", random_hex(16)}});
+    test_write_budget(0);
+    rejected(
+        [&] {
+          call("open", "failed-overwrite",
+               {{"write", true},
+                {"access", 0x13019f},
+                {"sharing", 7},
+                {"disposition", 4},
+                {"options", 0x40},
+                {"allocation", 128}});
+        },
+        "disk_full");
+    test_write_budget(-1);
+    ok(call("read", "failed-overwrite", {{"handle", overwrite_handle}, {"offset", 0}, {"count", 9}})
+           .at("data") == encode_bytes("preserved"));
+    call("close", "failed-overwrite", {{"handle", overwrite_handle}});
     auto dir = open("dir", 0x13019f, 7, 3, 1);
     rejected([&] { open("dir", 0x120089, 7, 1, 0x40); }, "is_directory");
     call("close", "dir", {{"handle", dir}});

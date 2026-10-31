@@ -255,7 +255,7 @@ void attributes4(writer &out, const std::vector<uint32_t> &requested, const json
         values.u64(total);
         break;
       case 45:
-        values.u64(size);
+        values.u64(m.value("allocated", size));
         break;
       case 47:
         values.u64(m.value("accessed_ns", ns) / 1000000000)

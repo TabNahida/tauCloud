@@ -60,7 +60,7 @@ void attr3(writer &w, const json &m) {
       .u32(m.value("uid", 65534u))
       .u32(m.value("gid", 65534u))
       .u64(size)
-      .u64(size)
+      .u64(m.value("allocated", size))
       .u32(0)
       .u32(0)
       .u64(hex64(m.at("fsid")))

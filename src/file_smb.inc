@@ -63,9 +63,8 @@ json smb_eas(const json &info) {
   q.bind(1, info.at("object"));
   return q.row() ? json::parse(q.text(0)) : json::object();
 }
-void smb_update_eas(const json &info, const json &input) {
+json smb_merge_eas(json values, const json &input) {
   require(input.is_array() && input.size() <= 256, "invalid_request");
-  auto values = smb_eas(info);
   for (auto ea : input) {
     auto name = ea.at("name").get<std::string>(), key = name;
     require(!name.empty() && name.size() <= 255, "invalid_ea_name");
@@ -90,6 +89,10 @@ void smb_update_eas(const json &info, const json &input) {
   for (auto &[key, ea] : values.items())
     total += 5 + key.size() + ea.at("value").get<std::string>().size() / 2;
   require(values.size() <= 256 && total <= 65531, "ea_too_large");
+  return values;
+}
+void smb_update_eas(const json &info, const json &input) {
+  auto values = smb_merge_eas(smb_eas(info), input);
   statement q(
       db, "INSERT INTO smb_eas VALUES(?,?) ON CONFLICT(native) DO UPDATE SET body=excluded.body");
   q.bind(1, info.at("object"));
@@ -286,6 +289,13 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     }
     smb_sharing(space, path, access, sharing);
     bool truncate = existing && (disposition == 0 || disposition == 4 || disposition == 5);
+    // Validate all initial metadata and quota before creating or truncating a file.
+    if (!existing && body.contains("eas"))
+      smb_merge_eas(json::object(), body.at("eas"));
+    auto allocation = body.contains("allocation") ? number(body, "allocation") : 0;
+    bool allocating = !directory && (!existing || truncate) && body.contains("allocation");
+    if (allocating)
+      quota(s, existing ? growth(s.directory.open(path, false).info(), allocation) : allocation);
     require(!truncate || (!directory && (access & 2)), "forbidden");
     require(disposition != 0 || (access & 0x10000), "forbidden");
     require(!(options & 0x1000) || (!path.empty() && (access & 0x10000)), "forbidden");
@@ -307,9 +317,44 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     } else if (!directory)
       file = s.directory.open(path, false, false, bool(access & 6));
     if (truncate) {
+      auto before = file.info();
+      if (allocating && allocation) {
+        auto native = before.at("object").get<std::string>();
+        allocation_reservation(native, std::max(allocation_reservation(native), allocation));
+        // Establish capacity before destroying the old contents. The final
+        // allocation below is still needed because native truncation can free
+        // preallocated extents; an overwrite is not an atomic replacement.
+        file.allocate(std::max(allocation, before.at("size").get<uint64_t>()));
+      }
       file.truncate(0);
       file.flush();
       index(space, path, file.info());
+      allocation_reservation(before.at("object"), 0);
+    }
+    if (allocating) {
+      auto info = file.info();
+      auto native = info.at("object").get<std::string>();
+      allocation_reservation(native, allocation);
+      try {
+        file.allocate(allocation);
+        file.flush();
+        index(space, path, file.info());
+      } catch (...) {
+        // A failed new CREATE must not leave a file or charge quota. Never
+        // remove an unrelated object that replaced the newly created name.
+        if (!existing) {
+          file = native_file();
+          auto current = stat_path(s.directory, path);
+          if (current && current->at("object") == native) {
+            s.directory.remove(path, false);
+            s.directory.flush();
+            erase(space, path);
+            allocation_reservation(native, 0);
+          }
+        } else
+          index(space, path, file.info());
+        throw;
+      }
     }
     if (!existing || truncate) {
       auto info = file.info();

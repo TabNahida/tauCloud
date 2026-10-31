@@ -20,8 +20,9 @@ def run():
     def seteas(h,raw):
         q=SMB2SetInfoRequest();q['info_type']=1;q['file_info_class']=15;q['file_id']=h.file_id;q['buffer']=raw
         r=h.connection.send(q,h.tree_connect.session.session_id,h.tree_connect.tree_connect_id);h.connection.receive(r)
-    def ea_query(h,flags=1,limit=65536,index=0):
+    def ea_query(h,flags=1,limit=65536,index=0,names=b''):
         q=SMB2QueryInfoRequest();q['info_type']=1;q['file_info_class']=15;q['file_id']=h.file_id;q['flags']=flags;q['additional_information']=index;q['output_buffer_length']=limit
+        q['buffer']=names
         request=h.connection.send(q,h.tree_connect.session.session_id,h.tree_connect.tree_connect_id)
         try:response=h.connection.receive(request)
         except SMBResponseException as error:
@@ -29,8 +30,8 @@ def run():
             response=error.header
         result=SMB2QueryInfoResponse();result.unpack(response['data'].get_value())
         return response['status'].get_value(),result['buffer'].get_value()
-    def read_eas(h,flags=1,limit=65536,index=0):
-        status,raw=ea_query(h,flags,limit,index);items={};offset=0
+    def read_eas(h,flags=1,limit=65536,index=0,names=b''):
+        status,raw=ea_query(h,flags,limit,index,names);items={};offset=0
         while True:
             nxt,flags,n,size=struct.unpack_from('<IBBH',raw,offset);name=raw[offset+8:offset+8+n];value=raw[offset+9+n:offset+9+n+size];items[name]=(flags,value)
             if not nxt:return items
@@ -119,6 +120,32 @@ def run():
         assert read_eas(paged,flags=0)=={b'C':(0,b'value')}
         independent=create(t,'paged-eas',disposition=1);assert read_eas(independent,flags=2)=={b'A':(0,b'value')};independent.close();paged.close()
         report['checks'].append('EA cursor paging, restart, single-entry and explicit indexes, independent opens, bounded whole-entry overflow and undersized-buffer retries')
+        def names(*values):
+            parts=[]
+            for i,name in enumerate(values):
+                record=struct.pack('<IB',0,len(name))+name+b'\0'
+                if i+1<len(values):
+                    record+=b'\xa5'*((-len(record))%4)
+                    record=struct.pack('<I',len(record))+record[4:]
+                parts.append(record)
+            return b''.join(parts)
+        selected=create(t,'paged-eas',disposition=1)
+        assert read_eas(selected,flags=3)=={b'A':(0,b'value')}
+        assert list(read_eas(selected,flags=5,index=999,names=names(b'c',b'a')))==[b'C',b'A']
+        assert read_eas(selected,flags=0,names=names(b'missing'))=={b'MISSING':(0,b'')}
+        assert read_eas(selected,flags=2)=={b'B':(0,b'value')}
+        assert read_eas(selected,flags=3,names=names(b'c',b'a'))=={b'C':(0,b'value')}
+        status,raw=ea_query(selected,names=names(b'c',b'a'),limit=15)
+        assert status==0x80000005 and raw==ea(b'C',b'value')
+        denied(lambda:ea_query(selected,names=names(b'a'),limit=14),0xc0000023)
+        for invalid in (b'\0'*5,struct.pack('<IB',4,1)+b'A\0',struct.pack('<IB',0,2)+b'A\0',struct.pack('<IB',0,1)+b'Ax'):
+            denied(lambda:ea_query(selected,names=invalid),0x80000014)
+        denied(lambda:ea_query(selected,names=names(b'bad/name')),0x80000013)
+        assert read_eas(selected,flags=2)=={b'C':(0,b'value')}
+        selected.close()
+        no_ea=create(t,'paged-eas',access=0x100080,disposition=1)
+        denied(lambda:ea_query(no_ea,names=names(b'A')),0xc0000022);no_ea.close()
+        report['checks'].append('selected-name EA queries preserve request order and scan cursor, ignore index/restart, match case-insensitively, return absent names, bound output and reject malformed chains without cursor changes')
         metadata=create(t,'ea-times');attrs(metadata,0x80,timestamps)
         seteas(metadata,ea(b'TIME',b'frozen'));assert struct.unpack_from('<QQQQ',query(metadata,4))==timestamps
         assert readattrs(metadata)==0x20
@@ -133,6 +160,10 @@ def run():
         denied(lambda:seteas(boundary,ea(b'A',b'x'*65526)),0xc0000050)
         assert read_eas(boundary)=={b'A':(0,b'x'*65525)}
         boundary.close();metadata.close()
+        excessive=SMB2CreateContextRequest();excessive['buffer_name']=b'ExtA';excessive['buffer_data']=ea(b'A',b'x'*65526)
+        failed=Open(t,'invalid-initial-eas')
+        denied(lambda:failed.create(ImpersonationLevel.Impersonation,0x13019f,0x80,7,3,0x40,create_contexts=[excessive]),0xc0000050)
+        assert not (f.root/'smbdata/invalid-initial-eas').exists()
         report['checks'].append('EA writes atomically update change time/archive while respecting frozen timestamps; exact 65531-byte aggregate limit and standard invalid-name/list statuses')
         report['status']='passed'
     except Exception:report['error']=traceback.format_exc();raise

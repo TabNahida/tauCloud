@@ -8,7 +8,8 @@ import struct
 import sqlite3
 import traceback
 from m5_integration import Fixture, create, query, setinfo, denied
-from smbprotocol.open import SMB2SetInfoRequest
+from smbprotocol.open import SMB2SetInfoRequest, Open, ImpersonationLevel
+from smbprotocol.create_contexts import SMB2CreateContextRequest
 from smbprotocol.file_info import FileDispositionInformation, FileEndOfFileInformation
 
 
@@ -146,6 +147,42 @@ def main():
         replacement.close()
         first.close()
         report['checks'].append('durable logical quota survives restart while allocation reports native close-time trimming; EOF extension consumes reservations; shrink and deletion release quota')
+        def initial(name, size, disposition=3, access=0x13019f, raw=None, duplicate=False, options=0x40):
+            context=SMB2CreateContextRequest()
+            context['buffer_name']=b'AlSi'
+            context['buffer_data']=struct.pack('<Q',size) if raw is None else raw
+            handle=Open(tree,name)
+            handle.create(ImpersonationLevel.Impersonation,access,0x80,7,disposition,options,
+                          create_contexts=[context,context] if duplicate else [context])
+            return handle
+        preallocated=initial('created-allocation',4096)
+        assert sizes(preallocated)==(4096,0) and used()==4096
+        preallocated.write(b'keep on failed overwrite')
+        denied(lambda:initial('over-quota-create',8192),0xc000007f)
+        assert not (fixture.root/'allocation/over-quota-create').exists() and used()==4096
+        denied(lambda:initial('created-allocation',16384,disposition=4),0xc000007f)
+        assert preallocated.read(0,24)==b'keep on failed overwrite' and used()==4096
+        for disposition in (1,3):
+            ignored=initial('created-allocation',16384,disposition=disposition,access=0x120089)
+            assert sizes(ignored)==(4096,24) and used()==4096
+            ignored.close()
+        for disposition in (4,5,0):
+            overwritten=initial('created-allocation',4096,disposition=disposition)
+            assert sizes(overwritten)==(4096,0) and used()==4096
+            overwritten.write(b'next overwrite');overwritten.close()
+        # Creation can reserve storage even when the returned handle is read-only.
+        readonly=initial('readonly-allocation',4096,access=0x120089)
+        assert sizes(readonly)==(4096,0) and used()==8192
+        denied(lambda:readonly.write(b'x'),0xc0000022);readonly.close()
+        for raw in (b'',b'\0'*7,b'\0'*9,struct.pack('<Q',2**63)):
+            denied(lambda:initial('malformed-allocation',0,raw=raw),0xc000000d)
+        denied(lambda:initial('duplicate-allocation',0,duplicate=True),0xc000000d)
+        assert not (fixture.root/'allocation/malformed-allocation').exists()
+        assert not (fixture.root/'allocation/duplicate-allocation').exists()
+        directory=initial('allocation-directory',16384,options=1)
+        assert used()==8192;directory.close()
+        preallocated.close()
+        report['checks'].append('AlSi CREATE/overwrite preallocation preserves zero EOF, charges durable quota, ignores existing opens/directories, validates context shape and fails over-quota before namespace/data mutation')
         report['status'] = 'passed'
     except Exception:
         report['error'] = traceback.format_exc()

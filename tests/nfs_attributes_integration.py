@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 from pynfs_acceptance import fixture
 from m7_integration import Client, op, t3, t4, p4
+from native_allocation import native_allocation
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
@@ -78,6 +79,28 @@ def main():
         ci=r.resarray[-1].opremove.resok4.cinfo
         assert not ci.atomic and ci.before==parent_before and ci.after>ci.before and change(c,root)==ci.after
         checks.append('durable change counters detect equal-size writes with restored mtime, share alias state and return real namespace change_info; reads do not advance them')
+        r=c.v3('CREATE',t3.CREATE3args(t3.diropargs3(t3.nfs_fh3(root),b'allocation'),t3.createhow3(1,attrs)),8)
+        assert r.status==0,r;allocated_h=r.resok.obj.handle.data
+        allocation_path=f.root/'nfsdata/allocation'
+        def check_allocation(expected_size):
+            native_bytes=native_allocation(allocation_path)
+            attributes=getattr3(c,allocated_h)
+            assert (attributes.size,attributes.used)==(expected_size,native_bytes),(attributes,native_bytes)
+            r=c.compound([op.putfh(allocated_h),op.getattr([1<<4,1<<13])]);assert r.status==0,r
+            values=r.resarray[-1].opgetattr.resok4.obj_attributes.attr_vals
+            assert len(values)==16 and int.from_bytes(values[:8],'big')==expected_size
+            assert int.from_bytes(values[8:],'big')==native_bytes,(values,native_bytes)
+        check_allocation(0)
+        r=c.v3('WRITE',t3.WRITE3args(t3.nfs_fh3(allocated_h),0,3,2,b'abc'),7);assert r.status==0,r
+        check_allocation(3)
+        r=c.v3('WRITE',t3.WRITE3args(t3.nfs_fh3(allocated_h),1024*1024,1,2,b'z'),7);assert r.status==0,r
+        check_allocation(1024*1024+1)
+        if os.name!='nt':assert native_allocation(allocation_path)<1024*1024
+        resized=t3.sattr3(t3.set_mode3(False),t3.set_uid3(False),t3.set_gid3(False),
+                         t3.set_size3(True,0),t3.set_atime(0),t3.set_mtime(0))
+        r=c.v3('SETATTR',t3.SETATTR3args(t3.nfs_fh3(allocated_h),resized,t3.sattrguard3(False)),2)
+        assert r.status==0,r;check_allocation(0)
+        checks.append('v3 used and v4 space_used match independent native allocation for empty, small, sparse/extended and truncated files, separately from logical size')
         for i in range(24): (f.root/'nfsdata'/('entry-%02d'%i)).write_bytes(b'x')
         cookie=0;verifier=b'\0'*8;names=[];pages=0
         r=c.compound([op.putfh(root),op.get_dir_delegation(False,[],t4.nfstime4(0,0),t4.nfstime4(0,0),[],[])])
