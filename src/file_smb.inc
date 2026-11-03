@@ -229,7 +229,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
   bool cleanup = op == "smb_close" || op == "smb_lock_cancel";
   bool writing = op == "smb_write" || op == "smb_resize" || op == "smb_allocation" ||
                  op == "smb_rename" || op == "smb_disposition" || op == "smb_attributes" ||
-                 op == "smb_set_eas";
+                 op == "smb_set_eas" || op == "smb_set_security";
   if (op == "smb_open")
     writing = body.value("write", false);
   auto grant = verify(body.at("grant"), writing, cleanup);
@@ -257,7 +257,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     require(!(options & 0x200) || !body.contains("eas"), "forbidden");
     // Standard file rights are valid even when an optional SET_INFO operation
     // is unavailable. Granting them never bypasses the space's write policy.
-    require((access & ~0x001f01ffu) == 0, "not_supported");
+    require((access & ~0x001f01ffu) == 0, "forbidden");
     require(!(access & (0xd0000u | 0x156u)) || grant.at("write").get<bool>(), "forbidden");
     auto existing = dav_exists(s, path);
     require(!existing || disposition != 2, "already_exists");
@@ -288,6 +288,58 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
         require(!(options & 0x1000), "cannot_delete");
       }
     }
+    auto descriptor = existing ? security_get(s, security_info(s, path))
+                               : security_new(s, grant, path, directory);
+    if (!existing) {
+      security_add(s, grant, path, directory);
+      if (body.contains("security")) {
+        auto supplied = security::decode(decode_bytes(body.at("security").get<std::string>()));
+        auto owner = security::principal(actor);
+        require(supplied.at("owner") == "" || supplied.at("owner") == owner, "invalid_owner");
+        if (supplied.at("group") != "") {
+          bool valid_group = supplied.at("group") == descriptor.at("group");
+          for (const auto &group : grant.value("groups", json::array()))
+            valid_group |=
+                supplied.at("group") == security::principal(group.get<std::string>(), true);
+          require(valid_group, "invalid_owner");
+          descriptor["group"] = supplied.at("group");
+        }
+        auto control = supplied.at("control").get<uint32_t>();
+        if (control & 4) {
+          descriptor["dacl"] = supplied.at("dacl");
+          descriptor["control"] = (control & 0x100c) | 0x8000;
+          if (!(control & 0x1000) && !supplied.at("dacl").is_null()) {
+            auto parent_sd = security_get(s, security_info(s, security_parent(path)));
+            auto inherited =
+                security::inherit(parent_sd, owner, descriptor.at("group"), directory, false);
+            for (const auto &entry : inherited.at("dacl"))
+              descriptor["dacl"].push_back(entry);
+            descriptor["control"] = descriptor.at("control").get<uint32_t>() |
+                                    (inherited.at("control").get<uint32_t>() & 0x400);
+          }
+        }
+        require(descriptor.at("dacl").size() <= 1024 &&
+                    security::encode(descriptor, 7).size() <= 65536,
+                "invalid_security_descriptor");
+      }
+    }
+    auto permitted = security::allowed(descriptor, security::token(grant));
+    if (existing && !path.empty()) {
+      auto parent_access = security_allowed(s, grant, security_info(s, security_parent(path)));
+      if (parent_access & 0x40)
+        permitted |= 0x10000;
+      if (parent_access & 1)
+        permitted |= 0x80;
+    }
+    // Once the parent permits creation, the creating open receives its requested
+    // rights; the inherited DACL controls subsequent opens (MS-FSA 2.1.5.1.1).
+    auto open_permissions = existing ? permitted : 0x1f01ffu;
+    if (body.value("maximum", false)) {
+      require((body.value("explicit_access", uint32_t(0)) & ~open_permissions) == 0, "forbidden");
+      access &= open_permissions;
+      require(access != 0, "forbidden");
+    } else
+      require((access & ~open_permissions) == 0, "forbidden");
     smb_sharing(space, path, access, sharing);
     bool truncate = existing && (disposition == 0 || disposition == 4 || disposition == 5);
     // Validate all initial metadata and quota before creating or truncating a file.
@@ -312,6 +364,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     native_file file;
     if (!existing) {
       file = s.directory.open(path, directory, true, !directory);
+      security_save(file.info(), descriptor);
       file.flush();
       s.directory.flush();
       index(space, path, file.info());
@@ -386,6 +439,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
       mark.row();
     }
     handles.emplace(id, std::move(h));
+    meta["maximal_access"] = permitted;
     meta["handle"] = id;
     meta["action"] = !existing ? 2 : truncate ? (disposition == 0 ? 0 : 3) : 1;
     return meta;
@@ -420,6 +474,58 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     return meta;
   }
   auto meta = smb_meta(s, h);
+  if (op == "smb_security" || op == "smb_set_security") {
+    uint32_t information = body.at("information");
+    require(!(information & 8), "forbidden");
+    require((information & 7) && !(information & ~0xa0000007u), "not_supported");
+    require(!((information & 0x80000000) && (information & 0x20000000)), "invalid_request");
+    auto descriptor = security_get(s, meta);
+    if (op == "smb_security") {
+      require(h.access & 0x20000, "forbidden");
+      return {{"data", encode_bytes(security::encode(descriptor, information))}};
+    }
+    require(!(information & 4) || (h.access & 0x40000), "forbidden");
+    require(!(information & 3) || (h.access & 0x80000), "forbidden");
+    require(!(information & 0xa0000000) || (information & 4), "invalid_request");
+    auto replacement = security::decode(decode_bytes(body.at("data").get<std::string>()));
+    auto subjects = security::token(grant);
+    if (information & 1) {
+      require(replacement.at("owner") == subjects.at(0), "invalid_owner");
+      descriptor["owner"] = replacement.at("owner");
+    }
+    if (information & 2) {
+      auto group = replacement.at("group");
+      bool valid_group = false;
+      for (const auto &name : grant.value("groups", json::array()))
+        valid_group |= group == security::principal(name.get<std::string>(), true);
+      // The primary group of an existing descriptor may be retained.
+      require(valid_group || group == descriptor.at("group"), "invalid_owner");
+      descriptor["group"] = group;
+    }
+    if (information & 4) {
+      descriptor["dacl"] = replacement.at("dacl");
+      auto control = descriptor.at("control").get<uint32_t>();
+      auto supplied = replacement.at("control").get<uint32_t>();
+      control = (control & ~0x150cu) | (supplied & 0x100c);
+      if ((supplied & 0x500) == 0x500)
+        control |= 0x400;
+      if (information & 0x80000000)
+        control |= 0x1000;
+      if (information & 0x20000000)
+        control &= ~0x1000u;
+      descriptor["control"] = control;
+    }
+    lease(grant, ctx);
+    transaction tx(db);
+    security_save(meta, descriptor);
+    auto times = meta.at("times");
+    times[3] = uint64_t(now()) * 10000 + 116444736000000000ULL;
+    auto info = h.directory ? security_info(s, path) : h.file.info(true);
+    smb_save_times(info, times);
+    audit(actor, "smb_set_security", path);
+    tx.commit();
+    return {{"updated", true}};
+  }
   if (op == "smb_stat")
     return meta;
   if (op == "smb_list") {
@@ -435,6 +541,9 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
       portable_path(name);
       auto child = path.empty() ? name : path + "/" + name;
       auto info = s.directory.open(child, value.at("directory")).info(true);
+      if (grant.value("access_based_enumeration", false) &&
+          (security_allowed(s, grant, info) & 0x20089) != 0x20089)
+        continue;
       index(space, child, info);
       auto item = dav_meta(s, child);
       item["name"] = name;
@@ -647,6 +756,9 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
             "forbidden");
     auto to = target.at("path").get<std::string>();
     portable_path(to);
+    security_add(s, target, to, h.directory);
+    if (dav_exists(s, to))
+      security_delete(s, target, to);
     if (to == path) return {{"from", path}, {"path", to}, {"space", space}};
     require(!beneath(to, path), "invalid_path");
     case_check(s.directory, to);

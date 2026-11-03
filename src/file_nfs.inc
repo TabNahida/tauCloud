@@ -198,6 +198,9 @@ json nfs_meta(space_state &s, const json &g, const std::string &path, native_fil
     info["uid"] = owner.integer(0); info["gid"] = owner.integer(1);
     stamp["uid"] = info["uid"]; stamp["gid"] = info["gid"];
   }
+  auto descriptor = security_get(s, info);
+  stamp["security"] = descriptor;
+  info["security_access"] = security::allowed(descriptor, security::token(g));
   auto signature = digest(stamp.dump());
   int64_t change = 0;
   {
@@ -407,6 +410,22 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
   auto before = o.file.info();
   auto p = o.path;
   bool dir = before.at("directory");
+  uint32_t required = op == "read" || op == "list"       ? 1
+                      : op == "write" || op == "resize"  ? 2
+                      : op == "lookup" || op == "parent" ? 0x20
+                      : op == "create"                   ? 2
+                      : op == "mkdir"                    ? 4
+                                                         : 0;
+  if (op == "setattr") {
+    required = 0x100;
+    if (body.contains("size"))
+      required |= 2;
+    if (body.contains("mode"))
+      required |= 0x40000;
+    if (body.contains("uid") || body.contains("gid"))
+      required |= 0x80000;
+  }
+  security_check(s, g, before, required);
   std::string request, hash;
   if (mutation) {
     request = body.at("request_id");
@@ -557,7 +576,9 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     case_check(s.directory, child);
     if (body.contains("size")) quota(s, number(body, "size"));
     pending(request, hash);
+    auto descriptor = security_new(s, g, child, op == "mkdir");
     auto f = s.directory.open(child, op == "mkdir", true, op == "create");
+    security_save(f.info(), descriptor);
     if (body.contains("size")) {
       require(op == "create", "is_directory");
       f.truncate(number(body, "size"));
@@ -584,6 +605,7 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     if (body.contains("directory"))
       require(meta->at("directory") == body.at("directory"),
               meta->at("directory").get<bool>() ? "is_directory" : "not_directory");
+    security_delete(s, g, child);
     unlocked(space, child);
     smb_sharing(space, child, 0x10000, 7);
     dav_guard(s, child, actor, body, meta->at("directory"), true);
@@ -625,7 +647,11 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     }
     require(!beneath(to, from), "invalid_path");
     case_check(s.directory, to);
+    security_delete(s, g, from);
+    security_add(s, g, to, meta->at("directory"));
     auto destination = dav_exists(s, to);
+    if (destination)
+      security_delete(s, g, to);
     std::string replaced;
     native_file pin_source;
     bool retain = false;

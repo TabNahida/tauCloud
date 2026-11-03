@@ -1,4 +1,5 @@
 #include <taucloud/files.hpp>
+#include <taucloud/security.hpp>
 #include <taucloud/http_stream.hpp>
 #include <taucloud/database.hpp>
 #include <algorithm>
@@ -93,12 +94,13 @@ struct file_store::impl {
       q.row();
       version = q.integer(0);
     }
-    require(version <= 5, "schema_too_new");
-    if (version > 0 && version < 5)
+    require(version <= 6, "schema_too_new");
+    if (version > 0 && version < 6)
       backup_database(db, c.state / (role + (version == 1   ? ".pre-v2.db"
                                              : version == 2 ? ".pre-v3.db"
                                              : version == 3 ? ".pre-v4.db"
-                                                            : ".pre-v5.db")));
+                                             : version == 4 ? ".pre-v5.db"
+                                                            : ".pre-v6.db")));
     transaction migration(db);
     sql(db, "CREATE TABLE IF NOT EXISTS spaces(id TEXT PRIMARY KEY,request TEXT NOT NULL,body TEXT "
             "NOT NULL);"
@@ -125,6 +127,8 @@ struct file_store::impl {
             "NULL); PRAGMA user_version=4;");
     sql(db, "CREATE TABLE IF NOT EXISTS allocations(native TEXT PRIMARY KEY,size INTEGER NOT "
             "NULL); PRAGMA user_version=5;");
+    sql(db, "CREATE TABLE IF NOT EXISTS security_descriptors(native TEXT PRIMARY KEY,body TEXT NOT "
+            "NULL); PRAGMA user_version=6;");
     migration.commit();
   }
   void audit(const std::string &actor, const std::string &action, const std::string &resource) {
@@ -482,6 +486,7 @@ struct file_store::impl {
     q.bind(2, id);
     q.row();
   }
+#include "file_security.inc"
 #include "file_dav.inc"
 #include "file_smb.inc"
 #include "file_nfs.inc"
@@ -602,6 +607,11 @@ struct file_store::impl {
       if ((j.value("protocol", "") == "webdav" || j.value("protocol", "") == "ftp") &&
           j.at("status") == "staging" && j.value("active_until", int64_t(0)) < now())
         dav_cancel_upload(s, j);
+    if (op != "begin" && op != "commit" && op != "chunk" && op != "seal" && op != "rename" &&
+        op != "remove")
+      security_preflight(s, grant, op);
+    if (op == "open" && writing)
+      security_path(s, grant, path, 2);
     if (op == "ftp_rmdir") {
       require(ctx.caller == "ftp" && !path.empty(), "forbidden");
       auto dir = s.directory.open(path, true);
@@ -782,6 +792,7 @@ struct file_store::impl {
           throw;
       }
       require(jobs(space).size() < 4096, "job_limit");
+      security_preflight(s, grant, op);
       quota(s, size);
       auto previous = stat_path(s.directory, path);
       auto stage = ".tc-stage-" + random_hex(16);
@@ -834,6 +845,7 @@ struct file_store::impl {
       if (op == "commit" && j.at("status") == "completed")
         return j;
       require(j.at("status") == "staging", "uncertain_write");
+      security_preflight(s, grant, op);
       auto file = s.directory.open(j.at("stage"), false, false, true);
       require(file.info().at("object") == j.at("native"), "object_replaced");
       require(file.info().at("size") == j.at("progress"), "uncertain_write");
@@ -867,6 +879,9 @@ struct file_store::impl {
       require(j.at("progress") == j.at("total"), "incomplete_upload");
       unlocked(space, path);
       file.flush();
+      auto previous_security = dav_exists(s, path);
+      security_save(file.info(), previous_security ? security_get(s, security_info(s, path))
+                                                   : security_new(s, grant, path, false));
       lease(grant, ctx);
       j["status"] = "committing";
       save_job(j);
@@ -878,7 +893,9 @@ struct file_store::impl {
       dav_guard(s, path, actor, body, false, true);
       portable_path(path);
       case_check(s.directory, path);
+      auto descriptor = security_new(s, grant, path, true);
       auto dir = s.directory.open(path, true, true);
+      security_save(dir.info(), descriptor);
       s.directory.flush();
       index(space, path, dir.info());
       audit(actor, "mkdir", path);
@@ -896,6 +913,7 @@ struct file_store::impl {
         require(target.at("space").at("id") == space, "cross_volume_move_requires_copy");
         to = target.at("path");
         portable_path(to);
+        security_add(s, target, to, false);
         dav_guard(s, to, actor, body, true, true);
       }
       try {
@@ -911,6 +929,7 @@ struct file_store::impl {
           throw;
       }
       require(jobs(space).size() < 4096, "job_limit");
+      security_delete(s, grant, path);
       auto info = object(space, path);
       require(!info.at("directory").get<bool>(), "directory_mutation_unavailable");
       require(s.directory.open(path).info().at("object") == info.at("native"), "object_replaced");

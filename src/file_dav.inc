@@ -379,6 +379,13 @@ json dav_dispatch(const std::string &op, const json &body, const json &grant, sp
   require(op == "dav_delete" || op == "dav_copy" || op == "dav_move", "not_supported");
   require(!path.empty(), "forbidden");
   auto list = dav_tree(s, path, op != "dav_copy" || body.value("depth", "infinity") != "0");
+  for (const auto &item : list) {
+    auto entry_path = item.at("path").get<std::string>();
+    if (op == "dav_copy")
+      security_path(s, grant, entry_path, 1);
+    else
+      security_delete(s, grant, entry_path);
+  }
   auto info = list.at(0);
   bool dir = info.at("directory");
   if (op != "dav_copy")
@@ -404,6 +411,7 @@ json dav_dispatch(const std::string &op, const json &body, const json &grant, sp
         throw error("parent_missing");
       throw;
     }
+    security_add(s, target, to, dir);
     previous = dav_exists(s, to);
     require(!previous || body.value("overwrite", true), "precondition_failed");
     auto target_conditions = body;
@@ -411,8 +419,9 @@ json dav_dispatch(const std::string &op, const json &body, const json &grant, sp
     target_conditions.erase("if_none_match");
     target_conditions.erase("unmodified_since");
     dav_guard(s, to, actor, target_conditions, true, true);
-    if (previous && previous->at("directory"))
-      dav_tree(s, to);
+    if (previous)
+      for (const auto &entry : dav_tree(s, to))
+        security_delete(s, target, entry.at("path"));
     for (auto &[id, h] : handles)
       require(h.space != space || !beneath(h.path, to), "locked");
   }
@@ -448,6 +457,7 @@ json dav_dispatch(const std::string &op, const json &body, const json &grant, sp
   if (op == "dav_copy") {
     auto stage = ".tc-stage-" + random_hex(16);
     auto root = s.directory.open(stage, dir, true, true);
+    security_save(root.info(), security_new(s, target, to, dir));
     j["stage"] = stage;
     j["native"] = root.info().at("object");
     root = native_file();
@@ -459,6 +469,8 @@ json dav_dispatch(const std::string &op, const json &body, const json &grant, sp
         auto p = item.at("path").get<std::string>(), dest = stage + p.substr(path.size());
         bool folder = item.at("directory");
         auto output = s.directory.open(dest, folder, p != path, true);
+        if (p != path)
+          security_save(output.info(), security_new(s, target, dest, folder));
         if (!folder) {
           auto input = s.directory.open(p);
           uint64_t offset = 0;

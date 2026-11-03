@@ -1,5 +1,7 @@
 # ADR 0008 — SMB 2.1 权威边界与凭据保护
 
+The original unsupported-ACL restriction is superseded by [shared file security](../file-security.md): persistent simple DACLs and cross-protocol access checks are implemented. Full privileged/security conformance remains open.
+
 下述原始“不支持阻塞锁队列”限制已由 Full SMB/NFS 扩展更新：现已实现有界异步等待、取消和生命周期清理，当前行为与固定提交证据见 M5 指南。其他历史范围排除不构成省略完整兼容性工作的许可。
 
 [English](0008-smb-profile.md)

@@ -59,6 +59,12 @@ void check(bool value, uint32_t status = 0xc000000d) {
     throw status_error(status);
 }
 uint32_t status(std::string_view code) {
+  if (code == "invalid_security_descriptor")
+    return 0xc0000079;
+  if (code == "invalid_owner")
+    return 0xc000005a;
+  if (code == "privilege_not_held")
+    return 0xc0000061;
   if (code == "preauth_hash_overlap")
     return 0xc05d0000;
   if (code == "not_found")
@@ -634,7 +640,7 @@ struct client {
       trees.emplace(tid, tree{share, grant.at("path"), grant.at("space").at("id"), writable});
       auto b = sized(16, 16);
       b[2] = 1;
-      put(b, 4, 0x30, 4);
+      put(b, 4, 0x30 | (grant.value("access_based_enumeration", false) ? 0x800 : 0), 4);
       put(b, 12, writable ? 0x1f01ff : 0x1200a9, 4);
       co_return b;
     }
@@ -667,6 +673,7 @@ struct client {
       bool query_maximal_access = false;
       std::optional<uint64_t> access_timestamp;
       std::optional<json> initial_eas;
+      std::optional<std::string> initial_security;
       std::optional<uint64_t> initial_allocation;
       auto context_len = get(p, 116, 4);
       if (context_len) {
@@ -681,6 +688,10 @@ struct client {
           auto item = std::string_view(contexts).substr(pos, limit);
           auto tag = slice(item, get(item, 4, 2), get(item, 6, 2), 16);
           slice(item, get(item, 10, 2), get(item, 12, 4), 16);
+          if (tag == "SecD") {
+            check(!initial_security);
+            initial_security = encode_bytes(slice(item, get(item, 10, 2), get(item, 12, 4), 16));
+          }
           if (tag == "ExtA") {
             check(!initial_eas);
             initial_eas = ea_decode(slice(item, get(item, 10, 2), get(item, 12, 4), 16));
@@ -701,7 +712,7 @@ struct client {
             if (size)
               access_timestamp = get(slice(item, get(item, 10, 2), size, 16), 0, 8);
           }
-          if (tag == "DHnC" || tag == "DH2C" || tag == "TWrp" || tag == "SecD") {
+          if (tag == "DHnC" || tag == "DH2C" || tag == "TWrp") {
             log("smb", "unsupported_create_context", std::string(tag));
             throw status_error(0xc00000bb);
           }
@@ -748,6 +759,8 @@ struct client {
                       {"attributes", get(p, 92, 4)},
                       {"maximum", maximum},
                       {"explicit_access", explicit_access}};
+      if (initial_security)
+        request["security"] = *initial_security;
       if (initial_eas)
         request["eas"] = *initial_eas;
       if (initial_allocation)
@@ -806,6 +819,7 @@ struct client {
               maximal_access = 0;
             }
           }
+          maximal_access &= meta.at("maximal_access").get<uint32_t>();
           if (!meta.at("directory").get<bool>() && (attributes(meta) & 1))
             maximal_access &= ~6u;
         }
@@ -1061,7 +1075,20 @@ struct client {
       if (type == 1 && klass == 48)
         check(selected.dialect != 0x202 && selected.dialect != 0x210 && selected.dialect != 0x302,
               0xc00000bb); // MS-SMB2 3.3.5.20.1 dialect restriction.
-      if (type == 1 && klass == 15) {
+      if (type == 3) {
+        json request = {{"information", get(p, 80, 4)}};
+        auto result = co_await operation(h, "security", false, request);
+        data = decode_bytes(result.at("data").get<std::string>());
+        if (data.size() > limit) {
+          // STATUS_BUFFER_TOO_SMALL supplies the required descriptor size.
+          bytes needed(4, '\0');
+          put(needed, 0, data.size(), 4);
+          code = 0xc0000023;
+          auto response = sized(8, 9);
+          put(response, 4, 4, 4);
+          co_return response + needed;
+        }
+      } else if (type == 1 && klass == 15) {
         auto flags = get(p, 84, 4);
         check((flags & ~7u) == 0);
         auto names = ea_names_decode(slice(p, get(p, 72, 2), input_length, 104));
@@ -1111,7 +1138,7 @@ struct client {
         if (klass == 5) {
           auto fsname = utf16("tauCloud");
           data.assign(12, '\0');
-          put(data, 0, 0x00000002 | 0x00000004, 4);
+          put(data, 0, 0x00000002 | 0x00000004 | 0x00000008, 4);
           put(data, 4, 120, 4);
           put(data, 8, fsname.size(), 4);
           data += fsname;
@@ -1142,7 +1169,7 @@ struct client {
         } else
           throw status_error(0xc00000bb);
       } else
-        throw status_error(0xc00000bb); // No synthetic DACL presented as persistent security.
+        throw status_error(0xc00000bb);
       if (data.size() > limit) {
         // Variable-length names must return the fixed prefix and the required
         // name length, allowing native clients to retry with a larger buffer.
@@ -1161,12 +1188,16 @@ struct client {
       co_return b + data;
     }
     if (cmd == 17) {
-      check(structure == 33 && p.size() >= 96 && get(p, 66, 1) == 1, 0xc00000bb);
+      check(structure == 33 && p.size() >= 96);
+      check(get(p, 66, 1) == 1 || get(p, 66, 1) == 3, 0xc00000bb);
       auto &h = handle(p, 80, tid);
       auto klass = get(p, 67, 1);
       auto input = slice(p, get(p, 72, 2), get(p, 68, 4), 96);
       json request;
-      if (klass == 4) {
+      if (get(p, 66, 1) == 3) {
+        request = {{"information", get(p, 76, 4)}, {"data", encode_bytes(input)}};
+        co_await operation(h, "set_security", true, request);
+      } else if (klass == 4) {
         check(input.size() >= 40, 0xc0000004);
         json values = json::array();
         for (size_t i = 0; i < 4; ++i)

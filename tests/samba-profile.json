@@ -67,6 +67,19 @@
     "smb2.lock.async",
     "smb2.lock.cancel",
     "smb2.lock.cancel-tdis",
-    "smb2.lock.cancel-logoff"
+    "smb2.lock.cancel-logoff",
+    "smb2.acls.CREATOR",
+    "smb2.acls.GENERIC",
+    "smb2.acls.OWNER",
+    "smb2.acls.INHERITANCE",
+    "smb2.acls.INHERITFLAGS",
+    "smb2.acls.DYNAMIC",
+    "smb2.acls.ACCESSBASED",
+    "smb2.acls.OWNER-RIGHTS",
+    "smb2.acls.OWNER-RIGHTS-DENY",
+    "smb2.acls.OWNER-RIGHTS-DENY1",
+    "smb2.acls.DENY1",
+    "smb2.acls.MXAC-NOT-GRANTED",
+    "smb2.acls.OVERWRITE_READ_ONLY_FILE"
   ]
 }

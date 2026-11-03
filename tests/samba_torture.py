@@ -24,6 +24,8 @@ def main():
     report = dict(host=platform.platform(), recorded_at=datetime.datetime.now(datetime.timezone.utc).isoformat(), tests=[])
     f = Fixture(args.bin)
     try:
+        if any('acls' in selector for selector in args.selectors):
+            f.api('shares', f.admin, dict(id='hideunread', space='smbdata', exposures={'smb':'rw'}, access_based_enumeration=True))
         credentials = f.base / 'samba-credentials'
         credentials.write_text('username=alice\npassword='+f.password+'\ndomain=TAUCLOUD\n')
         credentials.chmod(0o600)

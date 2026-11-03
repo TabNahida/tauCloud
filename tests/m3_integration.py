@@ -60,7 +60,18 @@ class Fixture:
     def start(self):
         self.process = subprocess.Popen([str(self.binary/('taucloud_supervisor'+self.suffix)), '--state', str(self.state)],stdout=self.log,stderr=self.log)
         wait(lambda: self.api('health/ready')['status']=='ready')
-        wait(lambda: all(v['status']=='running' for v in self.ctl('status').values()))
+        last_status = {}
+        def workers_ready():
+            nonlocal last_status
+            last_status = self.ctl('status')
+            return all(v['status']=='running' for v in last_status.values())
+        try:
+            wait(workers_ready)
+        except Exception:
+            self.log.flush()
+            print('Worker startup status:', json.dumps(last_status), file=sys.stderr)
+            print((self.base/'supervisor.log').read_text(errors='replace')[-16384:], file=sys.stderr)
+            raise
     def stop(self):
         self.ctl('stop'); self.process.wait(timeout=25)
     def close(self):

@@ -132,7 +132,7 @@ def run(args):
         for name in ['../escape','bad:stream','e\u0301']:
             denied(lambda name=name:create(t,name),0xc0000033)
         h=create(t,'中文.txt',access=0x120089,disposition=1);denied(lambda:query(h,0,info_type=3),0xc00000bb);h.close()
-        passed('directory deletion is nonrecursive; traversal/ADS/non-NFC denied; unsupported persistent ACL query rejected')
+        passed('directory deletion is nonrecursive; traversal/ADS/non-NFC denied; unsupported empty security-information selection rejected')
         h=create(t,'large');chunk=bytes(range(256))*256;expected=hashlib.sha256();actual=hashlib.sha256();total=args.large_mib*1024*1024
         for off in range(0,total,len(chunk)):h.write(chunk,off);expected.update(chunk)
         h.flush()

@@ -972,7 +972,7 @@ std::string v4(const identity &who, reader &r) {
           bool same = encode_bytes(actual.opaque()) == a.at("attrs").at("bytes").get<std::string>();
           check(op == 37 ? same : !same, op == 37 ? 10027 : 10009);
         } else if (op == 3) {
-          meta4(who, current);
+          auto access_meta = meta4(who, current);
           auto asked = a.at("access").get<uint32_t>();
           uint32_t allowed = asked & 0x23;
           if (current != pseudo) {
@@ -986,6 +986,15 @@ std::string v4(const identity &who, reader &r) {
               allowed = asked & 0x3f;
             } catch (...) {
             }
+          }
+          if (current != pseudo) {
+            auto rights = access_meta.at("security_access").get<uint32_t>();
+            uint32_t acl =
+                ((rights & 1) ? 1u : 0u) | ((rights & 0x20) ? 0x22u : 0u) |
+                ((rights & 2) ? 4u : 0u) | ((rights & 4) ? 8u : 0u) |
+                ((rights & (access_meta.at("directory").get<bool>() ? 0x40u : 0x10000u)) ? 16u
+                                                                                         : 0u);
+            allowed &= acl;
           }
           body.u32(asked & 0x3f).u32(allowed);
         } else if (op == 46) {
@@ -1061,6 +1070,7 @@ std::string v4(const identity &who, reader &r) {
           uint64_t parent_after = claim == 0 ? meta4(who, current).at("change").get<uint64_t>() : 0;
           auto m = meta4(who, target);
           check(!m.at("directory").get<bool>(), 21);
+          check((access & ~m.at("security_access").get<uint32_t>()) == 0, 13);
           // Authorization is checked for read and for the requested write access.
           if (access & 2) {
             auto raw = decode_bytes(target);

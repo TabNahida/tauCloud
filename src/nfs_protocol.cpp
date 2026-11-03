@@ -394,8 +394,13 @@ struct server::impl {
           allowed = mask & 0x3f;
         } catch (...) {
         }
+        auto rights = meta.at("security_access").get<uint32_t>();
+        uint32_t acl =
+            ((rights & 1) ? 1u : 0u) | ((rights & 0x20) ? 0x22u : 0u) | ((rights & 2) ? 4u : 0u) |
+            ((rights & 4) ? 8u : 0u) |
+            ((rights & (meta.at("directory").get<bool>() ? 0x40u : 0x10000u)) ? 16u : 0u);
         post3(w, meta);
-        w.u32(allowed);
+        w.u32(allowed & acl);
         break;
       }
       case 6:

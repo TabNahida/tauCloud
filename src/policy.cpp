@@ -200,6 +200,7 @@ json policy_dispatch(sqlite3 *db, const config &c, const std::string &operation,
             "protocol_unavailable");
     require(profile == "core" || !share_id.empty(), "forbidden");
     std::string exposed = "rw";
+    bool access_based = false;
     if (!share_id.empty()) {
       json share;
       if (profile == "smb") {
@@ -221,6 +222,7 @@ json policy_dispatch(sqlite3 *db, const config &c, const std::string &operation,
         share = record(db, "shares", share_id);
       space = record(db, "spaces", share.at("space"));
       exposed = share.at("exposures").value(profile, "");
+      access_based = profile == "smb" && share.value("access_based_enumeration", false);
       auto sub = share.value("path", "");
       if (!sub.empty())
         relative = sub + (relative.empty() ? "" : "/" + relative);
@@ -248,6 +250,13 @@ json policy_dispatch(sqlite3 *db, const config &c, const std::string &operation,
         {"write", write},     {"share", share_id},
         {"epoch", epoch(db)}, {"expires", std::min<int64_t>(now() + 2000, who.at("expires"))},
         {"protocol", profile}};
+    grant["access_based_enumeration"] = access_based;
+    grant["groups"] = json::array();
+    statement memberships(db,
+                          "SELECT groupname FROM memberships WHERE username=? ORDER BY groupname");
+    memberships.bind(1, actor);
+    while (memberships.row())
+      grant["groups"].push_back(memberships.text(0));
     if (!nfs_export.is_null()) grant["export"] = nfs_export;
     auto key = read_json(c.state / "ipc-keys.json").at("identity").get<std::string>();
     grant["signature"] = mac(key, grant.dump());
@@ -491,7 +500,14 @@ json policy_dispatch(sqlite3 *db, const config &c, const std::string &operation,
               require(m2 != "rw" || p == p2 ||
                           ((p == "core" || p == "webdav") && (p2 == "core" || p2 == "webdav")),
                       "mixed_writers_disabled");
-    result = {{"id", id}, {"space", space.at("id")}, {"path", path}, {"exposures", exposures}};
+    require(!data.contains("access_based_enumeration") ||
+                data.at("access_based_enumeration").is_boolean(),
+            "invalid_request");
+    result = {{"id", id},
+              {"space", space.at("id")},
+              {"path", path},
+              {"exposures", exposures},
+              {"access_based_enumeration", data.value("access_based_enumeration", false)}};
     if (data.value("update", false))
       record(db, kind, id);
     put(db, kind, id, result, data.value("update", false));
