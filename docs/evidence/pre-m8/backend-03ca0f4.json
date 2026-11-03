@@ -1,0 +1,34 @@
+{
+  "source": "03ca0f4392b8095ce2a6930abf694b4cb05747a3",
+  "url": "https://github.com/TabNahida/tauCloud/actions/runs/41180516276",
+  "status": "completed",
+  "conclusion": "failure",
+  "jobs": [
+    {
+      "id": 124476792505,
+      "name": "GCC",
+      "conclusion": "success"
+    },
+    {
+      "id": 124476792624,
+      "name": "Clang ASan+UBSan",
+      "conclusion": "success"
+    },
+    {
+      "id": 124476792724,
+      "name": "Windows",
+      "conclusion": "failure",
+      "failure": "Native NFS fixture worker startup wait timed out before NFS operations",
+      "root_cause": "unproven"
+    },
+    {
+      "id": 124481612110,
+      "name": "macOS native",
+      "conclusion": "success"
+    }
+  ],
+  "notes": [
+    "Separate targeted async-lock matrix passed all three compilers at the same source.",
+    "The Windows FTPS timeout at older fc28c4c is a separate preserved failure; this run passed FileZilla."
+  ]
+}

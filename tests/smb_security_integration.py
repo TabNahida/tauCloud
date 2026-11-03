@@ -182,6 +182,25 @@ def main():
         r=n.v3('SETATTR',t3.SETATTR3args(t3.nfs_fh3(fh),attrs,t3.sattrguard3(False)),2);assert r.status==13,r
         assert (f.root/'smbdata/with-sd').read_bytes()==b'created'
         passed('NFS writer publication still enforces file DACL; WRITE and chmod cannot bypass SMB restrictions')
+        f.api('shares',f.admin,dict(id='nfs',space='smbdata',exposures={'nfs':'r'},update=True))
+        f.api('shares',f.admin,dict(id='acl-dav',space='smbdata',exposures={'webdav':'rw'},update=True))
+        def dav(method,path,user='alice',body=None,headers=None,expected=200):
+            conn=http.client.HTTPSConnection('127.0.0.1',f.davport,context=f.context,timeout=10)
+            h={'Authorization':'Basic '+base64.b64encode((user+':'+f.password).encode()).decode()};h.update(headers or {})
+            try:
+                conn.request(method,'/dav/acl-dav/'+path,body=body,headers=h)
+                res=conn.getresponse();payload=res.read();assert res.status==expected,(method,path,res.status,payload)
+                return payload
+            finally:conn.close()
+        dav('PUT','with-sd','bob',b'bypass',expected=403)
+        dav('PUT','with-sd',body=b'replaced',expected=204)
+        dav('GET','with-sd','bob',expected=403)
+        destination={'Destination':f'https://127.0.0.1:{f.davport}/dav/acl-dav/copied'}
+        dav('COPY','parent','bob',headers=destination,expected=403)
+        assert not (f.root/'smbdata/copied').exists()
+        dav('COPY','parent',headers=destination,expected=201)
+        dav('GET','copied/sub/grand','bob')
+        passed('DAV writer cannot bypass ACL; staged PUT retains restrictions, recursive COPY checks descendants and inherits destination ACL through private staging parents')
         report['status']='passed' 
     except Exception:
         report['error']=traceback.format_exc();raise

@@ -1,0 +1,1017 @@
+{
+  "source": "bc07b2069e307b9ccbf92f915762f3089acbf91b",
+  "security": {
+    "status": "passed",
+    "checks": [
+      "schema 5 migration backs up each file authority before adding persistent security descriptors",
+      "self-relative owner/group/DACL query, requested sections, required buffer size and READ_CONTROL/WRITE_DAC/SACL boundaries",
+      "ordered deny/allow access checks, MAXIMUM_ALLOWED and explicit-right intersection; existing handles retain granted rights",
+      "SMB denial enforced by NFSv3 READ/ACCESS, NFSv4 ACCESS, core API and WebDAV readonly aliases",
+      "ACE order, empty versus NULL DACL, implicit owner rights and OWNER RIGHTS SID",
+      "malformed offsets, overlaps, truncation and unsupported ACEs rejected atomically; ownership cannot be assigned to another user",
+      "file/directory inheritance with CREATOR OWNER substitution and multi-generation propagation; ACL follows rename",
+      "SecD CREATE persists protected initial ACL, validates ownership and rejects duplicate/malformed contexts before mutation",
+      "group ACE enforcement and membership revocation use freshly signed identity grants",
+      "schema 6 durability across process restart; replacement object receives fresh owner and ACL",
+      "NFS writer publication still enforces file DACL; WRITE and chmod cannot bypass SMB restrictions"
+    ]
+  },
+  "nfs_attributes": {
+    "status": "passed",
+    "checks": [
+      "v3 CREATE preserves mode, mapped ownership and explicit atime/mtime on native handles",
+      "v3 ctime differs from preserved mtime and advances for mode-only metadata changes across export aliases",
+      "v4 SETATTR updates aliases consistently; GETATTR rejects write-only time attributes",
+      "durable change counters detect equal-size writes with restored mtime, share alias state and return real namespace change_info; reads do not advance them",
+      "v3 used and v4 space_used match independent native allocation for empty, small, sparse/extended and truncated files, separately from logical size",
+      "paged v4 READDIR skips reserved cookies 1/2 and resumes without duplicate or missing entries",
+      "mode/ownership and exact timestamps survive server restart through stable alias handles"
+    ],
+    "sanitizers": false
+  },
+  "samba_full_acl": {
+    "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "recorded_at": "2026-11-03T23:30:29.814724+00:00",
+    "tests": [
+      {
+        "selector": "smb2.acls",
+        "returncode": 1,
+        "status": "failed",
+        "counts": {
+          "success": 13,
+          "failure": 1,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acls-third-smb2.acls.log"
+      }
+    ],
+    "status": "failed"
+  },
+  "samba_expanded": {
+    "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "recorded_at": "2026-11-03T23:34:15.986071+00:00",
+    "tests": [
+      {
+        "selector": "smb2.read.eof",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.read.eof.log"
+      },
+      {
+        "selector": "smb2.read.position",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.read.position.log"
+      },
+      {
+        "selector": "smb2.read.dir",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.read.dir.log"
+      },
+      {
+        "selector": "smb2.lock.rw-shared",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.lock.rw-shared.log"
+      },
+      {
+        "selector": "smb2.lock.rw-exclusive",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.lock.rw-exclusive.log"
+      },
+      {
+        "selector": "smb2.lock.auto-unlock",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.lock.auto-unlock.log"
+      },
+      {
+        "selector": "smb2.lock.range",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.lock.range.log"
+      },
+      {
+        "selector": "smb2.compound.create-write-close",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.compound.create-write-close.log"
+      },
+      {
+        "selector": "smb2.sharemode",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 3,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.sharemode.log"
+      },
+      {
+        "selector": "smb2.create_no_streams",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.create_no_streams.log"
+      },
+      {
+        "selector": "smb2.dir.find",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.dir.find.log"
+      },
+      {
+        "selector": "smb2.dir.fixed",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.dir.fixed.log"
+      },
+      {
+        "selector": "smb2.credits",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 3,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.credits.log"
+      },
+      {
+        "selector": "smb2.lock.valid-request",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.lock.valid-request.log"
+      },
+      {
+        "selector": "smb2.lock.lock",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.lock.lock.log"
+      },
+      {
+        "selector": "smb2.lock.errorcode",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.lock.errorcode.log"
+      },
+      {
+        "selector": "smb2.lock.zerobytelength",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.lock.zerobytelength.log"
+      },
+      {
+        "selector": "smb2.lock.zerobyteread",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.lock.zerobyteread.log"
+      },
+      {
+        "selector": "smb2.lock.unlock",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.lock.unlock.log"
+      },
+      {
+        "selector": "smb2.lock.multiple-unlock",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.lock.multiple-unlock.log"
+      },
+      {
+        "selector": "smb2.lock.stacking",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.lock.stacking.log"
+      },
+      {
+        "selector": "smb2.lock.truncate",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.lock.truncate.log"
+      },
+      {
+        "selector": "smb2.create.brlocked",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.create.brlocked.log"
+      },
+      {
+        "selector": "smb2.read.access",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.read.access.log"
+      },
+      {
+        "selector": "smb2.getinfo.granted",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.getinfo.granted.log"
+      },
+      {
+        "selector": "smb2.compound.related1",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.compound.related1.log"
+      },
+      {
+        "selector": "smb2.compound.related2",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.compound.related2.log"
+      },
+      {
+        "selector": "smb2.compound.related5",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.compound.related5.log"
+      },
+      {
+        "selector": "smb2.compound.related6",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.compound.related6.log"
+      },
+      {
+        "selector": "smb2.compound.related8",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.compound.related8.log"
+      },
+      {
+        "selector": "smb2.compound.related9",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.compound.related9.log"
+      },
+      {
+        "selector": "smb2.compound.unrelated1",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.compound.unrelated1.log"
+      },
+      {
+        "selector": "smb2.compound.invalid1",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.compound.invalid1.log"
+      },
+      {
+        "selector": "smb2.compound.invalid3",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.compound.invalid3.log"
+      },
+      {
+        "selector": "smb2.compound.invalid4",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.compound.invalid4.log"
+      },
+      {
+        "selector": "smb2.create.leading-slash",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.create.leading-slash.log"
+      },
+      {
+        "selector": "smb2.create.impersonation",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.create.impersonation.log"
+      },
+      {
+        "selector": "smb2.rename",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 12,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.rename.log"
+      },
+      {
+        "selector": "smb2.compound.invalid2",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.compound.invalid2.log"
+      },
+      {
+        "selector": "smb2.session.two_logoff",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.session.two_logoff.log"
+      },
+      {
+        "selector": "smb2.session.ntlmssp_bug14932",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.session.ntlmssp_bug14932.log"
+      },
+      {
+        "selector": "smb2.connect",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.connect.log"
+      },
+      {
+        "selector": "smb2.session-require-signing",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.session-require-signing.log"
+      },
+      {
+        "selector": "smb2.lock.contend",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.lock.contend.log"
+      },
+      {
+        "selector": "smb2.lock.context",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.lock.context.log"
+      },
+      {
+        "selector": "smb2.lock.overlap",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.lock.overlap.log"
+      },
+      {
+        "selector": "smb2.create.multi",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.create.multi.log"
+      },
+      {
+        "selector": "smb2.create.mkdir-dup",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.create.mkdir-dup.log"
+      },
+      {
+        "selector": "smb2.compound_find.compound_find_related",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.compound_find.compound_find_related.log"
+      },
+      {
+        "selector": "smb2.compound_find.compound_find_unrelated",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.compound_find.compound_find_unrelated.log"
+      },
+      {
+        "selector": "smb2.charset.Testing naked diacritical (umlaut)",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.charset.Testing naked diacritical (umlaut).log"
+      },
+      {
+        "selector": "smb2.charset.Testing wide-a",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.charset.Testing wide-a.log"
+      },
+      {
+        "selector": "smb2.fileid.unique",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.fileid.unique.log"
+      },
+      {
+        "selector": "smb2.fileid.unique-dir",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.fileid.unique-dir.log"
+      },
+      {
+        "selector": "smb2.deny",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 2,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.deny.log"
+      },
+      {
+        "selector": "smb2.tcon",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.tcon.log"
+      },
+      {
+        "selector": "smb2.dir.file-index",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.dir.file-index.log"
+      },
+      {
+        "selector": "smb2.create.dir-alloc-size",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.create.dir-alloc-size.log"
+      },
+      {
+        "selector": "smb2.compound_async.flush_close",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.compound_async.flush_close.log"
+      },
+      {
+        "selector": "smb2.compound_async.flush_flush",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.compound_async.flush_flush.log"
+      },
+      {
+        "selector": "smb2.create.open",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.create.open.log"
+      },
+      {
+        "selector": "smb2.create.delete",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.create.delete.log"
+      },
+      {
+        "selector": "smb2.lock.async",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.lock.async.log"
+      },
+      {
+        "selector": "smb2.lock.cancel",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.lock.cancel.log"
+      },
+      {
+        "selector": "smb2.lock.cancel-tdis",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.lock.cancel-tdis.log"
+      },
+      {
+        "selector": "smb2.lock.cancel-logoff",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.lock.cancel-logoff.log"
+      },
+      {
+        "selector": "smb2.acls.CREATOR",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.acls.CREATOR.log"
+      },
+      {
+        "selector": "smb2.acls.GENERIC",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.acls.GENERIC.log"
+      },
+      {
+        "selector": "smb2.acls.OWNER",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.acls.OWNER.log"
+      },
+      {
+        "selector": "smb2.acls.INHERITANCE",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.acls.INHERITANCE.log"
+      },
+      {
+        "selector": "smb2.acls.INHERITFLAGS",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.acls.INHERITFLAGS.log"
+      },
+      {
+        "selector": "smb2.acls.DYNAMIC",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.acls.DYNAMIC.log"
+      },
+      {
+        "selector": "smb2.acls.ACCESSBASED",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.acls.ACCESSBASED.log"
+      },
+      {
+        "selector": "smb2.acls.OWNER-RIGHTS",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.acls.OWNER-RIGHTS.log"
+      },
+      {
+        "selector": "smb2.acls.OWNER-RIGHTS-DENY",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.acls.OWNER-RIGHTS-DENY.log"
+      },
+      {
+        "selector": "smb2.acls.OWNER-RIGHTS-DENY1",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.acls.OWNER-RIGHTS-DENY1.log"
+      },
+      {
+        "selector": "smb2.acls.DENY1",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.acls.DENY1.log"
+      },
+      {
+        "selector": "smb2.acls.MXAC-NOT-GRANTED",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.acls.MXAC-NOT-GRANTED.log"
+      },
+      {
+        "selector": "smb2.acls.OVERWRITE_READ_ONLY_FILE",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-acl-expanded-smb2.acls.OVERWRITE_READ_ONLY_FILE.log"
+      }
+    ],
+    "status": "passed"
+  },
+  "full_backend_local": {
+    "status": "failed",
+    "failure": "WebDAV recursive COPY returned not_found because staging parents are absent from public namespace index",
+    "fix": "Read pinned native parent when inheriting descriptor; follow-up regression adds DAV PUT/COPY permission checks"
+  },
+  "limitations": [
+    "Full ACL diagnostic remains failed at SDFLAGSVSCHOWN (privileged owner assignment).",
+    "Selected 79 selectors / 95 cases do not close Full SMB/NFS.",
+    "Initial M2 idempotent rename regression was fixed before bc07b20.",
+    "Initial directory SET security used metadata without changed_ns; corrected before bc07b20."
+  ]
+}

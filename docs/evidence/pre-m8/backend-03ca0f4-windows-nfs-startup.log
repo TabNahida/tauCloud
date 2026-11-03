@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+2026-10-31T07:45:27.6290574Z   File "D:\a\tauCloud\tauCloud\tests\windows_native_nfs.py", line 232, in <module>
+2026-10-31T07:45:27.6292725Z     raise SystemExit(main())
+2026-10-31T07:45:27.6293210Z                      ^^^^^^
+2026-10-31T07:45:27.6293859Z   File "D:\a\tauCloud\tauCloud\tests\windows_native_nfs.py", line 156, in main
+2026-10-31T07:45:27.6295594Z     f, port = fixture(args.bin)
+2026-10-31T07:45:27.6296584Z               ^^^^^^^^^^^^^^^^^
+2026-10-31T07:45:27.6297697Z   File "D:\a\tauCloud\tauCloud\tests\pynfs_acceptance.py", line 24, in fixture
+2026-10-31T07:45:27.6298606Z     f.start()
+2026-10-31T07:45:27.6299281Z   File "D:\a\tauCloud\tauCloud\tests\m3_integration.py", line 63, in start
+2026-10-31T07:45:27.6300848Z     wait(lambda: all(v['status']=='running' for v in self.ctl('status').values()))
+2026-10-31T07:45:27.6302086Z   File "D:\a\tauCloud\tauCloud\tests\m1_integration.py", line 31, in wait
+2026-10-31T07:45:27.6303257Z     raise AssertionError(f"condition timed out: {last}")
+2026-10-31T07:45:27.6304171Z AssertionError: condition timed out: None
+2026-10-31T07:45:27.7086434Z

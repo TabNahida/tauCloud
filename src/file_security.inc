@@ -37,7 +37,11 @@ void security_path(space_state &s, const json &grant, const std::string &path, u
   security_check(s, grant, security_info(s, path), mask);
 }
 json security_new(space_state &s, const json &grant, const std::string &path, bool directory) {
-  auto parent = security_info(s, security_parent(path));
+  // Staged DAV copies are deliberately absent from the public namespace index.
+  // Read the pinned native parent so children inherit its already-stored ACL.
+  auto parent_path = security_parent(path);
+  auto parent =
+      parent_path.empty() ? s.directory.info(true) : s.directory.open(parent_path, true).info(true);
   auto result =
       security::inherit(security_get(s, parent), security::principal(grant.at("actor")),
                         security::principal(grant.at("space").value("group", ""), true), directory);

@@ -36,9 +36,30 @@ try {
     try { $file.SetLength(65537); $file.Flush($true) } finally { $file.Dispose() }
     if ([IO.File]::ReadAllBytes($path).Length -ne 65537) { throw 'Truncate mismatch' }
     if ([IO.Directory]::GetFiles($dir).Count -ne 1) { throw 'Enumeration mismatch' }
+    # Use the real redirector and .NET security APIs, without translating service
+    # SIDs into host accounts or weakening the descriptor to pass a local check.
+    $originalAcl = Get-Acl -LiteralPath $path
+    $ownerSid = $originalAcl.GetOwner([Security.Principal.SecurityIdentifier])
+    $acl = [Security.AccessControl.FileSecurity]::new()
+    $acl.SetAccessRuleProtection($true,$false)
+    $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new($ownerSid,[Security.AccessControl.FileSystemRights]::FullControl,[Security.AccessControl.AccessControlType]::Allow))
+    $everyone = [Security.Principal.SecurityIdentifier]::new('S-1-1-0')
+    $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new($everyone,[Security.AccessControl.FileSystemRights]::WriteData,[Security.AccessControl.AccessControlType]::Deny))
+    Set-Acl -LiteralPath $path -AclObject $acl
+    $observed = Get-Acl -LiteralPath $path
+    $denyRules = @($observed.GetAccessRules($true,$true,[Security.Principal.SecurityIdentifier]) | Where-Object { $_.IdentityReference.Value -eq 'S-1-1-0' -and $_.AccessControlType -eq 'Deny' })
+    if ($denyRules.Count -ne 1) { throw 'Native DACL roundtrip mismatch' }
+    $writeDenied = $false
+    try { $attempt = [IO.File]::Open($path,[IO.FileMode]::Open,[IO.FileAccess]::Write,[IO.FileShare]::ReadWrite); $attempt.Dispose() }
+    catch [UnauthorizedAccessException] { $writeDenied = $true }
+    if (-not $writeDenied) { throw 'Native write bypassed DACL' }
+    if ([IO.File]::ReadAllBytes($path).Length -ne 65537) { throw 'DACL damaged readable data' }
+    $restore = [Security.AccessControl.FileSecurity]::new()
+    $restore.SetSecurityDescriptorBinaryForm($originalAcl.GetSecurityDescriptorBinaryForm(),[Security.AccessControl.AccessControlSections]::Access)
+    Set-Acl -LiteralPath $path -AclObject $restore
     [IO.File]::Delete($path); [IO.Directory]::Delete($dir)
     $connection=Get-SmbConnection | Where-Object { $_.ServerName -eq '127.0.0.1' -and $_.ShareName -eq 'smb' } | Select-Object ServerName,ShareName,Dialect,Encrypted,Signed
-    @{status='passed';client='Windows native SMB redirector';payload_sha256=$hash;connection=$connection} | ConvertTo-Json -Depth 4
+    @{status='passed';client='Windows native SMB redirector';payload_sha256=$hash;connection=$connection;security='native Get-Acl/Set-Acl, SID roundtrip, deny write and preserve read'} | ConvertTo-Json -Depth 4
 } finally {
     Get-SmbMapping | Where-Object { $_.RemotePath -eq $remote -and $_.LocalPath -eq $drive } | Remove-SmbMapping -Force -Confirm:$false
 }

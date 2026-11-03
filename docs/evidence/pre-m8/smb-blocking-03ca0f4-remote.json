@@ -459,8 +459,9 @@
   },
   "full_backend": {
     "url": "https://github.com/TabNahida/tauCloud/actions/runs/41180516276",
-    "status": "in_progress",
-    "note": "Not counted as passed. Wider M1-M7 and native Linux/Windows/macOS acceptance continues separately."
+    "status": "completed",
+    "note": "Linux GCC, Clang ASan+UBSan and macOS passed. Windows failed while starting the NFS fixture; no native NFS operations ran. Windows FileZilla passed in this run. Startup timeout root cause is unproven; startup status/log diagnostics added in bc07b20.",
+    "conclusion": "failure"
   },
   "limitations": [
     "Full SMB/NFS milestone remains open: Windows ACLs, NFS permissions/security/link semantics, Kerberos/RPCSEC_GSS, leases and durable/replay/multichannel are not completed by this increment.",
