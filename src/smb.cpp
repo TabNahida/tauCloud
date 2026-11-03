@@ -437,7 +437,41 @@ struct client {
                     {"protocol", "smb"},
                     {"path", relative},
                     {"write", writing}};
-    co_return co_await smb_rpc(s, "identity", "authorize", request);
+    try {
+      co_return co_await smb_rpc(s, "identity", "authorize", request);
+    } catch (const error &e) {
+      if (std::string_view(e.what()) != "unauthorized")
+        throw;
+    }
+    co_await revoke_session();
+    throw error("unauthorized");
+  }
+  pace::task<void> revoke_session() {
+    // Authentication revocation applies to every open in the session, not only
+    // the waiter that discovered it. Drain authority locks before publishing
+    // any final error; a newly authenticated client may immediately take them.
+    for (const auto &[id, h] : files) {
+      if (h.pipe)
+        continue;
+      try {
+        json body = {{"grant", h.grant}, {"handle", h.handle}};
+        co_await smb_rpc(s, h.grant.at("root").at("worker"), "smb_close", body);
+      } catch (const error &e) {
+        if (std::string_view(e.what()) != "stale_handle" &&
+            std::string_view(e.what()) != "policy_revoked") {
+          close();
+          throw;
+        }
+      }
+    }
+    files.clear();
+    trees.clear();
+    logged_off = true;
+    std::vector<uint64_t> waiting;
+    for (const auto &[id, pending] : pending_locks)
+      waiting.push_back(id);
+    for (auto id : waiting)
+      co_await finish_lock(id, 0xc000006d);
   }
   pace::task<json> operation(opened &h, std::string op, bool writing, json body = json::object()) {
     check(!h.pipe, 0xc00000bb);
@@ -1415,6 +1449,10 @@ struct client {
             code = 0xc000000d;
             log("smb", "command_" + std::to_string(cmd), "invalid_json");
           }
+          if (code && cmd == 17 && p.size() >= 96 && get(p, 66, 1) == 3)
+            log("smb", "failed_security_information", std::to_string(get(p, 76, 4)));
+          if (code && cmd == 5 && p.size() >= 120)
+            log("smb", "failed_create_access", std::to_string(get(p, 88, 4)));
           // A fatal secure-negotiation failure must stop even unrelated commands
           // later in this compound, not just suppress its response.
           if (!socket.is_open())

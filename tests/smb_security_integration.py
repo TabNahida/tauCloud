@@ -81,6 +81,9 @@ def main():
         denied(lambda:get_sd(limited),0xc0000022)
         denied(lambda:set_sd(limited,descriptor([])),0xc0000022);limited.close()
         passed('self-relative owner/group/DACL query, requested sections, required buffer size and READ_CONTROL/WRITE_DAC/SACL boundaries')
+        denied(lambda:create(t,'private',access=0x01000000,disposition=1),0xc0000061)
+        denied(lambda:create(t,'audit-create',access=0x011f01ff),0xc0000061)
+        assert not (f.root/'smbdata/audit-create').exists()
         live=create(bt,'private',access=1,disposition=1)
         protected=[ace(bob,1,deny=True),ace(alice),ace(EVERYONE,0x120089)]
         set_sd(h,descriptor(protected))
@@ -201,6 +204,13 @@ def main():
         dav('COPY','parent',headers=destination,expected=201)
         dav('GET','copied/sub/grand','bob')
         passed('DAV writer cannot bypass ACL; staged PUT retains restrictions, recursive COPY checks descendants and inherits destination ACL through private staging parents')
+        lockbody=b'<D:lockinfo xmlns:D="DAV:"><D:lockscope><D:exclusive/></D:lockscope><D:locktype><D:write/></D:locktype></D:lockinfo>'
+        lockheaders={'Content-Type':'application/xml','Depth':'0'}
+        dav('LOCK','parent/lock-created',body=lockbody,headers=lockheaders,expected=201)
+        dav('GET','parent/lock-created','bob',expected=403)
+        dav('LOCK','parent/forbidden-lock','bob',body=lockbody,headers=lockheaders,expected=403)
+        assert not (f.root/'smbdata/parent/forbidden-lock').exists()
+        passed('DAV LOCK on unmapped URL checks parent create rights and persists inherited DACL')
         report['status']='passed' 
     except Exception:
         report['error']=traceback.format_exc();raise

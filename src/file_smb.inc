@@ -257,6 +257,9 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     require(!(options & 0x200) || !body.contains("eas"), "forbidden");
     // Standard file rights are valid even when an optional SET_INFO operation
     // is unavailable. Granting them never bypasses the space's write policy.
+    // ACCESS_SYSTEM_SECURITY is privilege-gated, not an unknown DACL right.
+    // Native ACL editors use PRIVILEGE_NOT_HELD to retry without audit changes.
+    require(!(access & 0x01000000u), "privilege_not_held");
     require((access & ~0x001f01ffu) == 0, "forbidden");
     require(!(access & (0xd0000u | 0x156u)) || grant.at("write").get<bool>(), "forbidden");
     auto existing = dav_exists(s, path);

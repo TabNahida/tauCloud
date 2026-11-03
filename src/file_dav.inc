@@ -341,8 +341,10 @@ json dav_dispatch(const std::string &op, const json &body, const json &grant, sp
       require(!path.empty(), "not_found");
       dav_guard(s, path, actor, body, false, true);
       case_check(s.directory, path);
+      auto descriptor = security_new(s, grant, path, false);
       auto f = s.directory.open(path, false, true, true);
       f.flush();
+      security_save(f.info(), descriptor);
       index(space, path, f.info());
     }
     json lock = {{"token", "opaquelocktoken:" + random_hex(16)},

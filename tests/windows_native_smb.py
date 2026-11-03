@@ -41,7 +41,9 @@ try {
     $originalAcl = Get-Acl -LiteralPath $path
     $ownerSid = $originalAcl.GetOwner([Security.Principal.SecurityIdentifier])
     $acl = [Security.AccessControl.FileSecurity]::new()
-    $acl.SetAccessRuleProtection($true,$false)
+    $acl.SetOwner($ownerSid)
+    $acl.SetGroup($originalAcl.GetGroup([Security.Principal.SecurityIdentifier]))
+    $acl.SetAccessRuleProtection($false,$false)
     $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new($ownerSid,[Security.AccessControl.FileSystemRights]::FullControl,[Security.AccessControl.AccessControlType]::Allow))
     $everyone = [Security.Principal.SecurityIdentifier]::new('S-1-1-0')
     $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new($everyone,[Security.AccessControl.FileSystemRights]::WriteData,[Security.AccessControl.AccessControlType]::Deny))
@@ -55,7 +57,7 @@ try {
     if (-not $writeDenied) { throw 'Native write bypassed DACL' }
     if ([IO.File]::ReadAllBytes($path).Length -ne 65537) { throw 'DACL damaged readable data' }
     $restore = [Security.AccessControl.FileSecurity]::new()
-    $restore.SetSecurityDescriptorBinaryForm($originalAcl.GetSecurityDescriptorBinaryForm(),[Security.AccessControl.AccessControlSections]::Access)
+    $restore.SetSecurityDescriptorBinaryForm($originalAcl.GetSecurityDescriptorBinaryForm())
     Set-Acl -LiteralPath $path -AclObject $restore
     [IO.File]::Delete($path); [IO.Directory]::Delete($dir)
     $connection=Get-SmbConnection | Where-Object { $_.ServerName -eq '127.0.0.1' -and $_.ShareName -eq 'smb' } | Select-Object ServerName,ShareName,Dialect,Encrypted,Signed
@@ -87,6 +89,7 @@ def main():
             if result.returncode:report.update(status='failed',cleanup_error=result.stderr)
         proxy.close();report['smb_headers']=proxy.trace
         f.log.flush();report['server_log']=(f.base/'supervisor.log').read_text()[-65536:]
+        report['worker_logs']={p.name:p.read_text(errors='replace')[-32768:] for p in (f.state/'logs').glob('*.jsonl')}
         args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(report,indent=2)+'\n')
         f.close()
     print(json.dumps({k:v for k,v in report.items() if k!='server_log'},indent=2))

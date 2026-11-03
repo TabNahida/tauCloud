@@ -1,0 +1,25 @@
+{
+  "source_commit": "df09cfcdacd0fe7ce309dca08405fc541187b7aa",
+  "targeted_run": "https://github.com/TabNahida/tauCloud/actions/runs/41740988963",
+  "full_run": "https://github.com/TabNahida/tauCloud/actions/runs/41740988753",
+  "targeted": {
+    "gcc": "Failed during credential-revocation blocking-lock test: old holder remained locked while new authenticated session attempted LOCK.",
+    "clang": "Passed",
+    "msvc": "Independent ACL checks passed; native Set-Acl failed with unauthorized operation."
+  },
+  "full_backend": {
+    "clang": "litmus locks.unmapped_lock failed with 404 (38/39 locks passed).",
+    "gcc": "Full runner failed, pending complete job logs.",
+    "windows": "Full runner and native SMB failed, pending complete job logs."
+  },
+  "logs": {
+    "126282141480": [
+      "2026-11-03T23:47:30.8233090Z   \"stderr\": \"\\u001b[31;1mSet-Acl: \\u001b[0mC:\\\\Users\\\\runneradmin\\\\AppData\\\\Local\\\\Temp\\\\tc3-oya4xylv\\\\native-smb.ps1:36\\u001b[0m\\n\\u001b[31;1m\\u001b[0m\\u001b[36;1mLine |\\u001b[0m\\n\\u001b[31;1m\\u001b[0m\\u001b[36;1m\\u001b[36;1m  36 | \\u001b[0m     \\u001b[36;1mSet-Acl -LiteralPath $path -AclObject $acl\\u001b[0m\\n\\u001b[31;1m\\u001b[0m\\u001b[36;1m\\u001b[36;1m\\u001b[0m\\u001b[36;1m\\u001b[0m\\u001b[36;1m     | \\u001b[31;1m     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\\u001b[0m\\n\\u001b[31;1m\\u001b[0m\\u001b[36;1m\\u001b[36;1m\\u001b[0m\\u001b[36;1m\\u001b[0m\\u001b[36;1m\\u001b[31;1m\\u001b[31;1m\\u001b[36;1m     | \\u001b[31;1mAttempted to perform an unauthorized operation.\\u001b[0m\\n\",\r"
+    ],
+    "126282140761": [
+      "2026-11-03T23:45:25.3987423Z 37. unmapped_lock......... ",
+      "2026-11-03T23:45:25.3987803Z 37. unmapped_lock......... FAIL (LOCK on /dav/dav/litmus/lockcoll/ via /dav/dav/litmus/unmapped_url: 404 Not Found)",
+      "2026-11-03T23:45:25.3989524Z <- summary for `locks': of 39 tests run: 38 passed, 1 failed. 97.4%"
+    ]
+  }
+}

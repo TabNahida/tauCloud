@@ -83,6 +83,8 @@ void security_preflight(space_state &s, const json &grant, const std::string &op
     security_path(s, grant, path, 1);
   else if (op == "stat" || op == "dav_stat")
     security_path(s, grant, path, 0x80);
+  else if (op == "dav_lock" && !dav_exists(s, path))
+    security_add(s, grant, path, false);
   else if (op == "dav_props" || op == "dav_lock")
     security_path(s, grant, path, 0x100);
 }

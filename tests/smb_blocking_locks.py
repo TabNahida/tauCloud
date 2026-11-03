@@ -241,11 +241,13 @@ def run():
         lock(h, (0, 8, 0x12)); req = send_lock(other); pending(req)
         fixture.api('smb/credentials', fixture.admin, dict(username='alice', enabled=False))
         denied(lambda: d.receive(req, timeout=10), 0xc0000022, 0xc000006d)
-        d.disconnect(close=False)
         fixture.api('smb/credentials', fixture.admin, dict(username='alice', password=fixture.password))
         c, s, t = connect(0x311)
         h = create(t, 'revoked-waiter'); lock(h, (0, 8, 0x12)); lock(h, (0, 8, 4)); h.close()
-        passed('credential revocation fails pending locks promptly and leaves no stale authority locks')
+        # Keep the revoked transport alive until the new session has acquired
+        # the range: socket teardown must not be required to drain old locks.
+        d.disconnect(close=False)
+        passed('credential revocation drains all session locks before its final reply, without transport teardown')
         if args.idle:
             h = create(t, 'long-wait'); other = create(t, 'long-wait')
             lock(h, (0, 8, 0x12)); req = send_lock(other); pending(req)
