@@ -18,6 +18,14 @@ NFSv3 READ/WRITE and namespace changes, NFSv4 OPEN and ACCESS, and the core/WebD
 
 An SMB share may enable `access_based_enumeration:true` in its complete create/update definition. TREE_CONNECT advertises the flag, and directory snapshots omit entries whose DACL does not grant READ_DATA/LIST_DIRECTORY, READ_EA, READ_ATTRIBUTES and READ_CONTROL. The default remains false. This filters enumeration only; direct opens always use access checks.
 
+## Security QUERY_INFO
+
+Security `QUERY_INFO` treats its flags independently from `SET_INFO`: unknown bits, including the two DACL protection modifiers together, are ignored. Owner/group/DACL selectors still require READ_CONTROL; SACL remains denied and recognized but unimplemented label/resource/scope/backup selectors return NOT_SUPPORTED. An empty effective selector returns the 20-byte self-relative header, without exposing descriptor sections or requiring READ_CONTROL. Returned control bits describe only requested sections. Unused query input-buffer fields are ignored.
+
+An undersized security query returns the exact required descriptor size. SMB 3.1.1 wraps that size in a single error context (ErrorId zero); earlier dialects return the four-byte size directly. Both synchronous completion and a related query resumed after an asynchronous CREATE preserve this body. `tests/smb_security_query.py` covers 20 signed/encrypted groups across 2.1/3.0/3.0.2/3.1.1; see [local evidence](evidence/pre-m8/smb-security-query-local.json). The corrected query permits original Samba reauth3–5 to reach their still-failing anonymous reauthentication step. This does not establish full ACL or session conformance.
+
+References: [MS-SMB2 security query processing](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/d03767e7-c799-45c9-8fa0-7bde4f2fb0f2), [QUERY_INFO request](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/d623b2f7-a5cd-4639-8cc9-71fa7d9f9ba9), [MS-FSA security query](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fsa/0a9f223c-b258-4f61-8b59-92f970341400).
+
 ## Scoped ownership authority
 
 Administrators can explicitly assign SMB ownership authority per user and space through `POST /api/v1/smb-owner-authority`:

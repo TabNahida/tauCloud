@@ -1,0 +1,148 @@
+{
+  "recorded_at": "2026-11-04T14:08:14.649947+00:00",
+  "base_source": "ccdcd08b528593be3dfecf857c44639e1a702bb6",
+  "status": "targeted-local-passed-upstream-anonymous-reauth-failed-remote-pending",
+  "scope": "Security QUERY_INFO flags, sections and required-size error bodies; Full SMB/NFS remains unfinished.",
+  "sanitizers": "Linux Clang ASan/UBSan/LSan",
+  "source_sha256": {
+    "src/file_smb.inc": "9cad4b9e17c507fbf6b6dbd57fefbd4b8fbbcf5136d23e8c20d2f824db90e280",
+    "src/smb.cpp": "709e5d23ed6258114ea4e91719e0208b73c9a5f4a0bae62d6e46405fcf897b48",
+    "src/smb_async.inc": "86148652a3c7084ca48773d25108731ee7b0fd4653a54414db4ba4a309da1218",
+    "tests/smb_security_query.py": "2b7abab91e6b6b14e341cdcf6e66eb0ddf09573ad6f1d29f3451e010eb41cbbb",
+    ".github/workflows/smb-metadata.yml": "09990f264b806955084ec7ffa02e76866ea9454298ac870215881a9c91b943f0"
+  },
+  "reports": {
+    "smb-security-query-local": {
+      "sha256": "0c42609eaf0d445034dfefa8525b4ccd761d7f62538828e139fa768c02f9813d",
+      "report": {
+        "status": "passed",
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "checks": [
+          "210: QUERY ignores unknown and SET-only protection flags, including both protection bits; unused input fields are ignored",
+          "210: empty selector returns only self-relative header; section selection filters offsets and control flags",
+          "210: ignored flags do not bypass READ_CONTROL/SACL checks; known unsupported security selectors remain explicit",
+          "210: exact required length, SMB3.1.1 error context and older-dialect raw error data; exact-fit retry succeeds",
+          "210: related CREATE/QUERY resumed after cache recall preserves required-size error body, AsyncId and zero extra credits",
+          "300: QUERY ignores unknown and SET-only protection flags, including both protection bits; unused input fields are ignored",
+          "300: empty selector returns only self-relative header; section selection filters offsets and control flags",
+          "300: ignored flags do not bypass READ_CONTROL/SACL checks; known unsupported security selectors remain explicit",
+          "300: exact required length, SMB3.1.1 error context and older-dialect raw error data; exact-fit retry succeeds",
+          "300: related CREATE/QUERY resumed after cache recall preserves required-size error body, AsyncId and zero extra credits",
+          "302: QUERY ignores unknown and SET-only protection flags, including both protection bits; unused input fields are ignored",
+          "302: empty selector returns only self-relative header; section selection filters offsets and control flags",
+          "302: ignored flags do not bypass READ_CONTROL/SACL checks; known unsupported security selectors remain explicit",
+          "302: exact required length, SMB3.1.1 error context and older-dialect raw error data; exact-fit retry succeeds",
+          "302: related CREATE/QUERY resumed after cache recall preserves required-size error body, AsyncId and zero extra credits",
+          "311: QUERY ignores unknown and SET-only protection flags, including both protection bits; unused input fields are ignored",
+          "311: empty selector returns only self-relative header; section selection filters offsets and control flags",
+          "311: ignored flags do not bypass READ_CONTROL/SACL checks; known unsupported security selectors remain explicit",
+          "311: exact required length, SMB3.1.1 error context and older-dialect raw error data; exact-fit retry succeeds",
+          "311: related CREATE/QUERY resumed after cache recall preserves required-size error body, AsyncId and zero extra credits"
+        ],
+        "recorded_at": "2026-11-04T14:06:42.394066+00:00"
+      }
+    },
+    "smb-security-query-regression": {
+      "sha256": "67a379cc4b82505f33241d48b35ef18941b673dbfaa565e65345639bd9703b5f",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "schema 5 migration backs up each file authority before adding persistent security descriptors",
+          "self-relative owner/group/DACL query, requested sections, required buffer size and READ_CONTROL/WRITE_DAC/SACL boundaries",
+          "ordered deny/allow access checks, MAXIMUM_ALLOWED and explicit-right intersection; existing handles retain granted rights",
+          "SMB denial enforced by NFSv3 READ/ACCESS, NFSv4 ACCESS, core API and WebDAV readonly aliases",
+          "ACE order, empty versus NULL DACL, implicit owner rights and OWNER RIGHTS SID",
+          "malformed offsets, overlaps, truncation and unsupported ACEs rejected atomically; ownership cannot be assigned to another user",
+          "file/directory inheritance with CREATOR OWNER substitution and multi-generation propagation; ACL follows rename",
+          "SecD CREATE persists protected initial ACL, validates ownership and rejects duplicate/malformed contexts before mutation",
+          "group ACE enforcement and membership revocation use freshly signed identity grants",
+          "schema 7 durability across process restart; replacement object receives fresh owner and ACL",
+          "NFS writer publication still enforces file DACL; WRITE and chmod cannot bypass SMB restrictions",
+          "DAV writer cannot bypass ACL; staged PUT retains restrictions, recursive COPY checks descendants and inherits destination ACL through private staging parents",
+          "DAV LOCK on unmapped URL checks parent create rights and persists inherited DACL"
+        ]
+      }
+    },
+    "samba-security-query-session": {
+      "sha256": "66e68756b2395e7931f81bf17d4e645a46ad995232fc13df7c6fcdfb2b12fdc0",
+      "report": {
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "recorded_at": "2026-11-04T14:05:59.896050+00:00",
+        "tests": [
+          {
+            "selector": "smb2.session.reauth2",
+            "returncode": 1,
+            "status": "failed",
+            "counts": {
+              "success": 0,
+              "failure": 1,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-security-query-session-smb2.session.reauth2.log",
+            "service_generations_unchanged": true
+          },
+          {
+            "selector": "smb2.session.reauth3",
+            "returncode": 1,
+            "status": "failed",
+            "counts": {
+              "success": 0,
+              "failure": 1,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-security-query-session-smb2.session.reauth3.log",
+            "service_generations_unchanged": true
+          },
+          {
+            "selector": "smb2.session.reauth4",
+            "returncode": 1,
+            "status": "failed",
+            "counts": {
+              "success": 0,
+              "failure": 1,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-security-query-session-smb2.session.reauth4.log",
+            "service_generations_unchanged": true
+          },
+          {
+            "selector": "smb2.session.reauth5",
+            "returncode": 1,
+            "status": "failed",
+            "counts": {
+              "success": 0,
+              "failure": 1,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-security-query-session-smb2.session.reauth5.log",
+            "service_generations_unchanged": true
+          }
+        ],
+        "standard_differences_not_counted_as_passes": [],
+        "memory_limit_mib": 1024,
+        "status": "failed"
+      },
+      "report_note": "Condensed report: service snapshots and server log omitted; sha256 identifies the complete original report. Original selector logs remain in the workflow artifact or the sibling local evidence files."
+    }
+  },
+  "core_m5": {
+    "checks": 12573,
+    "status": "passed",
+    "log_sha256": "d4a6836a9b621d93b55e87fa1f78fa3092fe52bb022c4cca7bc6326e8ac2befb"
+  },
+  "upstream_logs": {
+    "smb-security-query-reauth2.log": "3b6da8d2d9e3e287d83d4b3efd56aadd4560ae119b8a0fd7d1f5fdd9642b415f",
+    "smb-security-query-reauth3.log": "89b773de3e0ac0cef2d9c94961d143b5743f30f6049498be3a87c1d914e12984",
+    "smb-security-query-reauth4.log": "33c90d0483d37f4f57d44d00adab288fa75ff5f884366ae84bc58081dbf62d14",
+    "smb-security-query-reauth5.log": "82120a72db3a5652c20b62b8f0903b34c8a2df221a5cb2072d735524c593172d"
+  },
+  "limitations": [
+    "SACL/label/resource/scope/backup security descriptors remain unsupported.",
+    "Samba reauth2-5 fail at anonymous SESSION_SETUP with LOGON_FAILURE; query correction does not claim reauthentication conformance.",
+    "New cross-platform run pending; earlier BATCH acceptance also pending at publication."
+  ]
+}

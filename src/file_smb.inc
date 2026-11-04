@@ -714,14 +714,25 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
   }
   if (op == "smb_security" || op == "smb_set_security") {
     uint32_t information = body.at("information");
+    if (op == "smb_security") {
+      // QUERY_INFO has its own flag namespace. In particular, protection
+      // modifiers belong to SET_INFO and MUST be ignored when querying.
+      information &= 0x0001007f;
+      require(!(information & 8), "forbidden");
+      require(!(information & ~7u), "not_supported");
+      require(!(information & 7) || (h.access & 0x20000), "forbidden");
+      auto descriptor = security_get(s, meta);
+      // MS-FSA 2.1.5.14 returns only control bits for requested sections.
+      uint32_t selected = ((information & 1) ? 0x0001 : 0) |
+                          ((information & 2) ? 0x0002 : 0) |
+                          ((information & 4) ? 0x140c : 0);
+      descriptor["control"] = descriptor.at("control").get<uint32_t>() & selected;
+      return {{"data", encode_bytes(security::encode(descriptor, information))}};
+    }
     require(!(information & 8), "forbidden");
     require((information & 7) && !(information & ~0xa0000007u), "not_supported");
     require(!((information & 0x80000000) && (information & 0x20000000)), "invalid_request");
     auto descriptor = security_get(s, meta);
-    if (op == "smb_security") {
-      require(h.access & 0x20000, "forbidden");
-      return {{"data", encode_bytes(security::encode(descriptor, information))}};
-    }
     require(!(information & 4) || (h.access & 0x40000), "forbidden");
     require(!(information & 3) || (h.access & 0x80000), "forbidden");
     require(!(information & 0xa0000000) || (information & 4), "invalid_request");

@@ -180,6 +180,19 @@ caching and NFS delegations remain open; see
 
 The earlier ADR exclusions describe the existing implementation, not permission to exclude features from this expanded goal. Preserve the passing limited-profile evidence while adding independent evidence for the following gates. Optional protocol facilities must be explicitly negotiated/refused according to the standards; refusal alone is not feature implementation.
 
+Latest targeted evidence: overwrite implicit access and retained Level II native
+descriptions pass GCC/Clang/MSVC at `0b93c80` (40 Level II groups per platform,
+28/28/27 EXCLUSIVE groups and eight original Samba cache selectors on Linux;
+[remote record](docs/evidence/pre-m8/smb-overwrite-0b93-remote.json)). Security
+QUERY_INFO now ignores unknown/SET-only flags, filters requested descriptor
+sections and preserves exact required-size error contexts through synchronous
+and asynchronous completion. All 20 four-dialect local groups, 13 shared ACL
+groups and 12,573 M5 core checks pass; cross-platform acceptance of this follow-up
+is pending ([local record](docs/evidence/pre-m8/smb-security-query-local.json)).
+Original reauth3–5 now pass their initial security query but, like reauth2, still
+fail at anonymous reauthentication. These corrections do not close the full
+security, session, cache or NFS gates below.
+
 - [x] Implement AlSi CREATE/overwrite allocation with durable quota, initial EA prevalidation and failed-new-CREATE cleanup; targeted GCC/Clang ASan+UBSan/MSVC checks pass at `fc28c4c`, including the smaller sparse-overwrite correction.
 - [x] Implement selected-name EA queries with bounded output and independent enumeration cursors; all three targeted jobs pass at `fc28c4c`.
 - [x] Implement MxAc current-policy maximal-access responses, optional timestamps and chained QFid replies, including encrypted SMB3 contexts; all three targeted jobs pass at `fc28c4c`.

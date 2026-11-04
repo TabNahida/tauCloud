@@ -1,0 +1,553 @@
+{
+  "source": "0b93c807bf1cf89a9941577fbde5dec7e2ddf298",
+  "workflow_run": 41838709263,
+  "url": "https://github.com/TabNahida/tauCloud/actions/runs/41838709263",
+  "status": "passed-gcc-clang-msvc",
+  "jobs": [
+    {
+      "id": 126604292469,
+      "name": "clang metadata",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 126604292841,
+      "name": "gcc metadata",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 126604292944,
+      "name": "msvc metadata",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 13329303419,
+      "name": "smb-metadata-clang",
+      "digest": "sha256:b58888b87c55ac65ef074ead6114ac6455daa87af3a6cb5852ba8ade7da645b6",
+      "head_sha": "0b93c807bf1cf89a9941577fbde5dec7e2ddf298",
+      "local_archive_sha256": "b58888b87c55ac65ef074ead6114ac6455daa87af3a6cb5852ba8ade7da645b6",
+      "reports": {
+        "oplocks.json": {
+          "sha256": "efda1913037758f26ad8302a141b9348252720a295f6159515fb1ab40b9ea636",
+          "report": {
+            "status": "passed",
+            "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+            "checks": [
+              "210: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+              "210: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+              "210: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+              "300: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+              "300: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+              "300: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+              "302: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+              "302: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+              "302: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+              "311: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+              "311: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+              "311: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+              "210: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+              "300: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+              "302: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+              "311: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+              "sharing violations do not recall dirty caches; readonly, directory, delete-on-close and conflicting native opens receive no unsupported cache grant",
+              "a lease-form ACK for a classic oplock is rejected and finishes the recall without leaving native exclusion stuck",
+              "two encrypted sessions on one transport renew independent cache authority and route breaks/ACKs with their own keys; a foreign-session ACK cannot release another open",
+              "native host reads/writes wait for SMB recall; dirty client data flushes before host access and the original handle observes subsequent native writes",
+              "SET_INFO recalls before mutation, permits cached flush while pending and applies EOF after ACK without replaying side effects",
+              "a new cached CREATE is announced before its own compound SET_INFO recall; asynchronous retries preserve the inherited FileId through the dependent READ",
+              "NFSv3 READ on an existing handle returns JUKEBOX during native recall; repeated retries leave SMB flush/ACK live and the next read returns current data",
+              "DAV GET returns a retryable response while a cache recall is pending and reads freshly flushed bytes after ACK",
+              "another transport cannot ACK the holder FileId; CLOSE flushes/releases authority and wakes the peer CREATE",
+              "unacknowledged recall fences the holder transport and open while the conflicting client completes after native exclusion releases",
+              "credential revocation closes the cache-bearing transport and releases native exclusion without requiring a client request",
+              "stalled identity RPC cannot hold the cache transport past its authority: independent watchdog closes it before IPC timeout and autonomous worker expiry releases native exclusion"
+            ],
+            "recorded_at": "2026-11-04T13:52:10.677403+00:00"
+          }
+        },
+        "oplock-level2.json": {
+          "sha256": "b07095ba84f60641adf6271a57401458d89f0e4a6d38fe4c4f266d71ecc49692",
+          "report": {
+            "status": "passed",
+            "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+            "checks": [
+              "210: direct Level II grant; own WRITE completes asynchronously after notification without a client ACK or extra credits",
+              "210: related WRITE/READ/CLOSE remains ordered across the no-ACK read-cache invalidation",
+              "210: EXCLUSIVE downgrades to shared Level II across transports; read-only and uncached readers coexist, then WRITE invalidates every cached reader without ACK",
+              "210: byte-range LOCK waits for both no-ACK invalidations and only then excludes the other handle",
+              "210: a read-only share renews standalone Level II without write authority; a later writer recalls it and obtains a genuinely writable native handle",
+              "210: CANCEL abandons a waiting CREATE while the valid downgrade ACK retains read caching until the next write",
+              "210: native writer tightens an outstanding downgrade; valid II ACK is followed by NONE with no second ACK, and the native writer sees the flushed boundary",
+              "210: flushing a cached byte lock during downgrade forces a subsequent NONE break and prevents a conflicting Level II grant",
+              "210: SET_INFO and DELETE_ON_CLOSE preserve existing Level II data caches; last close removes the file and releases native exclusion",
+              "210: SUPERSEDE/OVERWRITE/OVERWRITE_IF grant implicit rights, flush before truncation, then grant Level II without granting READ_DATA; an old handle write invalidates it",
+              "300: direct Level II grant; own WRITE completes asynchronously after notification without a client ACK or extra credits",
+              "300: related WRITE/READ/CLOSE remains ordered across the no-ACK read-cache invalidation",
+              "300: EXCLUSIVE downgrades to shared Level II across transports; read-only and uncached readers coexist, then WRITE invalidates every cached reader without ACK",
+              "300: byte-range LOCK waits for both no-ACK invalidations and only then excludes the other handle",
+              "300: a read-only share renews standalone Level II without write authority; a later writer recalls it and obtains a genuinely writable native handle",
+              "300: CANCEL abandons a waiting CREATE while the valid downgrade ACK retains read caching until the next write",
+              "300: native writer tightens an outstanding downgrade; valid II ACK is followed by NONE with no second ACK, and the native writer sees the flushed boundary",
+              "300: flushing a cached byte lock during downgrade forces a subsequent NONE break and prevents a conflicting Level II grant",
+              "300: SET_INFO and DELETE_ON_CLOSE preserve existing Level II data caches; last close removes the file and releases native exclusion",
+              "300: SUPERSEDE/OVERWRITE/OVERWRITE_IF grant implicit rights, flush before truncation, then grant Level II without granting READ_DATA; an old handle write invalidates it",
+              "302: direct Level II grant; own WRITE completes asynchronously after notification without a client ACK or extra credits",
+              "302: related WRITE/READ/CLOSE remains ordered across the no-ACK read-cache invalidation",
+              "302: EXCLUSIVE downgrades to shared Level II across transports; read-only and uncached readers coexist, then WRITE invalidates every cached reader without ACK",
+              "302: byte-range LOCK waits for both no-ACK invalidations and only then excludes the other handle",
+              "302: a read-only share renews standalone Level II without write authority; a later writer recalls it and obtains a genuinely writable native handle",
+              "302: CANCEL abandons a waiting CREATE while the valid downgrade ACK retains read caching until the next write",
+              "302: native writer tightens an outstanding downgrade; valid II ACK is followed by NONE with no second ACK, and the native writer sees the flushed boundary",
+              "302: flushing a cached byte lock during downgrade forces a subsequent NONE break and prevents a conflicting Level II grant",
+              "302: SET_INFO and DELETE_ON_CLOSE preserve existing Level II data caches; last close removes the file and releases native exclusion",
+              "302: SUPERSEDE/OVERWRITE/OVERWRITE_IF grant implicit rights, flush before truncation, then grant Level II without granting READ_DATA; an old handle write invalidates it",
+              "311: direct Level II grant; own WRITE completes asynchronously after notification without a client ACK or extra credits",
+              "311: related WRITE/READ/CLOSE remains ordered across the no-ACK read-cache invalidation",
+              "311: EXCLUSIVE downgrades to shared Level II across transports; read-only and uncached readers coexist, then WRITE invalidates every cached reader without ACK",
+              "311: byte-range LOCK waits for both no-ACK invalidations and only then excludes the other handle",
+              "311: a read-only share renews standalone Level II without write authority; a later writer recalls it and obtains a genuinely writable native handle",
+              "311: CANCEL abandons a waiting CREATE while the valid downgrade ACK retains read caching until the next write",
+              "311: native writer tightens an outstanding downgrade; valid II ACK is followed by NONE with no second ACK, and the native writer sees the flushed boundary",
+              "311: flushing a cached byte lock during downgrade forces a subsequent NONE break and prevents a conflicting Level II grant",
+              "311: SET_INFO and DELETE_ON_CLOSE preserve existing Level II data caches; last close removes the file and releases native exclusion",
+              "311: SUPERSEDE/OVERWRITE/OVERWRITE_IF grant implicit rights, flush before truncation, then grant Level II without granting READ_DATA; an old handle write invalidates it"
+            ],
+            "recorded_at": "2026-11-04T13:53:03.447006+00:00"
+          }
+        },
+        "samba-oplock-sharing.json": {
+          "sha256": "22dca68c921fc77a7bd2c935609afa36f127c33717009495356a45d91451bd65",
+          "report": {
+            "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+            "recorded_at": "2026-11-04T13:54:11.162941+00:00",
+            "tests": [
+              {
+                "selector": "smb2.oplock.exclusive1",
+                "returncode": 0,
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "log": "samba-oplock-sharing-smb2.oplock.exclusive1.log",
+                "service_generations_unchanged": true
+              },
+              {
+                "selector": "smb2.oplock.exclusive2",
+                "returncode": 0,
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "log": "samba-oplock-sharing-smb2.oplock.exclusive2.log",
+                "service_generations_unchanged": true
+              },
+              {
+                "selector": "smb2.oplock.exclusive3",
+                "returncode": 0,
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "log": "samba-oplock-sharing-smb2.oplock.exclusive3.log",
+                "service_generations_unchanged": true
+              },
+              {
+                "selector": "smb2.oplock.exclusive4",
+                "returncode": 0,
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "log": "samba-oplock-sharing-smb2.oplock.exclusive4.log",
+                "service_generations_unchanged": true
+              },
+              {
+                "selector": "smb2.oplock.exclusive5",
+                "returncode": 0,
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "log": "samba-oplock-sharing-smb2.oplock.exclusive5.log",
+                "service_generations_unchanged": true
+              },
+              {
+                "selector": "smb2.oplock.exclusive9",
+                "returncode": 0,
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "log": "samba-oplock-sharing-smb2.oplock.exclusive9.log",
+                "service_generations_unchanged": true
+              },
+              {
+                "selector": "smb2.oplock.levelii500",
+                "returncode": 0,
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "log": "samba-oplock-sharing-smb2.oplock.levelii500.log",
+                "service_generations_unchanged": true
+              },
+              {
+                "selector": "smb2.oplock.levelii501",
+                "returncode": 0,
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "log": "samba-oplock-sharing-smb2.oplock.levelii501.log",
+                "service_generations_unchanged": true
+              }
+            ],
+            "standard_differences_not_counted_as_passes": [],
+            "memory_limit_mib": 1024,
+            "status": "passed"
+          },
+          "report_note": "Condensed report: service snapshots and server log omitted; sha256 identifies the complete original report. Original selector logs remain in the workflow artifact or the sibling local evidence files."
+        }
+      }
+    },
+    {
+      "id": 13329122773,
+      "name": "smb-metadata-gcc",
+      "digest": "sha256:251fa17d0432a4ac8b1f466eb6c4ea903051f188ae02358d2859ddaf49d76d19",
+      "head_sha": "0b93c807bf1cf89a9941577fbde5dec7e2ddf298",
+      "local_archive_sha256": "251fa17d0432a4ac8b1f466eb6c4ea903051f188ae02358d2859ddaf49d76d19",
+      "reports": {
+        "oplocks.json": {
+          "sha256": "940debb1ddd73e76f864b30e6631c82ce931f929954c03bc0055e7a5f6b0d0b7",
+          "report": {
+            "status": "passed",
+            "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+            "checks": [
+              "210: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+              "210: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+              "210: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+              "300: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+              "300: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+              "300: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+              "302: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+              "302: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+              "302: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+              "311: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+              "311: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+              "311: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+              "210: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+              "300: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+              "302: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+              "311: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+              "sharing violations do not recall dirty caches; readonly, directory, delete-on-close and conflicting native opens receive no unsupported cache grant",
+              "a lease-form ACK for a classic oplock is rejected and finishes the recall without leaving native exclusion stuck",
+              "two encrypted sessions on one transport renew independent cache authority and route breaks/ACKs with their own keys; a foreign-session ACK cannot release another open",
+              "native host reads/writes wait for SMB recall; dirty client data flushes before host access and the original handle observes subsequent native writes",
+              "SET_INFO recalls before mutation, permits cached flush while pending and applies EOF after ACK without replaying side effects",
+              "a new cached CREATE is announced before its own compound SET_INFO recall; asynchronous retries preserve the inherited FileId through the dependent READ",
+              "NFSv3 READ on an existing handle returns JUKEBOX during native recall; repeated retries leave SMB flush/ACK live and the next read returns current data",
+              "DAV GET returns a retryable response while a cache recall is pending and reads freshly flushed bytes after ACK",
+              "another transport cannot ACK the holder FileId; CLOSE flushes/releases authority and wakes the peer CREATE",
+              "unacknowledged recall fences the holder transport and open while the conflicting client completes after native exclusion releases",
+              "credential revocation closes the cache-bearing transport and releases native exclusion without requiring a client request",
+              "stalled identity RPC cannot hold the cache transport past its authority: independent watchdog closes it before IPC timeout and autonomous worker expiry releases native exclusion"
+            ],
+            "recorded_at": "2026-11-04T13:49:53.025600+00:00"
+          }
+        },
+        "oplock-level2.json": {
+          "sha256": "ee33afc6bb7295b6b96d5888d6d9a1a399423f39fae84958e79d2e0eaa51dd13",
+          "report": {
+            "status": "passed",
+            "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+            "checks": [
+              "210: direct Level II grant; own WRITE completes asynchronously after notification without a client ACK or extra credits",
+              "210: related WRITE/READ/CLOSE remains ordered across the no-ACK read-cache invalidation",
+              "210: EXCLUSIVE downgrades to shared Level II across transports; read-only and uncached readers coexist, then WRITE invalidates every cached reader without ACK",
+              "210: byte-range LOCK waits for both no-ACK invalidations and only then excludes the other handle",
+              "210: a read-only share renews standalone Level II without write authority; a later writer recalls it and obtains a genuinely writable native handle",
+              "210: CANCEL abandons a waiting CREATE while the valid downgrade ACK retains read caching until the next write",
+              "210: native writer tightens an outstanding downgrade; valid II ACK is followed by NONE with no second ACK, and the native writer sees the flushed boundary",
+              "210: flushing a cached byte lock during downgrade forces a subsequent NONE break and prevents a conflicting Level II grant",
+              "210: SET_INFO and DELETE_ON_CLOSE preserve existing Level II data caches; last close removes the file and releases native exclusion",
+              "210: SUPERSEDE/OVERWRITE/OVERWRITE_IF grant implicit rights, flush before truncation, then grant Level II without granting READ_DATA; an old handle write invalidates it",
+              "300: direct Level II grant; own WRITE completes asynchronously after notification without a client ACK or extra credits",
+              "300: related WRITE/READ/CLOSE remains ordered across the no-ACK read-cache invalidation",
+              "300: EXCLUSIVE downgrades to shared Level II across transports; read-only and uncached readers coexist, then WRITE invalidates every cached reader without ACK",
+              "300: byte-range LOCK waits for both no-ACK invalidations and only then excludes the other handle",
+              "300: a read-only share renews standalone Level II without write authority; a later writer recalls it and obtains a genuinely writable native handle",
+              "300: CANCEL abandons a waiting CREATE while the valid downgrade ACK retains read caching until the next write",
+              "300: native writer tightens an outstanding downgrade; valid II ACK is followed by NONE with no second ACK, and the native writer sees the flushed boundary",
+              "300: flushing a cached byte lock during downgrade forces a subsequent NONE break and prevents a conflicting Level II grant",
+              "300: SET_INFO and DELETE_ON_CLOSE preserve existing Level II data caches; last close removes the file and releases native exclusion",
+              "300: SUPERSEDE/OVERWRITE/OVERWRITE_IF grant implicit rights, flush before truncation, then grant Level II without granting READ_DATA; an old handle write invalidates it",
+              "302: direct Level II grant; own WRITE completes asynchronously after notification without a client ACK or extra credits",
+              "302: related WRITE/READ/CLOSE remains ordered across the no-ACK read-cache invalidation",
+              "302: EXCLUSIVE downgrades to shared Level II across transports; read-only and uncached readers coexist, then WRITE invalidates every cached reader without ACK",
+              "302: byte-range LOCK waits for both no-ACK invalidations and only then excludes the other handle",
+              "302: a read-only share renews standalone Level II without write authority; a later writer recalls it and obtains a genuinely writable native handle",
+              "302: CANCEL abandons a waiting CREATE while the valid downgrade ACK retains read caching until the next write",
+              "302: native writer tightens an outstanding downgrade; valid II ACK is followed by NONE with no second ACK, and the native writer sees the flushed boundary",
+              "302: flushing a cached byte lock during downgrade forces a subsequent NONE break and prevents a conflicting Level II grant",
+              "302: SET_INFO and DELETE_ON_CLOSE preserve existing Level II data caches; last close removes the file and releases native exclusion",
+              "302: SUPERSEDE/OVERWRITE/OVERWRITE_IF grant implicit rights, flush before truncation, then grant Level II without granting READ_DATA; an old handle write invalidates it",
+              "311: direct Level II grant; own WRITE completes asynchronously after notification without a client ACK or extra credits",
+              "311: related WRITE/READ/CLOSE remains ordered across the no-ACK read-cache invalidation",
+              "311: EXCLUSIVE downgrades to shared Level II across transports; read-only and uncached readers coexist, then WRITE invalidates every cached reader without ACK",
+              "311: byte-range LOCK waits for both no-ACK invalidations and only then excludes the other handle",
+              "311: a read-only share renews standalone Level II without write authority; a later writer recalls it and obtains a genuinely writable native handle",
+              "311: CANCEL abandons a waiting CREATE while the valid downgrade ACK retains read caching until the next write",
+              "311: native writer tightens an outstanding downgrade; valid II ACK is followed by NONE with no second ACK, and the native writer sees the flushed boundary",
+              "311: flushing a cached byte lock during downgrade forces a subsequent NONE break and prevents a conflicting Level II grant",
+              "311: SET_INFO and DELETE_ON_CLOSE preserve existing Level II data caches; last close removes the file and releases native exclusion",
+              "311: SUPERSEDE/OVERWRITE/OVERWRITE_IF grant implicit rights, flush before truncation, then grant Level II without granting READ_DATA; an old handle write invalidates it"
+            ],
+            "recorded_at": "2026-11-04T13:50:37.133672+00:00"
+          }
+        },
+        "samba-oplock-sharing.json": {
+          "sha256": "5610c8a6ee21d53e639087e38d0b96532249fb3efb1852e18e0e5febb725e59e",
+          "report": {
+            "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+            "recorded_at": "2026-11-04T13:51:32.928486+00:00",
+            "tests": [
+              {
+                "selector": "smb2.oplock.exclusive1",
+                "returncode": 0,
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "log": "samba-oplock-sharing-smb2.oplock.exclusive1.log",
+                "service_generations_unchanged": true
+              },
+              {
+                "selector": "smb2.oplock.exclusive2",
+                "returncode": 0,
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "log": "samba-oplock-sharing-smb2.oplock.exclusive2.log",
+                "service_generations_unchanged": true
+              },
+              {
+                "selector": "smb2.oplock.exclusive3",
+                "returncode": 0,
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "log": "samba-oplock-sharing-smb2.oplock.exclusive3.log",
+                "service_generations_unchanged": true
+              },
+              {
+                "selector": "smb2.oplock.exclusive4",
+                "returncode": 0,
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "log": "samba-oplock-sharing-smb2.oplock.exclusive4.log",
+                "service_generations_unchanged": true
+              },
+              {
+                "selector": "smb2.oplock.exclusive5",
+                "returncode": 0,
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "log": "samba-oplock-sharing-smb2.oplock.exclusive5.log",
+                "service_generations_unchanged": true
+              },
+              {
+                "selector": "smb2.oplock.exclusive9",
+                "returncode": 0,
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "log": "samba-oplock-sharing-smb2.oplock.exclusive9.log",
+                "service_generations_unchanged": true
+              },
+              {
+                "selector": "smb2.oplock.levelii500",
+                "returncode": 0,
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "log": "samba-oplock-sharing-smb2.oplock.levelii500.log",
+                "service_generations_unchanged": true
+              },
+              {
+                "selector": "smb2.oplock.levelii501",
+                "returncode": 0,
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "log": "samba-oplock-sharing-smb2.oplock.levelii501.log",
+                "service_generations_unchanged": true
+              }
+            ],
+            "standard_differences_not_counted_as_passes": [],
+            "memory_limit_mib": 512,
+            "status": "passed"
+          },
+          "report_note": "Condensed report: service snapshots and server log omitted; sha256 identifies the complete original report. Original selector logs remain in the workflow artifact or the sibling local evidence files."
+        }
+      }
+    },
+    {
+      "id": 13328672903,
+      "name": "smb-metadata-msvc",
+      "digest": "sha256:e68ea046161b1b1814ff10a2b359822fffdfab07ef4ef8c6e43bbd8e4184275c",
+      "head_sha": "0b93c807bf1cf89a9941577fbde5dec7e2ddf298",
+      "local_archive_sha256": "e68ea046161b1b1814ff10a2b359822fffdfab07ef4ef8c6e43bbd8e4184275c",
+      "reports": {
+        "oplocks.json": {
+          "sha256": "aac40c293b82abbee36e611bd37662b8b20fcae29ea03f658d1d455edaefe3aa",
+          "report": {
+            "status": "passed",
+            "host": "Windows-2025Server-10.0.26100-SP0",
+            "checks": [
+              "210: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+              "210: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+              "210: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+              "300: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+              "300: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+              "300: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+              "302: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+              "302: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+              "302: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+              "311: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+              "311: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+              "311: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+              "210: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+              "300: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+              "302: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+              "311: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+              "sharing violations do not recall dirty caches; readonly, directory, delete-on-close and conflicting native opens receive no unsupported cache grant",
+              "a lease-form ACK for a classic oplock is rejected and finishes the recall without leaving native exclusion stuck",
+              "two encrypted sessions on one transport renew independent cache authority and route breaks/ACKs with their own keys; a foreign-session ACK cannot release another open",
+              "native host reads/writes wait for SMB recall; dirty client data flushes before host access and the original handle observes subsequent native writes",
+              "SET_INFO recalls before mutation, permits cached flush while pending and applies EOF after ACK without replaying side effects",
+              "a new cached CREATE is announced before its own compound SET_INFO recall; asynchronous retries preserve the inherited FileId through the dependent READ",
+              "NFSv3 READ on an existing handle returns JUKEBOX during native recall; repeated retries leave SMB flush/ACK live and the next read returns current data",
+              "DAV GET returns a retryable response while a cache recall is pending and reads freshly flushed bytes after ACK",
+              "another transport cannot ACK the holder FileId; CLOSE flushes/releases authority and wakes the peer CREATE",
+              "unacknowledged recall fences the holder transport and open while the conflicting client completes after native exclusion releases",
+              "credential revocation closes the cache-bearing transport and releases native exclusion without requiring a client request"
+            ],
+            "recorded_at": "2026-11-04T13:46:04.635854+00:00"
+          }
+        },
+        "oplock-level2.json": {
+          "sha256": "279d7182f883b66c07089e2b3872db5cba4f3fa3efb4d42ef1228b52172ccd1c",
+          "report": {
+            "status": "passed",
+            "host": "Windows-2025Server-10.0.26100-SP0",
+            "checks": [
+              "210: direct Level II grant; own WRITE completes asynchronously after notification without a client ACK or extra credits",
+              "210: related WRITE/READ/CLOSE remains ordered across the no-ACK read-cache invalidation",
+              "210: EXCLUSIVE downgrades to shared Level II across transports; read-only and uncached readers coexist, then WRITE invalidates every cached reader without ACK",
+              "210: byte-range LOCK waits for both no-ACK invalidations and only then excludes the other handle",
+              "210: a read-only share renews standalone Level II without write authority; a later writer recalls it and obtains a genuinely writable native handle",
+              "210: CANCEL abandons a waiting CREATE while the valid downgrade ACK retains read caching until the next write",
+              "210: native writer tightens an outstanding downgrade; valid II ACK is followed by NONE with no second ACK, and the native writer sees the flushed boundary",
+              "210: flushing a cached byte lock during downgrade forces a subsequent NONE break and prevents a conflicting Level II grant",
+              "210: SET_INFO and DELETE_ON_CLOSE preserve existing Level II data caches; last close removes the file and releases native exclusion",
+              "210: SUPERSEDE/OVERWRITE/OVERWRITE_IF grant implicit rights, flush before truncation, then grant Level II without granting READ_DATA; an old handle write invalidates it",
+              "300: direct Level II grant; own WRITE completes asynchronously after notification without a client ACK or extra credits",
+              "300: related WRITE/READ/CLOSE remains ordered across the no-ACK read-cache invalidation",
+              "300: EXCLUSIVE downgrades to shared Level II across transports; read-only and uncached readers coexist, then WRITE invalidates every cached reader without ACK",
+              "300: byte-range LOCK waits for both no-ACK invalidations and only then excludes the other handle",
+              "300: a read-only share renews standalone Level II without write authority; a later writer recalls it and obtains a genuinely writable native handle",
+              "300: CANCEL abandons a waiting CREATE while the valid downgrade ACK retains read caching until the next write",
+              "300: native writer tightens an outstanding downgrade; valid II ACK is followed by NONE with no second ACK, and the native writer sees the flushed boundary",
+              "300: flushing a cached byte lock during downgrade forces a subsequent NONE break and prevents a conflicting Level II grant",
+              "300: SET_INFO and DELETE_ON_CLOSE preserve existing Level II data caches; last close removes the file and releases native exclusion",
+              "300: SUPERSEDE/OVERWRITE/OVERWRITE_IF grant implicit rights, flush before truncation, then grant Level II without granting READ_DATA; an old handle write invalidates it",
+              "302: direct Level II grant; own WRITE completes asynchronously after notification without a client ACK or extra credits",
+              "302: related WRITE/READ/CLOSE remains ordered across the no-ACK read-cache invalidation",
+              "302: EXCLUSIVE downgrades to shared Level II across transports; read-only and uncached readers coexist, then WRITE invalidates every cached reader without ACK",
+              "302: byte-range LOCK waits for both no-ACK invalidations and only then excludes the other handle",
+              "302: a read-only share renews standalone Level II without write authority; a later writer recalls it and obtains a genuinely writable native handle",
+              "302: CANCEL abandons a waiting CREATE while the valid downgrade ACK retains read caching until the next write",
+              "302: native writer tightens an outstanding downgrade; valid II ACK is followed by NONE with no second ACK, and the native writer sees the flushed boundary",
+              "302: flushing a cached byte lock during downgrade forces a subsequent NONE break and prevents a conflicting Level II grant",
+              "302: SET_INFO and DELETE_ON_CLOSE preserve existing Level II data caches; last close removes the file and releases native exclusion",
+              "302: SUPERSEDE/OVERWRITE/OVERWRITE_IF grant implicit rights, flush before truncation, then grant Level II without granting READ_DATA; an old handle write invalidates it",
+              "311: direct Level II grant; own WRITE completes asynchronously after notification without a client ACK or extra credits",
+              "311: related WRITE/READ/CLOSE remains ordered across the no-ACK read-cache invalidation",
+              "311: EXCLUSIVE downgrades to shared Level II across transports; read-only and uncached readers coexist, then WRITE invalidates every cached reader without ACK",
+              "311: byte-range LOCK waits for both no-ACK invalidations and only then excludes the other handle",
+              "311: a read-only share renews standalone Level II without write authority; a later writer recalls it and obtains a genuinely writable native handle",
+              "311: CANCEL abandons a waiting CREATE while the valid downgrade ACK retains read caching until the next write",
+              "311: native writer tightens an outstanding downgrade; valid II ACK is followed by NONE with no second ACK, and the native writer sees the flushed boundary",
+              "311: flushing a cached byte lock during downgrade forces a subsequent NONE break and prevents a conflicting Level II grant",
+              "311: SET_INFO and DELETE_ON_CLOSE preserve existing Level II data caches; last close removes the file and releases native exclusion",
+              "311: SUPERSEDE/OVERWRITE/OVERWRITE_IF grant implicit rights, flush before truncation, then grant Level II without granting READ_DATA; an old handle write invalidates it"
+            ],
+            "recorded_at": "2026-11-04T13:46:49.405114+00:00"
+          }
+        }
+      }
+    }
+  ],
+  "scope": "Overwrite implicit access, sharing validation before cache recall, and retained native descriptions for Level II. Full SMB/NFS remains incomplete."
+}

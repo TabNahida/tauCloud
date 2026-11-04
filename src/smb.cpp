@@ -1402,7 +1402,8 @@ struct client : session_state, std::enable_shared_from_this<client> {
       auto type = get(p, 66, 1), klass = get(p, 67, 1), limit = get(p, 68, 4);
       check(limit <= 65536);
       auto input_length = get(p, 76, 4);
-      check(input_length == 0 || (type == 1 && klass == 15));
+      // Only EA and quota queries consume an input buffer. Other query types
+      // MUST ignore InputBufferLength (MS-SMB2 2.2.37).
       auto meta = co_await operation(h, "stat", false);
       meta["position"] = h.position;
       meta["mode"] = h.mode;
@@ -1420,7 +1421,14 @@ struct client : session_state, std::enable_shared_from_this<client> {
           put(needed, 0, data.size(), 4);
           code = 0xc0000023;
           auto response = sized(8, 9);
-          put(response, 4, 4, 4);
+          if (selected.dialect == 0x311) {
+            put(response, 2, 1, 1); // ErrorContextCount
+            put(response, 4, 12, 4); // ByteCount, including context header
+            response.resize(16, '\0');
+            put(response, 8, 4, 4); // ErrorDataLength; ErrorId is zero
+          } else {
+            put(response, 4, 4, 4);
+          }
           co_return response + needed;
         }
       } else if (type == 1 && klass == 15) {
@@ -1791,7 +1799,8 @@ struct client : session_state, std::enable_shared_from_this<client> {
           // later in this compound, not just suppress its response.
           if (!socket.is_open())
             break;
-          if (code && code != 0xc0000016 && code != 0x80000005) {
+          bool security_buffer_error = cmd == 16 && code == 0xc0000023 && !body.empty();
+          if (code && code != 0xc0000016 && code != 0x80000005 && !security_buffer_error) {
             body = cmd == 15 && (code == 0x10b || code == 0x10c)
                        ? notify_body({}) : sized(9, 9);
             if (code == 0xc0000004 && selected.dialect == 0x311) {

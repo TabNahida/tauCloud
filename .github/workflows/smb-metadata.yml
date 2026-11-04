@@ -41,6 +41,7 @@ on:
       - 'tests/nfs_mode_integration.py'
       - 'src/file_dav.inc'
       - 'tests/smb_security_integration.py'
+      - 'tests/smb_security_query.py'
       - 'tests/smb_owner_integration.py'
       - 'tests/samba_torture.py'
       - 'tests/windows_native_smb.py'
@@ -147,6 +148,9 @@ jobs:
         run: python tests/smb_notify_peers.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/smb-notify-peers.json
       - name: Persistent ACLs and cross-protocol permission checks
         run: python tests/smb_security_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/security.json
+      - name: SMB security query flags and dialect-specific error contexts
+        if: ${{ !cancelled() && steps.compile.outcome == 'success' }}
+        run: python tests/smb_security_query.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/security-query.json
       - name: SMB3.1.1 negotiated signing and GMAC nonce domains
         run: python tests/smb_signing_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/smb-signing.json
       - name: Native SMB directory notifications and asynchronous lifecycle

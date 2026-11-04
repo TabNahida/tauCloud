@@ -48,7 +48,9 @@ pace::task<void> finish_command(uint64_t id, uint32_t code, bytes body = {}) {
   put(response, 12, cmd, 2); put(response, 16, 3 | (item.encrypted ? 0 : 8), 4);
   put(response, 24, get(item.request, 24, 8), 8); put(response, 32, id, 8);
   put(response, 40, session, 8);
-  if (code && code != 0x80000005 && !(cmd == 15 && (code == 0x10b || code == 0x10c)))
+  bool security_buffer_error = cmd == 16 && code == 0xc0000023 && !body.empty();
+  if (code && code != 0x80000005 && !security_buffer_error &&
+      !(cmd == 15 && (code == 0x10b || code == 0x10c)))
     body = sized(9, 9);
   response += body;
   if (!item.encrypted) response.replace(48, 16, signature(key, response, selected.signing));

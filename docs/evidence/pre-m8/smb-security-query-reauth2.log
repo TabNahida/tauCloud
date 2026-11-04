@@ -1,0 +1,9 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793801176
+time: 2026-11-04 14:06:16.072894
+test: reauth2
+time: 2026-11-04 14:06:16.073178
+time: 2026-11-04 14:06:16.173097
+failure: reauth2 [
+source4/torture/smb2/session.c:361: status was NT_STATUS_LOGON_FAILURE, expected NT_STATUS_OK: smb2_session_setup_spnego failed
+]
