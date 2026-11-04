@@ -86,7 +86,7 @@ def run():
         denied(lambda:seteas(extended,bytes(malformed)),0x80000014)
         assert read_eas(extended)=={b'EXAMPLE':(0,b'updated')};extended.close()
         c.disconnect();f.stop();f.start();c,s,t=connect()
-        h=create(t,'renamed',disposition=1);assert readattrs(h)==0x2002
+        h=create(t,'renamed',disposition=1);assert readattrs(h)==0x2022
         assert struct.unpack_from('<QQQQ',query(h,4))==timestamps
         extended=create(t,'extended',disposition=1);assert read_eas(extended)=={b'EXAMPLE':(0,b'updated')}
         seteas(extended,ea(b'example',b''));denied(lambda:query(extended,15),0xc0000052);extended.close()

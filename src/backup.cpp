@@ -59,6 +59,11 @@ void scrub(const fs::path &path, const std::string &name) {
       statement closing(db, "SELECT count(*) FROM smb_close_delete");
       require(closing.row() && closing.integer(0) == 0, "unfinished_jobs");
     }
+    if (schema >= 4) {
+      statement times(db, "SELECT body FROM smb_times");
+      while (times.row())
+        require(json::parse(times.text(0)).value("rename_pending", json::object()).empty(), "unfinished_jobs");
+    }
     sql(db, "DELETE FROM dav_locks;");
   }
   sql(db, "PRAGMA wal_checkpoint(TRUNCATE)");

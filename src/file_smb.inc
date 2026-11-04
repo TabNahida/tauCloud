@@ -29,6 +29,7 @@ void smb_sharing(const std::string &space, const std::string &path, uint32_t acc
     }
 }
 void smb_reap(space_state &s) {
+  smb_reap_times(s);
   auto space = s.data.at("space").at("id").get<std::string>();
   // CREATE's DELETE_ON_CLOSE is an open mode, not Link.IsDeleted. Only a
   // closed (or lost) open activates it; a nonempty directory is left intact.
@@ -184,16 +185,66 @@ json smb_times(const json &info) {
   }
   return result;
 }
+json smb_time_record(const std::string &native) {
+  statement q(db, "SELECT body FROM smb_times WHERE native=?");
+  q.bind(1, native);
+  return q.row() ? json::parse(q.text(0)) : json::object();
+}
+void smb_save_time_record(const std::string &native, const json &value) {
+  statement q(db, "INSERT INTO smb_times VALUES(?,?) ON CONFLICT(native) DO UPDATE SET body=excluded.body");
+  q.bind(1, native); q.bind(2, value.dump()); q.row();
+}
 void smb_save_times(const json &info, const json &times) {
-  json value = {{"times", times},
-                {"accessed_ns", info.at("accessed_ns")},
-                {"modified_ns", info.at("modified_ns")},
-                {"changed_ns", info.at("changed_ns")}};
-  statement q(
-      db, "INSERT INTO smb_times VALUES(?,?) ON CONFLICT(native) DO UPDATE SET body=excluded.body");
-  q.bind(1, info.at("object"));
-  q.bind(2, value.dump());
-  q.row();
+  auto native = info.at("object").get<std::string>();
+  auto value = smb_time_record(native);
+  value["times"] = times;
+  for (const auto *field : {"accessed_ns", "modified_ns", "changed_ns"}) value[field] = info.at(field);
+  smb_save_time_record(native, value);
+}
+void smb_reap_times(space_state &s, const std::string &closing = "") {
+  auto space = s.data.at("space").at("id").get<std::string>();
+  for (auto it = smb_deferred_times.begin(); it != smb_deferred_times.end();) {
+    auto native = *it;
+    auto value = smb_time_record(native);
+    auto pending = value.value("rename_pending", json::object());
+    if (pending.empty()) { it = smb_deferred_times.erase(it); continue; }
+    statement object_path(db, "SELECT space,path,directory FROM objects WHERE native=?");
+    object_path.bind(1, native);
+    if (!object_path.row()) {
+      value.erase("rename_pending"); smb_save_time_record(native, value);
+      it = smb_deferred_times.erase(it); continue;
+    }
+    if (object_path.text(0) != space) { ++it; continue; }
+    bool change = false, notify = false, completed = false;
+    auto closer = handles.find(closing);
+    bool flush_notifications = closer != handles.end() && closer->second.space == space &&
+                               closer->second.path == object_path.text(1);
+    for (auto p = pending.begin(); p != pending.end();) {
+      // PendingNotifications belongs to the file; any close of this file
+      // flushes it. The deferred timestamp belongs to its originating open.
+      if (flush_notifications && p.value().at("notify").get<bool>()) {
+        notify = true; completed = true; p.value()["notify"] = false; p.value()["archive"] = false;
+      }
+      if (p.key() != closing && handles.contains(p.key())) { ++p; continue; }
+      change |= p.value().at("change").get<bool>();
+      notify |= p.value().at("notify").get<bool>();
+      completed = true; p = pending.erase(p);
+    }
+    if (!completed) { ++it; continue; }
+    auto current = stat_path(s.directory, object_path.text(1), bool(object_path.integer(2)), true);
+    if (current && current->at("object") == native) {
+      auto times = smb_times(*current);
+      if (change) times[3] = uint64_t(now()) * 10000 + 116444736000000000ull;
+      value["times"] = times;
+      for (const auto *field : {"accessed_ns", "modified_ns", "changed_ns"}) value[field] = current->at(field);
+    } else notify = false; // Never update or notify a replacement incarnation.
+    if (pending.empty()) value.erase("rename_pending");
+    else value["rename_pending"] = std::move(pending);
+    smb_save_time_record(native, value);
+    if (notify) notify_metadata(native, 4);
+    if (!value.contains("rename_pending")) it = smb_deferred_times.erase(it);
+    else ++it;
+  }
 }
 static uint64_t smb_nanoseconds(uint64_t ticks) {
   constexpr uint64_t epoch = 116444736000000000;
@@ -523,6 +574,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     return {{"cancelled", true}};
   }
   if (cleanup) {
+    smb_reap_times(s, id);
     auto meta = smb_meta(s, h);
     handles.erase(it);
     std::erase_if(locks, [&](const auto &v) { return v.handle == id; });
@@ -715,6 +767,13 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     transaction tx(db);
     smb_save_attributes(info, value);
     smb_save_times(info, times);
+    auto saved = smb_time_record(info.at("object"));
+    if (saved.contains("rename_pending") && saved["rename_pending"].contains(id)) {
+      auto &pending = saved["rename_pending"][id];
+      pending["change"] = !user_change;
+      pending["notify"] = !h.directory && (!user_change || pending.value("archive", false));
+      smb_save_time_record(info.at("object"), saved);
+    }
     audit(actor, "smb_basic_information", path);
     tx.commit();
     if (times[0] != meta.at("times")[0]) notify_metadata(info.at("object"), 64);
@@ -892,11 +951,29 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     for (auto &[other, x] : handles)
       if (x.space == space && beneath(x.path, path))
         x.path = to + x.path.substr(path.size());
-    // A same-volume Windows rename preserves the file's basic timestamps;
-    // Linux ctime still changes, so anchor the SMB values to the new native stamp.
-    auto moved = h.directory ? s.directory.open(to, true) : native_file();
-    smb_save_times(h.directory ? moved.info(true) : h.file.info(true), meta.at("times"));
+    // Preserve the basic times until CLOSE (MS-FSA product note 187).
+    // Archive and the deferred change/notification survive loss of the SMB
+    // process; record them by native incarnation and originating open.
     scan(s, ctx);
+    auto moved = h.directory ? s.directory.open(to, true) : native_file();
+    auto info = h.directory ? moved.info(true) : h.file.info(true);
+    auto native = info.at("object").get<std::string>();
+    transaction tx(db);
+    smb_save_times(info, meta.at("times"));
+    auto value = smb_time_record(native);
+    auto attributes = meta.at("attributes").get<uint32_t>();
+    bool archive_changed = !h.directory && !(attributes & 0x20);
+    if (!h.directory) {
+      statement archive(db, "INSERT INTO smb_attributes VALUES(?,?) ON CONFLICT(native) DO UPDATE SET attributes=excluded.attributes");
+      archive.bind(1, native); archive.bind(2, int64_t((attributes & ~0x80u) | 0x20u)); archive.row();
+    }
+    if (value.contains("rename_pending") && value["rename_pending"].contains(id))
+      archive_changed |= value["rename_pending"][id].value("archive", false);
+    value["rename_pending"][id] = {{"change", !h.user_change_time}, {"archive", archive_changed},
+                                   {"notify", !h.directory && (!h.user_change_time || archive_changed)}};
+    smb_save_time_record(native, value);
+    tx.commit();
+    smb_deferred_times.insert(native);
     return {{"from", path}, {"path", to}, {"space", space}};
   }
   require(!h.directory, op == "smb_read" ? "invalid_device_request" : "is_directory");

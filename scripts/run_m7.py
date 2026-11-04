@@ -56,6 +56,9 @@ def main():
                  [sys.executable, 'tests/m5_integration.py', '--bin', str(binary),
                   '--large-mib', str(args.large_mib), '--output', str(output.with_suffix('.smb.json'))]
                  + (['--sanitizers'] if args.sanitizers else [])]
+    commands += [[sys.executable, 'tests/smb_rename_metadata.py', '--bin', str(binary),
+                  '--output', str(output.with_suffix('.smb-rename-metadata.json'))]
+                 + (['--sanitizers'] if args.sanitizers else [])]
     commands += [[sys.executable, 'tests/smb_delete_on_close.py', '--bin', str(binary),
                   '--output', str(output.with_suffix('.smb-delete-close.json'))]
                  + (['--sanitizers'] if args.sanitizers else [])]

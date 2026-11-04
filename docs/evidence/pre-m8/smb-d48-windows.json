@@ -1,0 +1,45 @@
+{
+  "source": "d48e9a2f564c0ee3a1b47d2acf0ba6c9c0c41957",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41796135942",
+  "platform": "Windows MSVC",
+  "artifact_id": 13306151926,
+  "artifact_sha256": "c292ce7670b946ef67a79bd85fd1dc5ea99c54f64373ff664fa50abfdc58dd7c",
+  "scope": "Delete-on-close fixture cleanup and recursive/bounded notifications; Linux jobs still running when recorded.",
+  "reports": {
+    "smb-delete-close.json": {
+      "sha256": "9ce4a28447e5471a1f774f1a30d15f5ae2e74bfc1d95e5a421a8d22c65a3b083",
+      "result": {
+        "status": "passed",
+        "checks": [
+          "schema 6 upgrades to 7 with backups in every file worker",
+          "four signed/encrypted dialects: per-open mode, last-close unlink, nonempty directory preservation, explicit disposition, notifications and rename",
+          "killed SMB worker recovers durable intents, deletes files/empty directories and preserves nonempty directories without restarting other services",
+          "offline metadata backup accepts schema 7, refuses unresolved close intents and succeeds after recovery"
+        ]
+      }
+    },
+    "smb-notify.json": {
+      "sha256": "bc343cd90c3b229c37dea7aebd72f041d4ffd4557d9b9c2c1250ac35aaa27fe6",
+      "result": {
+        "status": "passed",
+        "checks": [
+          "SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup",
+          "per-open first filter/watch-tree settings, FIFO completion and events buffered between requests",
+          "native host writes trigger recursive watches while nonrecursive watches ignore descendants",
+          "rapid service-created recursive subtrees retain every ordered directory/file event between requests without requiring a rescan",
+          "recursive file/directory cross-parent moves report REMOVED/ADDED, same-parent renames report OLD/NEW and moved subtrees retain native coverage",
+          "events buffered across service operations remain byte-bounded, overflow without a partial batch and resume from fresh changes",
+          "SIZE filter ignores equal-length writes and reports actual growth",
+          "LAST_WRITE observes new-file writes even when native CREATE and WRITE are drained together",
+          "first per-open zero/short capacity persists, reopening restores capacity; NOTIFY_ENUM_DIR has no partial records; invalid-only filters stay pending and cancel cleanly",
+          "directory/list-access validation and persistent shared security descriptor changes generate SECURITY notifications",
+          "portable DOS attributes, creation-time and EA changes participate in native notification streams",
+          "initial CREATE metadata produces only ADDED; subsequent changes still produce MODIFIED",
+          "delete-pending directories complete outstanding watches without waiting for last-handle deletion",
+          "TREE_DISCONNECT and LOGOFF finish pending notifications with NOTIFY_CLEANUP before releasing keys",
+          "policy revocation denies the pending poll, invalidates its old handle and permits a fresh exclusive read open without retained watch/sharing authority"
+        ]
+      }
+    }
+  }
+}

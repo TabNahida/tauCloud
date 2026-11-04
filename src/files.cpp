@@ -17,9 +17,10 @@ uint64_t number(const json &data, const char *key) {
   require(value >= 0, "invalid_offset");
   return static_cast<uint64_t>(value);
 }
-std::optional<json> stat_path(native_file &root, const std::string &path, bool directory = false) {
+std::optional<json> stat_path(native_file &root, const std::string &path, bool directory = false,
+                              bool change_stamp = false) {
   try {
-    return root.open(path, directory).info();
+    return root.open(path, directory).info(change_stamp);
   } catch (const error &e) {
     if (std::string_view(e.what()) == "not_found")
       return {};
@@ -86,6 +87,7 @@ struct file_store::impl {
   };
   std::vector<waiting_lock> smb_waiters;
   std::map<std::string, uint32_t> pending_metadata;
+  std::set<std::string> smb_deferred_times;
   void notify_metadata(const std::string &native, uint32_t mask) {
     pending_metadata[native] |= mask;
   }
@@ -187,6 +189,10 @@ struct file_store::impl {
             "NULL,path TEXT NOT NULL,native TEXT NOT NULL,directory INTEGER NOT NULL,target TEXT "
             "NOT NULL); PRAGMA user_version=7;");
     migration.commit();
+    statement times(db, "SELECT native,body FROM smb_times");
+    while (times.row())
+      if (!json::parse(times.text(1)).value("rename_pending", json::object()).empty())
+        smb_deferred_times.insert(times.text(0));
   }
   void audit(const std::string &actor, const std::string &action, const std::string &resource) {
     statement q(db, "INSERT INTO audit(time,actor,action,resource) VALUES(?,?,?,?)");

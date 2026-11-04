@@ -103,7 +103,8 @@
     "smb2.notify.rmdir3",
     "smb2.notify.rmdir4",
     "smb2.notify.invalid-reauth",
-    "smb2.notify.rec"
+    "smb2.notify.rec",
+    "smb2.notify.mask-change"
   ],
   "standard_differences": [
     {
