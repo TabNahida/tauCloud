@@ -1,0 +1,74 @@
+{
+  "source": "1920af2db6ea77787bb2711306ce1b30ddbaf5da",
+  "recorded_at": "2026-11-04T03:13:38.719786+00:00",
+  "status": "passed",
+  "scope": "Twelve-bit mode/mode_set_masked, setgid inheritance, sticky checks, cross-protocol set-ID clearing and setuid-owner restriction. Full SMB/NFS remains incomplete.",
+  "reports": {
+    "nfs-mode-core5": {
+      "checks": 12403,
+      "status": "passed"
+    },
+    "nfs-mode-core7": {
+      "checks": 68,
+      "status": "passed"
+    },
+    "nfs-mode-owner-verified": {
+      "status": "passed",
+      "checks": [
+        "v3 special mode creation and v4 masked updates preserve unmasked bits; high-only masks preserve exact ACL bytes; combined masked mode applies before ACL",
+        "undefined mode bits, conflicting mode attributes and masked mode in CREATE/OPEN/GETATTR/VERIFY reject without creation",
+        "NFS data writes, truncation and ownership setters clear file set-ID bits",
+        "setgid directories transmit primary group and directory setgid to nonmember creators; explicit setgid requires verified group membership",
+        "sticky directories reject foreign unlink, rename and replacement while permitting the object owner",
+        "encrypted SMB writes clear NFS set-ID bits; SMB disposition and rename cannot bypass NFS sticky directories",
+        "staged DAV replacement clears set-ID; removing sticky restores unlink; special modes persist through complete restart"
+      ]
+    },
+    "nfs-mode-acl": {
+      "status": "passed",
+      "checks": [
+        "NFSv3 mode is enforced, owner/group are mapped, nonowner chmod denied; NFSv4 advertises real ACL support",
+        "group mode checks use only verified AUTH_SYS groups; omitted groups and root-squashed groups cannot grant access",
+        "ACL+mode applies mode then ACL; named-user ACE roundtrips, READ_ACL is enforced and chmod masks named grants",
+        "invalid ACL principal and flags fail before truncation; empty ACL denies data and owner can recover WRITE_ACL",
+        "special/named groups and primary-group changes enforce the mapped trustee; opaque SMB SIDs roundtrip; execute-only NFS READ/OPEN/ACCESS works; invalid CREATE ACL leaves no object",
+        "directory ACL inheritance preserves OWNER@ and clears the acl-only inherited flag; ACL attributes larger than 4 KiB roundtrip",
+        "NFS chmod and ACL changes govern new SMB opens of the same object",
+        "shared ACLs, symbolic principals and derived mode survive complete service restart"
+      ]
+    },
+    "nfs-mode-security": {
+      "status": "passed",
+      "checks": [
+        "schema 5 migration backs up each file authority before adding persistent security descriptors",
+        "self-relative owner/group/DACL query, requested sections, required buffer size and READ_CONTROL/WRITE_DAC/SACL boundaries",
+        "ordered deny/allow access checks, MAXIMUM_ALLOWED and explicit-right intersection; existing handles retain granted rights",
+        "SMB denial enforced by NFSv3 READ/ACCESS, NFSv4 ACCESS, core API and WebDAV readonly aliases",
+        "ACE order, empty versus NULL DACL, implicit owner rights and OWNER RIGHTS SID",
+        "malformed offsets, overlaps, truncation and unsupported ACEs rejected atomically; ownership cannot be assigned to another user",
+        "file/directory inheritance with CREATOR OWNER substitution and multi-generation propagation; ACL follows rename",
+        "SecD CREATE persists protected initial ACL, validates ownership and rejects duplicate/malformed contexts before mutation",
+        "group ACE enforcement and membership revocation use freshly signed identity grants",
+        "schema 6 durability across process restart; replacement object receives fresh owner and ACL",
+        "NFS writer publication still enforces file DACL; WRITE and chmod cannot bypass SMB restrictions",
+        "DAV writer cannot bypass ACL; staged PUT retains restrictions, recursive COPY checks descendants and inherits destination ACL through private staging parents",
+        "DAV LOCK on unmapped URL checks parent create rights and persists inherited DACL"
+      ]
+    }
+  },
+  "source_notes": "Core/ACL/shared-security regressions preceded the final owner-only setuid check. The final independent mode test includes that ownership boundary and passes. Remote jobs run the exact committed source.",
+  "upstream_verify": {
+    "errors": 0,
+    "failures": 0,
+    "name": "all",
+    "skipped": 265,
+    "tests": 266,
+    "time": 0.3534562587738037,
+    "timestamp": "2026-11-04 03:08:31.690527"
+  },
+  "remote": {
+    "targeted": "https://github.com/TabNahida/tauCloud/actions/runs/41765661931",
+    "backend_native": "https://github.com/TabNahida/tauCloud/actions/runs/41765661901",
+    "status": "in_progress"
+  }
+}

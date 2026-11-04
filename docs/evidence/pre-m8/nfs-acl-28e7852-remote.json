@@ -3760,12 +3760,12 @@
         "url": "https://github.com/TabNahida/tauCloud/actions/runs/41762876560/job/126354384806"
       },
       {
-        "completedAt": "0001-01-01T00:00:00Z",
-        "conclusion": "",
+        "completedAt": "2026-11-04T03:12:24Z",
+        "conclusion": "success",
         "databaseId": 126354384980,
         "name": "linux (gcc)",
         "startedAt": "2026-11-04T02:46:14Z",
-        "status": "in_progress",
+        "status": "completed",
         "steps": [
           {
             "conclusion": "success",
@@ -3888,46 +3888,52 @@
             "status": "completed"
           },
           {
-            "conclusion": "",
+            "conclusion": "success",
             "name": "Upstream NFS regular-file/directory profile including lease expiry",
             "number": 21,
-            "status": "in_progress"
+            "status": "completed"
           },
           {
-            "conclusion": "",
+            "conclusion": "success",
             "name": "NFS creation attributes and safe truncation",
             "number": 22,
-            "status": "pending"
+            "status": "completed"
           },
           {
-            "conclusion": "",
+            "conclusion": "success",
             "name": "Package the same Linux server for macOS native-client tests",
             "number": 23,
-            "status": "pending"
+            "status": "completed"
           },
           {
-            "conclusion": "",
+            "conclusion": "success",
             "name": "Run actions/upload-artifact@v4",
             "number": 24,
-            "status": "pending"
+            "status": "completed"
           },
           {
-            "conclusion": "",
+            "conclusion": "success",
             "name": "Run actions/upload-artifact@v4",
             "number": 25,
-            "status": "pending"
+            "status": "completed"
           },
           {
-            "conclusion": "",
+            "conclusion": "success",
             "name": "Post Run xmake-io/github-action-setup-xmake@v1",
             "number": 49,
-            "status": "pending"
+            "status": "completed"
           },
           {
-            "conclusion": "",
+            "conclusion": "success",
             "name": "Post Run actions/checkout@v4",
             "number": 50,
-            "status": "pending"
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 51,
+            "status": "completed"
           }
         ],
         "url": "https://github.com/TabNahida/tauCloud/actions/runs/41762876560/job/126354384980"
@@ -4110,6 +4116,59 @@
           }
         ],
         "url": "https://github.com/TabNahida/tauCloud/actions/runs/41762876560/job/126354385005"
+      },
+      {
+        "completedAt": "0001-01-01T00:00:00Z",
+        "conclusion": "",
+        "databaseId": 126363264225,
+        "name": "macos-clients",
+        "startedAt": "2026-11-04T03:12:30Z",
+        "status": "in_progress",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/download-artifact@v4",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "",
+            "name": "Run brew install qemu",
+            "number": 4,
+            "status": "in_progress"
+          },
+          {
+            "conclusion": "",
+            "name": "macOS native SMB and NFSv3 against isolated Linux guest",
+            "number": 5,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Run actions/upload-artifact@v4",
+            "number": 6,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Post Run actions/checkout@v4",
+            "number": 12,
+            "status": "pending"
+          }
+        ],
+        "url": "https://github.com/TabNahida/tauCloud/actions/runs/41762876560/job/126363264225"
       }
     ],
     "status": "in_progress",
