@@ -1,0 +1,199 @@
+{
+  "recorded_at": "2026-11-04T07:43:46.426965+00:00",
+  "base_source": "3d65a9059ea469da53dfaf7c1fc95c03010f7bf0",
+  "status": "partial",
+  "scope": "Durable per-open CREATE delete-on-close, deferred directory emptiness, rename/crash recovery and schema-7 backup safety. Not complete SMB/NFS conformance.",
+  "sanitizers": "Clang ASan/UBSan with LeakSanitizer",
+  "files_sha256": {
+    ".github/workflows/smb-metadata.yml": "8da5d04fae01ba225b6489fc9cac85c1ddf23fdf571d45277403bf156e679d14",
+    "src/files.cpp": "a02096d743120bd5ff53e18387150c4b5ef5b2c9873c31b64cc3fc43f2678e2b",
+    "src/file_smb.inc": "2c5f95ad8c00dad1544931a58ecd913440e4b7c86fc5fcb72ba9f8172da31320",
+    "src/backup.cpp": "755d41b1edf0e5ac211b97ff8622bf8806ef9910c776cffcfe6059eddbcc0aba",
+    "tests/m5_core.cpp": "cb015efc7c244461eb8e46c95591bf78eec733f504fd58bff4568edade10258d",
+    "tests/smb_delete_on_close.py": "8104490c2485aae8988229cc6d174b6724ffa1a9aa3798fadef57120c92429a5",
+    "tests/smb_security_integration.py": "45dfb0318f51f2f21f8da932151e905e92416476af8fcb459b85c74b3a8cfc67",
+    "scripts/run_m5.py": "1120525fa24a5d7df7f54736d073b99aa3fda41f4db06dd3dccd70ab2abfb3af",
+    "scripts/run_m7.py": "eb8e7f62627a3c9752d8c80ea963f010f1b5eb731aea14082f71e575884eb960"
+  },
+  "core": {
+    "status": "passed",
+    "checks": 12422
+  },
+  "local": {
+    "delete_close": {
+      "status": "passed",
+      "checks": [
+        "schema 6 upgrades to 7 with backups in every file worker",
+        "four signed/encrypted dialects: per-open mode, last-close unlink, nonempty directory preservation, explicit disposition, notifications and rename",
+        "killed SMB worker recovers durable intents, deletes files/empty directories and preserves nonempty directories without restarting other services",
+        "offline metadata backup accepts schema 7, refuses unresolved close intents and succeeds after recovery"
+      ]
+    },
+    "m5": {
+      "status": "passed",
+      "checks": [
+        "verified repeated logins do not exhaust the failed-authentication budget",
+        "signed NTLMv2 MIC authentication, UTF-16 create/read/write/flush/query/directory/close",
+        "QFid CREATE context agrees with internal file IDs across opens and distinguishes objects on one volume",
+        "authenticated srvsvc NDR32 share enumeration filters inaccessible and non-SMB shares",
+        "SMB share lookup ignores case, preserves canonical grants and rejects ambiguous publication without non-SMB shadowing",
+        "share access conflicts, exclusive/shared byte locks, rename with live handles, truncate and last-close deletion",
+        "signed related compound CREATE/WRITE/READ/CLOSE and credit accounting",
+        "directory deletion is nonrecursive; traversal/ADS/non-NFC denied; unsupported empty security-information selection rejected",
+        "1 MiB streamed binary roundtrip with SHA-256",
+        "unknown-session LOGOFF preserves the valid session; client-clock NTLMv2 accepted; excessive skew, bad MIC/proof, unsigned/tampered signing and malformed packets rejected",
+        "SMB credential revocation invalidates live access; re-enrollment and SPNEGO reconnect succeed",
+        "SMB worker kill/restart reclaims handles and durable delete intent without restarting API, identity or files"
+      ]
+    },
+    "notifications": {
+      "status": "passed",
+      "checks": [
+        "SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup",
+        "per-open first filter/watch-tree settings, FIFO completion and events buffered between requests",
+        "native host writes trigger recursive watches while nonrecursive watches ignore descendants",
+        "recursive watches stop observing moved-out subtrees and do not disclose queued outside names",
+        "SIZE filter ignores equal-length writes and reports actual growth",
+        "LAST_WRITE observes new-file writes even when native CREATE and WRITE are drained together",
+        "first per-open zero/short capacity persists, reopening restores capacity; NOTIFY_ENUM_DIR has no partial records; invalid-only filters stay pending and cancel cleanly",
+        "directory/list-access validation and persistent shared security descriptor changes generate SECURITY notifications",
+        "portable DOS attributes, creation-time and EA changes participate in native notification streams",
+        "initial CREATE metadata produces only ADDED; subsequent changes still produce MODIFIED",
+        "recursive descriptor exhaustion stays visibly overflowed across requests and releases all watches on close",
+        "delete-pending directories complete outstanding watches without waiting for last-handle deletion",
+        "TREE_DISCONNECT and LOGOFF finish pending notifications with NOTIFY_CLEANUP before releasing keys",
+        "policy revocation denies the pending poll, invalidates its old handle and permits a fresh exclusive read open without retained watch/sharing authority"
+      ]
+    },
+    "security": {
+      "status": "passed",
+      "checks": [
+        "schema 5 migration backs up each file authority before adding persistent security descriptors",
+        "self-relative owner/group/DACL query, requested sections, required buffer size and READ_CONTROL/WRITE_DAC/SACL boundaries",
+        "ordered deny/allow access checks, MAXIMUM_ALLOWED and explicit-right intersection; existing handles retain granted rights",
+        "SMB denial enforced by NFSv3 READ/ACCESS, NFSv4 ACCESS, core API and WebDAV readonly aliases",
+        "ACE order, empty versus NULL DACL, implicit owner rights and OWNER RIGHTS SID",
+        "malformed offsets, overlaps, truncation and unsupported ACEs rejected atomically; ownership cannot be assigned to another user",
+        "file/directory inheritance with CREATOR OWNER substitution and multi-generation propagation; ACL follows rename",
+        "SecD CREATE persists protected initial ACL, validates ownership and rejects duplicate/malformed contexts before mutation",
+        "group ACE enforcement and membership revocation use freshly signed identity grants",
+        "schema 7 durability across process restart; replacement object receives fresh owner and ACL",
+        "NFS writer publication still enforces file DACL; WRITE and chmod cannot bypass SMB restrictions",
+        "DAV writer cannot bypass ACL; staged PUT retains restrictions, recursive COPY checks descendants and inherits destination ACL through private staging parents",
+        "DAV LOCK on unmapped URL checks parent create rights and persists inherited DACL"
+      ]
+    },
+    "original_notify_diagnostic": {
+      "status": "failed",
+      "tests": [
+        {
+          "selector": "smb2.notify.rec",
+          "returncode": 1,
+          "status": "failed",
+          "counts": {
+            "success": 0,
+            "failure": 1,
+            "error": 0,
+            "skip": 0
+          },
+          "log": "samba-delete-close-smb2.notify.rec.log"
+        },
+        {
+          "selector": "smb2.notify.mask-change",
+          "returncode": 1,
+          "status": "failed",
+          "counts": {
+            "success": 0,
+            "failure": 0,
+            "error": 0,
+            "skip": 0
+          },
+          "log": "samba-delete-close-smb2.notify.mask-change.log"
+        },
+        {
+          "selector": "smb2.notify.rmdir1",
+          "returncode": 0,
+          "status": "passed",
+          "counts": {
+            "success": 1,
+            "failure": 0,
+            "error": 0,
+            "skip": 0
+          },
+          "log": "samba-delete-close-smb2.notify.rmdir1.log"
+        },
+        {
+          "selector": "smb2.notify.rmdir2",
+          "returncode": 0,
+          "status": "passed",
+          "counts": {
+            "success": 1,
+            "failure": 0,
+            "error": 0,
+            "skip": 0
+          },
+          "log": "samba-delete-close-smb2.notify.rmdir2.log"
+        },
+        {
+          "selector": "smb2.notify.rmdir3",
+          "returncode": 0,
+          "status": "passed",
+          "counts": {
+            "success": 1,
+            "failure": 0,
+            "error": 0,
+            "skip": 0
+          },
+          "log": "samba-delete-close-smb2.notify.rmdir3.log"
+        },
+        {
+          "selector": "smb2.notify.rmdir4",
+          "returncode": 0,
+          "status": "passed",
+          "counts": {
+            "success": 1,
+            "failure": 0,
+            "error": 0,
+            "skip": 0
+          },
+          "log": "samba-delete-close-smb2.notify.rmdir4.log"
+        }
+      ]
+    },
+    "original_create_regression": {
+      "status": "passed",
+      "tests": [
+        {
+          "selector": "smb2.create.delete",
+          "returncode": 0,
+          "status": "passed",
+          "counts": {
+            "success": 1,
+            "failure": 0,
+            "error": 0,
+            "skip": 0
+          },
+          "log": "samba-delete-create-smb2.create.delete.log"
+        },
+        {
+          "selector": "smb2.create.open",
+          "returncode": 0,
+          "status": "passed",
+          "counts": {
+            "success": 1,
+            "failure": 0,
+            "error": 0,
+            "skip": 0
+          },
+          "log": "samba-delete-create-smb2.create.open.log"
+        }
+      ]
+    }
+  },
+  "limitations": [
+    "New source awaits GCC/Clang ASan+UBSan/MSVC Actions.",
+    "The original recursive notify diagnostic proceeds beyond DIRECTORY_NOT_EMPTY and fails with NOTIFY_ENUM_DIR at rapid subtree installation.",
+    "The original mask-change diagnostic proceeds beyond directory deletion but times out after 300 seconds; it remains failed.",
+    "The complete notification suite, leases/oplocks, durable opens, multichannel and full SMB/NFS conformance remain unfinished."
+  ]
+}

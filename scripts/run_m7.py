@@ -56,6 +56,9 @@ def main():
                  [sys.executable, 'tests/m5_integration.py', '--bin', str(binary),
                   '--large-mib', str(args.large_mib), '--output', str(output.with_suffix('.smb.json'))]
                  + (['--sanitizers'] if args.sanitizers else [])]
+    commands += [[sys.executable, 'tests/smb_delete_on_close.py', '--bin', str(binary),
+                  '--output', str(output.with_suffix('.smb-delete-close.json'))]
+                 + (['--sanitizers'] if args.sanitizers else [])]
     commands += [[str(binary / ('taucloud_m6_tests' + suffix))],
                  [sys.executable, 'tests/m6_integration.py', '--bin', str(binary),
                   '--large-mib', str(args.large_mib), '--output', str(output.with_suffix('.smb3.json'))]

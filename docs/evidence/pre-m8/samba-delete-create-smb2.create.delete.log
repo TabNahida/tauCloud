@@ -1,0 +1,8 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793778149
+time: 2026-11-04 07:42:29.522760
+test: delete
+time: 2026-11-04 07:42:29.522846
+Checking SMB2_OPEN for delete on a readonly file.
+time: 2026-11-04 07:42:29.855453
+success: delete

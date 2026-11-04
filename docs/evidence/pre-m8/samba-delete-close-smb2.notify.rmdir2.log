@@ -1,0 +1,8 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793778193
+time: 2026-11-04 07:43:13.524898
+test: rmdir2
+time: 2026-11-04 07:43:13.525001
+TESTING NOTIFY CANCEL FOR DELETED DIR
+time: 2026-11-04 07:43:13.687634
+success: rmdir2

@@ -1,0 +1,7 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793777893
+time: 2026-11-04 07:38:13.160409
+test: mask-change
+time: 2026-11-04 07:38:13.160564
+TESTING CHANGE NOTIFY WITH MASK CHANGE
+maximum runtime exceeded for smbtorture - terminating

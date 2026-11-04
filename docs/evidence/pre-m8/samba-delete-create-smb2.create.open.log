@@ -1,0 +1,8 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793778149
+time: 2026-11-04 07:42:29.941660
+test: open
+time: 2026-11-04 07:42:29.941754
+Checking SMB2 Open
+time: 2026-11-04 07:42:31.668267
+success: open

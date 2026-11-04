@@ -117,13 +117,14 @@ struct file_store::impl {
       q.row();
       version = q.integer(0);
     }
-    require(version <= 6, "schema_too_new");
-    if (version > 0 && version < 6)
+    require(version <= 7, "schema_too_new");
+    if (version > 0 && version < 7)
       backup_database(db, c.state / (role + (version == 1   ? ".pre-v2.db"
                                              : version == 2 ? ".pre-v3.db"
                                              : version == 3 ? ".pre-v4.db"
                                              : version == 4 ? ".pre-v5.db"
-                                                            : ".pre-v6.db")));
+                                             : version == 5 ? ".pre-v6.db"
+                                                            : ".pre-v7.db")));
     transaction migration(db);
     sql(db, "CREATE TABLE IF NOT EXISTS spaces(id TEXT PRIMARY KEY,request TEXT NOT NULL,body TEXT "
             "NOT NULL);"
@@ -152,6 +153,9 @@ struct file_store::impl {
             "NULL); PRAGMA user_version=5;");
     sql(db, "CREATE TABLE IF NOT EXISTS security_descriptors(native TEXT PRIMARY KEY,body TEXT NOT "
             "NULL); PRAGMA user_version=6;");
+    sql(db, "CREATE TABLE IF NOT EXISTS smb_close_delete(handle TEXT PRIMARY KEY,space TEXT NOT "
+            "NULL,path TEXT NOT NULL,native TEXT NOT NULL,directory INTEGER NOT NULL,target TEXT "
+            "NOT NULL); PRAGMA user_version=7;");
     migration.commit();
   }
   void audit(const std::string &actor, const std::string &action, const std::string &resource) {

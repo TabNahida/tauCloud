@@ -1,0 +1,10 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793777892
+time: 2026-11-04 07:38:12.184249
+test: rec
+time: 2026-11-04 07:38:12.184345
+TESTING CHANGE NOTIFY WITH RECURSION
+time: 2026-11-04 07:38:13.054859
+failure: rec [
+(source4/torture/smb2/notify.c:642) Incorrect status NT_STATUS_NOTIFY_ENUM_DIR - should be NT_STATUS_OK
+]

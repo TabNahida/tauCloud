@@ -1,5 +1,6 @@
 #include <taucloud/smb.hpp>
 #include <taucloud/files.hpp>
+#include <taucloud/database.hpp>
 #include <taucloud/security.hpp>
 #include <iostream>
 using namespace tc;
@@ -246,6 +247,54 @@ int main() {
     store = std::make_unique<file_store>(cfg, "file", random_hex(16));
     store->dispatch("smb_recover", {}, ctx("smb"));
     ok(!fs::exists(base / "files/alice/renamed"));
+    // CREATE's delete-on-close is per-open, and becomes pending only at close.
+    auto initial_delete = open("close-file", 0x13019f, 7, 3, 0x1040);
+    auto held_delete = open("close-file");
+    ok(!call("stat", "close-file", {{"handle", held_delete}}).at("delete_pending").get<bool>());
+    call("close", "close-file", {{"handle", initial_delete}});
+    rejected([&] { open("close-file"); }, "delete_pending");
+    ok(fs::exists(base / "files/alice/close-file"));
+    call("close", "close-file", {{"handle", held_delete}});
+    ok(!fs::exists(base / "files/alice/close-file"));
+    auto parent_delete = open("close-dir", 0x13019f, 7, 3, 0x1001);
+    auto child_delete = open("close-dir/child");
+    call("close", "close-dir/child", {{"handle", child_delete}});
+    rejected([&] { call("disposition", "close-dir", {{"handle", parent_delete}, {"delete", true}}); },
+             "directory_not_empty");
+    call("close", "close-dir", {{"handle", parent_delete}});
+    ok(fs::exists(base / "files/alice/close-dir/child"));
+    parent_delete = open("close-dir", 0x13019f, 7, 1, 0x1001);
+    call("close", "close-dir", {{"handle", parent_delete}});
+    ok(fs::exists(base / "files/alice/close-dir/child"));
+    // A rename follows the native incarnation, including recovery of either
+    // side of the native/SQL commit boundary.
+    initial_delete = open("close-old", 0x13019f, 7, 3, 0x1040);
+    call("rename", "close-old", {{"handle", initial_delete}, {"target", grant("close-new")}});
+    call("close", "close-new", {{"handle", initial_delete}});
+    ok(!fs::exists(base / "files/alice/close-new"));
+    initial_delete = open("close-crash", 0x13019f, 7, 3, 0x1040);
+    open("close-crash-full", 0x13019f, 7, 3, 0x1001);
+    open("close-crash-full/child");
+    open("close-crash-empty", 0x13019f, 7, 3, 0x1001);
+    {
+      database journal(cfg.state / "file.db");
+      sql(journal, "UPDATE smb_close_delete SET target='close-crash-moved' WHERE path='close-crash'");
+    }
+    fs::rename(base / "files/alice/close-crash", base / "files/alice/close-crash-moved");
+    // A replacement at the former name must never inherit the old intent.
+    open("close-crash");
+    store.reset();
+    store = std::make_unique<file_store>(cfg, "file", random_hex(16));
+    store->dispatch("smb_recover", {}, ctx("smb"));
+    ok(fs::exists(base / "files/alice/close-crash"));
+    ok(!fs::exists(base / "files/alice/close-crash-moved"));
+    ok(fs::exists(base / "files/alice/close-crash-full/child"));
+    ok(!fs::exists(base / "files/alice/close-crash-empty"));
+    {
+      database journal(cfg.state / "file.db");
+      statement left(journal, "SELECT count(*) FROM smb_close_delete");
+      left.row(); ok(left.integer(0) == 0);
+    }
     auto binary = open("binary");
     call("write", "binary",
          {{"handle", binary},

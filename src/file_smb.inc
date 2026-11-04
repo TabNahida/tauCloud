@@ -30,6 +30,38 @@ void smb_sharing(const std::string &space, const std::string &path, uint32_t acc
 }
 void smb_reap(space_state &s) {
   auto space = s.data.at("space").at("id").get<std::string>();
+  // CREATE's DELETE_ON_CLOSE is an open mode, not Link.IsDeleted. Only a
+  // closed (or lost) open activates it; a nonempty directory is left intact.
+  // The durable intent is removed atomically with publishing pending deletion.
+  statement intents(db, "SELECT handle,path,native,directory,target FROM smb_close_delete WHERE space=?");
+  intents.bind(1, space);
+  std::vector<json> closing;
+  while (intents.row())
+    if (!handles.contains(intents.text(0)))
+      closing.push_back({{"handle", intents.text(0)}, {"path", intents.text(1)},
+                         {"native", intents.text(2)}, {"directory", bool(intents.integer(3))},
+                         {"target", intents.text(4)}});
+  for (const auto &intent : closing) {
+    std::string matched;
+    for (const auto &field : {"path", "target"}) {
+      auto path = intent.at(field).get<std::string>();
+      if (path.empty()) continue;
+      auto current = stat_path(s.directory, path, intent.at("directory"));
+      if (!current || current->at("object") != intent.at("native")) continue;
+      if (!intent.at("directory").get<bool>() || s.directory.open(path, true).list().empty())
+        matched = path;
+      break;
+    }
+    transaction tx(db);
+    if (!matched.empty()) {
+      statement mark(db, "INSERT OR IGNORE INTO smb_pending VALUES(?,?,?,?)");
+      mark.bind(1, space); mark.bind(2, matched); mark.bind(3, intent.at("native"));
+      mark.bind(4, int64_t(intent.at("directory").get<bool>())); mark.row();
+    }
+    statement done(db, "DELETE FROM smb_close_delete WHERE handle=?");
+    done.bind(1, intent.at("handle")); done.row();
+    tx.commit();
+  }
   statement q(db, "SELECT path,native,directory FROM smb_pending WHERE space=?");
   q.bind(1, space);
   std::vector<json> rows;
@@ -378,10 +410,6 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     require(!(options & 0x1000) || (!path.empty() && (access & 0x10000)), "forbidden");
     if ((options & 0x1000) && existing)
       security_sticky(s, grant, path);
-    if ((options & 0x1000) && directory && existing) {
-      auto dir = s.directory.open(path, true);
-      require(dir.list().empty(), "directory_not_empty");
-    }
     if (!existing || truncate) {
       require(!path.empty() && grant.at("write").get<bool>(), "forbidden");
       dav_guard(s, path, actor, body, false, !existing);
@@ -462,12 +490,10 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     h.directory = directory;
     auto meta = smb_meta(s, h);
     if (options & 0x1000) {
-      statement mark(db, "INSERT OR REPLACE INTO smb_pending VALUES(?,?,?,?)");
-      mark.bind(1, space);
-      mark.bind(2, path);
-      mark.bind(3, meta.at("object"));
-      mark.bind(4, int64_t(directory));
-      mark.row();
+      statement intent(db, "INSERT INTO smb_close_delete VALUES(?,?,?,?,?,?)");
+      intent.bind(1, id); intent.bind(2, space); intent.bind(3, path);
+      intent.bind(4, meta.at("object")); intent.bind(5, int64_t(directory));
+      intent.bind(6, std::string()); intent.row();
     }
     handles.emplace(id, std::move(h));
     meta["maximal_access"] = permitted;
@@ -855,8 +881,17 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
       require(!beneath(pending_tree.text(0), path) && !beneath(pending_tree.text(0), to),
               "delete_pending");
     lease(target, ctx);
+    // Record both possible names before the native rename. Recovery checks
+    // native incarnation at either name and never deletes a replacement.
+    statement intent_target(db, "UPDATE smb_close_delete SET target=? WHERE space=? AND path=?");
+    intent_target.bind(1, to); intent_target.bind(2, space); intent_target.bind(3, path);
+    intent_target.row();
+    // On failure keep both names: flush can fail after a successful rename.
     s.directory.rename(path, to, body.value("replace", false), h.directory);
     s.directory.flush();
+    statement intent_moved(db, "UPDATE smb_close_delete SET path=?,target='' WHERE space=? AND path=?");
+    intent_moved.bind(1, to); intent_moved.bind(2, space); intent_moved.bind(3, path);
+    intent_moved.row();
     // A native rename is atomic. Rescan reconciles the path index after a crash in the SQL gap.
     for (auto &[other, x] : handles)
       if (x.space == space && beneath(x.path, path))

@@ -33,12 +33,14 @@ std::vector<std::string> backup_names() {
 }
 void scrub(const fs::path &path, const std::string &name) {
   database db(path);
+  int64_t schema;
   {
     statement version(db, "PRAGMA user_version");
     require(version.row() &&
                 (name == "identity.db" ? version.integer(0) == 4
-                                       : (version.integer(0) >= 3 && version.integer(0) <= 6)),
+                                       : (version.integer(0) >= 3 && version.integer(0) <= 7)),
             "unsupported_backup_schema");
+    schema = version.integer(0);
   }
   if (name == "identity.db") {
     sql(db, "PRAGMA secure_delete=ON; DELETE FROM smb_credentials; DELETE FROM sessions; DELETE "
@@ -53,6 +55,10 @@ void scrub(const fs::path &path, const std::string &name) {
     }
     statement pending(db, "SELECT count(*) FROM smb_pending");
     require(pending.row() && pending.integer(0) == 0, "unfinished_jobs");
+    if (schema >= 7) {
+      statement closing(db, "SELECT count(*) FROM smb_close_delete");
+      require(closing.row() && closing.integer(0) == 0, "unfinished_jobs");
+    }
     sql(db, "DELETE FROM dav_locks;");
   }
   sql(db, "PRAGMA wal_checkpoint(TRUNCATE)");

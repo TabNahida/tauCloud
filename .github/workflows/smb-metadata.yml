@@ -18,6 +18,8 @@ on:
       - 'tests/samba-profile.json'
       - 'src/file_smb.inc'
       - 'src/files.cpp'
+      - 'src/backup.cpp'
+      - 'tests/smb_delete_on_close.py'
       - 'src/security.cpp'
       - 'src/file_security.inc'
       - 'include/taucloud/security.hpp'
@@ -105,6 +107,8 @@ jobs:
         run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_m2_tests${{ matrix.suffix }}
       - name: SMB authority and failed CREATE cleanup
         run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_m5_tests${{ matrix.suffix }}
+      - name: SMB per-open delete-on-close and durable recovery
+        run: python tests/smb_delete_on_close.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/smb-delete-close.json
       - name: NFSv4.1 reverse RPC, callback sequence replay and lifecycle
         run: python tests/nfs_backchannel_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/nfs-backchannel.json
       - name: NFSv4.1 channel limits and CREATE_SESSION replay

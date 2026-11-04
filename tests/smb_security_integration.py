@@ -164,14 +164,14 @@ def main():
             if isinstance(client,Client):client.close()
             else:client.disconnect()
         clients=[];f.stop()
-        db=sqlite3.connect(f.state/'file.db');assert db.execute('PRAGMA user_version').fetchone()[0]==6;db.close()
+        db=sqlite3.connect(f.state/'file.db');assert db.execute('PRAGMA user_version').fetchone()[0]==7;db.close()
         f.start();t=connect();bt=connect('bob')
         denied(lambda:create(bt,'private',access=1,disposition=1),0xc0000022)
         denied(lambda:create(bt,'renamed-private',access=1,disposition=1),0xc0000022)
         h=create(t,'private',access=FULL,disposition=1);assert parse(get_sd(h))['dacl'][0][0]==1
         deletion=FileDispositionInformation();deletion['delete_pending']=True;setinfo(h,deletion);h.close()
         h=create(bt,'private',access=FULL);assert parse(get_sd(h))['owner']==bob;h.close()
-        passed('schema 6 durability across process restart; replacement object receives fresh owner and ACL')
+        passed('schema 7 durability across process restart; replacement object receives fresh owner and ACL')
         # Change the single writer protocol so write-denial is tested at the file
         # DACL rather than stopped by the earlier readonly share policy.
         f.api('shares',f.admin,dict(id='smb',space='smbdata',exposures={'smb':'r'},update=True))
