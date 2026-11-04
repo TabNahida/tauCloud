@@ -143,13 +143,15 @@ Selected-profile acceptance: [M7 guide](docs/m7.md), [中文](docs/m7.zh-CN.md),
 The independent NFS native owner now acknowledges bounded request reservations:
 completion preserves a full lease, cancellation does not renew, duplicates
 cannot renew, and recall remains fixed. Native tmpfs/ext4 tests include worker
-SIGKILL after ACK. File-domain and network lifetime integration plus recovery
-remain open ([details](docs/nfs-delegations.md#native-request-reservations)).
+SIGKILL after ACK. File-domain capability routing now handles bounded, retry-safe
+reservations and cleanup after grant expiry/revocation (536 host / 761 Linux 6.19
+checks). Network receipt/reply integration and recovery remain open
+([details](docs/nfs-delegations.md#native-request-reservations)).
 
 SMB DELETE_OBJECT_ID and SET_OBJECT_ID_EXTENDED now preserve the underlying
 object and first 16-byte identity, enforce open/share write permissions and
-resume after cache recall. Four-dialect local checks pass; Windows mutations
-await Actions. NTFS native recreation semantics and NFS owner deadlines now
+resume after cache recall. Four-dialect local checks and 12 Windows mutation
+groups pass ([Windows evidence](docs/evidence/pre-m8/smb-object-id-mutations-2de-windows.json)). NTFS native recreation semantics and NFS owner deadlines now
 have fixed-source remote passes. SET_OBJECT_ID/volume-wide uniqueness, USN and
 link tracking remain open ([details](docs/smb-object-identifiers.md)).
 
@@ -161,8 +163,11 @@ discard an already acknowledged coherence extension. Local component and Linux
 
 SMB directory-search initialization now survives native cache recall/retry.
 The regression fails on the old binary and passes on all four tested dialects;
-Linux CIFS/macOS native reacceptance remains pending
-([evidence](docs/evidence/pre-m8/smb-directory-retry-local.json)).
+Linux CIFS passes all four native dialect profiles at `c4226c2`, but that workflow
+fails while writing diagnostics to an absent directory; the harness now creates
+it before mounting. macOS reacceptance remains pending
+([local regression](docs/evidence/pre-m8/smb-directory-retry-local.json),
+[remote profiles and harness failure](docs/evidence/pre-m8/smb-c422-native-profiles.json)).
 
 NFS receipt tracking now preserves protocol state while complete records wait
 in the executor or for its protocol mutex. Failed/cancelled requests cannot

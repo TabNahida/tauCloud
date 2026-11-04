@@ -70,6 +70,12 @@ class Fixture:
         except Exception:
             self.log.flush()
             print('Worker startup status:', json.dumps(last_status), file=sys.stderr)
+            for role, status in last_status.items():
+                if status.get('status') == 'running':
+                    continue
+                path = self.state / 'logs' / (role + '.jsonl')
+                if path.is_file():
+                    print('Worker startup log:', role, path.read_text(errors='replace')[-16384:], file=sys.stderr)
             print((self.base/'supervisor.log').read_text(errors='replace')[-16384:], file=sys.stderr)
             raise
     def stop(self):

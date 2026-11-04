@@ -1,0 +1,60 @@
+{
+  "status": "workflow_failed_after_native_profiles_passed",
+  "source": "c4226c2a85c5096214ebd4c490984d8d4fcbb8b2",
+  "url": "https://github.com/TabNahida/tauCloud/actions/runs/41928946198",
+  "artifact_sha256": "911f24d7047c14c1eb775cfd6cb57d4b25fe653ce3b146466a9847322c0dcfcc",
+  "native": {
+    "status": "passed",
+    "profiles": [
+      {
+        "dialect": "2.1",
+        "security": "krb5",
+        "status": "passed",
+        "checks": [
+          "kernel CIFS Kerberos mount",
+          "mandatory signing",
+          "1 MiB write/fsync/read",
+          "rename/overwrite/truncate/enumerate/delete"
+        ]
+      },
+      {
+        "dialect": "3.0",
+        "security": "krb5",
+        "status": "passed",
+        "checks": [
+          "kernel CIFS Kerberos mount",
+          "required SMB3 encryption",
+          "1 MiB write/fsync/read",
+          "rename/overwrite/truncate/enumerate/delete"
+        ]
+      },
+      {
+        "dialect": "3.02",
+        "security": "krb5",
+        "status": "passed",
+        "checks": [
+          "kernel CIFS Kerberos mount",
+          "required SMB3 encryption",
+          "1 MiB write/fsync/read",
+          "rename/overwrite/truncate/enumerate/delete"
+        ]
+      },
+      {
+        "dialect": "3.1.1",
+        "security": "krb5",
+        "status": "passed",
+        "checks": [
+          "kernel CIFS Kerberos mount",
+          "required SMB3 encryption",
+          "1 MiB write/fsync/read",
+          "rename/overwrite/truncate/enumerate/delete"
+        ]
+      }
+    ]
+  },
+  "failure": "FileNotFoundError while writing smb-gss.native-metadata.json: parent acceptance directory absent.",
+  "repair": "Create the output directory before mounting and before diagnostic writes.",
+  "limits": [
+    "All four kernel CIFS/Kerberos profiles report passed; whole-job acceptance requires a new passing run."
+  ]
+}

@@ -12,6 +12,10 @@ from smb_trace_proxy import HeaderProxy
 
 
 def exercise(fixture, kdc, host, output, report):
+    # Standalone Actions starts without an acceptance directory. Prepare it
+    # before mounting, so diagnostic writes cannot mask a protocol failure.
+    output = output.resolve()
+    output.parent.mkdir(parents=True, exist_ok=True)
     def run(command, timeout=45, check=True):
         result = subprocess.run(command, text=True, capture_output=True, timeout=timeout)
         if check:
