@@ -1,6 +1,6 @@
 # NFSv4.1 operation coverage
 
-This is an implementation and test map for the regular-file/directory AUTH_SYS profile. It is not a declaration of complete RFC 8881 conformance. The [RFC operation table](https://www.rfc-editor.org/rfc/rfc8881.html#section-17) is the source of the required/optional distinction. Linux RPCSEC_GSS authentication/integrity/privacy is now implemented and independently tested (see [Kerberos](nfs-kerberos.md)); TCP backchannel binding and AUTH_NONE/AUTH_SYS CB_NULL probes are implemented; SSV, CB_COMPOUND, GSS callbacks, delegation and pNFS layouts remain unfinished.
+This is an implementation and test map for the regular-file/directory AUTH_SYS profile. It is not a declaration of complete RFC 8881 conformance. The [RFC operation table](https://www.rfc-editor.org/rfc/rfc8881.html#section-17) is the source of the required/optional distinction. Linux RPCSEC_GSS authentication/integrity/privacy is now implemented and independently tested (see [Kerberos](nfs-kerberos.md)); TCP backchannel binding, AUTH_NONE/AUTH_SYS CB_NULL and solo CB_COMPOUND/CB_SEQUENCE probes with slot replay are implemented; SSV, other callback operations, GSS callbacks, delegation and pNFS layouts remain unfinished.
 
 | Required operations | Implementation | Executable evidence |
 | --- | --- | --- |
@@ -25,3 +25,5 @@ The obsolete v4.0 operations OPEN_CONFIRM, RENEW, SETCLIENTID, SETCLIENTID_CONFI
 The upstream regular-file/directory invocation is `all nodeleg noblock nochar nofifo nosocket nosymlink noRNM20`: the recorded result is 145 passed, 121 not selected, zero failed. The omitted cases remain visible in the report. RNM20 requires hardlinks; RNM21 replacement and trunking cases are included. Native kernel close-to-open cache revalidation, native NLM reboot recovery and Windows Client for NFS results are separately required; operation coverage alone cannot establish those results.
 
 Simple NFSv4 ACL attribute and mode synchronization are implemented in `src/file_nfs_security.inc` and `src/security.cpp`; independent coverage is in `tests/nfs_acl_integration.py`. The twelve mode bits, SETATTR-only mode_set_masked, group inheritance, sticky namespace protection and set-ID clearing are implemented with tests in `tests/nfs_mode_integration.py`. Audit/alarm, separate dacl/sacl attributes and complete ownership/domain semantics remain open; see [shared security](file-security.md).
+
+Solo CB_SEQUENCE callback sequencing, exact retry, transport failover, session teardown and dynamic slot maxima are covered by `tests/nfs_backchannel_integration.py` ([local evidence](evidence/pre-m8/nfs-cb-sequence-local.json)); this does not yet exercise delegation/recall authority.

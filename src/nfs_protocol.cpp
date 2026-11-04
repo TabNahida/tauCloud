@@ -803,6 +803,7 @@ void server::disconnect(const std::string &connection) {
     session.connections.erase(connection);
     session.back_connections.erase(connection);
     session.callback_up.erase(connection);
+    session.callback_ready.erase(connection);
   }
   std::erase_if(impl_->callback_probes, [&](const auto &p) { return p.second.connection == connection; });
 }

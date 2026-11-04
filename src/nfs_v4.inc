@@ -24,8 +24,10 @@ struct session {
   std::vector<uint32_t> callback_flavors;
   uint32_t callback_flavor = UINT32_MAX;
   std::string callback_credential;
-  std::set<std::string> back_connections, callback_up;
-  uint32_t callback_request_limit = 0;
+  std::set<std::string> back_connections, callback_up, callback_ready;
+  uint32_t callback_request_limit = 0, callback_response_limit = 0;
+  uint32_t callback_slots = 0, callback_sequence = 1;
+  bool callback_unresolved = false;
 
 };
 struct open_state {
@@ -958,6 +960,8 @@ std::string v4(const identity &who, reader &r) {
           sessions.at(idstr).callback_flavors = a.at("callback_flavors").get<std::vector<uint32_t>>();
           auto &created = sessions.at(idstr);
           created.callback_request_limit = back[1];
+          created.callback_response_limit = back[2];
+          created.callback_slots = back[5];
           configure_callback(created, a);
           bool backchannel = (a.at("flags").get<uint32_t>() & 2) && callback_available(created);
           if (backchannel) created.back_connections.insert(connection);
@@ -1006,7 +1010,8 @@ std::string v4(const identity &who, reader &r) {
             .u32(n)
             .u32(uint32_t(s.slots.size() - 1))
             .u32(uint32_t(s.slots.size() - 1))
-            .u32(callback_path_up(s.client) ? 0 : 1);
+            .u32((callback_path_up(s.client) ? 0 : 1) |
+                 (s.callback_unresolved && s.back_connections.empty() ? 0x200 : 0));
       } else if (op == 41) {
         auto id = a.at("session").get<std::string>();
         auto &s = session_check(id);
@@ -1094,6 +1099,7 @@ std::string v4(const identity &who, reader &r) {
           s.callback_flavors = std::move(flavors);
           configure_callback(s, a);
           s.callback_up.clear();
+          s.callback_ready.clear();
           for (const auto &bound : s.back_connections) probe_callback(sid, bound);
         } else if (op == 54) {
           check(false, 22); // SET_SSV is invalid for the negotiated SP4_NONE.
