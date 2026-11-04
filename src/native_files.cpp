@@ -17,6 +17,7 @@
 #include <linux/falloc.h>
 #include <sys/stat.h>
 #include <sys/statvfs.h>
+#include <sys/xattr.h>
 #include <sys/syscall.h>
 #include <sys/inotify.h>
 #include <unistd.h>
@@ -252,6 +253,60 @@ std::string native_file::stable_identity() const {
               h->handle_bytes > 0 && h->handle_bytes <= 128, "stable_handles_unavailable");
   return info().at("object").get<std::string>() + ":" + std::to_string(h->handle_type) + ":" +
          encode_bytes(std::string_view(reinterpret_cast<char *>(h->f_handle), h->handle_bytes));
+#endif
+}
+std::optional<std::string> native_file::object_identifier(bool create) const {
+  auto identity = info().at("object").get<std::string>();
+#ifdef _WIN32
+  FILE_OBJECTID_BUFFER value{};
+  DWORD size = 0;
+  if (!DeviceIoControl(impl_->file->handle,
+                       create ? FSCTL_CREATE_OR_GET_OBJECT_ID : FSCTL_GET_OBJECT_ID,
+                       nullptr, 0, &value, sizeof(value), &size, nullptr)) {
+    auto code = GetLastError();
+    if (!create && code == ERROR_OBJECT_NOT_FOUND) return std::nullopt;
+    if (code == ERROR_INVALID_FUNCTION || code == ERROR_NOT_SUPPORTED)
+      throw error("invalid_device_request");
+    native_error();
+  }
+  require(size == 64, "invalid_object_identifier");
+  return std::string(reinterpret_cast<const char *>(&value), 64);
+#else
+  // A copied xattr must not give a new inode the source object's identifier.
+  // The file authority serializes mutations, including replacement of copied
+  // records. XATTR_CREATE also resolves concurrent first-time native callers.
+  constexpr auto key = "user.taucloud.object-id.v1";
+  auto prefix = identity + '\0';
+  for (int attempt = 0; attempt < 3; ++attempt) {
+    char stored[1024];
+    auto length = fgetxattr(impl_->file->handle, key, stored, sizeof(stored));
+    bool exists = length >= 0;
+    if (length < 0 && errno != ENODATA) {
+      if (errno == EOPNOTSUPP) throw error("invalid_device_request");
+      native_error();
+    }
+    if (exists) {
+      std::string_view value(stored, static_cast<size_t>(length));
+      if (value.size() == prefix.size() + 64 && value.starts_with(prefix))
+        return std::string(value.substr(prefix.size()));
+    }
+    if (!create) return std::nullopt;
+    auto id = decode_bytes(random_hex(16));
+    // UUID version 4, encoded as a GUID (little-endian first three fields).
+    id[7] = char((uint8_t(id[7]) & 15) | 0x40);
+    id[8] = char((uint8_t(id[8]) & 63) | 0x80);
+    // Linux has no volume object ID here. MS-FSCC permits a zero birth volume.
+    auto value = prefix + id + std::string(16, '\0') + id + std::string(16, '\0');
+    if (fsetxattr(impl_->file->handle, key, value.data(), value.size(),
+                 exists ? XATTR_REPLACE : XATTR_CREATE) == 0) {
+      flush();
+      return value.substr(prefix.size());
+    }
+    if (errno == EEXIST || errno == ENODATA) continue;
+    if (errno == EOPNOTSUPP) throw error("invalid_device_request");
+    native_error();
+  }
+  throw error("conflict");
 #endif
 }
 json native_file::info(bool change_stamp) const {

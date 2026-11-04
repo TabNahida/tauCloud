@@ -53,6 +53,9 @@ public:
   json info(bool change_stamp = false) const;
   // Filesystems without native incarnation evidence are ineligible for persistent NFS handles.
   std::string stable_identity() const;
+  // Persistent SMB FILE_OBJECTID_BUFFER; absent unless explicitly created.
+  // Metadata remains bound to this native incarnation across host renames.
+  std::optional<std::string> object_identifier(bool create = false) const;
   // Internal enumeration avoids Linux atime updates where ownership permits.
   // Client-requested directory reads retain their native access behavior.
   std::vector<json> list(bool preserve_access = false) const;

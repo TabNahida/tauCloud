@@ -44,8 +44,8 @@ session keys or file contents.
 [Local evidence](evidence/pre-m8/smb-compound-framing-local.json) retains the
 pre-fix reproduction, final component results and remaining unmodified Samba
 failures. The complete Full SMB/NFS gate and fixed-source native reacceptance
-remain open. In particular, `related3` still requires
-FSCTL_CREATE_OR_GET_OBJECT_ID, `interim2` expects Windows' special rejection of
+remain open. `related3` now passes locally with the separately implemented
+[persistent object-ID IOCTL](smb-object-identifiers.md). `interim2` expects Windows' special rejection of
 an indefinite non-final CHANGE_NOTIFY, and `write_write`/`read_read` expect
 asynchronous scheduling for otherwise immediately completed I/O. The separate
 `compound-padding` case stops at its unsupported named-stream prerequisite;

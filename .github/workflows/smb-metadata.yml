@@ -38,6 +38,7 @@ on:
       - 'tests/smb_notify_peers.py'
       - 'tests/smb_blocking_locks.py'
       - 'tests/smb_compound_async.py'
+      - 'tests/smb_object_id.py'
       - 'tests/samba-profile.json'
       - 'src/file_smb.inc'
       - 'src/files.cpp'
@@ -149,6 +150,12 @@ jobs:
         run: xmake -y -j 8
       - name: Native cache exclusion, cancellation and allocation safety
         run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_m2_tests${{ matrix.suffix }}
+      - name: Persistent SMB object identifiers and authority
+        if: ${{ !cancelled() && steps.compile.outcome == 'success' }}
+        run: python tests/smb_object_id.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/object-id.json
+      - name: Original Samba related CREATE object-ID IOCTL CLOSE compound
+        if: ${{ !cancelled() && steps.compile.outcome == 'success' && runner.os == 'Linux' }}
+        run: python tests/samba_torture.py ${{ matrix.test_options }} --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/samba-object-id-compound.json smb2.compound.related3
       - name: NFS core and independent SSV cryptographic vectors
         if: ${{ !cancelled() && steps.compile.outcome == 'success' }}
         run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_m7_tests${{ matrix.suffix }}

@@ -1343,6 +1343,26 @@ struct client : session_state, std::enable_shared_from_this<client> {
         }
       }
       auto &h = handle(p, 72, tid);
+      auto control = get(p, 68, 4);
+      if (control == 0x900c0 || control == 0x9009c) {
+        check(get(p, 112, 4) == 1, 0xc00000bb);
+        check(!h.pipe && get(p, 92, 4) == 0 && get(p, 104, 4) == 0 &&
+                  get(p, 108, 4) >= 64 && get(p, 108, 4) <= 65536);
+        // GET never creates metadata. CREATE_OR_GET may reuse an existing ID
+        // under read authority; first creation needs a fresh write grant.
+        auto result = co_await operation(h, "object_id", false);
+        if (result.at("identifier").is_null() && control == 0x900c0)
+          result = co_await operation(h, "create_object_id", true);
+        check(!result.at("identifier").is_null(), 0xc00002f0);
+        auto value = decode_bytes(result.at("identifier").get<std::string>());
+        check(value.size() == 64);
+        auto b = sized(48, 49);
+        put(b, 4, control, 4);
+        b.replace(8, 16, fid_for(h));
+        put(b, 32, 112, 4);
+        put(b, 36, value.size(), 4);
+        co_return b + value;
+      }
       check(get(p, 68, 4) == 0x11c017 && get(p, 112, 4) == 1, 0xc00000bb);
       check(h.pipe && h.pending.empty());
       auto data = slice(p, get(p, 88, 4), get(p, 92, 4), 120);

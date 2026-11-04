@@ -1,0 +1,611 @@
+{
+  "recorded_at": "2026-11-04T21:57:17.272473+00:00",
+  "base_source": "2294038cfe9e5c8bcf21243e589809664c6d9eaf",
+  "status": "local_passed_remote_pending",
+  "full_conformance": false,
+  "scope": "Persistent CREATE_OR_GET_OBJECT_ID and GET_OBJECT_ID; native NTFS path awaits remote acceptance",
+  "files_sha256": {
+    "include/taucloud/files.hpp": "ecb9669db2d00d107bdf4918a91e25bed1b3c47d6b3817aed71900342d7eed40",
+    "src/native_files.cpp": "ddbd54283ae16171abcad93e50afb194af5d0e8264dc4385567de8868754abe4",
+    "src/file_smb.inc": "7800c8824dde91577722d3af5d5583a4f94d1af4af08dfb9bcde0f640d998830",
+    "src/smb.cpp": "731a9d8c689dfe93782f029b51565ce37f0e43531af68de2e71a5f2eb08b4867",
+    "tests/smb_object_id.py": "6ac6478a07ef7ff96688581df7a9cd995d7eb80a2709bea1201c95fe38c8b982",
+    ".github/workflows/smb-metadata.yml": "a8f01d8477b7f6c2795ecabd8a087a0985fd8d090e3fb61c33a9eef7f84d4495"
+  },
+  "reports": {
+    "object_ids_initial": {
+      "sha256": "3433c6ae93b5498b5be687e56dcee66541fc5518b603d72a682d71ffb62c4b53",
+      "report": {
+        "status": "failed",
+        "checks": [
+          "210: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+          "300: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+          "302: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+          "311: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories"
+        ],
+        "recorded_at": "2026-11-04T21:54:54.453365+00:00",
+        "error": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/tests/smb_object_id.py\", line 116, in main\n    h = create(t, copied.name, disposition=1)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/tests/m5_integration.py\", line 42, in create\n    h=Open(tree,name);h.create(ImpersonationLevel.Impersonation,access,FileAttributes.FILE_ATTRIBUTE_NORMAL,share,disposition,options);return h\n                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/.deps/nfs-venv/lib/python3.12/site-packages/smbprotocol/open.py\", line 1160, in create\n    return self._create_response(request)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/.deps/nfs-venv/lib/python3.12/site-packages/smbprotocol/open.py\", line 1168, in _create_response\n    response = self.connection.receive(request)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/.deps/nfs-venv/lib/python3.12/site-packages/smbprotocol/connection.py\", line 1103, in receive\n    raise SMBResponseException(response)\nsmbprotocol.exceptions.ObjectNameNotFound: Received unexpected status from the server: The object name is not found. (3221225524) STATUS_OBJECT_NAME_NOT_FOUND: 0xc0000034\n"
+      }
+    },
+    "object_ids_final": {
+      "sha256": "9eb73dbaa30b9a8bddff737de895ab2be1ce6c0c9600ecaa25a24f67277fd9ce",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "210: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+          "300: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+          "302: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+          "311: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+          "copying Linux data and xattrs cannot clone the source object identifier",
+          "identifiers survive all-service restart and out-of-band native rename",
+          "delete and same-name recreation do not inherit the old identifier",
+          "read-only share can retrieve existing IDs but cannot create metadata"
+        ],
+        "recorded_at": "2026-11-04T21:55:37.533488+00:00"
+      }
+    },
+    "attributes": {
+      "sha256": "86962dee9b9fce3e3d247cacf16c3f2f881e7b3e8f9850e64b88163fc2db70a8",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "CREATE/QUERY/SET persistent DOS attributes, zero/no-change and NORMAL semantics; readonly open/delete checks and granted-handle authority",
+          "four independent timestamps, native mtime, zero/no-change, per-handle explicit/-1 freeze and -2 re-enable; invalid times reject before attribute mutation",
+          "binary extended attributes on CREATE/QUERY/SET, case-insensitive updates, deletion, restart, NEED_EA and access rights; malformed chains reject atomically",
+          "attributes follow native object across rename/restart, directory invariants hold, replacement object does not inherit stale metadata",
+          "per-open mode CREATE/QUERY/SET and FileAllInformation agreement, write-through writes, independent handles, invalid synchronous/immutable modes and SMB2 ignored synchronous CREATE flags",
+          "EA cursor paging, restart, single-entry and explicit indexes, independent opens, bounded whole-entry overflow and undersized-buffer retries",
+          "selected-name EA queries preserve request order and scan cursor, ignore index/restart, match case-insensitively, return absent names, bound output and reject malformed chains without cursor changes",
+          "MxAc maximal access uses fresh policy and readonly restrictions, supports optional change-time comparison and chained QFid replies, rejects malformed/duplicate contexts before mutation",
+          "EA writes atomically update change time/archive while respecting frozen timestamps; exact 65531-byte aggregate limit and standard invalid-name/list statuses"
+        ]
+      }
+    },
+    "samba_related3": {
+      "sha256": "5b4d456ebfe8fea63f13a1de5bdfd893de06afeaee2fb5a01f2ba0d328408ba7",
+      "report": {
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "recorded_at": "2026-11-04T21:54:54.451087+00:00",
+        "tests": [
+          {
+            "selector": "smb2.compound.related3",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "taucloud-object-id-samba-smb2.compound.related3.log",
+            "services_before": {
+              "api": {
+                "failures": [],
+                "generation": "28e8a7c5fa370528b288cccf748d878c",
+                "identity": {
+                  "birth": 34246524,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_api",
+                  "generation": "28e8a7c5fa370528b288cccf748d878c",
+                  "pid": 1851521,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 89190400,
+                "started": 1793829300914,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file": {
+                "failures": [],
+                "generation": "daff85ca33385135366307fcaae263ee",
+                "identity": {
+                  "birth": 34246354,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file",
+                  "generation": "daff85ca33385135366307fcaae263ee",
+                  "pid": 1851381,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 66760704,
+                "started": 1793829299214,
+                "status": "running",
+                "open_descriptors": 13
+              },
+              "file_1": {
+                "failures": [],
+                "generation": "ebdc4e2d7bf7459d781512dacb4e7814",
+                "identity": {
+                  "birth": 34246366,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_1",
+                  "generation": "ebdc4e2d7bf7459d781512dacb4e7814",
+                  "pid": 1851389,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 61861888,
+                "started": 1793829299339,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file_2": {
+                "failures": [],
+                "generation": "cb695742575622a86d9c79e36e324424",
+                "identity": {
+                  "birth": 34246378,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_2",
+                  "generation": "cb695742575622a86d9c79e36e324424",
+                  "pid": 1851400,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 60600320,
+                "started": 1793829299461,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file_3": {
+                "failures": [],
+                "generation": "da666fc36d3b9bb9631031083ad6458e",
+                "identity": {
+                  "birth": 34246391,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_3",
+                  "generation": "da666fc36d3b9bb9631031083ad6458e",
+                  "pid": 1851408,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 61280256,
+                "started": 1793829299588,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "ftp": {
+                "failures": [],
+                "generation": "47c8132aa7db8672878b6a5d543b7db2",
+                "identity": {
+                  "birth": 34246474,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_ftp",
+                  "generation": "47c8132aa7db8672878b6a5d543b7db2",
+                  "pid": 1851474,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 51965952,
+                "started": 1793829300421,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "helper": {
+                "failures": [],
+                "generation": "3df6648fae1bd91cf8877378145e315b",
+                "identity": {
+                  "birth": 34246451,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_helper",
+                  "generation": "3df6648fae1bd91cf8877378145e315b",
+                  "pid": 1851448,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 52350976,
+                "started": 1793829300185,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "identity": {
+                "failures": [],
+                "generation": "a159142bde3d693d7030cf8172d63e1c",
+                "identity": {
+                  "birth": 34246341,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_identity",
+                  "generation": "a159142bde3d693d7030cf8172d63e1c",
+                  "pid": 1851373,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 142168064,
+                "started": 1793829299088,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "monitor": {
+                "failures": [],
+                "generation": "659874c066c8cf099044a91be3c59ace",
+                "identity": {
+                  "birth": 34246415,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_monitor",
+                  "generation": "659874c066c8cf099044a91be3c59ace",
+                  "pid": 1851424,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 51867648,
+                "started": 1793829299831,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "nfs": {
+                "failures": [],
+                "generation": "836e8f10f821c5a368fb758a643355d3",
+                "identity": {
+                  "birth": 34246499,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_nfs",
+                  "generation": "836e8f10f821c5a368fb758a643355d3",
+                  "pid": 1851499,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 51933184,
+                "started": 1793829300670,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "plugins": {
+                "failures": [],
+                "generation": "d9296525f44a457cca1184b59d30f381",
+                "identity": {
+                  "birth": 34246512,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_plugins",
+                  "generation": "d9296525f44a457cca1184b59d30f381",
+                  "pid": 1851508,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 52502528,
+                "started": 1793829300796,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "protocol": {
+                "failures": [],
+                "generation": "ef7a7020b54c9ab292cf7ac35029d165",
+                "identity": {
+                  "birth": 34246403,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_protocol",
+                  "generation": "ef7a7020b54c9ab292cf7ac35029d165",
+                  "pid": 1851416,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 51785728,
+                "started": 1793829299713,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "smb": {
+                "failures": [],
+                "generation": "51d768e857f9d02e7455e28ab0393280",
+                "identity": {
+                  "birth": 34246487,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_smb",
+                  "generation": "51d768e857f9d02e7455e28ab0393280",
+                  "pid": 1851479,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 57122816,
+                "started": 1793829300545,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "storage_admin": {
+                "failures": [],
+                "generation": "6ba15a67e773292c974ef9c3dc97bbaf",
+                "identity": {
+                  "birth": 34246439,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_storage_admin",
+                  "generation": "6ba15a67e773292c974ef9c3dc97bbaf",
+                  "pid": 1851440,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 51953664,
+                "started": 1793829300067,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "updater": {
+                "failures": [],
+                "generation": "8547b645022c427f77f5a37c569ee3ef",
+                "identity": {
+                  "birth": 34246427,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_updater",
+                  "generation": "8547b645022c427f77f5a37c569ee3ef",
+                  "pid": 1851432,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 52297728,
+                "started": 1793829299949,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "webdav": {
+                "failures": [],
+                "generation": "ebe935cf3a5360020e9627c4a74db906",
+                "identity": {
+                  "birth": 34246462,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_webdav",
+                  "generation": "ebe935cf3a5360020e9627c4a74db906",
+                  "pid": 1851461,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 56889344,
+                "started": 1793829300303,
+                "status": "running",
+                "open_descriptors": 8
+              }
+            },
+            "services_after": {
+              "api": {
+                "failures": [],
+                "generation": "28e8a7c5fa370528b288cccf748d878c",
+                "identity": {
+                  "birth": 34246524,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_api",
+                  "generation": "28e8a7c5fa370528b288cccf748d878c",
+                  "pid": 1851521,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 93122560,
+                "started": 1793829300914,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file": {
+                "failures": [],
+                "generation": "daff85ca33385135366307fcaae263ee",
+                "identity": {
+                  "birth": 34246354,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file",
+                  "generation": "daff85ca33385135366307fcaae263ee",
+                  "pid": 1851381,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 67940352,
+                "started": 1793829299214,
+                "status": "running",
+                "open_descriptors": 15
+              },
+              "file_1": {
+                "failures": [],
+                "generation": "ebdc4e2d7bf7459d781512dacb4e7814",
+                "identity": {
+                  "birth": 34246366,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_1",
+                  "generation": "ebdc4e2d7bf7459d781512dacb4e7814",
+                  "pid": 1851389,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 64221184,
+                "started": 1793829299339,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file_2": {
+                "failures": [],
+                "generation": "cb695742575622a86d9c79e36e324424",
+                "identity": {
+                  "birth": 34246378,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_2",
+                  "generation": "cb695742575622a86d9c79e36e324424",
+                  "pid": 1851400,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 62959616,
+                "started": 1793829299461,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file_3": {
+                "failures": [],
+                "generation": "da666fc36d3b9bb9631031083ad6458e",
+                "identity": {
+                  "birth": 34246391,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_3",
+                  "generation": "da666fc36d3b9bb9631031083ad6458e",
+                  "pid": 1851408,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 63639552,
+                "started": 1793829299588,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "ftp": {
+                "failures": [],
+                "generation": "47c8132aa7db8672878b6a5d543b7db2",
+                "identity": {
+                  "birth": 34246474,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_ftp",
+                  "generation": "47c8132aa7db8672878b6a5d543b7db2",
+                  "pid": 1851474,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 55898112,
+                "started": 1793829300421,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "helper": {
+                "failures": [],
+                "generation": "3df6648fae1bd91cf8877378145e315b",
+                "identity": {
+                  "birth": 34246451,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_helper",
+                  "generation": "3df6648fae1bd91cf8877378145e315b",
+                  "pid": 1851448,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 56479744,
+                "started": 1793829300185,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "identity": {
+                "failures": [],
+                "generation": "a159142bde3d693d7030cf8172d63e1c",
+                "identity": {
+                  "birth": 34246341,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_identity",
+                  "generation": "a159142bde3d693d7030cf8172d63e1c",
+                  "pid": 1851373,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 142757888,
+                "started": 1793829299088,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "monitor": {
+                "failures": [],
+                "generation": "659874c066c8cf099044a91be3c59ace",
+                "identity": {
+                  "birth": 34246415,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_monitor",
+                  "generation": "659874c066c8cf099044a91be3c59ace",
+                  "pid": 1851424,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 55996416,
+                "started": 1793829299831,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "nfs": {
+                "failures": [],
+                "generation": "836e8f10f821c5a368fb758a643355d3",
+                "identity": {
+                  "birth": 34246499,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_nfs",
+                  "generation": "836e8f10f821c5a368fb758a643355d3",
+                  "pid": 1851499,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 55865344,
+                "started": 1793829300670,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "plugins": {
+                "failures": [],
+                "generation": "d9296525f44a457cca1184b59d30f381",
+                "identity": {
+                  "birth": 34246512,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_plugins",
+                  "generation": "d9296525f44a457cca1184b59d30f381",
+                  "pid": 1851508,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 56434688,
+                "started": 1793829300796,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "protocol": {
+                "failures": [],
+                "generation": "ef7a7020b54c9ab292cf7ac35029d165",
+                "identity": {
+                  "birth": 34246403,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_protocol",
+                  "generation": "ef7a7020b54c9ab292cf7ac35029d165",
+                  "pid": 1851416,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 55914496,
+                "started": 1793829299713,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "smb": {
+                "failures": [],
+                "generation": "51d768e857f9d02e7455e28ab0393280",
+                "identity": {
+                  "birth": 34246487,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_smb",
+                  "generation": "51d768e857f9d02e7455e28ab0393280",
+                  "pid": 1851479,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 61054976,
+                "started": 1793829300545,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "storage_admin": {
+                "failures": [],
+                "generation": "6ba15a67e773292c974ef9c3dc97bbaf",
+                "identity": {
+                  "birth": 34246439,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_storage_admin",
+                  "generation": "6ba15a67e773292c974ef9c3dc97bbaf",
+                  "pid": 1851440,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 56475648,
+                "started": 1793829300067,
+                "status": "running",
+                "open_descriptors": 6
+              },
+              "updater": {
+                "failures": [],
+                "generation": "8547b645022c427f77f5a37c569ee3ef",
+                "identity": {
+                  "birth": 34246427,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_updater",
+                  "generation": "8547b645022c427f77f5a37c569ee3ef",
+                  "pid": 1851432,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 56229888,
+                "started": 1793829299949,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "webdav": {
+                "failures": [],
+                "generation": "ebe935cf3a5360020e9627c4a74db906",
+                "identity": {
+                  "birth": 34246462,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_webdav",
+                  "generation": "ebe935cf3a5360020e9627c4a74db906",
+                  "pid": 1851461,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 61018112,
+                "started": 1793829300303,
+                "status": "running",
+                "open_descriptors": 8
+              }
+            }
+          }
+        ],
+        "standard_differences_not_counted_as_passes": [],
+        "memory_limit_mib": 1024,
+        "status": "passed"
+      }
+    }
+  },
+  "samba_log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793829302\ntime: 2026-11-04 21:55:02.721591\ntest: related3\ntime: 2026-11-04 21:55:02.721720\ntime: 2026-11-04 21:55:02.876634\nsuccess: related3\n",
+  "notes": [
+    "Clang debug with ASan/UBSan/LSan; four signed/encrypted dialects passed, 9 DOS/EA regression groups passed, original Samba related3 passed.",
+    "Initial copy test failed at CREATE of an online host-created destination: incremental namespace index reconciliation is a separate open gate. Final test creates the destination via SMB before copying data/xattrs.",
+    "Full object-ID SET/DELETE/EXTENDED, link tracking, USN and volume assignment are not claimed. Remote Actions remain pending."
+  ]
+}

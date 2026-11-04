@@ -140,6 +140,12 @@ Selected-profile acceptance: [M7 guide](docs/m7.md), [中文](docs/m7.zh-CN.md),
 
 ## Full SMB/NFS compatibility prerequisite (user decision, 2026-10-31)
 
+SMB CREATE_OR_GET_OBJECT_ID and GET_OBJECT_ID now use persistent native file
+metadata, with four-dialect identity/authority/restart checks and the original
+Samba related3 compound passing locally. Cross-platform acceptance, the remaining
+object-ID controls and online host-created namespace reconciliation remain open.
+See [implementation and evidence](docs/smb-object-identifiers.md).
+
 Named NFS CLAIM_DELEGATE_CUR now materializes OPEN state through native-identity
 checked namespace lookup, including during CB_RECALL and subsequent DELEGRETURN.
 Internal scans no longer reopen delegated files for data access. Component tests
