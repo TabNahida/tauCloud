@@ -309,7 +309,7 @@ json nfs_updated_security(const json &g, json descriptor, const json &attrs, boo
   return descriptor;
 }
 void nfs_apply_attrs(space_state &s, const json &g, const std::string &path, native_file &f,
-                     const json &attrs) {
+                     const json &attrs, std::optional<uint64_t> inherited_gid = std::nullopt) {
   auto meta = nfs_meta(s, g, path, f);
   auto raw = decode_bytes(meta.at("handle").get<std::string>());
   statement native(*nfs_db, "SELECT token FROM objects WHERE id=?");
@@ -324,10 +324,10 @@ void nfs_apply_attrs(space_state &s, const json &g, const std::string &path, nat
     statement q(*nfs_db, "INSERT OR REPLACE INTO attributes VALUES(?,?)");
     q.bind(1, id); q.bind(2, int64_t(number(attrs, "mode"))); q.row();
   }
-  if (attrs.contains("uid") || attrs.contains("gid")) {
+  if (attrs.contains("uid") || attrs.contains("gid") || inherited_gid) {
     statement q(*nfs_db, "INSERT OR REPLACE INTO ownership VALUES(?,?,?)");
     q.bind(1, id); q.bind(2, int64_t(attrs.value("uid", meta.at("uid").get<uint64_t>())));
-    q.bind(3, int64_t(attrs.value("gid", meta.at("gid").get<uint64_t>()))); q.row();
+    q.bind(3, int64_t(attrs.value("gid", inherited_gid.value_or(meta.at("gid").get<uint64_t>())))); q.row();
   }
   if (attrs.contains("mode") || attrs.contains("mode_mask") || attrs.contains("uid") ||
       attrs.contains("gid") || attrs.contains("acl"))
@@ -680,6 +680,12 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     auto initial = body;
     auto inherited = security_new(s, g, child, op == "mkdir");
     bool setgid_parent = security_get(s, before).value("mode_special", 0u) & 02000;
+    // A group SID may have several numeric aliases in this export. Inherit the
+    // parent's chosen GID as well as its descriptor group; otherwise a child
+    // reports the first alias instead of its parent's POSIX group identity.
+    std::optional<uint64_t> inherited_gid;
+    if (setgid_parent && !initial.contains("gid"))
+      inherited_gid = nfs_meta(s, g, p, o.file).at("gid").get<uint64_t>();
     if (!initial.contains("uid"))
       initial["uid"] = g.value("nfs_uid", 65534u);
     if (!initial.contains("gid") && !setgid_parent)
@@ -699,7 +705,7 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     }
     f.flush();
     o.file.flush();
-    nfs_apply_attrs(s, g, child, f, initial);
+    nfs_apply_attrs(s, g, child, f, initial, inherited_gid);
     f.flush();
     auto result = nfs_meta(s, g, child, f);
     result["created"] = true;

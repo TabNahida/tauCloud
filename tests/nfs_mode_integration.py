@@ -93,7 +93,7 @@ def main():
         f.api('memberships', f.admin, dict(username='bob', group='limited'))
         f.api('grants', f.admin, dict(space='nfsdata', subject_type='user', subject='bob', rights='rw'))
         f.api('nfs-exports', f.admin, dict(id='nfs', update=True, trust='loopback-auth-sys', anonymous='bob',
-              uids={'1000':'alice', '1001':'bob'}, gids={'1000':'unix', '1001':'limited'}))
+              uids={'1000':'alice', '1001':'bob'}, gids={'100':'unix', '1000':'unix', '1001':'limited'}))
         for share, kind in [('mode-smb', 'smb'), ('mode-dav', 'webdav')]:
             f.api('shares', f.admin, dict(id=share, space='nfsdata', exposures={kind:'r'}))
         for user in ('alice', 'bob'):
@@ -163,7 +163,7 @@ def main():
         assert (stat(bob, child).uid, stat(bob, child).gid, stat(bob, child).mode) == (1001, 1000, 0o660)
         assert stat(bob, sub).gid == 1000 and stat(bob, sub).mode == 0o2770
         setattrs(bob, child, attrs(mode=0o2660), 13)
-        passed('setgid directories transmit primary group and directory setgid to nonmember creators; explicit setgid requires verified group membership')
+        passed('setgid directories transmit the exact parent GID alias and directory setgid to nonmember creators; explicit setgid requires verified group membership')
 
         sticky = mkdir(alice, root, b'sticky', 0o1777)
         victim = file(alice, sticky, b'victim')
@@ -222,7 +222,8 @@ def main():
         f.start()
         alice = client()
         assert stat(alice, h).mode == 0o4755 and stat(alice, parent).mode == 0o2777
-        passed('staged DAV replacement clears set-ID; removing sticky restores unlink; special modes persist through complete restart')
+        assert stat(alice, parent).gid == stat(alice, child).gid == stat(alice, sub).gid == 1000
+        passed('staged DAV replacement clears set-ID; removing sticky restores unlink; special modes and inherited GID aliases persist through complete restart')
         report['status'] = 'passed'
     except Exception:
         report['error'] = traceback.format_exc()

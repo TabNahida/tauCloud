@@ -171,7 +171,7 @@ d=p.parent/'mode-parent'
 d.mkdir();d.chmod(0o3777)
 sub=d/'sub';sub.mkdir()
 assert stat.S_IMODE(sub.stat().st_mode)&0o2000
-assert sub.stat().st_gid==d.stat().st_gid
+assert sub.stat().st_gid==d.stat().st_gid, ('setgid GID inheritance',sub.stat().st_gid,d.stat().st_gid)
 sub.rmdir();d.rmdir()
 p.unlink()
 '''

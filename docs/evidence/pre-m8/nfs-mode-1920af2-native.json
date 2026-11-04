@@ -1,0 +1,822 @@
+{
+  "source": "1920af2db6ea77787bb2711306ce1b30ddbaf5da",
+  "workflow": {
+    "conclusion": "",
+    "headSha": "1920af2db6ea77787bb2711306ce1b30ddbaf5da",
+    "jobs": [
+      {
+        "completedAt": "2026-11-04T03:39:05Z",
+        "conclusion": "failure",
+        "databaseId": 126363311244,
+        "name": "linux (gcc)",
+        "startedAt": "2026-11-04T03:12:35Z",
+        "status": "completed",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake-io/github-action-setup-xmake@v1",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python3 scripts/fetch_pace.py",
+            "number": 4,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python3 scripts/fetch_pace.py --dependency recipes",
+            "number": 5,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run sudo apt-get update && sudo apt-get install -y libssl-dev libexpat1-dev",
+            "number": 6,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python3 scripts/fetch_litmus.py",
+            "number": 7,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python3 -m pip install --break-system-packages -r tests/smb-requirements.txt -r tests/nfs-requirements.txt",
+            "number": 8,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python3 scripts/run_m7.py --compiler gcc  --litmus build/litmus/installed/bin/litmus",
+            "number": 9,
+            "status": "completed"
+          },
+          {
+            "conclusion": "failure",
+            "name": "Independent native clients",
+            "number": 10,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Linux native NLM blocking locks and NSM restart recovery",
+            "number": 11,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/upload-artifact@v4",
+            "number": 12,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Kernel CIFS missing-MIC rejection (not compatibility)",
+            "number": 13,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Unmodified Samba file, directory and credit tests",
+            "number": 14,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Unmodified FileZilla GUI FTPS upload and download",
+            "number": 15,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Upstream pynfs client",
+            "number": 16,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Upstream NFS session and client lifecycle",
+            "number": 17,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFS competing clients and restart recovery",
+            "number": 18,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Upstream regular-file and directory namespace",
+            "number": 19,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFS native attributes and aliases",
+            "number": 20,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Upstream NFS regular-file/directory profile including lease expiry",
+            "number": 21,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFS creation attributes and safe truncation",
+            "number": 22,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Package the same Linux server for macOS native-client tests",
+            "number": 23,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/upload-artifact@v4",
+            "number": 24,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/upload-artifact@v4",
+            "number": 25,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run xmake-io/github-action-setup-xmake@v1",
+            "number": 49,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 50,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 51,
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/TabNahida/tauCloud/actions/runs/41765661901/job/126363311244"
+      },
+      {
+        "completedAt": "2026-11-04T03:29:13Z",
+        "conclusion": "success",
+        "databaseId": 126363311568,
+        "name": "windows",
+        "startedAt": "2026-11-04T03:12:35Z",
+        "status": "completed",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake-io/github-action-setup-xmake@v1",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_pace.py",
+            "number": 4,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_pace.py --dependency recipes",
+            "number": 5,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python -m pip install -r tests/smb-requirements.txt -r tests/nfs-requirements.txt",
+            "number": 6,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/run_m7.py --compiler msvc",
+            "number": 7,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFS competing clients and restart recovery",
+            "number": 8,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFS native attributes and aliases",
+            "number": 9,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFS creation attributes and safe truncation",
+            "number": 10,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Windows native SMB redirector (signed and encrypted)",
+            "number": 11,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Windows native Client for NFS v3 (TCP, nolock)",
+            "number": 12,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Unmodified FileZilla GUI FTPS upload and download",
+            "number": 13,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/upload-artifact@v4",
+            "number": 14,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run xmake-io/github-action-setup-xmake@v1",
+            "number": 27,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 28,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 29,
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/TabNahida/tauCloud/actions/runs/41765661901/job/126363311568"
+      },
+      {
+        "completedAt": "2026-11-04T03:24:11Z",
+        "conclusion": "success",
+        "databaseId": 126363311579,
+        "name": "linux (clang)",
+        "startedAt": "2026-11-04T03:12:35Z",
+        "status": "completed",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake-io/github-action-setup-xmake@v1",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python3 scripts/fetch_pace.py",
+            "number": 4,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python3 scripts/fetch_pace.py --dependency recipes",
+            "number": 5,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run sudo apt-get update && sudo apt-get install -y libssl-dev libexpat1-dev",
+            "number": 6,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python3 scripts/fetch_litmus.py",
+            "number": 7,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python3 -m pip install --break-system-packages -r tests/smb-requirements.txt -r tests/nfs-requirements.txt",
+            "number": 8,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python3 scripts/run_m7.py --compiler clang --mode debug --sanitizers --litmus build/litmus/installed/bin/litmus",
+            "number": 9,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Independent native clients",
+            "number": 10,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Linux native NLM blocking locks and NSM restart recovery",
+            "number": 11,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Run actions/upload-artifact@v4",
+            "number": 12,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Kernel CIFS missing-MIC rejection (not compatibility)",
+            "number": 13,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Unmodified Samba file, directory and credit tests",
+            "number": 14,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Unmodified FileZilla GUI FTPS upload and download",
+            "number": 15,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Upstream pynfs client",
+            "number": 16,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Upstream NFS session and client lifecycle",
+            "number": 17,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "NFS competing clients and restart recovery",
+            "number": 18,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Upstream regular-file and directory namespace",
+            "number": 19,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "NFS native attributes and aliases",
+            "number": 20,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Upstream NFS regular-file/directory profile including lease expiry",
+            "number": 21,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "NFS creation attributes and safe truncation",
+            "number": 22,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Package the same Linux server for macOS native-client tests",
+            "number": 23,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Run actions/upload-artifact@v4",
+            "number": 24,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/upload-artifact@v4",
+            "number": 25,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run xmake-io/github-action-setup-xmake@v1",
+            "number": 49,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 50,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 51,
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/TabNahida/tauCloud/actions/runs/41765661901/job/126363311579"
+      },
+      {
+        "completedAt": "0001-01-01T00:00:00Z",
+        "conclusion": "",
+        "databaseId": 126372213315,
+        "name": "macos-clients",
+        "startedAt": "2026-11-04T03:39:10Z",
+        "status": "in_progress",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/download-artifact@v4",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run brew install qemu",
+            "number": 4,
+            "status": "completed"
+          },
+          {
+            "conclusion": "",
+            "name": "macOS native SMB and NFSv3 against isolated Linux guest",
+            "number": 5,
+            "status": "in_progress"
+          },
+          {
+            "conclusion": "",
+            "name": "Run actions/upload-artifact@v4",
+            "number": 6,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Post Run actions/checkout@v4",
+            "number": 12,
+            "status": "pending"
+          }
+        ],
+        "url": "https://github.com/TabNahida/tauCloud/actions/runs/41765661901/job/126372213315"
+      }
+    ],
+    "status": "in_progress",
+    "url": "https://github.com/TabNahida/tauCloud/actions/runs/41765661901"
+  },
+  "artifact": {
+    "id": 13291984423,
+    "sha256": "a0381aaf28a7223d8a3078758d4fbad9d97f38b29f7cbbca4d932d334f66d455"
+  },
+  "reports": {
+    "native-linux.json": {
+      "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+      "recorded_at": "2026-11-04T03:25:31.436591+00:00",
+      "profiles": [
+        {
+          "name": "smbclient-2.1",
+          "status": "passed",
+          "commands": [
+            {
+              "command": [
+                "smbclient",
+                "--version"
+              ],
+              "returncode": 0,
+              "stdout": "Version 4.19.5-Ubuntu\n",
+              "stderr": ""
+            },
+            {
+              "command": [
+                "smbclient",
+                "//127.0.0.1/smb",
+                "-p",
+                "57085",
+                "-A",
+                "/tmp/tc3-pxfbkj_t/smb-credentials",
+                "--option=client min protocol=SMB2_10",
+                "--option=client max protocol=SMB2_10",
+                "--option=client signing=required",
+                "-c",
+                "put /tmp/tc3-pxfbkj_t/source probe; get probe /tmp/tc3-pxfbkj_t/download; rename probe renamed; del renamed"
+              ],
+              "returncode": 0,
+              "stdout": "",
+              "stderr": "putting file /tmp/tc3-pxfbkj_t/source as \\probe (6918.9 kb/s) (average 6918.9 kb/s)\ngetting file \\probe of size 1048576 as /tmp/tc3-pxfbkj_t/download (8325.2 KiloBytes/sec) (average 8325.2 KiloBytes/sec)\n"
+            }
+          ],
+          "version": "Version 4.19.5-Ubuntu",
+          "payload_sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+          "server_log": "{\"code\":\"3221225768\",\"event\":\"command_11\",\"role\":\"smb\",\"time\":1793762740962}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793762741280}\n",
+          "kernel_log": "[Wed Nov  4 03:25:28 2026] RPC: Registered tcp NFSv4.1 backchannel transport module."
+        },
+        {
+          "name": "smbclient-3.1.1",
+          "status": "passed",
+          "commands": [
+            {
+              "command": [
+                "smbclient",
+                "--version"
+              ],
+              "returncode": 0,
+              "stdout": "Version 4.19.5-Ubuntu\n",
+              "stderr": ""
+            },
+            {
+              "command": [
+                "smbclient",
+                "//127.0.0.1/smb",
+                "-p",
+                "57085",
+                "-A",
+                "/tmp/tc3-pxfbkj_t/smb-credentials",
+                "--option=client min protocol=SMB3_11",
+                "--option=client max protocol=SMB3_11",
+                "--option=client signing=required",
+                "-c",
+                "put /tmp/tc3-pxfbkj_t/source probe; get probe /tmp/tc3-pxfbkj_t/download; rename probe renamed; del renamed"
+              ],
+              "returncode": 0,
+              "stdout": "",
+              "stderr": "putting file /tmp/tc3-pxfbkj_t/source as \\probe (7111.1 kb/s) (average 7111.1 kb/s)\ngetting file \\probe of size 1048576 as /tmp/tc3-pxfbkj_t/download (8393.4 KiloBytes/sec) (average 8393.4 KiloBytes/sec)\n"
+            }
+          ],
+          "version": "Version 4.19.5-Ubuntu",
+          "payload_sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+          "server_log": "{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793762741668}\n",
+          "kernel_log": "[Wed Nov  4 03:25:28 2026] RPC: Registered tcp NFSv4.1 backchannel transport module."
+        },
+        {
+          "name": "kernel-nfs-3",
+          "status": "passed",
+          "commands": [
+            {
+              "command": [
+                "sudo",
+                "-n",
+                "mount",
+                "-t",
+                "nfs",
+                "-o",
+                "vers=3,proto=tcp,port=40911,sec=sys,soft,timeo=10,retrans=1,mountproto=tcp,mountport=40911,mountvers=3,nolock",
+                "127.0.0.1:/nfs",
+                "/tmp/tc3-pxfbkj_t/mount"
+              ],
+              "returncode": 0,
+              "stdout": "",
+              "stderr": ""
+            },
+            {
+              "command": [
+                "python3",
+                "-c",
+                "import os,sys,hashlib\nfrom pathlib import Path\np=Path(sys.argv[1]); data=Path(sys.argv[2]).read_bytes()\nd=p/'probe-dir'; d.mkdir()\nf=d/'file'\nwith f.open('wb') as out: out.write(data); out.flush(); os.fsync(out.fileno())\nassert f.read_bytes()==data\nf.rename(d/'renamed'); f=d/'renamed'\nwith f.open('r+b') as out: out.seek(123);out.write(b'changed');out.truncate(65537);out.flush();os.fsync(out.fileno())\nassert f.read_bytes()==(data[:123]+b'changed'+data[130:])[:65537]\nassert [x.name for x in d.iterdir()]==['renamed']\nf.unlink();d.rmdir()\n",
+                "/tmp/tc3-pxfbkj_t/mount",
+                "/tmp/tc3-pxfbkj_t/source"
+              ],
+              "returncode": 0,
+              "stdout": "",
+              "stderr": ""
+            },
+            {
+              "command": [
+                "sudo",
+                "-n",
+                "umount",
+                "/tmp/tc3-pxfbkj_t/mount"
+              ],
+              "returncode": 0,
+              "stdout": "",
+              "stderr": ""
+            }
+          ],
+          "payload_sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+          "server_log": "",
+          "kernel_log": "[Wed Nov  4 03:25:28 2026] RPC: Registered tcp NFSv4.1 backchannel transport module."
+        },
+        {
+          "name": "kernel-nfs-4.1",
+          "status": "failed",
+          "commands": [
+            {
+              "command": [
+                "sudo",
+                "-n",
+                "mount",
+                "-t",
+                "nfs",
+                "-o",
+                "vers=4.1,proto=tcp,port=40911,sec=sys,soft,timeo=10,retrans=1",
+                "127.0.0.1:/nfs",
+                "/tmp/tc3-pxfbkj_t/mount"
+              ],
+              "returncode": 0,
+              "stdout": "",
+              "stderr": ""
+            },
+            {
+              "command": [
+                "python3",
+                "-c",
+                "import os,sys,hashlib\nfrom pathlib import Path\np=Path(sys.argv[1]); data=Path(sys.argv[2]).read_bytes()\nd=p/'probe-dir'; d.mkdir()\nf=d/'file'\nwith f.open('wb') as out: out.write(data); out.flush(); os.fsync(out.fileno())\nassert f.read_bytes()==data\nf.rename(d/'renamed'); f=d/'renamed'\nwith f.open('r+b') as out: out.seek(123);out.write(b'changed');out.truncate(65537);out.flush();os.fsync(out.fileno())\nassert f.read_bytes()==(data[:123]+b'changed'+data[130:])[:65537]\nassert [x.name for x in d.iterdir()]==['renamed']\nf.unlink();d.rmdir()\n",
+                "/tmp/tc3-pxfbkj_t/mount",
+                "/tmp/tc3-pxfbkj_t/source"
+              ],
+              "returncode": 0,
+              "stdout": "",
+              "stderr": ""
+            },
+            {
+              "command": [
+                "python3",
+                "-c",
+                "import os,sys\nfrom pathlib import Path\np=Path(sys.argv[1])/'cache-probe';native=Path(sys.argv[2])/'cache-probe'\nwith p.open('wb') as out: out.write(b'first');out.flush();os.fsync(out.fileno())\nassert p.read_bytes()==b'first'\nbefore=native.stat()\nwith native.open('r+b') as out: out.write(b'other');out.flush();os.fsync(out.fileno())\nos.utime(native,ns=(before.st_atime_ns,before.st_mtime_ns))\nassert p.read_bytes()==b'other', 'close-to-open returned stale data after equal-size/restored-mtime mutation'\np.unlink()\n",
+                "/tmp/tc3-pxfbkj_t/mount",
+                "/tmp/tc3-pxfbkj_t/files/nfsdata"
+              ],
+              "returncode": 0,
+              "stdout": "",
+              "stderr": ""
+            },
+            {
+              "command": [
+                "python3",
+                "-c",
+                "import os,sys,stat,subprocess\nfrom pathlib import Path\np=Path(sys.argv[1])/'acl-probe'\np.write_bytes(b'private')\np.chmod(0o600)\nassert stat.S_IMODE(p.stat().st_mode)==0o600\nbefore=subprocess.check_output(['nfs4_getfacl',str(p)],text=True)\nassert 'OWNER@' in before\nsubprocess.run(['nfs4_setfacl','-s','A::OWNER@:RWXdo,A:g:GROUP@:R,A::EVERYONE@:R',str(p)],check=True)\nafter=subprocess.check_output(['nfs4_getfacl',str(p)],text=True)\nassert 'OWNER@' in after and 'GROUP@' in after and 'EVERYONE@' in after\nassert stat.S_IMODE(p.stat().st_mode)==0o744\nassert p.read_bytes()==b'private'\np.chmod(0o640)\nassert stat.S_IMODE(p.stat().st_mode)==0o640\nprint(before,after,subprocess.check_output(['nfs4_getfacl',str(p)],text=True),sep=chr(10))\np.chmod(0o4755)\nassert stat.S_IMODE(p.stat().st_mode)==0o4755\nwith p.open('ab') as out: out.write(b'changed');out.flush();os.fsync(out.fileno())\nassert stat.S_IMODE(p.stat().st_mode)==0o755\nd=p.parent/'mode-parent'\nd.mkdir();d.chmod(0o3777)\nsub=d/'sub';sub.mkdir()\nassert stat.S_IMODE(sub.stat().st_mode)&0o2000\nassert sub.stat().st_gid==d.stat().st_gid\nsub.rmdir();d.rmdir()\np.unlink()\n",
+                "/tmp/tc3-pxfbkj_t/mount"
+              ],
+              "returncode": 1,
+              "stdout": "# file: /tmp/tc3-pxfbkj_t/mount/acl-probe\nA::OWNER@:rwatTncCo\nD::OWNER@:x\nD::GROUP@:rwax\nA::EVERYONE@:dtTnNcy\nA::EVERYONE@:tncy\nD::EVERYONE@:rwax\n\n\n# file: /tmp/tc3-pxfbkj_t/mount/acl-probe\nA::OWNER@:rwadxtTnNcCoy\nA::GROUP@:rtncy\nA::EVERYONE@:rtncy\n\n\n# file: /tmp/tc3-pxfbkj_t/mount/acl-probe\nA::OWNER@:rwatTncCo\nD::OWNER@:x\nA::GROUP@:r\nD::GROUP@:wax\nA::OWNER@:dtTnNcCoy\nA::GROUP@:tncy\nA::EVERYONE@:tncy\nA::EVERYONE@:tncy\nD::EVERYONE@:rwax\n\n\n",
+              "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 25, in <module>\nAssertionError\n"
+            },
+            {
+              "command": [
+                "sudo",
+                "-n",
+                "umount",
+                "/tmp/tc3-pxfbkj_t/mount"
+              ],
+              "returncode": 0,
+              "stdout": "",
+              "stderr": ""
+            }
+          ],
+          "checks": [
+            "native v4.1 close-to-open cache invalidation after independent equal-size write with restored mtime"
+          ],
+          "error": "Traceback (most recent call last):\n  File \"/home/runner/work/tauCloud/tauCloud/tests/native_clients.py\", line 178, in main\n    run(['python3','-c',acl_code,str(mount)])\n  File \"/home/runner/work/tauCloud/tauCloud/tests/native_clients.py\", line 35, in run\n    raise RuntimeError(f'{command[0]} failed: {result.stderr or result.stdout}')\nRuntimeError: python3 failed: Traceback (most recent call last):\n  File \"<string>\", line 25, in <module>\nAssertionError\n\n",
+          "server_log": "",
+          "kernel_log": "[Wed Nov  4 03:25:28 2026] RPC: Registered tcp NFSv4.1 backchannel transport module.\n[Wed Nov  4 03:25:42 2026] NFS: Registering the id_resolver key type"
+        },
+        {
+          "name": "kernel-nfs-4.1-root",
+          "status": "passed",
+          "commands": [
+            {
+              "command": [
+                "sudo",
+                "-n",
+                "mount",
+                "-t",
+                "nfs",
+                "-o",
+                "vers=4.1,proto=tcp,port=40911,sec=sys,soft,timeo=10,retrans=1",
+                "127.0.0.1:/",
+                "/tmp/tc3-pxfbkj_t/mount"
+              ],
+              "returncode": 0,
+              "stdout": "",
+              "stderr": ""
+            },
+            {
+              "command": [
+                "python3",
+                "-c",
+                "import os,sys\nfrom pathlib import Path\np=Path(sys.argv[1]);assert {x.name for x in p.iterdir()}=={'nfs','second'}\nfirst=p/'nfs'/'open-first';second=p/'second'/'open-second'\nwith first.open('w+b') as a, second.open('w+b') as b:\n    a.write(b'first export');a.flush();os.fsync(a.fileno())\n    b.write(b'second export');b.flush();os.fsync(b.fileno())\n    a.seek(0);b.seek(0)\n    assert a.read()==b'first export' and b.read()==b'second export'\nfirst.unlink();second.unlink()\n",
+                "/tmp/tc3-pxfbkj_t/mount"
+              ],
+              "returncode": 0,
+              "stdout": "",
+              "stderr": ""
+            },
+            {
+              "command": [
+                "python3",
+                "-c",
+                "import os,sys,hashlib\nfrom pathlib import Path\np=Path(sys.argv[1]); data=Path(sys.argv[2]).read_bytes()\nd=p/'probe-dir'; d.mkdir()\nf=d/'file'\nwith f.open('wb') as out: out.write(data); out.flush(); os.fsync(out.fileno())\nassert f.read_bytes()==data\nf.rename(d/'renamed'); f=d/'renamed'\nwith f.open('r+b') as out: out.seek(123);out.write(b'changed');out.truncate(65537);out.flush();os.fsync(out.fileno())\nassert f.read_bytes()==(data[:123]+b'changed'+data[130:])[:65537]\nassert [x.name for x in d.iterdir()]==['renamed']\nf.unlink();d.rmdir()\n",
+                "/tmp/tc3-pxfbkj_t/mount/nfs",
+                "/tmp/tc3-pxfbkj_t/source"
+              ],
+              "returncode": 0,
+              "stdout": "",
+              "stderr": ""
+            },
+            {
+              "command": [
+                "sudo",
+                "-n",
+                "umount",
+                "/tmp/tc3-pxfbkj_t/mount"
+              ],
+              "returncode": 0,
+              "stdout": "",
+              "stderr": ""
+            }
+          ],
+          "checks": [
+            "native pseudo-root mount and enumeration",
+            "simultaneous opens in two exports",
+            "complete file roundtrip through pseudo-root"
+          ],
+          "payload_sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+          "server_log": "",
+          "kernel_log": "[Wed Nov  4 03:25:28 2026] RPC: Registered tcp NFSv4.1 backchannel transport module.\n[Wed Nov  4 03:25:42 2026] NFS: Registering the id_resolver key type"
+        }
+      ],
+      "status": "failed",
+      "test_kind": "file_roundtrip"
+    },
+    "linux-native-nlm.json": {
+      "status": "passed",
+      "checks": [
+        "native F_SETLKW blocks on an independent wire owner, receives GRANTED and retains a server-visible byte lock",
+        "NSM server-reboot notification makes the Linux kernel reclaim its lock; independent post-grace TEST observes it and native unlock releases it"
+      ],
+      "worker_logs": {
+        "nfs": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793762746912}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"nfs\",\"time\":1793762752424}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793762754368}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"nfs\",\"time\":1793762755071}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793762757010}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793762759410}\n",
+        "file": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793762745689}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file\",\"time\":1793762752915}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793762753136}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file\",\"time\":1793762755563}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793762755785}\n"
+      },
+      "kernel_log": "ys/devices/virtual/misc/vmbus!hv_kvp...\n[Wed Nov  4 03:12:19 2026] systemd[1]: Reached target integritysetup.target - Local Integrity Protected Volumes.\n[Wed Nov  4 03:12:19 2026] systemd[1]: Reached target slices.target - Slice Units.\n[Wed Nov  4 03:12:19 2026] systemd[1]: Reached target snapd.mounts-pre.target - Mounting snaps.\n[Wed Nov  4 03:12:19 2026] systemd[1]: Reached target snapd.mounts.target - Mounted snaps.\n[Wed Nov  4 03:12:19 2026] systemd[1]: Reached target swap.target - Swaps.\n[Wed Nov  4 03:12:19 2026] systemd[1]: Reached target time-set.target - System Time Set.\n[Wed Nov  4 03:12:19 2026] systemd[1]: Reached target veritysetup.target - Local Verity Protected Volumes.\n[Wed Nov  4 03:12:19 2026] systemd[1]: Listening on dm-event.socket - Device-mapper event daemon FIFOs.\n[Wed Nov  4 03:12:19 2026] systemd[1]: Listening on lvm2-lvmpolld.socket - LVM2 poll daemon socket.\n[Wed Nov  4 03:12:19 2026] systemd[1]: Listening on multipathd.socket - multipathd control socket.\n[Wed Nov  4 03:12:19 2026] systemd[1]: Listening on syslog.socket - Syslog Socket.\n[Wed Nov  4 03:12:19 2026] systemd[1]: Listening on systemd-coredump.socket - Process Core Dump Socket.\n[Wed Nov  4 03:12:19 2026] systemd[1]: Listening on systemd-fsckd.socket - fsck to fsckd communication Socket.\n[Wed Nov  4 03:12:19 2026] systemd[1]: Listening on systemd-initctl.socket - initctl Compatibility Named Pipe.\n[Wed Nov  4 03:12:19 2026] systemd[1]: Listening on systemd-journald-dev-log.socket - Journal Socket (/dev/log).\n[Wed Nov  4 03:12:19 2026] systemd[1]: Listening on systemd-journald.socket - Journal Socket.\n[Wed Nov  4 03:12:19 2026] systemd[1]: Listening on systemd-networkd.socket - Network Service Netlink Socket.\n[Wed Nov  4 03:12:19 2026] systemd[1]: systemd-pcrextend.socket - TPM2 PCR Extension (Varlink) was skipped because of an unmet condition check (ConditionSecurity=measured-uki).\n[Wed Nov  4 03:12:19 2026] systemd[1]: Listening on systemd-udevd-control.socket - udev Control Socket.\n[Wed Nov  4 03:12:19 2026] systemd[1]: Listening on systemd-udevd-kernel.socket - udev Kernel Socket.\n[Wed Nov  4 03:12:19 2026] systemd[1]: Mounting dev-hugepages.mount - Huge Pages File System...\n[Wed Nov  4 03:12:19 2026] systemd[1]: Mounting dev-mqueue.mount - POSIX Message Queue File System...\n[Wed Nov  4 03:12:19 2026] systemd[1]: Mounting sys-kernel-debug.mount - Kernel Debug File System...\n[Wed Nov  4 03:12:19 2026] systemd[1]: Mounting sys-kernel-tracing.mount - Kernel Trace File System...\n[Wed Nov  4 03:12:19 2026] systemd[1]: Starting systemd-journald.service - Journal Service...\n[Wed Nov  4 03:12:19 2026] systemd[1]: Starting keyboard-setup.service - Set the console keyboard layout...\n[Wed Nov  4 03:12:19 2026] systemd[1]: Starting kmod-static-nodes.service - Create List of Static Device Nodes...\n[Wed Nov  4 03:12:19 2026] systemd[1]: Starting lvm2-monitor.service - Monitoring of LVM2 mirrors, snapshots etc. using dmeventd or progress polling...\n[Wed Nov  4 03:12:19 2026] systemd-journald[161]: Collecting audit messages is disabled.\n[Wed Nov  4 03:12:19 2026] systemd[1]: Starting modprobe@configfs.service - Load Kernel Module configfs...\n[Wed Nov  4 03:12:19 2026] systemd[1]: Starting modprobe@dm_mod.service - Load Kernel Module dm_mod...\n[Wed Nov  4 03:12:19 2026] systemd[1]: Starting modprobe@drm.service - Load Kernel Module drm...\n[Wed Nov  4 03:12:19 2026] systemd[1]: Starting modprobe@efi_pstore.service - Load Kernel Module efi_pstore...\n[Wed Nov  4 03:12:19 2026] systemd[1]: Starting modprobe@fuse.service - Load Kernel Module fuse...\n[Wed Nov  4 03:12:19 2026] pstore: Using crash dump compression: deflate\n[Wed Nov  4 03:12:19 2026] systemd[1]: Starting modprobe@loop.service - Load Kernel Module loop...\n[Wed Nov  4 03:12:19 2026] pstore: Registered efi_pstore as persistent store backend\n[Wed Nov  4 03:12:19 2026] systemd[1]: Starting modprobe@nvme_fabrics.service - Load Kernel Module nvme_fabrics...\n[Wed Nov  4 03:12:19 2026] systemd[1]: netplan-ovs-cleanup.service - OpenVSwitch configuration for cleanup was skipped because of an unmet condition check (ConditionFileIsExecutable=/usr/bin/ovs-vsctl).\n[Wed Nov  4 03:12:19 2026] systemd[1]: Starting systemd-fsck-root.service - File System Check on Root Device...\n[Wed Nov  4 03:12:19 2026] systemd[1]: Starting systemd-modules-load.service - Load Kernel Modules...\n[Wed Nov  4 03:12:19 2026] systemd[1]: systemd-pcrmachine.service - TPM2 PCR Machine ID Measurement was skipped because of an unmet condition check (ConditionSecurity=measured-uki).\n[Wed Nov  4 03:12:19 2026] systemd[1]: systemd-tpm2-setup-early.service - TPM2 SRK Setup (Early) was skipped because of an unmet condition check (ConditionSecurity=measured-uki).\n[Wed Nov  4 03:12:19 2026] systemd[1]: Starting systemd-udev-trigger.service - Coldplug All udev Devices...\n[Wed Nov  4 03:12:19 2026] systemd[1]: Started systemd-journald.service - Journal Service.\n[Wed Nov  4 03:12:19 2026] i2c_dev: i2c /dev entries driver\n[Wed Nov  4 03:12:19 2026] EXT4-fs (sda1): re-mounted f81fd3ad-787e-4eef-9f87-a66f187e46af r/w.\n[Wed Nov  4 03:12:19 2026] systemd-journald[161]: Received client request to flush runtime journal.\n[Wed Nov  4 03:12:19 2026] systemd-journald[161]: /var/log/journal/dea6d6a5eb9548ec97f8b91c56f0bffa/system.journal: Journal file uses a different sequence number ID, rotating.\n[Wed Nov  4 03:12:19 2026] systemd-journald[161]: Rotating system journal.\n[Wed Nov  4 03:12:20 2026] hv_vmbus: registering driver hyperv_keyboard\n[Wed Nov  4 03:12:20 2026] input: AT Translated Set 2 keyboard as /devices/LNXSYSTM:00/LNXSYBUS:00/ACPI0004:00/MSFT1000:00/d34b2567-b9b6-42b9-8778-0a4ec0b955bf/serio0/input/input0\n[Wed Nov  4 03:12:20 2026] hv_vmbus: registering driver hyperv_drm\n[Wed Nov  4 03:12:20 2026] hyperv_drm 5620e0c7-8062-4dce-aeb7-520c7ef76171: [drm] Synthvid Version major 3, minor 5\n[Wed Nov  4 03:12:20 2026] Console: switching to colour dummy device 80x25\n[Wed Nov  4 03:12:20 2026] hid: raw HID events driver (C) Jiri Kosina\n[Wed Nov  4 03:12:20 2026] hyperv_drm 5620e0c7-8062-4dce-aeb7-520c7ef76171: [drm] Registered 1 planes with drm panic\n[Wed Nov  4 03:12:20 2026] [drm] Initialized hyperv_drm 1.0.0 for 5620e0c7-8062-4dce-aeb7-520c7ef76171 on minor 1\n[Wed Nov  4 03:12:20 2026] Console: switching to colour frame buffer device 128x48\n[Wed Nov  4 03:12:20 2026] hyperv_drm 5620e0c7-8062-4dce-aeb7-520c7ef76171: [drm] fb0: hyperv_drmdrmfb frame buffer device\n[Wed Nov  4 03:12:20 2026] hv_vmbus: registering driver hid_hyperv\n[Wed Nov  4 03:12:20 2026] input: Microsoft Vmbus HID-compliant Mouse as /devices/0006:045E:0621.0001/input/input1\n[Wed Nov  4 03:12:20 2026] hid-hyperv 0006:045E:0621.0001: input: VIRTUAL HID v0.01 Mouse [Microsoft Vmbus HID-compliant Mouse] on \n[Wed Nov  4 03:12:20 2026] kvm_amd: TSC scaling supported\n[Wed Nov  4 03:12:20 2026] kvm_amd: Nested Virtualization enabled\n[Wed Nov  4 03:12:20 2026] kvm_amd: Nested Paging enabled\n[Wed Nov  4 03:12:20 2026] kvm_amd: kvm_amd: Hyper-V enlightened NPT TLB flush enabled\n[Wed Nov  4 03:12:20 2026] kvm_amd: kvm_amd: Hyper-V Direct TLB Flush enabled\n[Wed Nov  4 03:12:20 2026] kvm_amd: Virtual VMLOAD VMSAVE supported\n[Wed Nov  4 03:12:20 2026] kvm_amd: PMU virtualization is disabled\n[Wed Nov  4 03:12:21 2026] workqueue: drm_fb_helper_damage_work hogged CPU for >10000us 4 times, consider switching to WQ_UNBOUND\n[Wed Nov  4 03:12:21 2026] workqueue: drm_fb_helper_damage_work hogged CPU for >10000us 5 times, consider switching to WQ_UNBOUND\n[Wed Nov  4 03:12:21 2026] hv_utils: KVP IC version 4.0\n[Wed Nov  4 03:12:21 2026] workqueue: drm_fb_helper_damage_work hogged CPU for >10000us 7 times, consider switching to WQ_UNBOUND\n[Wed Nov  4 03:12:21 2026] EXT4-fs (sda16): mounted filesystem 99a63e33-6f19-4119-9eaf-a172bb6c6c6a r/w with ordered data mode. Quota mode: none.\n[Wed Nov  4 03:12:21 2026] audit: type=1400 audit(1793761941.867:2): apparmor=\"STATUS\" operation=\"profile_load\" profile=\"unconfined\" name=4D6F6E676F444220436F6D70617373 pid=459 comm=\"apparmor_parser\"\n[Wed Nov  4 03:12:21 2026] audit: type=1400 audit(1793761941.867:3): apparmor=\"STATUS\" operation=\"profile_load\" profile=\"unconfined\" name=\"Discord\" pid=458 comm=\"apparmor_parser\"\n[Wed Nov  4 03:12:21 2026] audit: type=1400 audit(1793761941.868:4): apparmor=\"STATUS\" operation=\"profile_load\" profile=\"unconfined\" name=\"QtWebEngineProcess\" pid=460 comm=\"apparmor_parser\"\n[Wed Nov  4 03:12:21 2026] audit: type=1400 audit(1793761941.868:5): apparmor=\"STATUS\" operation=\"profile_load\" profile=\"unconfined\" name=\"1password\" pid=457 comm=\"apparmor_parser\"\n[Wed Nov  4 03:12:21 2026] audit: type=1400 audit(1793761941.869:6): apparmor=\"STATUS\" operation=\"profile_load\" profile=\"unconfined\" name=\"balena-etcher\" pid=462 comm=\"apparmor_parser\"\n[Wed Nov  4 03:12:21 2026] audit: type=1400 audit(1793761941.871:7): apparmor=\"STATUS\" operation=\"profile_load\" profile=\"unconfined\" name=\"brave\" pid=465 comm=\"apparmor_parser\"\n[Wed Nov  4 03:12:21 2026] audit: type=1400 audit(1793761941.873:8): apparmor=\"STATUS\" operation=\"profile_load\" profile=\"unconfined\" name=\"cam\" pid=467 comm=\"apparmor_parser\"\n[Wed Nov  4 03:12:21 2026] audit: type=1400 audit(1793761941.873:9): apparmor=\"STATUS\" operation=\"profile_load\" profile=\"unconfined\" name=\"buildah\" pid=466 comm=\"apparmor_parser\"\n[Wed Nov  4 03:12:21 2026] audit: type=1400 audit(1793761941.875:10): apparmor=\"STATUS\" operation=\"profile_load\" profile=\"unconfined\" name=\"ch-checkns\" pid=468 comm=\"apparmor_parser\"\n[Wed Nov  4 03:12:22 2026] /dev/sr0: Can't lookup blockdev\n[Wed Nov  4 03:12:22 2026] 8021q: 802.1Q VLAN Support v1.8\n[Wed Nov  4 03:12:22 2026] cfg80211: Loading compiled-in X.509 certificates for regulatory database\n[Wed Nov  4 03:12:22 2026] Loaded X.509 cert 'sforshee: 00b28ddf47aef9cea7'\n[Wed Nov  4 03:12:22 2026] Loaded X.509 cert 'wens: 61c038651aabdcf94bd0ac7ff06c7248db18c600'\n[Wed Nov  4 03:12:22 2026] faux_driver regulatory: Direct firmware load for regulatory.db failed with error -2\n[Wed Nov  4 03:12:22 2026] cfg80211: failed to load regulatory.db\n[Wed Nov  4 03:12:27 2026] EXT4-fs (sda1): resizing filesystem from 19398395 to 39059195 blocks\n[Wed Nov  4 03:12:28 2026] EXT4-fs (sda1): resized filesystem to 39059195\n[Wed Nov  4 03:12:28 2026] ephemeral0: Can't lookup blockdev\n[Wed Nov  4 03:12:28 2026] systemd-fstab-generator[981]: Checking was requested for \"ephemeral0\", but it is not a device.\n[Wed Nov  4 03:12:28 2026] systemd-fstab-generator[981]: x-systemd.device-timeout ignored for ephemeral0\n[Wed Nov  4 03:12:29 2026] ephemeral0: Can't lookup blockdev\n[Wed Nov  4 03:12:29 2026] kauditd_printk_skb: 113 callbacks suppressed\n[Wed Nov  4 03:12:29 2026] audit: type=1400 audit(1793761949.659:124): apparmor=\"STATUS\" operation=\"profile_replace\" info=\"same as current profile, skipping\" profile=\"unconfined\" name=\"rsyslogd\" pid=1058 comm=\"apparmor_parser\"\n[Wed Nov  4 03:12:29 2026] evm: overlay not supported\n[Wed Nov  4 03:12:30 2026] loop0: detected capacity change from 0 to 8\n[Wed Nov  4 03:12:30 2026] Adding 3145724k swap on /swapfile.  Priority:-1 extents:70 across:67493884k \n[Wed Nov  4 03:12:30 2026] systemd-journald[161]: /var/log/journal/dea6d6a5eb9548ec97f8b91c56f0bffa/user-1001.journal: Journal file uses a different sequence number ID, rotating.\n[Wed Nov  4 03:12:30 2026] NET: Registered PF_QIPCRTR protocol family\n[Wed Nov  4 03:12:30 2026] audit: type=1400 audit(1793761950.540:125): apparmor=\"STATUS\" operation=\"profile_replace\" info=\"same as current profile, skipping\" profile=\"unconfined\" name=\"/usr/lib/snapd/snap-confine\" pid=1366 comm=\"apparmor_parser\"\n[Wed Nov  4 03:12:31 2026] audit: type=1400 audit(1793761951.259:126): apparmor=\"STATUS\" operation=\"profile_load\" profile=\"unconfined\" name=\"docker-default\" pid=1529 comm=\"apparmor_parser\"\n[Wed Nov  4 03:12:31 2026] Initializing XFRM netlink socket\n[Wed Nov  4 03:12:31 2026] systemd-fstab-generator[1631]: Checking was requested for \"ephemeral0\", but it is not a device.\n[Wed Nov  4 03:12:31 2026] systemd-fstab-generator[1631]: x-systemd.device-timeout ignored for ephemeral0\n[Wed Nov  4 03:12:32 2026] bridge: filtering via arp/ip/ip6tables is no longer available by default. Update your scripts to load br_netfilter if you need this.\n[Wed Nov  4 03:12:33 2026] systemd-fstab-generator[1975]: Checking was requested for \"ephemeral0\", but it is not a device.\n[Wed Nov  4 03:12:33 2026] systemd-fstab-generator[1975]: x-systemd.device-timeout ignored for ephemeral0\n[Wed Nov  4 03:12:33 2026] systemd-fstab-generator[2038]: Checking was requested for \"ephemeral0\", but it is not a device.\n[Wed Nov  4 03:12:33 2026] systemd-fstab-generator[2038]: x-systemd.device-timeout ignored for ephemeral0\n[Wed Nov  4 03:13:06 2026] hv_balloon: Max. dynamic memory size: 16384 MB\n[Wed Nov  4 03:13:38 2026] hv_netvsc 7ced8d19-07b0-7ced-8d19-07b07ced8d19 eth0: VF slot 1 added\n[Wed Nov  4 03:13:38 2026] hv_pci f0cc636b-5d67-4aae-b140-ba696f52a68e: PCI VMBus probing: Using version 0x10004\n[Wed Nov  4 03:13:38 2026] hv_pci f0cc636b-5d67-4aae-b140-ba696f52a68e: PCI host bridge to bus 5d67:00\n[Wed Nov  4 03:13:38 2026] pci_bus 5d67:00: root bus resource [mem 0xfc0000000-0xfc00fffff window]\n[Wed Nov  4 03:13:38 2026] pci_bus 5d67:00: No busn resource found for root bus, will use [bus 00-ff]\n[Wed Nov  4 03:13:38 2026] pci 5d67:00:02.0: [15b3:1016] type 00 class 0x020000 PCIe Endpoint\n[Wed Nov  4 03:13:38 2026] pci 5d67:00:02.0: BAR 0 [mem 0xfc0000000-0xfc00fffff 64bit pref]\n[Wed Nov  4 03:13:38 2026] pci 5d67:00:02.0: enabling Extended Tags\n[Wed Nov  4 03:13:38 2026] pci 5d67:00:02.0: 0.000 Gb/s available PCIe bandwidth, limited by Unknown x0 link at 5d67:00:02.0 (capable of 63.008 Gb/s with 8.0 GT/s PCIe x8 link)\n[Wed Nov  4 03:13:38 2026] pci_bus 5d67:00: busn_res: [bus 00-ff] end is updated to 00\n[Wed Nov  4 03:13:38 2026] pci 5d67:00:02.0: BAR 0 [mem 0xfc0000000-0xfc00fffff 64bit pref]: assigned\n[Wed Nov  4 03:13:39 2026] mlx5_core 5d67:00:02.0: enabling device (0000 -> 0002)\n[Wed Nov  4 03:13:39 2026] mlx5_core 5d67:00:02.0: firmware version: 14.30.5032\n[Wed Nov  4 03:13:39 2026] mlx5_core 5d67:00:02.0: Flow counters bulk query buffer size increased, bulk_query_len(8)\n[Wed Nov  4 03:13:39 2026] hv_netvsc 7ced8d19-07b0-7ced-8d19-07b07ced8d19 eth0: VF registering: eth1\n[Wed Nov  4 03:13:39 2026] mlx5_core 5d67:00:02.0 eth1: joined to eth0\n[Wed Nov  4 03:13:39 2026] mlx5_core 5d67:00:02.0: MLX5E: StrdRq(0) RqSz(1024) StrdSz(256) RxCqeCmprss(0 basic)\n[Wed Nov  4 03:13:39 2026] mlx5_core 5d67:00:02.0 enP23911s1: renamed from eth1\n[Wed Nov  4 03:13:39 2026] MACsec IEEE 802.1AE\n[Wed Nov  4 03:13:39 2026] mlx5_core 5d67:00:02.0 enP23911s1: Link up\n[Wed Nov  4 03:13:39 2026] hv_netvsc 7ced8d19-07b0-7ced-8d19-07b07ced8d19 eth0: Data path switched to VF: enP23911s1\n[Wed Nov  4 03:13:39 2026] mlx5_core 5d67:00:02.0 mlx5_0: Port: 1 Link ACTIVE\n[Wed Nov  4 03:25:25 2026] systemd-fstab-generator[39351]: Checking was requested for \"ephemeral0\", but it is not a device.\n[Wed Nov  4 03:25:25 2026] systemd-fstab-generator[39351]: x-systemd.device-timeout ignored for ephemeral0\n[Wed Nov  4 03:25:26 2026] systemd-fstab-generator[39431]: Checking was requested for \"ephemeral0\", but it is not a device.\n[Wed Nov  4 03:25:26 2026] systemd-fstab-generator[39431]: x-systemd.device-timeout ignored for ephemeral0\n[Wed Nov  4 03:25:27 2026] systemd-fstab-generator[39890]: Checking was requested for \"ephemeral0\", but it is not a device.\n[Wed Nov  4 03:25:27 2026] systemd-fstab-generator[39890]: x-systemd.device-timeout ignored for ephemeral0\n[Wed Nov  4 03:25:28 2026] systemd-fstab-generator[39961]: Checking was requested for \"ephemeral0\", but it is not a device.\n[Wed Nov  4 03:25:28 2026] systemd-fstab-generator[39961]: x-systemd.device-timeout ignored for ephemeral0\n[Wed Nov  4 03:25:28 2026] RPC: Registered named UNIX socket transport module.\n[Wed Nov  4 03:25:28 2026] RPC: Registered udp transport module.\n[Wed Nov  4 03:25:28 2026] RPC: Registered tcp transport module.\n[Wed Nov  4 03:25:28 2026] RPC: Registered tcp-with-tls transport module.\n[Wed Nov  4 03:25:28 2026] RPC: Registered tcp NFSv4.1 backchannel transport module.\n[Wed Nov  4 03:25:41 2026] netfs: FS-Cache loaded\n[Wed Nov  4 03:25:42 2026] NFS: Registering the id_resolver key type\n[Wed Nov  4 03:25:42 2026] Key type id_resolver registered\n[Wed Nov  4 03:25:42 2026] Key type id_legacy registered\n"
+    }
+  },
+  "finding": "Native NFSv4.1 data/ACL/set-ID clearing passed, but the setgid child numeric GID differed from its parent when several GIDs mapped to the same group. Reproduced by the local wire client with aliases 100/1000. Targeted matrix passes do not close this native gate."
+}
