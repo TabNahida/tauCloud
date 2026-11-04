@@ -1,0 +1,10 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793778458
+time: 2026-11-04 07:47:38.662203
+test: rec
+time: 2026-11-04 07:47:38.662296
+TESTING CHANGE NOTIFY WITH RECURSION
+time: 2026-11-04 07:47:39.497161
+failure: rec [
+(source4/torture/smb2/notify.c:655) wrong value for notify.smb2.out.changes[5].action  0x4 should be 0x2
+]

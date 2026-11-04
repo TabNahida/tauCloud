@@ -542,15 +542,11 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
       h.notification = directory.watch(h.notify_recursive, h.notify_filter);
     }
     if (body.value("register", false)) return {{"pending", true}};
-    auto result = h.notification->poll();
-    require(!result.at("deleted").get<bool>(), "notify_cleanup");
-    bool overflow = h.notify_overflow || result.at("overflow").get<bool>();
-    for (auto event : result.at("events")) {
-      if (h.notify_events.size() >= 1024) { overflow = true; break; }
-      h.notify_events.push_back(std::move(event));
-    }
+    collect_notifications(h);
+    require(!h.notify_deleted, "notify_cleanup");
+    bool overflow = h.notify_overflow;
     auto events = std::move(h.notify_events);
-    h.notify_events = json::array(); h.notify_overflow = false;
+    h.notify_events = json::array(); h.notify_overflow = false; h.notify_bytes = 0;
     return {{"pending", !overflow && events.empty()}, {"overflow", overflow}, {"events", events}};
   }
   if (op == "smb_security" || op == "smb_set_security") {

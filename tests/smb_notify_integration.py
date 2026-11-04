@@ -131,6 +131,66 @@ def run():
             d.close()
         passed('native host writes trigger recursive watches while nonrecursive watches ignore descendants')
 
+        # Cancel the first request but retain its recursive watch. Rapid service
+        # mkdir/create operations must be collected even without a pending poll.
+        d = create(t, 'rapid-tree', options=1, access=0x120089)
+        req = notify(d, 3, True); req.cancel()
+        denied(lambda: c.receive(req, timeout=10), 0xc0000120)
+        expected = []
+        for i in range(8):
+            subpath = 'branch-' + str(i)
+            create(t, 'rapid-tree/' + subpath, options=1).close()
+            create(t, 'rapid-tree/' + subpath + '/leaf').close()
+            expected.extend([(1, subpath), (1, subpath + '\\leaf')])
+        req = notify(d, interim=False)
+        assert events(c, req, asynchronous=False) == expected
+        d.close()
+        passed('rapid service-created recursive subtrees retain every ordered directory/file event between requests without requiring a rescan')
+
+        for directory in (False, True):
+            name = 'move-pair-' + str(directory)
+            d = create(t, name, options=1, access=0x120089)
+            create(t, name + '/a', options=1).close(); create(t, name + '/b', options=1).close()
+            h = create(t, name + '/a/item', options=1 if directory else 0x40)
+            req = notify(d, 3, True); req.cancel()
+            denied(lambda: c.receive(req, timeout=10), 0xc0000120)
+            for target in ('b/item', 'b/new'):
+                rename = FileRenameInformation(); rename['file_name'] = name + '/' + target
+                setinfo(h, rename)
+            req = notify(d, interim=False)
+            result = events(c, req, asynchronous=False)
+            assert result == [(2, 'a\\item'), (1, 'b\\item'), (4, 'b\\item'), (5, 'b\\new')], result
+            if directory:
+                req = notify(d)
+                (root / name / 'b/new/host-child').write_bytes(b'after move')
+                assert events(c, req) == [(1, 'b\\new\\host-child')]
+            h.close(); d.close()
+        passed('recursive file/directory cross-parent moves report REMOVED/ADDED, same-parent renames report OLD/NEW and moved subtrees retain native coverage')
+
+        d = create(t, 'buffer-bound', options=1, access=0x120089)
+        h = create(t, 'buffer-bound/initial')
+        req = notify(d, 1); req.cancel()
+        denied(lambda: c.receive(req, timeout=10), 0xc0000120)
+        # Reuse one object to isolate byte buffering from directory-size and
+        # namespace-allocation budgets. 700 names exceed 64 KiB before 1024 events.
+        for i in range(350):
+            rename = FileRenameInformation()
+            rename['file_name'] = 'buffer-bound/' + str(i).zfill(4) + '-' + 'x'*110
+            setinfo(h, rename)
+        h.close()
+        req = notify(d, interim=False)
+        denied(lambda: c.receive(req, timeout=10), 0x10c)
+        # An overflow consumes the incomplete batch. A later change starts a
+        # fresh batch instead of exposing a truncated tail of the old events.
+        create(t, 'buffer-bound/after-overflow').close()
+        req = notify(d, interim=False)
+        assert events(c, req, asynchronous=False) == [(1, 'after-overflow')]
+        d.close()
+        passed('events buffered across service operations remain byte-bounded, overflow without a partial batch and resume from fresh changes')
+
+
+
+
         if os.name != 'nt':
             name = 'moved-out'
             d = create(t, name, options=1, access=0x120089)

@@ -232,7 +232,16 @@ json native_watch::poll() {
       } else if (entry->mask & IN_MOVED_TO) {
         auto previous = removed.find(entry->cookie);
         if (previous != removed.end()) {
-          event(previous->second.name, 4, previous->second.mask); event(relative, 5, mask);
+          // MS-FSA reports cross-directory moves as REMOVED/ADDED, even
+          // when both parents are covered by one recursive watch. Only a
+          // rename within one parent uses the OLD_NAME/NEW_NAME pair.
+          auto parent = [](const std::string &name) {
+            auto slash = name.rfind('/');
+            return slash == std::string::npos ? std::string() : name.substr(0, slash);
+          };
+          bool moved = parent(previous->second.name) != parent(relative);
+          event(previous->second.name, moved ? 2 : 4, previous->second.mask);
+          event(relative, moved ? 1 : 5, mask);
           if (directory)
             for (auto &[wd, item] : w.directories)
               if (item.path == previous->second.name || item.path.starts_with(previous->second.name + "/"))

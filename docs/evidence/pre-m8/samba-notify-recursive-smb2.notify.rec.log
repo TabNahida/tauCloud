@@ -1,0 +1,8 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793778593
+time: 2026-11-04 07:49:53.676535
+test: rec
+time: 2026-11-04 07:49:53.676641
+TESTING CHANGE NOTIFY WITH RECURSION
+time: 2026-11-04 07:49:54.541830
+success: rec

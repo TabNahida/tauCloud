@@ -1,0 +1,138 @@
+{
+  "recorded_at": "2026-11-04T07:57:01.076427+00:00",
+  "base_source": "8af73498fd297335f65b5c39c5ca8dd58cf06b85",
+  "status": "partial",
+  "scope": "Service-boundary recursive watch installation, bounded native/metadata queue and cross-parent move actions. Full notification and Full SMB/NFS gates remain open.",
+  "sanitizers": "Clang ASan/UBSan including LeakSanitizer",
+  "files_sha256": {
+    "src/files.cpp": "96ad4380badfc1cfdb384d4b0718639ef9309e102b21967e9f9c7f5d24ab8735",
+    "src/file_smb.inc": "bfe4300b57b42f1818fd21edb71d064d0de9d2fab8dade55a7aa89f61b21755e",
+    "src/native_notify.inc": "82734bde5f1c85826ed7de7692f43547821501832d101eb19eb935a69c8634cc",
+    "tests/smb_notify_integration.py": "7b42493af764f40baa7926ef62f1a38f78c1251caa3f6cec0f6277ea43414ef4",
+    "tests/samba-profile.json": "6c08c6745f4fe6180cf5163f3ecc62cc2310e2ca68f2d1afd7a61777b035bc95",
+    ".github/workflows/smb-metadata.yml": "98e0985a5e9377aa5d66e086e7a19da0b981b0dc352db85af9340ac8dacb83d4",
+    "tests/smb_delete_on_close.py": "c2f0838254a500aa2fe7968b7821fbed9aaf97c0a3868c743b2c505ddb66f6af"
+  },
+  "local": {
+    "notifications": {
+      "status": "passed",
+      "checks": [
+        "SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup",
+        "per-open first filter/watch-tree settings, FIFO completion and events buffered between requests",
+        "native host writes trigger recursive watches while nonrecursive watches ignore descendants",
+        "rapid service-created recursive subtrees retain every ordered directory/file event between requests without requiring a rescan",
+        "recursive file/directory cross-parent moves report REMOVED/ADDED, same-parent renames report OLD/NEW and moved subtrees retain native coverage",
+        "events buffered across service operations remain byte-bounded, overflow without a partial batch and resume from fresh changes",
+        "recursive watches stop observing moved-out subtrees and do not disclose queued outside names",
+        "SIZE filter ignores equal-length writes and reports actual growth",
+        "LAST_WRITE observes new-file writes even when native CREATE and WRITE are drained together",
+        "first per-open zero/short capacity persists, reopening restores capacity; NOTIFY_ENUM_DIR has no partial records; invalid-only filters stay pending and cancel cleanly",
+        "directory/list-access validation and persistent shared security descriptor changes generate SECURITY notifications",
+        "portable DOS attributes, creation-time and EA changes participate in native notification streams",
+        "initial CREATE metadata produces only ADDED; subsequent changes still produce MODIFIED",
+        "recursive descriptor exhaustion stays visibly overflowed across requests and releases all watches on close",
+        "delete-pending directories complete outstanding watches without waiting for last-handle deletion",
+        "TREE_DISCONNECT and LOGOFF finish pending notifications with NOTIFY_CLEANUP before releasing keys",
+        "policy revocation denies the pending poll, invalidates its old handle and permits a fresh exclusive read open without retained watch/sharing authority"
+      ]
+    },
+    "delete_on_close": {
+      "status": "passed",
+      "checks": [
+        "schema 6 upgrades to 7 with backups in every file worker",
+        "four signed/encrypted dialects: per-open mode, last-close unlink, nonempty directory preservation, explicit disposition, notifications and rename",
+        "killed SMB worker recovers durable intents, deletes files/empty directories and preserves nonempty directories without restarting other services",
+        "offline metadata backup accepts schema 7, refuses unresolved close intents and succeeds after recovery"
+      ]
+    },
+    "core": {
+      "checks": 12422,
+      "status": "passed"
+    },
+    "intermediate_recursion": {
+      "status": "failed",
+      "tests": [
+        {
+          "selector": "smb2.notify.rec",
+          "returncode": 1,
+          "status": "failed",
+          "counts": {
+            "success": 0,
+            "failure": 1,
+            "error": 0,
+            "skip": 0
+          },
+          "log": "samba-notify-eager-smb2.notify.rec.log"
+        }
+      ]
+    },
+    "original_diagnostics": {
+      "status": "failed",
+      "tests": [
+        {
+          "selector": "smb2.notify.rec",
+          "returncode": 0,
+          "status": "passed",
+          "counts": {
+            "success": 1,
+            "failure": 0,
+            "error": 0,
+            "skip": 0
+          },
+          "log": "samba-notify-recursive-smb2.notify.rec.log"
+        },
+        {
+          "selector": "smb2.notify.dir",
+          "returncode": 0,
+          "status": "passed",
+          "counts": {
+            "success": 1,
+            "failure": 0,
+            "error": 0,
+            "skip": 0
+          },
+          "log": "samba-notify-recursive-smb2.notify.dir.log"
+        },
+        {
+          "selector": "smb2.notify.valid-req",
+          "returncode": 1,
+          "status": "failed",
+          "counts": {
+            "success": 0,
+            "failure": 1,
+            "error": 0,
+            "skip": 0
+          },
+          "log": "samba-notify-recursive-smb2.notify.valid-req.log"
+        },
+        {
+          "selector": "smb2.notify.mask",
+          "returncode": 1,
+          "status": "failed",
+          "counts": {
+            "success": 0,
+            "failure": 1,
+            "error": 0,
+            "skip": 0
+          },
+          "log": "samba-notify-recursive-smb2.notify.mask.log"
+        }
+      ]
+    }
+  },
+  "resource_failure": {
+    "status": "failed",
+    "scenario": "Attempting 600 service CREATE/CLOSE operations with 115-byte filenames under the 512 MiB ASan worker budget",
+    "error": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/tests/smb_notify_integration.py\", line 174, in run\n    create(t, 'buffer-bound/' + str(i).zfill(4) + '-' + 'x'*110).close()\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/tests/m5_integration.py\", line 42, in create\n    h=Open(tree,name);h.create(ImpersonationLevel.Impersonation,access,FileAttributes.FILE_ATTRIBUTE_NORMAL,share,disposition,options);return h\n                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/.deps/nfs-venv/lib/python3.12/site-packages/smbprotocol/open.py\", line 1160, in create\n    return self._create_response(request)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/.deps/nfs-venv/lib/python3.12/site-packages/smbprotocol/open.py\", line 1168, in _create_response\n    response = self.connection.receive(request)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/.deps/nfs-venv/lib/python3.12/site-packages/smbprotocol/connection.py\", line 1103, in receive\n    raise SMBResponseException(response)\nsmbprotocol.exceptions.InvalidParameter: Received unexpected status from the server: An invalid parameter was passed to a service or function. (3221225485) STATUS_INVALID_PARAMETER: 0xc000000d\n",
+    "server_log": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793778797175}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793778797239}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793778797347}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793778797463}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793778797583}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793778797702}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793778797796}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793778797914}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793778798032}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793778798150}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793778798268}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793778798389}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793778798503}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793778798622}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793778798740}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793778798980}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"api\",\"time\":1793778800774}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"nfs\",\"time\":1793778800857}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"smb\",\"time\":1793778800900}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"ftp\",\"time\":1793778800941}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"webdav\",\"time\":1793778800984}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"helper\",\"time\":1793778801026}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"storage_admin\",\"time\":1793778801068}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"updater\",\"time\":1793778801110}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"monitor\",\"time\":1793778801152}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"protocol\",\"time\":1793778801194}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_3\",\"time\":1793778801236}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_2\",\"time\":1793778801278}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_1\",\"time\":1793778801320}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file\",\"time\":1793778801382}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"identity\",\"time\":1793778801424}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"supervisor\",\"time\":1793778801454}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793778801614}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793778801664}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793778801798}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793778801915}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793778802033}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793778802155}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793778802235}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793778802353}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793778802471}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793778802589}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793778802707}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793778802829}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793778802944}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793778803147}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793778803180}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793778803421}\n{\"code\":\"3221225768\",\"event\":\"command_11\",\"role\":\"smb\",\"time\":1793778804262}\n{\"code\":\"resource_exhausted\",\"event\":\"worker_unhealthy\",\"role\":\"file\",\"time\":1793778820414}\n{\"code\":\"transport_closed\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793778820447}\n{\"code\":\"1245599\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793778820447}\n",
+    "assessment": "services.cpp emits resource_exhausted when worker RSS exceeds the configured limit. This larger namespace churn remains a separate resource-validation gap. The final queue test reuses one file for 350 renames to exceed 64 KiB with fewer than 1024 events, isolating the queue byte bound without changing production or sanitizer limits."
+  },
+  "fixture_correction": "The first byte-bound test used 195-byte names and was rejected by the current 120-byte component bound. Broader-name compatibility remains open; the final test uses valid 115-byte names.",
+  "limitations": [
+    "New source awaits GCC/Clang ASan+UBSan/MSVC acceptance.",
+    "valid-req still fails at a two-versus-one event count; mask still fails at an unexpected directory LAST_ACCESS notification.",
+    "mask-change, tree naming and session reconnect remain unfinished. No full notification-suite success is claimed.",
+    "Native host writes that populate a directory before Linux watch installation still return overflow.",
+    "The per-operation native drains are bounded by existing handle/watch limits and 16 native batches per watch; comprehensive performance and stress gates remain open."
+  ]
+}

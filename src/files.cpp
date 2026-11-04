@@ -67,7 +67,8 @@ struct file_store::impl {
     bool user_access_time = false, user_write_time = false, user_change_time = false;
     std::unique_ptr<native_watch> notification = nullptr;
     uint32_t notify_filter = 0;
-    bool notify_recursive = false, notify_overflow = false;
+    bool notify_recursive = false, notify_overflow = false, notify_deleted = false;
+    size_t notify_bytes = 0;
     json notify_events = json::array();
   };
   struct byte_lock {
@@ -88,6 +89,36 @@ struct file_store::impl {
   void notify_metadata(const std::string &native, uint32_t mask) {
     pending_metadata[native] |= mask;
   }
+  void queue_notification(opened &h, json event, size_t limit = 1024) {
+    if (h.notify_overflow) return;
+    auto bytes = event.at("name").get_ref<const std::string &>().size();
+    if (h.notify_events.size() >= limit || bytes > 65536 - h.notify_bytes) {
+      h.notify_overflow = true;
+      h.notify_events.clear(); h.notify_bytes = 0;
+      return;
+    }
+    h.notify_bytes += bytes;
+    h.notify_events.push_back(std::move(event));
+  }
+  void collect_notifications(opened &h) {
+    auto result = h.notification->poll();
+    h.notify_deleted |= result.at("deleted").get<bool>();
+    h.notify_overflow |= result.at("overflow").get<bool>();
+    if (h.notify_overflow) { h.notify_events.clear(); h.notify_bytes = 0; }
+    for (auto event : result.at("events")) queue_notification(h, std::move(event));
+  }
+  void collect_notifications() {
+    // Install recursive child watches before the next file-domain operation can
+    // populate them. Buffer events even when no CHANGE_NOTIFY is outstanding.
+    // Native host races still report overflow; they cannot be serialized here.
+    for (auto &[id, h] : handles) {
+      if (!h.notification) continue;
+      try { collect_notifications(h); }
+      catch (...) {
+        h.notify_overflow = true; h.notify_events.clear(); h.notify_bytes = 0;
+      }
+    }
+  }
   void deliver_metadata(const std::string &native, uint32_t mask) {
     statement q(db, "SELECT space,path FROM objects WHERE native=?");
     q.bind(1, native);
@@ -98,8 +129,7 @@ struct file_store::impl {
             path == h.path || !beneath(path, h.path)) continue;
         auto relative = h.path.empty() ? path : path.substr(h.path.size() + 1);
         if (!h.notify_recursive && relative.find('/') != std::string::npos) continue;
-        if (h.notify_events.size() >= 256) { h.notify_overflow = true; h.notify_events.clear(); }
-        if (!h.notify_overflow) h.notify_events.push_back({{"name", relative}, {"action", 3}});
+        queue_notification(h, {{"name", relative}, {"action", 3}}, 256);
       }
     }
   }
@@ -523,10 +553,12 @@ struct file_store::impl {
     pending_metadata.clear();
     try {
       auto result = dispatch_request(op, body, ctx);
+      collect_notifications();
       for (const auto &[native, mask] : pending_metadata) deliver_metadata(native, mask);
       pending_metadata.clear();
       return result;
     } catch (...) {
+      collect_notifications();
       // A failed transaction must not publish metadata events. Native changes
       // may already have committed, so tell affected watchers to rescan.
       uint32_t mask = 0;

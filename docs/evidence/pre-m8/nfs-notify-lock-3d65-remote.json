@@ -1,0 +1,105 @@
+{
+  "recorded_at": "2026-11-04T07:53:50.454294+00:00",
+  "source": "3d65a9059ea469da53dfaf7c1fc95c03010f7bf0",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41793012402",
+  "status": "passed",
+  "scope": "Nine independent CB_NOTIFY_LOCK groups on all three compilers, including real lease expiry and immutable callback retry; one custom scenario using the unmodified pynfs client stack on both Linux compilers. Does not establish the full upstream callback suite or delegation/GSS callback conformance.",
+  "platforms": {
+    "gcc": {
+      "artifact_id": 13304636997,
+      "artifact_sha256": "d93add486866ba07f94fa84c44d3ecec31970b7915841c8a4a0314441f39454b",
+      "reports": {
+        "nfs-notify-lock.json": {
+          "sha256": "ef6ff7c4987731d477f9884fffb22ddf9edcb36ce0f03bc1eaf87f79119ec4ca",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "OPEN advertises MAY_NOTIFY_LOCK; READW conflict release delivers exact handle/owner/referring request; the hint neither grants nor reserves the lock",
+              "nonblocking LOCK denial does not enroll a waiter and cancels a previous blocking request for the same owner/file",
+              "closing the waiting OPEN removes its unsent notification without granting lock state",
+              "fresh write-policy authority is required before dispatch; revocation drops the waiter and restoring rights does not resurrect it",
+              "inconsistent operation status and lost notification reply cause disconnect then exact two-operation replay; RETRY_UNCACHED_REP consumes the slot without granting a lock",
+              "multiple waiting owners share one bounded callback slot and no second notification is sent before the first completes",
+              "client NOTSUPP completes the optional callback; foreground polling and explicit lock acquisition remain usable",
+              "two-operation callbacks respect negotiated operation and full RPC size limits; constrained clients can still poll for locks",
+              "expired client and OPEN state remove the queued hint; releasing the competing lock never notifies or revives the expired session"
+            ],
+            "sanitizers": false
+          }
+        },
+        "pynfs-notify-lock.json": {
+          "sha256": "688b820ee5b76c73f17e6ab6fdfdec778f7182895c57fb95fa9bcb8abe78565e",
+          "result": {
+            "status": "passed",
+            "client": "pinned linux-nfs/pynfs unmodified RPC and NFS4Client implementation",
+            "scope": "custom scenario; not the full upstream callback test suite",
+            "checks": [
+              "CB_NOTIFY_LOCK decoded and acknowledged by pynfs; matching handle/client/owner; explicit retry acquires the lock"
+            ],
+            "sanitizers": false
+          }
+        }
+      }
+    },
+    "clang": {
+      "artifact_id": 13304439882,
+      "artifact_sha256": "b3173e7d885182053a8e06b8abdd276b17513995f0a00a3e3ad2ff047768d5d5",
+      "reports": {
+        "nfs-notify-lock.json": {
+          "sha256": "027c953efcf1d6f60c5ceaa6ae1e82180cc9cac1632831ab3945c6f15a13bb29",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "OPEN advertises MAY_NOTIFY_LOCK; READW conflict release delivers exact handle/owner/referring request; the hint neither grants nor reserves the lock",
+              "nonblocking LOCK denial does not enroll a waiter and cancels a previous blocking request for the same owner/file",
+              "closing the waiting OPEN removes its unsent notification without granting lock state",
+              "fresh write-policy authority is required before dispatch; revocation drops the waiter and restoring rights does not resurrect it",
+              "inconsistent operation status and lost notification reply cause disconnect then exact two-operation replay; RETRY_UNCACHED_REP consumes the slot without granting a lock",
+              "multiple waiting owners share one bounded callback slot and no second notification is sent before the first completes",
+              "client NOTSUPP completes the optional callback; foreground polling and explicit lock acquisition remain usable",
+              "two-operation callbacks respect negotiated operation and full RPC size limits; constrained clients can still poll for locks",
+              "expired client and OPEN state remove the queued hint; releasing the competing lock never notifies or revives the expired session"
+            ],
+            "sanitizers": true
+          }
+        },
+        "pynfs-notify-lock.json": {
+          "sha256": "5973ba283c48eb3cd38872c2d7ede2bc3b347039d61a404db8c4fbda8afa07bb",
+          "result": {
+            "status": "passed",
+            "client": "pinned linux-nfs/pynfs unmodified RPC and NFS4Client implementation",
+            "scope": "custom scenario; not the full upstream callback test suite",
+            "checks": [
+              "CB_NOTIFY_LOCK decoded and acknowledged by pynfs; matching handle/client/owner; explicit retry acquires the lock"
+            ],
+            "sanitizers": true
+          }
+        }
+      }
+    },
+    "msvc": {
+      "artifact_id": 13304514266,
+      "artifact_sha256": "96b9aa56f4560c477ccaad817b68f86a3d8bba247c1cad8dd9de3a1f59aceff8",
+      "reports": {
+        "nfs-notify-lock.json": {
+          "sha256": "9ccbf21ed7bc20a2c1461dd606fa2da483f9ca89c6bea233cc33830a2912e35f",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "OPEN advertises MAY_NOTIFY_LOCK; READW conflict release delivers exact handle/owner/referring request; the hint neither grants nor reserves the lock",
+              "nonblocking LOCK denial does not enroll a waiter and cancels a previous blocking request for the same owner/file",
+              "closing the waiting OPEN removes its unsent notification without granting lock state",
+              "fresh write-policy authority is required before dispatch; revocation drops the waiter and restoring rights does not resurrect it",
+              "inconsistent operation status and lost notification reply cause disconnect then exact two-operation replay; RETRY_UNCACHED_REP consumes the slot without granting a lock",
+              "multiple waiting owners share one bounded callback slot and no second notification is sent before the first completes",
+              "client NOTSUPP completes the optional callback; foreground polling and explicit lock acquisition remain usable",
+              "two-operation callbacks respect negotiated operation and full RPC size limits; constrained clients can still poll for locks",
+              "expired client and OPEN state remove the queued hint; releasing the competing lock never notifies or revives the expired session"
+            ],
+            "sanitizers": false
+          }
+        }
+      }
+    }
+  }
+}

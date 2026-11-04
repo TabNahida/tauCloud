@@ -1,0 +1,17 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793778594
+time: 2026-11-04 07:49:54.652191
+test: dir
+time: 2026-11-04 07:49:54.652294
+TESTING CHANGE NOTIFY ON DIRECTORIES
+Testing notify cancel
+Testing notify mkdir
+Testing notify rmdir
+Testing notify mkdir - rmdir - mkdir - rmdir
+Testing buffered notify on create of 10 files
+Testing notify on unlink for the first file
+and now from the 1st notify
+(3rd notify) this notify will only see the 1st unlink
+Testing if a close() on the dir handle triggers the notify reply
+time: 2026-11-04 07:49:59.223989
+success: dir

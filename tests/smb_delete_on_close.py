@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Independent CREATE delete-on-close versus explicit disposition and recovery."""
 import argparse
+from contextlib import closing
 import json
 import os
 from pathlib import Path
@@ -41,12 +42,12 @@ def main():
         # Test the schema-6 upgrade with an actual pre-upgrade database backup.
         f.stop()
         for role in ('file', 'file_1', 'file_2', 'file_3'):
-            with sqlite3.connect(f.state/(role+'.db')) as db:
+            with closing(sqlite3.connect(f.state/(role+'.db'))) as db, db:
                 db.executescript('DROP TABLE smb_close_delete; PRAGMA user_version=6;')
         f.start()
         for role in ('file', 'file_1', 'file_2', 'file_3'):
             assert (f.state/(role+'.pre-v7.db')).exists()
-            with sqlite3.connect(f.state/(role+'.db')) as db:
+            with closing(sqlite3.connect(f.state/(role+'.db'))) as db, db:
                 assert db.execute('PRAGMA user_version').fetchone()[0] == 7
         passed('schema 6 upgrades to 7 with backups in every file worker')
         root = f.root/'smbdata'
@@ -112,9 +113,9 @@ def main():
         # refuses shared pending deletion. A completed state remains portable.
         c.disconnect(); f.stop()
         backup = f.base/'backup-doc'; f.ctl('backup', '--output', str(backup))
-        with sqlite3.connect(backup/'file.db') as db:
+        with closing(sqlite3.connect(backup/'file.db')) as db, db:
             assert db.execute('PRAGMA user_version').fetchone()[0] == 7
-        with sqlite3.connect(f.state/'file.db') as db:
+        with closing(sqlite3.connect(f.state/'file.db')) as db, db:
             db.execute("INSERT INTO smb_close_delete VALUES('abandoned', 'smbdata', 'missing', 'obsolete', 0, '')")
         rejected = f.ctl('backup', '--output', str(f.base/'backup-unfinished'), ok=False)
         assert 'unfinished_jobs' in rejected
@@ -131,7 +132,12 @@ def main():
         for c in clients:
             try: c.disconnect(close=False)
             except Exception: pass
-        if f: f.close()
+        if f:
+            try: f.close()
+            except Exception:
+                report['status'] = 'failed'
+                report['cleanup_error'] = traceback.format_exc()
+                print(report['cleanup_error'], flush=True)
         a.output.parent.mkdir(parents=True, exist_ok=True)
         a.output.write_text(json.dumps(report, indent=2)+'\n')
     return int(report['status'] != 'passed')
