@@ -1,0 +1,1414 @@
+{
+  "recorded_at": "2026-11-04T20:55:14.968695+00:00",
+  "source": "0bf303f66715ba0febfbda24bd6a41658522f5f7",
+  "kernel": {
+    "run": "https://github.com/TabNahida/tauCloud/actions/runs/41907622493",
+    "conclusion": "success",
+    "host_checks": 180,
+    "guest_checks": 364,
+    "proof_lines": [
+      "kernel\tHost capability refusal or native acceptance\t2026-11-04T20:41:39.4190690Z PASS native delegation 180 checks",
+      "kernel\tRequired tmpfs and ext4 native exclusion in QEMU\t2026-11-04T20:42:03.7259193Z PASS native delegation 364 checks",
+      "kernel\tRequired tmpfs and ext4 native exclusion in QEMU\t2026-11-04T20:42:03.7259442Z TAUCLOUD_DELEGATION_VM_PASS"
+    ],
+    "raw_log_sha256": "3f9782a81d0b44f98eddcb8df29d88cdcebf1dd2876b191345b11d843d75e01b"
+  },
+  "windows_smb": {
+    "run": "https://github.com/TabNahida/tauCloud/actions/runs/41907622485",
+    "conclusion": "success"
+  },
+  "windows_nfs": {
+    "run": "https://github.com/TabNahida/tauCloud/actions/runs/41907622250",
+    "conclusion": "success"
+  },
+  "matrix_snapshot": {
+    "conclusion": "",
+    "jobs": [
+      {
+        "completedAt": "0001-01-01T00:00:00Z",
+        "conclusion": "",
+        "databaseId": 126846393321,
+        "name": "gcc metadata",
+        "startedAt": "2026-11-04T20:32:51Z",
+        "status": "in_progress",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake-io/github-action-setup-xmake@v1",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_pace.py",
+            "number": 4,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_pace.py --dependency recipes",
+            "number": 5,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libssl-dev libexpat1-dev samba-testsuite smbclient cifs-utils keyutils libkrb5-dev krb5-kdc krb5-admin-server krb5-user nfs-common",
+            "number": 6,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python -m pip install -r tests/smb-requirements.txt -r tests/nfs-requirements.txt",
+            "number": 7,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python -m pip install -r tests/kerberos-requirements.txt",
+            "number": 8,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_nfs_client.py",
+            "number": 9,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake f -y -c -p linux -a x86_64 -m release --m0=n --m1=y --toolchain=gcc --sanitizers=n",
+            "number": 10,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake -y -j 8",
+            "number": 11,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Native cache exclusion, cancellation and allocation safety",
+            "number": 12,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFS core and independent SSV cryptographic vectors",
+            "number": 13,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFS delegation native exclusion, recall and authority lifetime",
+            "number": 14,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFS delegation protocol components (injected native provider, not production handout)",
+            "number": 15,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFS advertised lease, session expiry and recovery after configuration changes",
+            "number": 16,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB shared lease state, wire vectors and break transitions",
+            "number": 17,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB shared lease native exclusion and file-domain authority",
+            "number": 18,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB file lease CREATE, shared recall and cross-connection acknowledgments",
+            "number": 19,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Original Samba lease grants, upgrades, recalls and epochs",
+            "number": 20,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Full Samba lease diagnostic (known incomplete compatibility)",
+            "number": 21,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB authority and failed CREATE cleanup",
+            "number": 22,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB per-open delete-on-close and durable recovery",
+            "number": 23,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB rename archive, deferred metadata and crash recovery",
+            "number": 24,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFSv4.1 reverse RPC, callback sequence replay and lifecycle",
+            "number": 25,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFSv4.1 callback installation races and definitive error recovery",
+            "number": 26,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFSv4.1 channel limits and CREATE_SESSION replay",
+            "number": 27,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFSv4.1 OPEN and WANT_DELEGATION negotiation, authority and replay",
+            "number": 28,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFSv4.1 blocking lock notification and callback replay",
+            "number": 29,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB session renewal and failure cleanup",
+            "number": 30,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB anonymous reauthentication and retained security context",
+            "number": 31,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB multiplexed sessions, replacement and isolation",
+            "number": 32,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB CREATE dot paths and share-root confinement",
+            "number": 33,
+            "status": "completed"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB recursive notification directory reuse",
+            "number": 34,
+            "status": "in_progress"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB cross-transport notification ordering and reciprocal writers",
+            "number": 35,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Persistent ACLs and cross-protocol permission checks",
+            "number": 36,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB security query flags and dialect-specific error contexts",
+            "number": 37,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB security and size updates preserve classic oplock ownership",
+            "number": 38,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB security archive, deferred timestamps and recovery",
+            "number": 39,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB3.1.1 negotiated signing and GMAC nonce domains",
+            "number": 40,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Native SMB directory notifications and asynchronous lifecycle",
+            "number": 41,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Unmodified Samba notification lifecycle",
+            "number": 42,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Current MS-FSA destination-directory sharing",
+            "number": 43,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Scoped SMB ownership authority and revocation",
+            "number": 44,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Native Windows security descriptor operations",
+            "number": 45,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Unmodified Samba ACL conformance",
+            "number": 46,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Full unmodified Samba ACL suite with explicit owner restoration",
+            "number": 47,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "DOS metadata, timestamps, EAs and modes",
+            "number": 48,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Asynchronous SMB blocking locks and cancellation",
+            "number": 49,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB native cache grants, recall, ACK and cross-protocol coherence",
+            "number": 50,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB Level II shared read caching and no-ACK invalidation",
+            "number": 51,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB BATCH cached closes, sharing conflicts and read-only authority",
+            "number": 52,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Original Samba EXCLUSIVE, BATCH and Level II transitions",
+            "number": 53,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Original Samba BATCH session replacement and reauthentication",
+            "number": 54,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Related asynchronous SMB compounds and dependent cancellation",
+            "number": 55,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Unmodified Samba asynchronous locks",
+            "number": 56,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Native allocation and durable quota",
+            "number": 57,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFS attributes and native allocation",
+            "number": 58,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFS file authority and security discovery isolation",
+            "number": 59,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFS anonymous security discovery and revocation",
+            "number": 60,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFSv4 ACLs, mode and cross-protocol access",
+            "number": 61,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFS special modes and shared namespace permissions",
+            "number": 62,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFS RPCSEC_GSS with real MIT KDC and client",
+            "number": 63,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFS Kerberos callback integrity, privacy and lifecycle",
+            "number": 64,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFS Kerberos machine state protection and cleanup",
+            "number": 65,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFS SSV key negotiation, RPC protection, rotation and cleanup",
+            "number": 66,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Unmodified pynfs callback program and RPC version",
+            "number": 67,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Unmodified pynfs explicit no-delegation request",
+            "number": 68,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Full pynfs delegation diagnostic (grants and recall incomplete)",
+            "number": 69,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Unmodified pynfs client blocking lock notification",
+            "number": 70,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB3 dialects and encrypted allocation",
+            "number": 71,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB Kerberos, SPNEGO and native Linux CIFS",
+            "number": 72,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Run actions/upload-artifact@v4",
+            "number": 73,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Post Run xmake-io/github-action-setup-xmake@v1",
+            "number": 145,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Post Run actions/checkout@v4",
+            "number": 146,
+            "status": "pending"
+          }
+        ],
+        "url": "https://github.com/TabNahida/tauCloud/actions/runs/41907622252/job/126846393321"
+      },
+      {
+        "completedAt": "0001-01-01T00:00:00Z",
+        "conclusion": "",
+        "databaseId": 126846393688,
+        "name": "msvc metadata",
+        "startedAt": "2026-11-04T20:32:51Z",
+        "status": "in_progress",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake-io/github-action-setup-xmake@v1",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_pace.py",
+            "number": 4,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_pace.py --dependency recipes",
+            "number": 5,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Run sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libssl-dev libexpat1-dev samba-testsuite smbclient cifs-utils keyutils libkrb5-dev krb5-kdc krb5-admin-server krb5-user nfs-common",
+            "number": 6,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python -m pip install -r tests/smb-requirements.txt -r tests/nfs-requirements.txt",
+            "number": 7,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Run python -m pip install -r tests/kerberos-requirements.txt",
+            "number": 8,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_nfs_client.py",
+            "number": 9,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake f -y -c -p windows -a x64 -m release --m0=n --m1=y --toolchain=msvc --sanitizers=n",
+            "number": 10,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake -y -j 8",
+            "number": 11,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Native cache exclusion, cancellation and allocation safety",
+            "number": 12,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFS core and independent SSV cryptographic vectors",
+            "number": 13,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFS delegation native exclusion, recall and authority lifetime",
+            "number": 14,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFS delegation protocol components (injected native provider, not production handout)",
+            "number": 15,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFS advertised lease, session expiry and recovery after configuration changes",
+            "number": 16,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB shared lease state, wire vectors and break transitions",
+            "number": 17,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB shared lease native exclusion and file-domain authority",
+            "number": 18,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB file lease CREATE, shared recall and cross-connection acknowledgments",
+            "number": 19,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Original Samba lease grants, upgrades, recalls and epochs",
+            "number": 20,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Full Samba lease diagnostic (known incomplete compatibility)",
+            "number": 21,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB authority and failed CREATE cleanup",
+            "number": 22,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB per-open delete-on-close and durable recovery",
+            "number": 23,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB rename archive, deferred metadata and crash recovery",
+            "number": 24,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFSv4.1 reverse RPC, callback sequence replay and lifecycle",
+            "number": 25,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFSv4.1 callback installation races and definitive error recovery",
+            "number": 26,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFSv4.1 channel limits and CREATE_SESSION replay",
+            "number": 27,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFSv4.1 OPEN and WANT_DELEGATION negotiation, authority and replay",
+            "number": 28,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFSv4.1 blocking lock notification and callback replay",
+            "number": 29,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB session renewal and failure cleanup",
+            "number": 30,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB anonymous reauthentication and retained security context",
+            "number": 31,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB multiplexed sessions, replacement and isolation",
+            "number": 32,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB CREATE dot paths and share-root confinement",
+            "number": 33,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB recursive notification directory reuse",
+            "number": 34,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB cross-transport notification ordering and reciprocal writers",
+            "number": 35,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Persistent ACLs and cross-protocol permission checks",
+            "number": 36,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB security query flags and dialect-specific error contexts",
+            "number": 37,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB security and size updates preserve classic oplock ownership",
+            "number": 38,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB security archive, deferred timestamps and recovery",
+            "number": 39,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB3.1.1 negotiated signing and GMAC nonce domains",
+            "number": 40,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Native SMB directory notifications and asynchronous lifecycle",
+            "number": 41,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Unmodified Samba notification lifecycle",
+            "number": 42,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Current MS-FSA destination-directory sharing",
+            "number": 43,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Scoped SMB ownership authority and revocation",
+            "number": 44,
+            "status": "completed"
+          },
+          {
+            "conclusion": "",
+            "name": "Native Windows security descriptor operations",
+            "number": 45,
+            "status": "in_progress"
+          },
+          {
+            "conclusion": "",
+            "name": "Unmodified Samba ACL conformance",
+            "number": 46,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Full unmodified Samba ACL suite with explicit owner restoration",
+            "number": 47,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "DOS metadata, timestamps, EAs and modes",
+            "number": 48,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Asynchronous SMB blocking locks and cancellation",
+            "number": 49,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB native cache grants, recall, ACK and cross-protocol coherence",
+            "number": 50,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB Level II shared read caching and no-ACK invalidation",
+            "number": 51,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB BATCH cached closes, sharing conflicts and read-only authority",
+            "number": 52,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Original Samba EXCLUSIVE, BATCH and Level II transitions",
+            "number": 53,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Original Samba BATCH session replacement and reauthentication",
+            "number": 54,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Related asynchronous SMB compounds and dependent cancellation",
+            "number": 55,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Unmodified Samba asynchronous locks",
+            "number": 56,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Native allocation and durable quota",
+            "number": 57,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFS attributes and native allocation",
+            "number": 58,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFS file authority and security discovery isolation",
+            "number": 59,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFS anonymous security discovery and revocation",
+            "number": 60,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFSv4 ACLs, mode and cross-protocol access",
+            "number": 61,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFS special modes and shared namespace permissions",
+            "number": 62,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFS RPCSEC_GSS with real MIT KDC and client",
+            "number": 63,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFS Kerberos callback integrity, privacy and lifecycle",
+            "number": 64,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFS Kerberos machine state protection and cleanup",
+            "number": 65,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFS SSV key negotiation, RPC protection, rotation and cleanup",
+            "number": 66,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Unmodified pynfs callback program and RPC version",
+            "number": 67,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Unmodified pynfs explicit no-delegation request",
+            "number": 68,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Full pynfs delegation diagnostic (grants and recall incomplete)",
+            "number": 69,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Unmodified pynfs client blocking lock notification",
+            "number": 70,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB3 dialects and encrypted allocation",
+            "number": 71,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB Kerberos, SPNEGO and native Linux CIFS",
+            "number": 72,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Run actions/upload-artifact@v4",
+            "number": 73,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Post Run xmake-io/github-action-setup-xmake@v1",
+            "number": 145,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Post Run actions/checkout@v4",
+            "number": 146,
+            "status": "pending"
+          }
+        ],
+        "url": "https://github.com/TabNahida/tauCloud/actions/runs/41907622252/job/126846393688"
+      },
+      {
+        "completedAt": "0001-01-01T00:00:00Z",
+        "conclusion": "",
+        "databaseId": 126846393700,
+        "name": "clang metadata",
+        "startedAt": "2026-11-04T20:32:50Z",
+        "status": "in_progress",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake-io/github-action-setup-xmake@v1",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_pace.py",
+            "number": 4,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_pace.py --dependency recipes",
+            "number": 5,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libssl-dev libexpat1-dev samba-testsuite smbclient cifs-utils keyutils libkrb5-dev krb5-kdc krb5-admin-server krb5-user nfs-common",
+            "number": 6,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python -m pip install -r tests/smb-requirements.txt -r tests/nfs-requirements.txt",
+            "number": 7,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python -m pip install -r tests/kerberos-requirements.txt",
+            "number": 8,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_nfs_client.py",
+            "number": 9,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake f -y -c -p linux -a x86_64 -m debug --m0=n --m1=y --toolchain=clang --sanitizers=y",
+            "number": 10,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake -y -j 8",
+            "number": 11,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Native cache exclusion, cancellation and allocation safety",
+            "number": 12,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFS core and independent SSV cryptographic vectors",
+            "number": 13,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFS delegation native exclusion, recall and authority lifetime",
+            "number": 14,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFS delegation protocol components (injected native provider, not production handout)",
+            "number": 15,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFS advertised lease, session expiry and recovery after configuration changes",
+            "number": 16,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB shared lease state, wire vectors and break transitions",
+            "number": 17,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB shared lease native exclusion and file-domain authority",
+            "number": 18,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB file lease CREATE, shared recall and cross-connection acknowledgments",
+            "number": 19,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Original Samba lease grants, upgrades, recalls and epochs",
+            "number": 20,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Full Samba lease diagnostic (known incomplete compatibility)",
+            "number": 21,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB authority and failed CREATE cleanup",
+            "number": 22,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB per-open delete-on-close and durable recovery",
+            "number": 23,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB rename archive, deferred metadata and crash recovery",
+            "number": 24,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFSv4.1 reverse RPC, callback sequence replay and lifecycle",
+            "number": 25,
+            "status": "completed"
+          },
+          {
+            "conclusion": "",
+            "name": "NFSv4.1 callback installation races and definitive error recovery",
+            "number": 26,
+            "status": "in_progress"
+          },
+          {
+            "conclusion": "",
+            "name": "NFSv4.1 channel limits and CREATE_SESSION replay",
+            "number": 27,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFSv4.1 OPEN and WANT_DELEGATION negotiation, authority and replay",
+            "number": 28,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFSv4.1 blocking lock notification and callback replay",
+            "number": 29,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB session renewal and failure cleanup",
+            "number": 30,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB anonymous reauthentication and retained security context",
+            "number": 31,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB multiplexed sessions, replacement and isolation",
+            "number": 32,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB CREATE dot paths and share-root confinement",
+            "number": 33,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB recursive notification directory reuse",
+            "number": 34,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB cross-transport notification ordering and reciprocal writers",
+            "number": 35,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Persistent ACLs and cross-protocol permission checks",
+            "number": 36,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB security query flags and dialect-specific error contexts",
+            "number": 37,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB security and size updates preserve classic oplock ownership",
+            "number": 38,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB security archive, deferred timestamps and recovery",
+            "number": 39,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB3.1.1 negotiated signing and GMAC nonce domains",
+            "number": 40,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Native SMB directory notifications and asynchronous lifecycle",
+            "number": 41,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Unmodified Samba notification lifecycle",
+            "number": 42,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Current MS-FSA destination-directory sharing",
+            "number": 43,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Scoped SMB ownership authority and revocation",
+            "number": 44,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Native Windows security descriptor operations",
+            "number": 45,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Unmodified Samba ACL conformance",
+            "number": 46,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Full unmodified Samba ACL suite with explicit owner restoration",
+            "number": 47,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "DOS metadata, timestamps, EAs and modes",
+            "number": 48,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Asynchronous SMB blocking locks and cancellation",
+            "number": 49,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB native cache grants, recall, ACK and cross-protocol coherence",
+            "number": 50,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB Level II shared read caching and no-ACK invalidation",
+            "number": 51,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB BATCH cached closes, sharing conflicts and read-only authority",
+            "number": 52,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Original Samba EXCLUSIVE, BATCH and Level II transitions",
+            "number": 53,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Original Samba BATCH session replacement and reauthentication",
+            "number": 54,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Related asynchronous SMB compounds and dependent cancellation",
+            "number": 55,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Unmodified Samba asynchronous locks",
+            "number": 56,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Native allocation and durable quota",
+            "number": 57,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFS attributes and native allocation",
+            "number": 58,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFS file authority and security discovery isolation",
+            "number": 59,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFS anonymous security discovery and revocation",
+            "number": 60,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFSv4 ACLs, mode and cross-protocol access",
+            "number": 61,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFS special modes and shared namespace permissions",
+            "number": 62,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFS RPCSEC_GSS with real MIT KDC and client",
+            "number": 63,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFS Kerberos callback integrity, privacy and lifecycle",
+            "number": 64,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFS Kerberos machine state protection and cleanup",
+            "number": 65,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "NFS SSV key negotiation, RPC protection, rotation and cleanup",
+            "number": 66,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Unmodified pynfs callback program and RPC version",
+            "number": 67,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Unmodified pynfs explicit no-delegation request",
+            "number": 68,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Full pynfs delegation diagnostic (grants and recall incomplete)",
+            "number": 69,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Unmodified pynfs client blocking lock notification",
+            "number": 70,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB3 dialects and encrypted allocation",
+            "number": 71,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "SMB Kerberos, SPNEGO and native Linux CIFS",
+            "number": 72,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Run actions/upload-artifact@v4",
+            "number": 73,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Post Run xmake-io/github-action-setup-xmake@v1",
+            "number": 145,
+            "status": "pending"
+          },
+          {
+            "conclusion": "",
+            "name": "Post Run actions/checkout@v4",
+            "number": 146,
+            "status": "pending"
+          }
+        ],
+        "url": "https://github.com/TabNahida/tauCloud/actions/runs/41907622252/job/126846393700"
+      }
+    ],
+    "status": "in_progress"
+  },
+  "scope": "Independent native owner before file-domain integration. Running matrix is not counted as passed. Full SMB/NFS remains open."
+}

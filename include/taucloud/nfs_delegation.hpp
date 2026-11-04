@@ -18,6 +18,12 @@ public:
   bool held() const { return state_ == state::active || state_ == state::recalling; }
   int64_t expires() const { return expires_; }
   int64_t recall_until() const { return recall_until_; }
+  // A remote native authority may observe expiry/revocation first. Such an
+  // observation can retire local state, never revive or renew it.
+  void observe_terminal(state value) {
+    if (held() && (value == state::returned || value == state::revoked || value == state::expired))
+      state_ = value;
+  }
   void expire(int64_t time) {
     if (!held()) return;
     // A client lease expiring before the recall interval revokes all of that

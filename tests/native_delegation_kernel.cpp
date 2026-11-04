@@ -244,6 +244,52 @@ static void owner_suite(const fs::path &base, bool mandatory) {
   check(writer >= 0 && std::chrono::steady_clock::now() - start > 500ms, "worker_crash_retention_deadline");
   close(writer);
   std::cout << "PASS " << base << " OWNER/SIGKILL-worker-retention-expiry\n";
+  // The child remains unreaped until controller destruction, so its PID cannot
+  // be reused while these verified waitid observations and signals execute.
+  {
+    auto f = root.open("owned"); native_delegation_owner stopped;
+    auto pid = static_cast<pid_t>(stopped.process_id()); siginfo_t event{};
+    check(kill(pid, SIGSTOP) == 0 && waitid(P_PID, pid, &event, WSTOPPED | WNOWAIT) == 0 &&
+        event.si_code == CLD_STOPPED, "owner_stop_not_observed");
+    bool lost = false;
+    try { stopped.acquire(f, 5000, 800); }
+    catch (const error &e) { lost = std::string_view(e.what()) == "delegation_owner_lost"; }
+    kill(pid, SIGCONT);
+    check(lost, "stopped_owner_acquire_not_timed_out");
+    auto limit = std::chrono::steady_clock::now() + 500ms;
+    do {
+      event = {}; check(waitid(P_PID, pid, &event, WEXITED | WNOHANG | WNOWAIT) == 0, "late_owner_wait");
+      if (event.si_pid) break;
+      std::this_thread::sleep_for(5ms);
+    } while (std::chrono::steady_clock::now() < limit);
+    check(event.si_pid == pid, "late_acquire_restarted_expired_lease");
+    writer = open((base / "owned").c_str(), O_WRONLY | O_NONBLOCK);
+    check(writer >= 0, "late_acquire_left_guard"); close(writer);
+    check(!f.cache_guard(false), "uncertain_acquire_description_unfenced");
+  }
+  {
+    auto f = root.open("owned"); native_delegation_owner killed;
+    auto held = killed.acquire(f, 5000, 5000);
+    check(held != 0, "killed_owner_acquire");
+    auto pid = static_cast<pid_t>(killed.process_id()); siginfo_t event{};
+    check(kill(pid, SIGSTOP) == 0 && waitid(P_PID, pid, &event, WSTOPPED | WNOWAIT) == 0,
+        "release_owner_stop");
+    bool refused = false;
+    try { killed.release(held); }
+    catch (const error &e) { refused = std::string_view(e.what()) == "delegation_owner_lost"; }
+    check(refused && !f.cache_guard(false), "live_owner_release_unfenced_description");
+    writer = open((base / "owned").c_str(), O_WRONLY | O_NONBLOCK);
+    check(writer < 0 && errno == EWOULDBLOCK, "live_owner_release_unlocked_guard");
+    check(kill(pid, SIGKILL) == 0 && waitid(P_PID, pid, &event, WEXITED | WNOWAIT) == 0,
+        "owner_death_not_observed");
+    writer = open((base / "owned").c_str(), O_WRONLY | O_NONBLOCK);
+    check(writer < 0 && errno == EWOULDBLOCK, "owner_death_lost_retained_guard");
+    killed.release(held);
+    writer = open((base / "owned").c_str(), O_WRONLY | O_NONBLOCK);
+    check(writer >= 0, "dead_owner_explicit_release_failed"); close(writer);
+    check(bool(f.delegation_guard(false)), "dead_owner_release_left_local_fence");
+  }
+  std::cout << "PASS " << base << " OWNER/absolute-expiry-and-confirmed-death-cleanup\n";
   // NFS recovery retains private pins and unlinked open incarnations. The
   // descriptor handoff must preserve those already-validated native flags.
   auto original = root.open("pin-source", false, true, true);
@@ -261,6 +307,93 @@ static void owner_suite(const fs::path &base, bool mandatory) {
   owner.release(pin_id);
   std::cout << "PASS " << base << " OWNER/private-pin-and-unlinked-incarnation\n";
 }
+static void file_domain_suite(const fs::path &base) {
+  initialize(base / "state", 38443);
+  auto cfg = config::load(base / "state"); cfg.nfs_lease_seconds = 5;
+  fs::create_directories(base / "root");
+  auto root = inspect_root(base / "root"); root["id"] = "root"; root["worker"] = "file";
+  json space = {{"id", "space"}, {"root", "root"}, {"path", "space"},
+      {"owner", "alice"}, {"group", ""}, {"quota", 1048576}};
+  auto ctx = [](std::string who = "nfs") { return call_context{who, random_hex(16), now() + 30000, {}}; };
+  auto store = std::make_unique<file_store>(cfg, "file", random_hex(16));
+  space = store->dispatch("provision", {{"root", root}, {"space", space}}, ctx("identity"));
+  auto signing = read_json(cfg.state / "ipc-keys.json").at("identity").get<std::string>();
+  auto export_id = random_hex(16), client = random_hex(16);
+  auto grant = [&] {
+    json g = {{"actor", "alice"}, {"root", root}, {"space", space}, {"path", ""},
+        {"write", true}, {"share", "nfs"}, {"epoch", 2}, {"expires", now() + 2000},
+        {"protocol", "nfs"}, {"nfs_uid", 1000}, {"nfs_gid", 1000}, {"groups", {"unix"}},
+        {"export", {{"uuid", export_id}, {"uids", {{"1000", "alice"}}}, {"gids", {{"1000", "unix"}}}}}};
+    g["signature"] = mac(signing, g.dump()); return g;
+  };
+  auto nfs = [&](std::string op, std::string handle, json b = json::object()) {
+    b["op"] = op; b["handle"] = handle; b["grant"] = grant(); b["request_id"] = random_hex(16);
+    return store->dispatch("nfs_file", b, ctx());
+  };
+  { auto native = native_file::root(base / "root"); auto f = native.open("space/cached", false, true, true); f.write(0, "data"); }
+  auto dir = nfs("root", "").at("handle").get<std::string>();
+  auto fh = nfs("lookup", dir, {{"name", "cached"}}).at("handle").get<std::string>();
+  auto control = [&](std::string op, json cookie = "", int remaining = 3000) {
+    return json{{"op", op}, {"cookie", cookie}, {"handle", fh}, {"client", client},
+        {"remaining_ms", remaining}, {"grant", grant()}};
+  };
+  auto call = [&](std::string op, json cookie = "", int remaining = 3000) {
+    return store->dispatch("nfs_delegation", control(op, cookie, remaining), ctx());
+  };
+  auto gated = control("acquire"); gated["wire"] = true;
+  check(!store->dispatch("nfs_delegation", gated, ctx()).at("granted"), "production_handout_gate_bypassed");
+  auto d = call("acquire");
+  check(d.at("granted") && d.at("provider") == "independent-owner" && d.at("owner_available"), "domain_owner_not_used");
+  auto cookie = d.at("cookie");
+  check(call("renew", cookie).at("granted"), "domain_owner_renew_failed");
+  int writer = open((base / "root/space/cached").c_str(), O_WRONLY | O_NONBLOCK);
+  check(writer < 0 && errno == EWOULDBLOCK, "domain_native_conflict_not_blocked");
+  auto limit = std::chrono::steady_clock::now() + 1s;
+  do { d = call("poll", cookie); if (d.at("state") == "recalling") break; std::this_thread::sleep_for(5ms); }
+  while (std::chrono::steady_clock::now() < limit);
+  check(d.at("state") == "recalling", "domain_native_recall_not_imported");
+  check(call("return", cookie).at("state") == "returned", "domain_return_failed"); call("forget", cookie);
+  d = call("acquire", "", 1500); check(d.at("granted"), "domain_reacquire_failed"); cookie = d.at("cookie");
+  store.reset();
+  writer = open((base / "root/space/cached").c_str(), O_WRONLY | O_NONBLOCK);
+  check(writer < 0 && errno == EWOULDBLOCK, "domain_destruction_released_lease");
+  store = std::make_unique<file_store>(cfg, "file", random_hex(16));
+  bool stale = false;
+  try { call("poll", cookie); } catch (const error &e) { stale = std::string_view(e.what()) == "stale_handle"; }
+  check(stale, "replacement_accepted_old_cookie");
+  limit = std::chrono::steady_clock::now() + 3s;
+  do { std::this_thread::sleep_for(20ms); writer = open((base / "root/space/cached").c_str(), O_WRONLY | O_NONBLOCK); }
+  while (writer < 0 && errno == EWOULDBLOCK && std::chrono::steady_clock::now() < limit);
+  check(writer >= 0, "domain_detached_owner_not_expired"); close(writer);
+  store.reset();
+  int ready[2]; check(pipe2(ready, O_CLOEXEC) == 0, "domain_crash_pipe");
+  auto worker = fork(); check(worker >= 0, "domain_crash_fork");
+  if (!worker) {
+    close(ready[0]);
+    try {
+      store = std::make_unique<file_store>(cfg, "file", random_hex(16));
+      dir = nfs("root", "").at("handle").get<std::string>();
+      fh = nfs("lookup", dir, {{"name", "cached"}}).at("handle").get<std::string>();
+      auto acquired = call("acquire");
+      if (!acquired.at("granted") || acquired.at("provider") != "independent-owner") _exit(2);
+      char marker = 'R'; if (write(ready[1], &marker, 1) != 1) _exit(3);
+      for (;;) pause();
+    } catch (...) { _exit(4); }
+  }
+  close(ready[1]); pollfd notification{ready[0], POLLIN, 0}; char marker = 0;
+  bool acknowledged = poll(&notification, 1, 5000) > 0 && read(ready[0], &marker, 1) == 1 && marker == 'R';
+  close(ready[0]); kill(worker, SIGKILL); int status; waitpid(worker, &status, 0);
+  check(acknowledged && WIFSIGNALED(status), "domain_worker_guard_not_acknowledged");
+  store = std::make_unique<file_store>(cfg, "file", random_hex(16));
+  writer = open((base / "root/space/cached").c_str(), O_WRONLY | O_NONBLOCK);
+  check(writer < 0 && errno == EWOULDBLOCK, "domain_worker_crash_lost_protection");
+  auto started = std::chrono::steady_clock::now();
+  do { std::this_thread::sleep_for(20ms); writer = open((base / "root/space/cached").c_str(), O_WRONLY | O_NONBLOCK); }
+  while (writer < 0 && errno == EWOULDBLOCK && std::chrono::steady_clock::now() - started < 5s);
+  check(writer >= 0 && std::chrono::steady_clock::now() - started > 500ms, "domain_worker_crash_expiry"); close(writer);
+  store.reset();
+  std::cout << "PASS " << base << " FILE-DOMAIN/owner-renew-recall-return-replacement-SIGKILL\n";
+}
 int main(int argc, char **argv) {
   if (auto result = native_delegation_owner::entry(argc, argv); result >= 0) return result;
   bool guest = getpid() == 1;
@@ -274,8 +407,10 @@ int main(int argc, char **argv) {
       check(mount("/dev/vda", "/disk", "ext4", 0, nullptr) == 0, "mount_ext4");
       suite("/tmp/delegation", true);
       owner_suite("/tmp/delegation", true);
+      file_domain_suite("/tmp/domain");
       suite("/disk/delegation", true);
       owner_suite("/disk/delegation", true);
+      file_domain_suite("/disk/domain");
     } else {
       base = fs::temp_directory_path() / ("tc-native-delegation-" + random_hex(6));
       suite(base, argc > 1 && std::string_view(argv[1]) == "--require");

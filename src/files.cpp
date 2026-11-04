@@ -4,6 +4,7 @@
 #include <taucloud/http_stream.hpp>
 #include <taucloud/database.hpp>
 #include <taucloud/nfs_delegation.hpp>
+#include <taucloud/native_delegation_owner.hpp>
 #include <algorithm>
 #include <map>
 #include <set>
@@ -110,7 +111,10 @@ struct file_store::impl {
     native_file file;
     std::unique_ptr<native_cache_guard> guard;
     nfs_detail::delegation_lifetime lifetime;
+    uint64_t owner_id = 0;
+    bool owner_backed = false, owner_failed = false, owner_recalled = false;
   };
+  std::unique_ptr<native_delegation_owner> nfs_owner;
   std::map<std::string, nfs_delegation_guard> nfs_delegations;
   std::map<std::string, uint32_t> pending_metadata;
   std::set<std::string> smb_deferred_times;

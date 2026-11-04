@@ -1,11 +1,13 @@
 #include <taucloud/files.hpp>
 #include <taucloud/nfs_delegation.hpp>
+#include <taucloud/native_delegation_owner.hpp>
 #include <iostream>
 #include <thread>
 #include <source_location>
 using namespace tc;
 using tc::nfs_detail::delegation_lifetime;
-int main() {
+int main(int argc, char **argv) {
+  if (auto result = native_delegation_owner::entry(argc, argv); result >= 0) return result;
   int checks = 0;
   auto base = fs::temp_directory_path() / ("tc-nfs-delegation-" + random_hex(6));
   auto check = [&](bool value, std::source_location location = std::source_location::current()) {

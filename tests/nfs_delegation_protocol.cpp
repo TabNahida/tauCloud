@@ -1,4 +1,5 @@
 #include <taucloud/files.hpp>
+#include <taucloud/native_delegation_owner.hpp>
 #include <taucloud/nfs.hpp>
 #include <deque>
 #include <iostream>
@@ -6,7 +7,8 @@
 #include <thread>
 using namespace tc;
 using namespace tc::nfs_detail;
-int main() {
+int main(int argc, char **argv) {
+  if (auto result = tc::native_delegation_owner::entry(argc, argv); result >= 0) return result;
   int checks = 0;
   auto base = fs::temp_directory_path() / ("tc-nfs-delegation-protocol-" + random_hex(6));
   auto ok = [&](bool value, std::source_location loc = std::source_location::current()) {

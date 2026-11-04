@@ -121,11 +121,11 @@ and cleanup. `tests/nfs_lease_lifetime.py` independently checks advertised lease
 renewal, session/state expiry and recovery after reducing the lease. Both are
 mandatory in the GCC/Clang sanitizer/MSVC Actions matrix.
 
-The guard still lives in the file worker. It does not survive that worker's
-death. Durable protocol ownership records are now written, but reclaim and a
-surviving native guard owner do not exist yet. This is why the production file
-authority refuses `wire:true` acquisition. Actual client handout and
-crash/recovery coherence remain required rather than being counted as passed.
+On supported Linux kernels the coordinator now uses the independent native
+owner described below; older Linux and Windows retain the private local
+primitive. Durable protocol ownership records exist, but network renewal
+acknowledgment, reclaim and complete restart fencing remain open. The production
+file authority therefore still refuses `wire:true` acquisition.
 
 ## Protocol state and recall components
 
@@ -229,10 +229,37 @@ handoff also preserves validated private-pin and unlinked-incarnation flags;
 both recovery-related object forms pass real native acquisition and release.
 The final local guest run passes 364 checks, with evidence in
 [native owner acceptance](evidence/pre-m8/native-delegation-owner-local.json).
+The corresponding remote kernel run and Windows native SMB/NFS runs also
+succeed ([remote evidence](evidence/pre-m8/native-delegation-owner-0bf-remote.json)).
 
 This is the native ownership component, **not yet the production NFS provider**.
-The file-domain coordinator still uses its previous primitive. Integrating owner
-IDs with signed authority, ensuring network renewals never outlive owner ACKs,
+The file-domain coordinator now binds owner IDs to its existing signed-grant,
+client, export, filehandle and unguessable-cookie checks. On supported Linux it
+uses the independent owner; an acknowledged capability refusal permits the old
+private primitive, while an uncertain owner call never falls back to another
+acquisition. Provider identity and availability are exposed in private snapshots.
+Fresh authorized renewal must receive the owner ACK before extending the local
+lifetime. Owner terminal state retires local state; control failure starts recall,
+refuses renewal and retains the native descriptor until authorized cleanup.
+
+Acquire and renew carry absolute monotonic deadlines, so queued requests cannot
+restart a relative lease after a controller timeout. A regular-file guard can
+be explicitly released via the retained shared open description after confirmed
+owner death. EOF alone is insufficient: a live disconnected owner could later
+clean up its old guard and unlock a new guard on the same description. Directory
+parent guards cannot use this local fallback. Controller destruction still only
+detaches.
+
+The updated 6.19 tmpfs/ext4 guest passes 431 checks. Tests stop the owner until an
+acquire times out, prove the expired request cannot create a late guard, and
+verify that release while the owner lives stays fenced while release after its
+confirmed death succeeds. File-domain tests cover owner selection, native recall,
+renewal, return, store destruction, stale cookies after replacement, and SIGKILL
+of a real file-domain worker with protection retained until expiry. The isolated
+kernel explicitly enables FHANDLE for real stable file identities. See
+[file-domain owner evidence](evidence/pre-m8/nfs-owner-domain-local.json).
+
+Ensuring successful network SEQUENCE/callback renewals never outlive owner ACKs,
 recovering state across worker replacement, and durable delegation reclaim remain
 open. The private disconnected owner deliberately cannot be reattached by a new
 worker yet. Simultaneous owner/worker loss and full server restart still require

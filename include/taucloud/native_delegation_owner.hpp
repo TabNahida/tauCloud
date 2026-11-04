@@ -20,6 +20,8 @@ public:
   void renew(uint64_t id, int64_t remaining_ms);
   void recall(uint64_t id);
   void release(uint64_t id);
+  // Diagnostics only; use a pidfd/verified process identity for signaling.
+  int64_t process_id() const;
   // Must be called before application startup (including ordinary invocation),
   // registering helper support before an owner can spawn this executable.
   // Returns -1 for ordinary invocation.

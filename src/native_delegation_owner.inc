@@ -165,7 +165,7 @@ struct native_delegation_owner::impl {
             (acquiring || !request.native_flags), "invalid_request");
         if (acquiring) {
           require(!request.id && request.period >= 5000 && request.period <= 3600000 &&
-              request.remaining > 0 && request.remaining <= request.period, "invalid_request");
+              request.remaining > clock() && request.remaining <= clock() + request.period, "invalid_request");
           require(records.size() < 256 && next != UINT64_MAX, "operation_limit");
           int64_t seconds = 0; std::ifstream input("/proc/sys/fs/lease-break-time");
           if (input >> seconds && seconds * 1000 >= request.period + 5000) {
@@ -173,10 +173,11 @@ struct native_delegation_owner::impl {
             file.impl_->private_pin = request.native_flags & 1;
             file.impl_->allow_unlinked = request.native_flags & 2;
             auto guard = file.delegation_guard(op == acquire_write);
-            if (guard) {
+            auto accepted = clock();
+            if (guard && request.remaining > accepted) {
               response.id = ++next;
               records.emplace(response.id, record{std::move(file), std::move(guard),
-                  nfs_detail::delegation_lifetime(clock(), request.period, request.remaining)});
+                  nfs_detail::delegation_lifetime(accepted, request.period, request.remaining - accepted)});
             }
           }
         } else {
@@ -186,7 +187,11 @@ struct native_delegation_owner::impl {
           auto &r = found->second;
           r.lifetime.expire(clock());
           if (!r.lifetime.held()) { r.guard.reset(); r.file = native_file(); }
-          if (op == renew) require(r.lifetime.renew(clock(), request.remaining), "stale_handle");
+          if (op == renew) {
+            auto accepted = clock();
+            require(request.remaining > accepted && request.remaining <= accepted + 3600000 &&
+                r.lifetime.renew(accepted, request.remaining - accepted), "stale_handle");
+          }
           else if (op == recall) r.lifetime.recall(clock());
           else if (op == release) { records.erase(found); }
           if (op != release) {
@@ -212,6 +217,13 @@ native_delegation_owner::native_delegation_owner() : impl_(std::make_unique<impl
 #endif
 }
 native_delegation_owner::~native_delegation_owner() = default;
+int64_t native_delegation_owner::process_id() const {
+#ifdef __linux__
+  return impl_->child;
+#else
+  return 0;
+#endif
+}
 uint64_t native_delegation_owner::acquire(const native_file &file, int64_t period, int64_t remaining, bool write) {
 #ifdef __linux__
   std::lock_guard lock(impl_->mutex);
@@ -220,7 +232,7 @@ uint64_t native_delegation_owner::acquire(const native_file &file, int64_t perio
   auto resource = file.impl_->file;
   if (resource->cache_owned.exchange(true)) return 0;
   impl::packet request; request.op = write ? impl::acquire_write : impl::acquire_read;
-  request.period = period; request.remaining = remaining;
+  request.period = period; request.remaining = impl::clock() + remaining;
   request.native_flags = (file.impl_->private_pin ? 1 : 0) | (file.impl_->allow_unlinked ? 2 : 0);
   bool acquired = false;
   try {
@@ -260,7 +272,8 @@ json native_delegation_owner::inspect(uint64_t id) {
 void native_delegation_owner::renew(uint64_t id, int64_t remaining) {
 #ifdef __linux__
   std::lock_guard lock(impl_->mutex);
-  impl::packet request; request.op = impl::renew; request.id = id; request.remaining = remaining;
+  require(remaining > 0 && remaining <= 3600000, "invalid_request");
+  impl::packet request; request.op = impl::renew; request.id = id; request.remaining = impl::clock() + remaining;
   impl_->exchange(request);
 #else
   (void)id; (void)remaining; throw error("not_supported");
@@ -279,8 +292,23 @@ void native_delegation_owner::release(uint64_t id) {
 #ifdef __linux__
   std::lock_guard lock(impl_->mutex);
   impl::packet request; request.op = impl::release; request.id = id;
-  impl_->exchange(request);
   auto found = impl_->owned.find(id);
+  try { impl_->exchange(request); }
+  catch (const error &e) {
+    // Explicit return/expiry authorizes release after confirmed owner death.
+    // SCM_RIGHTS retained the same open description in this process. Directory
+    // guards also own a parent description, so they cannot use this fallback.
+    // A live disconnected owner could later destroy its old guard and unlock
+    // a newly acquired guard on this same description. Keep the local fence
+    // until the unreaped child is known dead; do not infer death from EOF.
+    struct stat info{}; siginfo_t exited{};
+    if (std::string_view(e.what()) != "delegation_owner_lost" || found == impl_->owned.end() ||
+        waitid(P_PID, impl_->child, &exited, WEXITED | WNOHANG | WNOWAIT) || exited.si_pid != impl_->child ||
+        fstat(found->second->handle, &info) || !S_ISREG(info.st_mode)) throw;
+    if (delegation_level(found->second->handle, F_UNLCK) < 0 &&
+        !(errno == EAGAIN && delegation_level(found->second->handle, 0, true) == F_UNLCK))
+      native_error();
+  }
   if (found != impl_->owned.end()) { found->second->cache_owned = false; impl_->owned.erase(found); }
 #else
   (void)id; throw error("not_supported");
