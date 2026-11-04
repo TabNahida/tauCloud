@@ -18,6 +18,32 @@ NFSv3 READ/WRITE and namespace changes, NFSv4 OPEN and ACCESS, and the core/WebD
 
 An SMB share may enable `access_based_enumeration:true` in its complete create/update definition. TREE_CONNECT advertises the flag, and directory snapshots omit entries whose DACL does not grant READ_DATA/LIST_DIRECTORY, READ_EA, READ_ATTRIBUTES and READ_CONTROL. The default remains false. This filters enumeration only; direct opens always use access checks.
 
+## Security SET_INFO metadata
+
+Successful security updates set Archive immediately on regular files and defer
+automatic ChangeTime until the originating open closes. Explicit ChangeTime is
+preserved; a later explicit value cancels the pending automatic update, while
+the `-2` sentinel re-enables it. Creation/access/write times are preserved.
+Directory security updates do not introduce Archive or ChangeTime changes.
+This follows [MS-FSA SET_SECURITY](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fsa/2e97fa70-e1f5-410b-ba87-f1ffda39a8ed)
+and the NTFS/ReFS behavior in [product note 194](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fsa/4e3695bd-7574-4f24-a223-b4679c065b63).
+
+The security notification remains immediate. Attribute notifications share the
+existing file-wide close queue with rename, while deferred timestamps belong to
+individual opens. A peer close can flush the notification without completing
+the originating open's timestamp. Descriptor, Archive and pending metadata are
+committed together; rejected requests have no such side effects. The persisted
+`rename_pending` key is retained for compatibility with earlier state databases
+and now covers both operations. Process-loss recovery and offline backup checks
+use the same queue. Closing a metadata peer uses a pinned native description so
+it does not recall a surviving classic oplock merely to read timestamps.
+
+Twenty independent signed/encrypted groups cover these semantics across four
+dialects; existing rename, cache and cross-protocol ACL regressions also pass
+locally ([evidence](evidence/pre-m8/smb-security-metadata-local.json)).
+GCC, Clang sanitizers and MSVC acceptance is configured in `smb-metadata.yml`;
+remote acceptance of this increment is pending.
+
 ## Security QUERY_INFO
 
 Security `QUERY_INFO` treats its flags independently from `SET_INFO`: unknown bits, including the two DACL protection modifiers together, are ignored. Owner/group/DACL selectors still require READ_CONTROL; SACL remains denied and recognized but unimplemented label/resource/scope/backup selectors return NOT_SUPPORTED. An empty effective selector returns the 20-byte self-relative header, without exposing descriptor sections or requiring READ_CONTROL. Returned control bits describe only requested sections. Unused query input-buffer fields are ignored.

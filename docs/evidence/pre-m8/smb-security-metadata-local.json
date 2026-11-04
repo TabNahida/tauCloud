@@ -1,0 +1,142 @@
+{
+  "recorded_at": "2026-11-04T14:47:03.752345+00:00",
+  "base_source": "61b1bbd41f9d0b443756c5262cca993b5ce231fe",
+  "status": "targeted-local-passed-remote-pending",
+  "sanitizers": "Linux Clang ASan/UBSan/LSan",
+  "scope": "SET_SECURITY Archive and per-open deferred/frozen ChangeTime, directory exception, atomic rejection, shared close notifications and process-loss recovery. Full SMB/NFS remains unfinished.",
+  "source_sha256": {
+    "src/file_smb.inc": "d5aff55d334afe28f5a818662cb046f52268e6658c23dcfefc379be178413cb7",
+    "tests/smb_security_metadata.py": "da720a57687193f90ac6d1237bda37a195f5e26e478bd34c75828ddc8ff6b20f",
+    "tests/smb_security_oplocks.py": "62a50616e20821fcf71d3c5c2984425f73cac38f5dba26e67133447b5ef09452",
+    ".github/workflows/smb-metadata.yml": "b18f3cbd47f1b42bfa44541f9f9a883c1f07a54b79c05b2b401576d39cdb7179"
+  },
+  "reports": {
+    "local": {
+      "sha256": "44aa451515b99e215769fc2f2045a6455748f8d7ed9a586a52890588deb9e81d",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "210: security notification is immediate; archive is visible before close; change time is deferred",
+          "210: security notification is immediate; archive is visible before close; change time is frozen",
+          "210: rejected security updates change neither descriptor, attributes, times nor notifications",
+          "210: directory security updates do not invent archive or change-time changes",
+          "300: security notification is immediate; archive is visible before close; change time is deferred",
+          "300: security notification is immediate; archive is visible before close; change time is frozen",
+          "300: rejected security updates change neither descriptor, attributes, times nor notifications",
+          "300: directory security updates do not invent archive or change-time changes",
+          "302: security notification is immediate; archive is visible before close; change time is deferred",
+          "302: security notification is immediate; archive is visible before close; change time is frozen",
+          "302: rejected security updates change neither descriptor, attributes, times nor notifications",
+          "302: directory security updates do not invent archive or change-time changes",
+          "311: security notification is immediate; archive is visible before close; change time is deferred",
+          "311: security notification is immediate; archive is visible before close; change time is frozen",
+          "311: rejected security updates change neither descriptor, attributes, times nor notifications",
+          "311: directory security updates do not invent archive or change-time changes",
+          "another close flushes file-wide notifications; only the originating close completes its timestamp",
+          "explicit ChangeTime cancels a pending automatic update; -2 re-enables it",
+          "repeated security updates and rename merge their pending metadata at the final name",
+          "SMB process loss recovers the committed descriptor, archive and deferred timestamp; clean metadata backup succeeds"
+        ]
+      }
+    },
+    "oplocks": {
+      "sha256": "49b037d65cb0dd8052c0b31d2110dd301aa9160952c22badccd1b0c5c4367fb5",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "210/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "210/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "210/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "300/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "300/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "300/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "302/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "302/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "302/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "311/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "311/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "311/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK"
+        ]
+      }
+    },
+    "rename": {
+      "sha256": "528d01d10582ceccc57fc9dc73e5c89412546332fe46deb5a2c3f9b1427ea33f",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "four signed/encrypted dialects set archive immediately, preserve creation/access/write times and defer change time plus one attribute notification to close",
+          "explicit change time stays frozen across repeated rename and close while a real archive change is notified once at the final name",
+          "explicit time after rename cancels its deferred update; -2 re-enables it without inventing archive changes",
+          "another close flushes file-wide pending notifications while only the originating open completes its deferred timestamp",
+          "directory rename updates change time at close without applying a data-file archive bit",
+          "SMB process loss recovers durable rename metadata; offline backup refuses unresolved markers and succeeds after file-service restart recovery",
+          "recovery discards stale rename markers without transferring metadata to a replacement native incarnation"
+        ]
+      }
+    },
+    "acl": {
+      "sha256": "67a379cc4b82505f33241d48b35ef18941b673dbfaa565e65345639bd9703b5f",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "schema 5 migration backs up each file authority before adding persistent security descriptors",
+          "self-relative owner/group/DACL query, requested sections, required buffer size and READ_CONTROL/WRITE_DAC/SACL boundaries",
+          "ordered deny/allow access checks, MAXIMUM_ALLOWED and explicit-right intersection; existing handles retain granted rights",
+          "SMB denial enforced by NFSv3 READ/ACCESS, NFSv4 ACCESS, core API and WebDAV readonly aliases",
+          "ACE order, empty versus NULL DACL, implicit owner rights and OWNER RIGHTS SID",
+          "malformed offsets, overlaps, truncation and unsupported ACEs rejected atomically; ownership cannot be assigned to another user",
+          "file/directory inheritance with CREATOR OWNER substitution and multi-generation propagation; ACL follows rename",
+          "SecD CREATE persists protected initial ACL, validates ownership and rejects duplicate/malformed contexts before mutation",
+          "group ACE enforcement and membership revocation use freshly signed identity grants",
+          "schema 7 durability across process restart; replacement object receives fresh owner and ACL",
+          "NFS writer publication still enforces file DACL; WRITE and chmod cannot bypass SMB restrictions",
+          "DAV writer cannot bypass ACL; staged PUT retains restrictions, recursive COPY checks descendants and inherits destination ACL through private staging parents",
+          "DAV LOCK on unmapped URL checks parent create rights and persists inherited DACL"
+        ]
+      }
+    }
+  },
+  "core": {
+    "report": {
+      "checks": 12583,
+      "status": "passed"
+    },
+    "log_sha256": "64b313c349f3047224cece03993c74d7ef6d028c5e06501e0b960cbb6db2b25e"
+  },
+  "original_samba": {
+    "report_sha256": "4b899182c73a4cc0bcbce0757e5a0a3d5a8856f91ded872763d3d244734013ce",
+    "tests": [
+      {
+        "selector": "smb2.session.reauth4",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-security-metadata-smb2.session.reauth4.log",
+        "log_sha256": "835dc95ce6c1fd1edb0845f055f8dab8edb058c8cd5b8ea8272f5db85e3f6cfd"
+      },
+      {
+        "selector": "smb2.notify.mask-change",
+        "returncode": 0,
+        "status": "passed",
+        "counts": {
+          "success": 1,
+          "failure": 0,
+          "error": 0,
+          "skip": 0
+        },
+        "log": "samba-security-metadata-smb2.notify.mask-change.log",
+        "log_sha256": "923bae7514221a7f5c0c88b9cd01dc252a6af1b01ab31fd7188c8ae02f4cb8dc"
+      }
+    ]
+  },
+  "limits": [
+    "Cross-platform acceptance of this increment is pending.",
+    "Windows native first-write failure before the preceding 61b1bbd fix remains subject to remote reacceptance.",
+    "Full SMB sessions/leases/durable handles, remaining metadata/security and NFS delegation/SSV/Windows GSS gates remain open."
+  ]
+}

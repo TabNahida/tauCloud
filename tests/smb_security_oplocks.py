@@ -73,6 +73,8 @@ def main():
                 time.sleep(.3); c.echo(sid=s.session_id, timeout=5)
                 assert q.empty() and pq.empty(), 'security mutation unexpectedly recalled a classic oplock'
                 limited.close()
+                time.sleep(.3); c.echo(sid=s.session_id, timeout=5)
+                assert q.empty() and pq.empty(), 'metadata-peer close unexpectedly recalled a surviving cache'
 
                 # A real data open still recalls EXCLUSIVE/BATCH. This proves
                 # the security operation preserved the grant, rather than

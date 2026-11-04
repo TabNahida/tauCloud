@@ -205,6 +205,25 @@ void smb_save_times(const json &info, const json &times) {
   for (const auto *field : {"accessed_ns", "modified_ns", "changed_ns"}) value[field] = info.at(field);
   smb_save_time_record(native, value);
 }
+void smb_defer_change(const opened &h, const std::string &id, const json &info, const json &meta) {
+  const auto native = info.at("object").get<std::string>();
+  smb_save_times(info, meta.at("times"));
+  auto value = smb_time_record(native);
+  auto attributes = meta.at("attributes").get<uint32_t>();
+  bool archive_changed = !h.directory && !(attributes & 0x20);
+  if (!h.directory) {
+    statement archive(db, "INSERT INTO smb_attributes VALUES(?,?) ON CONFLICT(native) DO UPDATE SET attributes=excluded.attributes");
+    archive.bind(1, native); archive.bind(2, int64_t((attributes & ~0x80u) | 0x20u)); archive.row();
+  }
+  // Keep the persisted key compatible with pending renames from older builds.
+  // SET_SECURITY and rename share per-open deferred change time and file-wide
+  // attribute notifications (MS-FSA product notes 187 and 194).
+  if (value.contains("rename_pending") && value["rename_pending"].contains(id))
+    archive_changed |= value["rename_pending"][id].value("archive", false);
+  value["rename_pending"][id] = {{"change", !h.user_change_time}, {"archive", archive_changed},
+                                 {"notify", !h.directory && (!h.user_change_time || archive_changed)}};
+  smb_save_time_record(native, value);
+}
 void smb_reap_times(space_state &s, const std::string &closing = "") {
   auto space = s.data.at("space").at("id").get<std::string>();
   for (auto it = smb_deferred_times.begin(); it != smb_deferred_times.end();) {
@@ -235,7 +254,17 @@ void smb_reap_times(space_state &s, const std::string &closing = "") {
       completed = true; p = pending.erase(p);
     }
     if (!completed) { ++it; continue; }
-    auto current = stat_path(s.directory, object_path.text(1), bool(object_path.integer(2)), true);
+    std::optional<json> current;
+    // Security updates do not recall classic oplocks. Closing a metadata-only
+    // peer must not open a second native data description and recall a surviving
+    // EXCLUSIVE/BATCH holder. Use the already pinned native incarnation.
+    for (auto &[handle_id, open] : handles) {
+      if (open.directory || open.space != space || open.path != object_path.text(1)) continue;
+      auto info = open.file.info(true);
+      if (info.at("object") == native) { current = std::move(info); break; }
+    }
+    if (!current)
+      current = stat_path(s.directory, object_path.text(1), bool(object_path.integer(2)), true);
     if (current && current->at("object") == native) {
       auto times = smb_times(*current);
       if (change) times[3] = uint64_t(now()) * 10000 + 116444736000000000ull;
@@ -785,12 +814,10 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     lease(grant, ctx);
     transaction tx(db);
     security_save(meta, descriptor);
-    auto times = meta.at("times");
-    times[3] = uint64_t(now()) * 10000 + 116444736000000000ULL;
-    auto info = h.directory ? security_info(s, path) : h.file.info(true);
-    smb_save_times(info, times);
+    if (!h.directory) smb_defer_change(h, id, h.file.info(true), meta);
     audit(actor, "smb_set_security", path);
     tx.commit();
+    if (!h.directory) smb_deferred_times.insert(meta.at("object").get<std::string>());
     return {{"updated", true}};
   }
   if (op == "smb_stat")
@@ -1093,19 +1120,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     auto info = h.directory ? moved.info(true) : h.file.info(true);
     auto native = info.at("object").get<std::string>();
     transaction tx(db);
-    smb_save_times(info, meta.at("times"));
-    auto value = smb_time_record(native);
-    auto attributes = meta.at("attributes").get<uint32_t>();
-    bool archive_changed = !h.directory && !(attributes & 0x20);
-    if (!h.directory) {
-      statement archive(db, "INSERT INTO smb_attributes VALUES(?,?) ON CONFLICT(native) DO UPDATE SET attributes=excluded.attributes");
-      archive.bind(1, native); archive.bind(2, int64_t((attributes & ~0x80u) | 0x20u)); archive.row();
-    }
-    if (value.contains("rename_pending") && value["rename_pending"].contains(id))
-      archive_changed |= value["rename_pending"][id].value("archive", false);
-    value["rename_pending"][id] = {{"change", !h.user_change_time}, {"archive", archive_changed},
-                                   {"notify", !h.directory && (!h.user_change_time || archive_changed)}};
-    smb_save_time_record(native, value);
+    smb_defer_change(h, id, info, meta);
     tx.commit();
     smb_deferred_times.insert(native);
     return {{"from", path}, {"path", to}, {"space", space}};

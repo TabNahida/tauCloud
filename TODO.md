@@ -215,6 +215,15 @@ Windows native first-write failure at `e9c7f8b` is retained with its SET_INFO
 self-recall trace; remote reacceptance of this correction is pending
 ([failure evidence](docs/evidence/pre-m8/smb-native-e9c-windows-failure.json)).
 
+SET_SECURITY now sets regular-file Archive and preserves explicit ChangeTime;
+automatic ChangeTime and attribute notifications share the durable close queue
+with rename. Directory security updates leave these metadata fields unchanged.
+Twenty local signed/encrypted groups cover four dialects, failed requests,
+freeze/re-enable, peer close and process-loss recovery; rename, classic-cache
+and cross-protocol ACL regressions pass. Remote acceptance is pending
+([evidence](docs/evidence/pre-m8/smb-security-metadata-local.json)). This does not
+close the full metadata or security gates below.
+
 - [x] Implement AlSi CREATE/overwrite allocation with durable quota, initial EA prevalidation and failed-new-CREATE cleanup; targeted GCC/Clang ASan+UBSan/MSVC checks pass at `fc28c4c`, including the smaller sparse-overwrite correction.
 - [x] Implement selected-name EA queries with bounded output and independent enumeration cursors; all three targeted jobs pass at `fc28c4c`.
 - [x] Implement MxAc current-policy maximal-access responses, optional timestamps and chained QFid replies, including encrypted SMB3 contexts; all three targeted jobs pass at `fc28c4c`.

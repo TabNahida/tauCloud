@@ -44,6 +44,7 @@ on:
       - 'tests/smb_security_integration.py'
       - 'tests/smb_security_query.py'
       - 'tests/smb_security_oplocks.py'
+      - 'tests/smb_security_metadata.py'
       - 'tests/smb_owner_integration.py'
       - 'tests/samba_torture.py'
       - 'tests/windows_native_smb.py'
@@ -159,6 +160,9 @@ jobs:
       - name: SMB security and size updates preserve classic oplock ownership
         if: ${{ !cancelled() && steps.compile.outcome == 'success' }}
         run: python tests/smb_security_oplocks.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/security-oplocks.json
+      - name: SMB security archive, deferred timestamps and recovery
+        if: ${{ !cancelled() && steps.compile.outcome == 'success' }}
+        run: python tests/smb_security_metadata.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/security-metadata.json
       - name: SMB3.1.1 negotiated signing and GMAC nonce domains
         run: python tests/smb_signing_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/smb-signing.json
       - name: Native SMB directory notifications and asynchronous lifecycle
