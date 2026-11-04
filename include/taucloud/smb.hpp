@@ -34,6 +34,7 @@ struct ntlm_exchange {
   bytes negotiate, challenge;
   int64_t expires;
   explicit ntlm_exchange(bytes type1);
+  void verify_anonymous(std::string_view type3) const;
   json verify(bytes type3, std::string_view hash) const;
 };
 } // namespace tc::smb_detail

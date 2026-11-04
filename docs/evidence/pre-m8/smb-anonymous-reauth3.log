@@ -1,0 +1,7 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793801903
+time: 2026-11-04 14:18:23.512603
+test: reauth3
+time: 2026-11-04 14:18:23.512779
+time: 2026-11-04 14:18:24.126549
+success: reauth3

@@ -1,0 +1,152 @@
+{
+  "recorded_at": "2026-11-04T14:21:41.204226+00:00",
+  "base_source": "e9c7f8b05152ce5360c259cf0f8fa6e64a1fc9bb",
+  "status": "targeted-local-passed-reauth4-5-failed-remote-pending",
+  "sanitizers": "Linux Clang ASan/UBSan/LSan",
+  "scope": "Anonymous NTLM renewal of an existing unexpired session retains the security context and keys without extending authority. Full SMB/NFS remains unfinished.",
+  "source_sha256": {
+    "src/smb_crypto.cpp": "67311bc51aeae3a815ce23be8209e50676901a1179f72ec19ab596f3a77bca56",
+    "src/identity.cpp": "f08c315f838ae4d6910313f7c063a47d3630cbbd2f7d3c7187334d7f23b5ff14",
+    "include/taucloud/smb.hpp": "4dcc61664d5e51011fedb781674f8fad2e84ed18be1f216ceb884606a6bd0100",
+    "src/nfs_v4.inc": "763b10868eea77cc83c5e002cff95c7ed2734531a5d23ff744db052282997455",
+    "tests/m5_core.cpp": "880eab3858cf4c0d6093b3f3743d40ecd683bfce5acbc801be65356286b3cf31",
+    "tests/smb_anonymous_reauthentication.py": "5b3d06a73956e9822e42ea8d55748b5b8d143a3f04a3a20f4de481a643aee8d3",
+    ".github/workflows/smb-metadata.yml": "9a7342bebd1f1f7eb6ed153e0b65f8936d95e0fa3314307c4aba869152873378"
+  },
+  "reports": {
+    "smb-anonymous-local": {
+      "sha256": "ca3805de1f4e78ede28df67d9f072a79e5081a33052ca2130d19bfa8634fffc7",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "210: anonymous reauthentication preserves old keys, account-only ACL access, handles and locks; authority lifetime is unchanged and credential renewal still works",
+          "300: anonymous reauthentication preserves old keys, account-only ACL access, handles and locks; authority lifetime is unchanged and credential renewal still works",
+          "302: anonymous reauthentication preserves old keys, account-only ACL access, handles and locks; authority lifetime is unchanged and credential renewal still works",
+          "311: anonymous reauthentication preserves old keys, account-only ACL access, handles and locks; authority lifetime is unchanged and credential renewal still works",
+          "expired: anonymous authentication cannot revive invalidated authority; failed renewal releases exclusive opens",
+          "revoked: anonymous authentication cannot revive invalidated authority; failed renewal releases exclusive opens",
+          "missing anonymous flag: malformed anonymous token cannot renew a session",
+          "nonzero LM response: malformed anonymous token cannot renew a session",
+          "nonempty NT response: malformed anonymous token cannot renew a session",
+          "anonymous authentication without an established security context grants no standalone file authority",
+          "unsigned anonymous renewal cannot enter an authenticated session"
+        ]
+      }
+    },
+    "smb-anonymous-renewal-regression": {
+      "sha256": "389cb23cbbaa06a5196ec84af10a5108ba732ce8af8cfcfb545c838f7e9ca07f",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "SMB2.1/3.0/3.0.2/3.1.1 repeated signed/encrypted NTLM renewal preserves session ID, keys, opens and byte-range locks",
+          "expired authority reports NETWORK_SESSION_EXPIRED and renews the same open after an intervening management login",
+          "wrong proof and different-user renewal fail, release exclusive handles and complete signed/encrypted watches with NOTIFY_CLEANUP",
+          "fresh valid credentials cannot renew a revoked token or resurrect its exclusive open",
+          "LOGOFF during an incomplete renewal resets authentication state and permits a fresh encrypted session on the same transport",
+          "SESSION_SETUP for an unknown session does not abort another session's in-progress renewal or borrow its signing key"
+        ]
+      }
+    },
+    "nfs-notify-lock-anonymous": {
+      "sha256": "027c953efcf1d6f60c5ceaa6ae1e82180cc9cac1632831ab3945c6f15a13bb29",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "OPEN advertises MAY_NOTIFY_LOCK; READW conflict release delivers exact handle/owner/referring request; the hint neither grants nor reserves the lock",
+          "nonblocking LOCK denial does not enroll a waiter and cancels a previous blocking request for the same owner/file",
+          "closing the waiting OPEN removes its unsent notification without granting lock state",
+          "fresh write-policy authority is required before dispatch; revocation drops the waiter and restoring rights does not resurrect it",
+          "inconsistent operation status and lost notification reply cause disconnect then exact two-operation replay; RETRY_UNCACHED_REP consumes the slot without granting a lock",
+          "multiple waiting owners share one bounded callback slot and no second notification is sent before the first completes",
+          "client NOTSUPP completes the optional callback; foreground polling and explicit lock acquisition remain usable",
+          "two-operation callbacks respect negotiated operation and full RPC size limits; constrained clients can still poll for locks",
+          "expired client and OPEN state remove the queued hint; releasing the competing lock never notifies or revives the expired session"
+        ],
+        "sanitizers": true
+      }
+    },
+    "samba-anonymous-session": {
+      "sha256": "969c34a9fb76232df419c7d9728a74da7e2ea0ef445d0fbdaef29cac4b6bb4bd",
+      "report": {
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "recorded_at": "2026-11-04T14:18:15.182891+00:00",
+        "tests": [
+          {
+            "selector": "smb2.session.reauth2",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-anonymous-session-smb2.session.reauth2.log",
+            "service_generations_unchanged": true
+          },
+          {
+            "selector": "smb2.session.reauth3",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-anonymous-session-smb2.session.reauth3.log",
+            "service_generations_unchanged": true
+          },
+          {
+            "selector": "smb2.session.reauth4",
+            "returncode": 1,
+            "status": "failed",
+            "counts": {
+              "success": 0,
+              "failure": 1,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-anonymous-session-smb2.session.reauth4.log",
+            "service_generations_unchanged": true
+          },
+          {
+            "selector": "smb2.session.reauth5",
+            "returncode": 1,
+            "status": "failed",
+            "counts": {
+              "success": 0,
+              "failure": 1,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-anonymous-session-smb2.session.reauth5.log",
+            "service_generations_unchanged": true
+          }
+        ],
+        "standard_differences_not_counted_as_passes": [],
+        "memory_limit_mib": 1024,
+        "status": "failed"
+      }
+    }
+  },
+  "core_m5": {
+    "checks": 12583,
+    "status": "passed",
+    "log_sha256": "4754f3c86cd8472b230aaab19b1e07ebf7c9fc7d9d75017cd547117475881410"
+  },
+  "upstream_logs": {
+    "smb-anonymous-reauth2.log": "8475da0f7ce2bc98500e7c3814834bddc4d150516213b75db8bdd96a852894ad",
+    "smb-anonymous-reauth3.log": "b5edff911b2ab38615cdd3f7ccd7847c389407691352026d7c242ed923dc65b9",
+    "smb-anonymous-reauth4.log": "9953dd1085d0cb81a3b3bd9ca3ceaad6b53f49ed7bbde066417d128657b33335",
+    "smb-anonymous-reauth5.log": "c2c09c62eb65b5a51f6478681ba869ef015583564b136cc8007586271f11af4a"
+  },
+  "limitations": [
+    "Original reauth4 fails at SET_INFO with INVALID_NETWORK_RESPONSE; later operations not verified.",
+    "Original reauth5 fails at unlink of a nonexistent destination with OBJECT_NAME_NOT_FOUND; later operations not verified.",
+    "Standalone anonymous file authority remains disabled; revoked or expired authority cannot be revived with anonymous credentials.",
+    "Windows NFS OPEN INVAL root cause remains unknown; this change adds original domain-error logging, not a speculative timeout fix.",
+    "Cross-platform acceptance of the new implementation is pending."
+  ],
+  "diagnostic_note": "A local transparent proxy printed only NTLM flags and security-buffer lengths. Samba anonymous AUTHENTICATE used flags 0x62008a15 with LM/NT/domain/user/workstation/key lengths [0,0,0,0,0,16], leading to support for the permitted omitted LM response. No tokens, password, proof or keys were logged. Service snapshots/server log are omitted from the condensed report; sha256 identifies the full original local report."
+}

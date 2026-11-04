@@ -234,6 +234,22 @@ struct identity_store::impl {
     auto start = get(token, 40, 4), size = get(token, 36, 2);
     require(start <= token.size() && size <= token.size() - start, "unauthorized");
     auto name = utf8(std::string_view(token).substr(start, size));
+    if (name.empty()) {
+      exchange.verify_anonymous(token);
+      auto previous = body.value("replace_token", "");
+      require(previous.size() == 64, "unauthorized");
+      statement active(db, "SELECT s.name,s.expires FROM sessions s JOIN users u ON u.name=s.name "
+                           "WHERE s.hash=? AND s.kind='smb' AND s.expires>? AND u.enabled=1");
+      active.bind(1, digest(previous));
+      active.bind(2, now());
+      require(active.row(), "unauthorized");
+      ctx.check();
+      // A valid session keeps its existing security context on reauthentication
+      // (MS-SMB2 3.3.5.5.3). Anonymous authentication cannot create authority,
+      // resurrect revoked/expired authority or extend the original credential's
+      // lifetime. The worker already verified the old channel signature/AEAD.
+      return {{"token", previous}, {"username", active.text(0)}, {"expires", active.integer(1)}};
+    }
     throttle("smb:" + path_fold(name));
     statement q(db, "SELECT u.name,c.cipher FROM users u JOIN smb_credentials c ON c.name=u.name "
                     "WHERE u.name=? COLLATE NOCASE AND u.enabled=1");

@@ -45,6 +45,32 @@ int main(int argc, char **argv) {
     ok(inherited_dir.at("group") == mode_group && (security::mode(inherited_dir) & 02000));
     ok(inherited_file.at("group") == mode_group && !(security::mode(inherited_file) & 07000));
     ok(encode_bytes(nt_hash("Password")) == "a4f49c406510bdcab6824ee7c30fd852");
+    {
+      bytes negotiate(32, '\0'); negotiate.replace(0, 8, "NTLMSSP\0", 8);
+      put(negotiate, 8, 1, 4); put(negotiate, 12, 0x80011, 4);
+      ntlm_exchange anonymous(negotiate);
+      bytes token(65, '\0'); token.replace(0, 8, "NTLMSSP\0", 8);
+      put(token, 8, 3, 4); put(token, 12, 1, 2); put(token, 14, 1, 2);
+      put(token, 16, 64, 4); put(token, 60, 0x800, 4);
+      anonymous.verify_anonymous(token); ok(true);
+      auto omitted = token; put(omitted, 12, 0, 2); put(omitted, 14, 0, 2);
+      anonymous.verify_anonymous(omitted); ok(true);
+      auto changed = token; changed[64] = 1;
+      rejected([&] { anonymous.verify_anonymous(changed); }, "unauthorized");
+      changed = token; put(changed, 60, 0, 4);
+      rejected([&] { anonymous.verify_anonymous(changed); }, "unauthorized");
+      for (size_t field : {20, 28, 36}) {
+        changed = token; put(changed, field, 1, 2); put(changed, field + 2, 1, 2);
+        put(changed, field + 4, 64, 4);
+        rejected([&] { anonymous.verify_anonymous(changed); }, "unauthorized");
+      }
+      changed = token; put(changed, 16, 63, 4);
+      rejected([&] { anonymous.verify_anonymous(changed); }, "invalid_packet");
+      changed = token; put(changed, 48, 9999, 4);
+      rejected([&] { anonymous.verify_anonymous(changed); }, "invalid_packet");
+      anonymous.expires = now() - 1;
+      rejected([&] { anonymous.verify_anonymous(token); }, "unauthorized");
+    }
     ok(encode_bytes(hmac(nt_hash("Password"), utf16("USERDomain"))) ==
        "0c868a403bfd7a93a3001ef22ef02e3f");
     ok(utf8(utf16("中文-é-😀")) == "中文-é-😀");

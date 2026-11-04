@@ -1508,6 +1508,9 @@ std::string v4(const identity &who, reader &r) {
     } catch (const failure &e) {
       code = e.status;
     } catch (const error &e) {
+      // Preserve the domain failure before translation to an NFS status. This
+      // distinguishes malformed requests from transient IPC/storage failures.
+      log("nfs", "operation_" + std::to_string(op) + "_domain_error", e.what());
       code = status(e.what());
     } catch (const xdr_error &) {
       code = 10036;

@@ -305,6 +305,25 @@ ntlm_exchange::ntlm_exchange(bytes type1) : negotiate(std::move(type1)), expires
   av(info, 0, {});
   secput(challenge, 40, info);
 }
+void ntlm_exchange::verify_anonymous(std::string_view type3) const {
+  require(now() < expires && type3.size() >= 64 &&
+              type3.substr(0, 8) == std::string_view("NTLMSSP\0", 8) && get(type3, 8, 4) == 3,
+          "unauthorized");
+  auto flags = get(type3, 60, 4);
+  size_t minimum = (flags & 0x02000000) ? 72 : 64;
+  require(type3.size() >= minimum && (flags & 0x800), "unauthorized");
+  // MS-NLMP 3.3.2 defines the anonymous LM response as one zero byte;
+  // 3.1.5.1.2 permits omitting it when the challenge supplies TargetInfo.
+  // Neither representation proves a user identity or supplies a user key.
+  auto lm = sec(type3, 12, minimum);
+  require((lm.empty() || lm == bytes(1, '\0')) &&
+              sec(type3, 20, minimum).empty() && sec(type3, 28, minimum).empty() &&
+              sec(type3, 36, minimum).empty(), "unauthorized");
+  sec(type3, 44, minimum); // Validate workstation bounds even though it is not an identity.
+  auto key = sec(type3, 52, minimum);
+  require((flags & 0x40000000) ? key.size() == 16 : key.empty(), "unauthorized");
+  // Anonymous key material never replaces established SMB keys.
+}
 json ntlm_exchange::verify(bytes type3, std::string_view hash) const {
   require(now() < expires && hash.size() == 16 && type3.size() >= 80 && get(type3, 8, 4) == 3,
           "unauthorized");

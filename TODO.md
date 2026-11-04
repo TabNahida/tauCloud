@@ -193,6 +193,18 @@ Original reauth3–5 now pass their initial security query but, like reauth2, st
 fail at anonymous reauthentication. These corrections do not close the full
 security, session, cache or NFS gates below.
 
+Anonymous NTLM reauthentication now retains an existing valid security context,
+keys and authority lifetime; it cannot establish new file authority or revive
+expired/revoked sessions. Eleven independent local groups and 12,583 M5 checks
+pass, and original Samba reauth2/3 now pass. Reauth4 still fails at SET_INFO and
+reauth5 at unlinking a nonexistent destination; the complete session gate stays
+open ([evidence](docs/evidence/pre-m8/smb-anonymous-local.json)). BATCH's Windows
+run at `ccdcd08` passes all 37 BATCH groups but fails NFS CB_NOTIFY_LOCK testing
+when a later OPEN returns INVAL. This differs from the earlier first-EXCHANGE_ID
+timeout. Original domain errors are now logged before NFS status translation to
+diagnose the cause; no timeout/root-cause fix is claimed
+([failure evidence](docs/evidence/pre-m8/nfs-notify-ccd-windows-failure.json)).
+
 - [x] Implement AlSi CREATE/overwrite allocation with durable quota, initial EA prevalidation and failed-new-CREATE cleanup; targeted GCC/Clang ASan+UBSan/MSVC checks pass at `fc28c4c`, including the smaller sparse-overwrite correction.
 - [x] Implement selected-name EA queries with bounded output and independent enumeration cursors; all three targeted jobs pass at `fc28c4c`.
 - [x] Implement MxAc current-policy maximal-access responses, optional timestamps and chained QFid replies, including encrypted SMB3 contexts; all three targeted jobs pass at `fc28c4c`.
