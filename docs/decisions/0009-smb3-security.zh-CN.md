@@ -21,3 +21,5 @@ Full SMB/NFS 扩展现已实现 SMB 3.1.1 的 AES-256-CCM/GCM 和完整 Kerberos
 ## Full-compatibility extension — 2026-11-04 无共同加密算法协商
 
 签名、AES-256 和 Linux Kerberos 的 GCC/Clang ASan+UBSan/MSVC 定向验收已在 `682b007` 全部通过（[证据](../evidence/pre-m8/smb-security-682b007-remote.json)）。随后实现无共同加密算法的 SMB3.1.1 签名会话：请求缺少加密上下文时响应也省略；有上下文但无共同算法时返回 cipher 零。继续拒绝未签名请求和未协商的加密传输。缺少预认证上下文返回 INVALID_PARAMETER，仅规范指定的单例类型拒绝重复，被忽略的上下文可以重复。本地核心及独立客户端测试通过，本次扩展的远程验收待完成，其他完整兼容性门槛仍未关闭。
+
+实现更新（2026-11-04）：扩展后的 Full SMB/NFS 工作已支持基于原生排斥的 EXCLUSIVE 数据 oplock 及异步召回/ACK。Level II/BATCH、lease 和 durable handle 仍未完成；此数据缓存路径已替代最初的不授予缓存决策，详见[缓存一致性](../native-cache-coherence.md)。

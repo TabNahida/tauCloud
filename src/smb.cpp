@@ -433,6 +433,9 @@ struct opened {
   uint32_t mode = 0;
   std::optional<uint32_t> notify_capacity = std::nullopt;
   size_t ea_cursor = 0;
+  std::string cache_cookie = "";
+  int64_t cache_poll_at = 0, cache_fence_at = 0;
+  bool cache_encrypted = false, cache_announced = false, cache_break_sent = false;
 };
 struct session_state {
   bool authenticated = false, raw_ntlm = false;
@@ -506,7 +509,7 @@ struct client : session_state, std::enable_shared_from_this<client> {
   bytes negotiate_transcript = bytes(64, '\0');
   std::map<uint64_t, session_state> sessions;
   uint64_t next_async_id = 1, executing_command = 0;
-  bool dispatching = false, pump_done = false;
+  bool dispatching = false, pump_done = false, watchdog_done = false;
   int64_t last_activity = now();
   client(smb_state &state, pace::tcp::stream tcp) : s(state), socket(std::move(tcp)) {
     socket.set_no_delay();
@@ -713,6 +716,7 @@ struct client : session_state, std::enable_shared_from_this<client> {
 #include "smb_async.inc"
 #include "smb_rpc.inc"
 #include "smb_sessions.inc"
+#include "smb_cache.inc"
   pace::task<bytes> command(std::string_view p, uint32_t &tid, uint32_t &code, bool encrypted) {
     check(!logged_off, 0xc0000203);
     auto cmd = get(p, 12, 2);
@@ -905,6 +909,9 @@ struct client : session_state, std::enable_shared_from_this<client> {
     }
     if (cmd == 5) {
       check(structure == 57 && p.size() >= 120 && files.size() < 64);
+      auto requested_oplock = get(p, 67, 1);
+      check(requested_oplock == 0 || requested_oplock == 1 || requested_oplock == 8 ||
+            requested_oplock == 9 || requested_oplock == 255);
       check(get(p, 68, 4) <= 3, 0xc00000a5); // BAD_IMPERSONATION_LEVEL
       auto encoded_name = slice(p, get(p, 108, 2), get(p, 110, 2), 120);
       check(encoded_name.empty() || (get(encoded_name, 0, 2) != '\\' && get(encoded_name, 0, 2) != '/'));
@@ -1091,7 +1098,36 @@ struct client : session_state, std::enable_shared_from_this<client> {
         put(b, 84, response_contexts.size(), 4);
         b += response_contexts;
       }
+      if (requested_oplock == 8 && !meta.at("directory").get<bool>() && (access & 3) == 3 &&
+          !(options & 0x1000)) {
+        std::exception_ptr failure;
+        try {
+          auto &h = files.at(fid);
+          auto acquired = co_await operation(h, "cache_acquire", true);
+          if (acquired.at("granted").get<bool>()) {
+            h.cache_cookie = acquired.at("cookie");
+            h.cache_encrypted = encrypted;
+            cache_deadline(h, acquired);
+            b[2] = 8;
+          }
+        } catch (...) { failure = std::current_exception(); }
+        if (failure) { co_await release(fid); std::rethrow_exception(failure); }
+      }
       co_return b;
+    }
+    if (cmd == 18) {
+      check(structure == 24 && p.size() >= 88);
+      auto &h = handle(p, 72, tid);
+      check(!h.cache_cookie.empty() && h.cache_break_sent, 0xc0000184);
+      auto level = get(p, 66, 1);
+      json request = {{"cookie", h.cache_cookie}};
+      co_await operation(h, "cache_ack", true, request);
+      h.cache_cookie.clear(); h.cache_fence_at = h.cache_poll_at = 0;
+      h.cache_break_sent = false;
+      check(level == 0, level == 255 ? 0xc000000d : 0xc00000e3);
+      auto result = sized(24, 24);
+      result.replace(8, 16, fid_for(h));
+      co_return result;
     }
     if (cmd == 6 || cmd == 7) {
       check(structure == 24 && p.size() >= 88);
@@ -1523,6 +1559,7 @@ struct client : session_state, std::enable_shared_from_this<client> {
   pace::task<void> run() {
     s.clients.insert(this);
     s.io->spawn(pump_locks());
+    s.io->spawn(cache_watchdog());
     try {
       while (socket.is_open() && !ending) {
         bytes prefix;
@@ -1706,8 +1743,8 @@ struct client : session_state, std::enable_shared_from_this<client> {
             code = e.status;
             log("smb", "command_" + std::to_string(cmd), std::to_string(code));
           } catch (const error &e) {
-            if (cmd == 5 && std::string_view(e.what()) == "cache_break_pending") {
-              try { defer_command(p, tid, encrypted, 0, {}); code = 0x103; }
+            if ((cmd == 5 || cmd == 14 || cmd == 17) && std::string_view(e.what()) == "cache_break_pending") {
+              try { defer_command(p, tid, encrypted, 0, related_file); code = 0x103; }
               catch (const status_error &limit) { code = limit.status; }
             } else code = status(e.what());
             log("smb", "command_" + std::to_string(cmd), e.what());
@@ -1800,6 +1837,8 @@ struct client : session_state, std::enable_shared_from_this<client> {
           break;
         if (encrypted) check(select_session(encrypted_session));
         if (!output.empty()) co_await send_packet(std::move(output), encrypted);
+        announce_caches();
+        co_await poll_caches_locked();
         co_await complete_frame_notifications();
         // A later frame on this writer must not overtake a ready notification
         // on another transport. All stateful cleanup can also mutate files.
@@ -1820,7 +1859,7 @@ struct client : session_state, std::enable_shared_from_this<client> {
     } catch (...) {
     }
     close();
-    while (!pump_done)
+    while (!pump_done || !watchdog_done)
       co_await s.io->sleep_for(1ms);
     while (dispatching) co_await s.io->sleep_for(1ms);
     {

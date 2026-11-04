@@ -334,6 +334,18 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     return info;
   }
   if (op == "smb_open") {
+    // An EXCLUSIVE oplock does not relax sharing. Reject an incompatible
+    // ordinary open before recalling dirty data that it cannot access anyway.
+    if (!body.value("maximum", false)) {
+      auto requested = smb_categories(body.at("access").get<uint32_t>());
+      auto share = body.at("sharing").get<unsigned>();
+      for (const auto &[other, held] : handles)
+        if (held.cache && held.space == space && held.path == path && requested) {
+          auto existing = smb_categories(held.access);
+          require((requested & ~held.sharing) == 0 && (existing & ~share) == 0,
+                  "sharing_violation");
+        }
+    }
     cache_conflict(space, path);
     smb_reap(s);
     require(handles.size() < 128, "handle_limit");
@@ -572,6 +584,19 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     if (op == "smb_cache_acquire" && smb_meta(s, h).at("delete_pending").get<bool>())
       return {{"granted", false}, {"cookie", ""}, {"breaking", false}, {"remaining_ms", 0}};
     return cache_dispatch(op, body, grant, h);
+  }
+  // Recall before any namespace/metadata mutation. Repeating a deferred SMB
+  // request is safe only when no mutation has happened before this boundary.
+  if (op == "smb_rename" || op == "smb_disposition" || op == "smb_attributes" ||
+      op == "smb_set_eas" || op == "smb_set_security" || op == "smb_resize" ||
+      op == "smb_allocation" || op == "smb_list") {
+    cache_conflict(space, path);
+    if (op == "smb_rename") {
+      auto target = verify(body.at("target"), true);
+      require(target.at("space").at("id") == space && target.at("actor") == actor &&
+              target.at("protocol") == "smb", "forbidden");
+      cache_conflict(space, target.at("path"));
+    }
   }
   if (op == "smb_lock_cancel") {
     const auto token = body.at("waiter").get<std::string>();

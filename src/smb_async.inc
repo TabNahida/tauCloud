@@ -53,6 +53,7 @@ pace::task<void> finish_command(uint64_t id, uint32_t code, bytes body = {}) {
   response += body;
   if (!item.encrypted) response.replace(48, 16, signature(key, response, selected.signing));
   co_await send_packet(std::move(response), item.encrypted);
+  announce_caches();
 }
 // A resumed command may itself wait for a range lock or directory event. Move
 // its waiter under the already announced ID; never send a second interim.
@@ -92,7 +93,8 @@ pace::task<void> pump_commands(uint64_t sid) {
       body = co_await command(item.request, item.tree_id, code, item.encrypted);
     } catch (const status_error &e) { code = e.status; }
       catch (const error &e) {
-        if (get(item.request, 12, 2) == 5 && std::string_view(e.what()) == "cache_break_pending") {
+        auto cmd = get(item.request, 12, 2);
+        if ((cmd == 5 || cmd == 14 || cmd == 17) && std::string_view(e.what()) == "cache_break_pending") {
           auto current = pending_commands.find(id);
           if (current != pending_commands.end() && !current->second.deadline)
             current->second.deadline = async_clock() + 10000;
@@ -291,6 +293,10 @@ pace::task<void> pump_locks() {
       if (has_authenticated() && !has_pending() && now() - last_activity >= 60000) {
         close();
         break;
+      }
+      {
+        dispatch_guard guard(dispatching);
+        co_await poll_caches_locked();
       }
       if (!has_pending())
         continue;

@@ -14,6 +14,8 @@ on:
       - 'tests/smb_reauthentication.py'
       - 'tests/linux_native_smb_gss.py'
       - 'src/smb_async.inc'
+      - 'src/smb_cache.inc'
+      - 'tests/smb_oplock_integration.py'
       - 'src/smb_sessions.inc'
       - 'tests/smb_multisession.py'
       - 'tests/smb_paths.py'
@@ -166,6 +168,11 @@ jobs:
         run: python tests/smb_attributes_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/metadata.json
       - name: Asynchronous SMB blocking locks and cancellation
         run: python tests/smb_blocking_locks.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.blocking_options }} --output build/acceptance/blocking-locks.json
+      - name: SMB native cache grants, recall, ACK and cross-protocol coherence
+        run: python tests/smb_oplock_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/oplocks.json
+      - name: Original Samba exclusive-oplock sharing failures do not recall caches
+        if: runner.os == 'Linux'
+        run: python tests/samba_torture.py ${{ matrix.test_options }} --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/samba-oplock-sharing.json smb2.oplock.exclusive1 smb2.oplock.exclusive3
       - name: Related asynchronous SMB compounds and dependent cancellation
         run: python tests/smb_compound_async.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/compound-async.json
       - name: Unmodified Samba asynchronous locks

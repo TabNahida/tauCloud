@@ -1,0 +1,111 @@
+{
+  "recorded_at": "2026-11-04T12:09:09.398059+00:00",
+  "source": "e7f0fd70958aab9040e3036c096a7dcf56801602",
+  "status": "targeted-matrix-passed",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41823047564",
+  "scope": "Related asynchronous SMB operation continuation; predates EXCLUSIVE wire cache grants. Full SMB/NFS remains open.",
+  "hosts": {
+    "gcc": {
+      "conclusion": "success",
+      "job": 126550728803,
+      "artifact": 13319261231,
+      "artifact_sha256": "c6677a93ffca0c5e3da17fede40fc5f48ea4a514fbd669a518abe3e1e7d78ceb",
+      "compound_report_sha256": "548554cd70be46b497d2b98e5d207273c58da9950bec9df71ad82572ee35b288",
+      "report": {
+        "status": "passed",
+        "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+        "checks": [
+          "210: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+          "210: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+          "210: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+          "210: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+          "300: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+          "300: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+          "300: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+          "300: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+          "302: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+          "302: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+          "302: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+          "302: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+          "311: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+          "311: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+          "311: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+          "311: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+          "deferred CHANGE_NOTIFY keeps its AsyncId, honors actual registration FIFO and releases its dependent ECHO only after notification",
+          "deferred TREE_DISCONNECT and LOGOFF complete successfully without cancelling their own response",
+          "128 dependent-command bound rejects excess work and its descendants without side effects; cancellation releases all capacity for reuse",
+          "TREE_DISCONNECT and LOGOFF finish pending dependencies under their owning encryption keys"
+        ],
+        "recorded_at": "2026-11-04T11:58:14.865538+00:00"
+      }
+    },
+    "clang": {
+      "conclusion": "success",
+      "job": 126550728496,
+      "artifact": 13318843721,
+      "artifact_sha256": "52639bcca1368997ef2cbd0cb8b029205c13e658aebf3f3da5ccd5cf41963ef4",
+      "compound_report_sha256": "348ef9d8728a2e293ee0cf44121e75bbca28d0f809a3a18f1ef89107199b3c8a",
+      "report": {
+        "status": "passed",
+        "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+        "checks": [
+          "210: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+          "210: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+          "210: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+          "210: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+          "300: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+          "300: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+          "300: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+          "300: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+          "302: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+          "302: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+          "302: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+          "302: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+          "311: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+          "311: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+          "311: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+          "311: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+          "deferred CHANGE_NOTIFY keeps its AsyncId, honors actual registration FIFO and releases its dependent ECHO only after notification",
+          "deferred TREE_DISCONNECT and LOGOFF complete successfully without cancelling their own response",
+          "128 dependent-command bound rejects excess work and its descendants without side effects; cancellation releases all capacity for reuse",
+          "TREE_DISCONNECT and LOGOFF finish pending dependencies under their owning encryption keys"
+        ],
+        "recorded_at": "2026-11-04T12:02:03.377169+00:00"
+      }
+    },
+    "msvc": {
+      "conclusion": "success",
+      "job": 126550728812,
+      "artifact": 13318483224,
+      "artifact_sha256": "3cb5eaac52d0113b033ce98726f49e6b3124b1e8d5e38005ea4430631306c9e1",
+      "compound_report_sha256": "4d257b687eb919e4e33de011a3375ec36b2d178ab9d534efdad0b03aab33462b",
+      "report": {
+        "status": "passed",
+        "host": "Windows-2025Server-10.0.26100-SP0",
+        "checks": [
+          "210: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+          "210: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+          "210: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+          "210: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+          "300: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+          "300: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+          "300: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+          "300: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+          "302: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+          "302: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+          "302: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+          "302: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+          "311: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+          "311: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+          "311: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+          "311: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+          "deferred CHANGE_NOTIFY keeps its AsyncId, honors actual registration FIFO and releases its dependent ECHO only after notification",
+          "deferred TREE_DISCONNECT and LOGOFF complete successfully without cancelling their own response",
+          "128 dependent-command bound rejects excess work and its descendants without side effects; cancellation releases all capacity for reuse",
+          "TREE_DISCONNECT and LOGOFF finish pending dependencies under their owning encryption keys"
+        ],
+        "recorded_at": "2026-11-04T11:57:49.391795+00:00"
+      }
+    }
+  }
+}

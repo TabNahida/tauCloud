@@ -1,8 +1,9 @@
 # Native cache exclusion
 
-This is an implementation prerequisite for SMB oplocks/leases and NFS
-delegations. It does **not** grant any network cache authority yet. Full
-SMB/NFS compatibility remains open.
+Native exclusion now backs SMB EXCLUSIVE data-oplock grants and recall/ACK
+on eligible regular-file opens. Level II/BATCH oplocks, SMB leases, directory
+caching and NFS delegations remain unfinished. Full SMB/NFS compatibility
+remains open.
 
 `native_file::cache_guard()` pins the same native object as the open file.
 Successful acquisition excludes conflicting native data access, including
@@ -80,9 +81,11 @@ includes direct SMB/core/NFS conflicts, independent files, invalid callers and
 cookies, ACK/flush visibility, real expiry, five seconds of fresh polling that
 cannot prevent recall, revocation/recovery, and an actual file-worker process
 which receives no IPC while native access waits for autonomous expiry.
-This internal authority is not yet called by SMB CREATE, so network clients
-still receive no caching grant. Wire-level pending operations and break/ACK
-acceptance remain necessary before enabling that grant.
+The coordinator now passes the complete GCC/Clang ASan+UBSan/MSVC matrix at
+`9b32f48` ([fixed-source evidence](evidence/pre-m8/cache-authority-9b-remote.json)).
+SMB CREATE now uses it for EXCLUSIVE grants as described below. The separate
+Windows backend DAV-after-restore and M8 fake-engine failures in that evidence
+are still explicit; targeted success does not imply those workflows passed.
 
 ## Asynchronous related SMB operations
 
@@ -106,24 +109,63 @@ chains, nested waits, cancellation, generated/inherited FileIds, teardown,
 notification FIFO and resource exhaustion in
 `tests/smb_compound_async.py`. [Local evidence](evidence/pre-m8/smb-compound-async-local.json)
 records the exact source hashes and results. This verifies transport continuation;
-CREATE has not yet enabled cache grants, so actual native-cache-conflict wire
-acceptance, break messages and ACKs remain open.
+the subsequent wire-oplock tests below also exercise actual cache-blocked CREATE
+and related READ/CLOSE continuation.
 
 The continuation follows Microsoft's
 [related compound processing](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/46dd4182-62d3-4e30-9fe5-e2ec124edca1)
 and [asynchronous interim response](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/c1692ece-7c6d-45c8-a0e3-6b53c0483030)
 rules.
 
+## SMB EXCLUSIVE data-oplock wire integration
+
+An explicit EXCLUSIVE request on a writable regular-file open with both READ_DATA
+and WRITE_DATA may now receive an EXCLUSIVE grant if the file domain obtains
+native exclusion. Read-only opens, directories, delete-on-close and conflicting
+native access receive NONE. BATCH/Level II/lease requests are not granted yet.
+An incompatible sharing request fails without recalling the existing cache.
+
+The front end renews authority every 250 ms using fresh identity grants. A
+separate coroutine, which never waits for RPC or the dispatch gate, closes a
+cache-bearing transport before its authority or fixed recall deadline expires.
+A stalled RPC, slow socket or repeated fresh grants cannot prolong recall.
+CREATE replies precede any break for their new FileId.
+
+Break notifications use command 18, MessageId UINT64_MAX, TreeId zero, zero
+credits and the owning session/FileId. Unencrypted breaks are unsigned as
+recommended by MS-SMB2 3.3.4.6; in particular the fixed MessageId is never reused
+as an AES-GMAC signing nonce. Encrypted opens receive authenticated encrypted
+breaks with fresh transform nonces. Client ACKs still pass ordinary session,
+tree, FileId and signing/encryption validation. An unsolicited or duplicate ACK
+returns INVALID_DEVICE_STATE; a foreign handle returns FILE_CLOSED. The current
+recall target and successful ACK level are NONE. Invalid classic ACK levels
+release the native recall and return the appropriate protocol error.
+
+The holder can write/flush while a competing CREATE waits. ACK flushes native
+file data before admitting the contender. SET_INFO and directory enumeration
+recall affected caches before mutations/enumeration; their asynchronous retries
+cannot replay a mutation that occurred before the recall boundary. Closing the
+holder completes recall; CANCEL drops the waiter; timeout, credential revocation,
+worker-authority loss and disconnect invalidate the old open.
+
+[Local wire evidence](evidence/pre-m8/smb-oplock-local.json) covers four dialects,
+same-transport and related CREATE/READ/CLOSE waits, nested session keys, CANCEL,
+ACK ownership, sharing denial, unsupported grants, native host reads/writes,
+SET_INFO ordering, NFSv3 JUKEBOX retries, DAV retries, revoked credentials and
+an identity process paused while a polling RPC holds the dispatch gate. Windows
+native probes use CreateFileW with DELETE sharing, avoiding a CRT sharing
+violation unrelated to oplocks. The targeted Actions matrix now includes these
+checks plus original Samba exclusive1/exclusive3 sharing scenarios; remote
+acceptance of this new wire increment is pending.
+
 ## Remaining integration
 
-The coordinator's namespace and complete cross-protocol behavior still need
-wire-level acceptance. SMB still needs signed/encrypted unsolicited breaks, ACK
-validation and actual cache-conflict wire acceptance, including cancellation
-and disconnect cleanup. Related asynchronous continuation is now implemented
-and independently tested as described above. NFS still needs delegation state, recalls and revocation. Linux's
-finite kernel break deadline and namespace changes need explicit treatment.
-Passing these native tests alone cannot enable network caches or close the
-full compatibility gate.
+Level II/BATCH caching, metadata-only opens without unnecessary breaks, SMB
+leases, namespace/handle caching, complete oplock transitions and the complete
+original Samba suite still need implementation and evidence. NFS still needs
+delegation state, recalls and revocation. Linux's finite kernel break deadline
+and namespace changes need explicit treatment for handle/delegation caching.
+The EXCLUSIVE data path does not close any of these broader compatibility gates.
 
 References: [Linux file leases](https://www.man7.org/linux/man-pages/man2/F_SETLEASE.2const.html),
 [Windows oplock requests](https://learn.microsoft.com/en-us/windows/win32/api/winioctl/ni-winioctl-fsctl_request_oplock),

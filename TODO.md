@@ -140,23 +140,20 @@ Selected-profile acceptance: [M7 guide](docs/m7.md), [中文](docs/m7.zh-CN.md),
 
 ## Full SMB/NFS compatibility prerequisite (user decision, 2026-10-31)
 
-Native cache exclusion now has a Linux lease / Windows RW-oplock adapter and
-actual blocking-open/flush/cancellation tests. The native core step passes
-GCC/Clang ASan+UBSan/MSVC at `4fe2b79`, along with the complete targeted
-protocol matrix and Windows native NFS regression. Network break/ACK
-coordination remains open. This foundation does not enable SMB caching or NFS delegations; see
-[native cache coherence](docs/native-cache-coherence.md).
+Native exclusion uses Linux leases / Windows RW oplocks. The adapter and file-domain
+coordinator pass the full GCC/Clang ASan+UBSan/MSVC targeted matrix at `9b32f48`
+([evidence](docs/evidence/pre-m8/cache-authority-9b-remote.json)). The separate Windows
+backend DAV-after-restore and M8 fake-engine failures remain explicitly unresolved.
 
-The file-domain cache coordinator now adds acquisition cookies, authenticated
-polling, ACK/flush ordering, monotonic authority/break deadlines and autonomous
-open fencing. Local tests cover SMB/core/NFS conflicts and a real idle file
-worker; [remote GCC and MSVC targeted acceptance](docs/evidence/pre-m8/cache-authority-9b-remote.json) passes, while Clang is still running. The separate Windows backend DAV-after-restore `lease_expired` failure remains unresolved. SMB CREATE still does not grant
-network caching; unsolicited breaks and actual cache-conflict wire acceptance
-remain required. Related asynchronous SMB continuation now retains dependent
-commands, preserves AsyncIds across nested waits, orders inherited FileIds and
-cancels dependent work without side effects. Four dialects and resource bounds
-pass [local client checks](docs/evidence/pre-m8/smb-compound-async-local.json);
-remote acceptance of this transport addition is pending.
+SMB now grants native-backed EXCLUSIVE data oplocks, recalls to NONE, validates
+ACK ownership, flushes before release and fences expired transports independently
+of stalled RPCs. Related asynchronous CREATE/READ/CLOSE and pre-mutation SET_INFO
+waits retain their AsyncIds and cancellation semantics. [Local wire checks](docs/evidence/pre-m8/smb-oplock-local.json)
+cover four dialects, native host IO, NFS/DAV reads, idle renewal, revocation and a
+paused identity service. Cross-platform and original Samba acceptance of this wire
+increment is pending. Level II/BATCH, metadata-only no-break behavior, leases,
+namespace/handle caching and NFS delegations remain open; see
+[native cache coherence](docs/native-cache-coherence.md).
 
 The earlier ADR exclusions describe the existing implementation, not permission to exclude features from this expanded goal. Preserve the passing limited-profile evidence while adding independent evidence for the following gates. Optional protocol facilities must be explicitly negotiated/refused according to the standards; refusal alone is not feature implementation.
 

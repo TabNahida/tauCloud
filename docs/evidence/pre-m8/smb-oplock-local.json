@@ -1,0 +1,165 @@
+{
+  "recorded_at": "2026-11-04T12:10:57.247928+00:00",
+  "base_source": "fdbbe5b",
+  "status": "passed",
+  "scope": "Native-backed EXCLUSIVE data-oplock grant and recall to NONE; full SMB/NFS remains unfinished",
+  "sanitizers": "Linux Clang ASan/UBSan/LSan",
+  "source_sha256": {
+    "src/smb.cpp": "fda986705cc0bb7f4715792105fe788118e4668eec4fcf4cff8e22fac680090c",
+    "src/smb_async.inc": "be65df1549b2a7968676bfc41de9ff08ec6929a887df5fb8304fd129239ccc52",
+    "src/smb_cache.inc": "69bab8d2c508f51faee67338edb8cb9bea433cdce3de56692a75ddb78cd324f2",
+    "src/file_smb.inc": "ca53b9e74676e45d62daf9a80dbb3ce992ce289eb989f04cfc48d03feb701616",
+    "tests/smb_oplock_integration.py": "1e1619078bd8f1822f350bf3a96ced691e7745dccb15af18b0f24593c2964193",
+    ".github/workflows/smb-metadata.yml": "b0b47553f714e77292664aa200eb5d10dda7abb28139caa72c944dbefed61f4d"
+  },
+  "reports": {
+    "smb-oplock": {
+      "sha256": "01fe186ad340a91ceb3b63b4d5a928ef27419b2e9475f222c21fb613af0812ef",
+      "report": {
+        "status": "passed",
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "checks": [
+          "210: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "210: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "210: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "300: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "300: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "300: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "302: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "302: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "302: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "311: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "311: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "311: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "sharing violations do not recall dirty caches; readonly, directory, delete-on-close and conflicting native opens receive no unsupported cache grant",
+          "a lease-form ACK for a classic oplock is rejected and finishes the recall without leaving native exclusion stuck",
+          "two encrypted sessions on one transport renew independent cache authority and route breaks/ACKs with their own keys; a foreign-session ACK cannot release another open",
+          "native host reads/writes wait for SMB recall; dirty client data flushes before host access and the original handle observes subsequent native writes",
+          "SET_INFO recalls before mutation, permits cached flush while pending and applies EOF after ACK without replaying side effects",
+          "a new cached CREATE is announced before its own compound SET_INFO recall; asynchronous retries preserve the inherited FileId through the dependent READ",
+          "NFSv3 READ on an existing handle returns JUKEBOX during native recall; repeated retries leave SMB flush/ACK live and the next read returns current data",
+          "DAV GET returns a retryable response while a cache recall is pending and reads freshly flushed bytes after ACK",
+          "another transport cannot ACK the holder FileId; CLOSE flushes/releases authority and wakes the peer CREATE",
+          "unacknowledged recall fences the holder transport and open while the conflicting client completes after native exclusion releases",
+          "credential revocation closes the cache-bearing transport and releases native exclusion without requiring a client request",
+          "stalled identity RPC cannot hold the cache transport past its authority: independent watchdog closes it before IPC timeout and autonomous worker expiry releases native exclusion"
+        ],
+        "recorded_at": "2026-11-04T12:09:10.867806+00:00"
+      }
+    },
+    "oplock-compound": {
+      "sha256": "fd0701d8333707a666d33f5ad78b362bcb543ce3847debe190e01154442fa03c",
+      "report": {
+        "status": "passed",
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "checks": [
+          "210: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+          "210: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+          "210: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+          "210: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+          "300: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+          "300: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+          "300: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+          "300: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+          "302: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+          "302: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+          "302: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+          "302: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+          "311: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+          "311: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+          "311: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+          "311: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+          "deferred CHANGE_NOTIFY keeps its AsyncId, honors actual registration FIFO and releases its dependent ECHO only after notification",
+          "deferred TREE_DISCONNECT and LOGOFF complete successfully without cancelling their own response",
+          "128 dependent-command bound rejects excess work and its descendants without side effects; cancellation releases all capacity for reuse",
+          "TREE_DISCONNECT and LOGOFF finish pending dependencies under their owning encryption keys"
+        ],
+        "recorded_at": "2026-11-04T11:57:10.316346+00:00"
+      }
+    },
+    "oplock-smb3": {
+      "sha256": "35367a11535b57b0c8dfc808b477647c8b6d0c8d32a6fd6aa4edaeece875ba81",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+          "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+          "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+          "0x300 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x302 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x311 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+          "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+          "AES-256-CCM/GCM-only offers use 32-byte directional keys, verified encrypted file I/O and same-handle NTLM renewal",
+          "leases and durable handles are not granted; durable reconnect explicitly unsupported; encrypted change notification cancels asynchronously; multichannel absent",
+          "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+          "absent encryption context is omitted from reply; no common cipher selects zero; CMAC/GMAC authenticated signed file I/O works without cipher fallback",
+          "cipher-free sessions reject unsigned commands and unnegotiated AES-GCM transforms even with correctly derived keys",
+          "repeated ignored NETNAME/transport/unknown contexts are accepted; missing mandatory preauthentication context returns INVALID_PARAMETER",
+          "unknown signing IDs select CMAC and unknown ciphers select zero; unsupported hash and malformed contexts fail without dialect fallback",
+          "independent AES-128/256 CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+          "AES-256-CCM/GCM reject modified tags, nonces, plaintext lengths, session IDs and ciphertext",
+          "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+          "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+          "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+        ],
+        "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "authentication_provider": "pyspnego NTLM",
+        "large_mib": 1,
+        "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+        "port": 54153,
+        "sanitizers": true
+      }
+    }
+  },
+  "core": {
+    "m5": {
+      "sha256": "205907f471bfb3d124522bf79fca7a4b66ae283a4ac660fd735e408e1ffb1bd2",
+      "results": [
+        {
+          "code": "ok",
+          "event": "started",
+          "role": "file",
+          "time": 1793793568568
+        },
+        {
+          "code": "ok",
+          "event": "stopped",
+          "role": "file",
+          "time": 1793793570635
+        },
+        {
+          "checks": 12470,
+          "status": "passed"
+        }
+      ]
+    },
+    "m7": {
+      "sha256": "1ab6994c15b868b8106508b840801fe2e75bcd93ea4a7a95d900bff59fb22fe7",
+      "results": [
+        {
+          "checks": 98,
+          "status": "passed"
+        }
+      ]
+    }
+  },
+  "initial_client_probe_correction": {
+    "sha256": "9f39b4eddb7de26b291ea127e68922edc5b3d07e8c343b6f8e1e6e3098bb16d6",
+    "error": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/tests/smb_oplock_integration.py\", line 135, in main\n    receive_close(requests[2]); holder._connected = True; holder.close()\n                                                          ^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/.deps/nfs-venv/lib/python3.12/site-packages/smbprotocol/open.py\", line 1493, in close\n    return self._close_response(request)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/.deps/nfs-venv/lib/python3.12/site-packages/smbprotocol/open.py\", line 1512, in _close_response\n    del self.tree_connect.session.open_table[self.file_id]\n        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^\nKeyError: b'7\\x84\\x19\\x1a\\x93\\x1b\\xb7\\xd2\\x13Ze\\xf7\\xa0\\t\\x80\\t'\n",
+    "correction": "Parse the compound CLOSE response on the newly created Open, not on the cache holder; no production behavior was weakened."
+  },
+  "review_followup": "Retain related_file when SET_INFO or QUERY_DIRECTORY first enters the cache wait queue; CREATE/SET_INFO/READ regression now covers inherited FileId and response-before-break ordering.",
+  "remote": "pending GCC/Clang/MSVC, plus unmodified Samba exclusive1/exclusive3; Windows native test uses CreateFileW DELETE sharing",
+  "remaining": [
+    "Level II/BATCH oplocks and complete transitions",
+    "Metadata-only opens without unnecessary breaks",
+    "SMB leases and directory/namespace/handle caching",
+    "NFS delegation, recalls and revocation",
+    "Full upstream compatibility and remaining TODO gates"
+  ]
+}
