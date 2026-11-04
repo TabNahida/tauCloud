@@ -59,6 +59,8 @@ on:
       - 'tests/kerberos-requirements.txt'
       - 'src/nfs_v4.inc'
       - 'tests/nfs_attributes_integration.py'
+      - 'tests/nfs_session_negotiation.py'
+      - 'tests/pynfs_acceptance.py'
       - 'tests/native_allocation.py'
   workflow_dispatch:
 permissions:
@@ -97,6 +99,8 @@ jobs:
         run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_m2_tests${{ matrix.suffix }}
       - name: SMB authority and failed CREATE cleanup
         run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_m5_tests${{ matrix.suffix }}
+      - name: NFSv4.1 channel limits and CREATE_SESSION replay
+        run: python tests/nfs_session_negotiation.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/nfs-session-negotiation.json
       - name: SMB session renewal and failure cleanup
         run: python tests/smb_reauthentication.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/smb-reauth.json
       - name: Persistent ACLs and cross-protocol permission checks

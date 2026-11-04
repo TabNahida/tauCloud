@@ -929,7 +929,11 @@ std::string v4(const identity &who, reader &r) {
           fore = {0, std::min(fore[1], 128 * 1024u), std::min(fore[2], 128 * 1024u),
                   std::min({fore[3], fore[2], 128 * 1024u}), std::min(fore[4], 16u),
                   std::min(fore[5], 8u)};
-          std::vector<uint32_t> back = {0, 4096, 4096, 0, 1, 1};
+          // RFC 8881 18.36.3: both channels may reduce buffer sizes, but the
+          // backchannel must preserve the client's operation and slot counts.
+          // Returning these bounds does not grant a backchannel (csr_flags=0).
+          std::vector<uint32_t> back = {0, std::min(back_offer[1], 4096u),
+              std::min(back_offer[2], 4096u), 0, back_offer[4], back_offer[5]};
           auto idstr = random_hex(16);
           if (c.replaces) {
             if (!sid.empty() && sessions.at(sid).client == c.replaces) {

@@ -41,11 +41,12 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--bin', type=Path, required=True)
     p.add_argument('--output', type=Path, required=True)
+    p.add_argument('--sanitizers', action='store_true', help='allow sanitizer overhead in disposable worker memory limits')
     p.add_argument('selectors', nargs='+')
     args = p.parse_args()
     args.output = args.output.resolve()
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    f, port = fixture(args.bin)
+    f, port = fixture(args.bin, 1024 if args.sanitizers else 256)
     try:
         command = [sys.executable, '-u', 'testserver.py', f'127.0.0.1:{port}/nfs',
                    '--minorversion=1', '--uid=1000', '--gid=1000', '--noinit', '--nocleanup',

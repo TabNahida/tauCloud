@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "/media/data1/Project/Network/tauCloud/tests/nfs_session_negotiation.py", line 70, in <module>
+    run(p.parse_args())
+  File "/media/data1/Project/Network/tauCloud/tests/nfs_session_negotiation.py", line 34, in run
+    assert getattr(returned, field) <= getattr(offered, field), (direction, field, offered, returned)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('back', 'ca_maxrequestsize', channel_attrs4(ca_headerpadsize=32, ca_maxrequestsize=128, ca_maxresponsesize=128, ca_maxresponsesize_cached=128, ca_maxoperations=2, ca_maxrequests=2, ca_rdma_ird=[57]), channel_attrs4(ca_headerpadsize=0, ca_maxrequestsize=4096, ca_maxresponsesize=4096, ca_maxresponsesize_cached=0, ca_maxoperations=1, ca_maxrequests=1, ca_rdma_ird=[]))

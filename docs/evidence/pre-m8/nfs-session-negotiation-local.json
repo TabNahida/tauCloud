@@ -1,0 +1,93 @@
+{
+  "recorded_at": "2026-11-04T06:24:13.471599+00:00",
+  "base_source": "bd6a2ad6cd97547f0469c67be28058410950fd64",
+  "status": "partial",
+  "scope": "NFSv4.1 channel attribute negotiation; backchannel callbacks and delegations are still unimplemented",
+  "standard": "https://www.rfc-editor.org/rfc/rfc8881.html#section-18.36.3",
+  "files_sha256": {
+    "src/nfs_v4.inc": "1115a2404dcfc5760a6701cb5cf32543395ce2a38e7fc5d15f9027b82aea46a9",
+    "tests/nfs_session_negotiation.py": "2bae9a983864a5adb50ac84d1a80605c2778889f14b66a2137dc1cbc3971981d",
+    "tests/pynfs_acceptance.py": "276f4cd56be7f1bab25995a65d01f26cf4a09f0bfa0e164a6e37cd2236adf731",
+    ".github/workflows/smb-metadata.yml": "8c89d03d3c558d0b9ecdedcae63af8bcdd6f4bc2f147d7bece7a8f32b2c37a13",
+    "scripts/run_m7.py": "04816a730545dae5fcc37b48a4ea84cef4988763ef1b742f9043ae29e6ac74dc"
+  },
+  "sanitizers": "Clang ASan/UBSan including LeakSanitizer",
+  "before": {
+    "status": "failed",
+    "reason": "128-byte backchannel request/response limits were increased to 4096; operation and slot counts were changed to one",
+    "log": "nfs-session-negotiation-before.log"
+  },
+  "core": {
+    "status": "passed",
+    "checks": 77
+  },
+  "independent": {
+    "status": "passed",
+    "checks": [
+      "four backchannel offers preserve operation/concurrency counts and never increase buffer/RDMA limits; forechannel stays bounded",
+      "CREATE_SESSION retries preserve the original negotiated session; subsequent SEQUENCE/GETFH and explicit destruction work"
+    ],
+    "sanitizers": true
+  },
+  "upstream": {
+    "selector": "create_session",
+    "status": "failed",
+    "summary": {
+      "tests": 266,
+      "skipped": 235,
+      "failures": 3,
+      "errors": 0,
+      "selected": 31,
+      "passed": 28,
+      "failures_by_code": [
+        {
+          "code": "DELEG6",
+          "reason": "Could not get delegation"
+        },
+        {
+          "code": "DELEG7",
+          "reason": "Could not get delegation"
+        },
+        {
+          "code": "DELEG5",
+          "reason": "Could not get delegation"
+        }
+      ],
+      "passed_codes": [
+        "CSESS28",
+        "CSESS25",
+        "CSESS2b",
+        "CSESS2",
+        "CSESS1",
+        "CSESS6",
+        "CSESS5b",
+        "CSESS5a",
+        "CSESS5",
+        "CSESS27",
+        "CSESS26",
+        "CSESS19",
+        "CSESS18",
+        "CSESS17",
+        "CSESS10",
+        "CSESS9",
+        "CSESS23",
+        "CSESS3",
+        "CSESS22",
+        "CSESS200",
+        "CSESS29",
+        "CSESS24",
+        "CSESS4",
+        "CSESS16a",
+        "CSESS16",
+        "CSESS8",
+        "CSESS7",
+        "CSESS15"
+      ]
+    },
+    "raw_report_sha256": "2b64d9d3d0a505dc272568f9240442c97003f1de0714eed5bca19f73a04356c1",
+    "log": "pynfs-session-negotiation-fixed.log",
+    "unmodified_client": true
+  },
+  "fixture": "Initial run with the default 256 MiB worker budget failed during user creation before protocol tests. --sanitizers now gives disposable pynfs workers 1024 MiB; production memory policy unchanged. The independent fixture uses 512 MiB.",
+  "remote": "Three-platform workflow extended; acceptance pending for this source."
+}
