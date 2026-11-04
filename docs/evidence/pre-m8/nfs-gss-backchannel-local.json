@@ -1,8 +1,8 @@
 {
-  "recorded_at": "2026-11-04T10:08:20.729438+00:00",
+  "recorded_at": "2026-11-04T10:16:27.593150+00:00",
   "base_source": "4f8ec28df4db0f6390307d95797c8969e0dc0331",
   "status": "partial",
-  "scope": "Linux RPCSEC_GSS protection of existing NFSv4.1 callbacks, additive credential lifecycle, exact channel limits and shared-context replay-window admission. Full SMB/NFS remains open.",
+  "scope": "Linux RPCSEC_GSS protection of existing NFSv4.1 callbacks, additive credential lifecycle, exact channel limits and shared-context replay-window admission. Full SMB/NFS remains open. Mixed valid flavor arrays succeed; CREATE_SESSION and BACKCHANNEL_CTL reject unknown GSS handles before mutation.",
   "sanitizers": "Clang ASan/UBSan including LeakSanitizer; unchanged 512 MiB disposable worker budget and 16 live TCP connection limit",
   "files_sha256": {
     "src/nfs_backchannel.inc": "73a948fa10919e2ef36b0210bed37fee9cfce5da0e36e42bace76bd92398f262",
@@ -13,9 +13,11 @@
     "src/nfs_v4.inc": "6f14f99becbd093e2b0f09f194263ab6ceafc57530dde476ef6bd72b3cbe4fd1",
     "src/gss.cpp": "ef94e05b5fa085951ef78bd0e74f3bb35f42652cf80992f5c2442fd31e6d84a0",
     "include/taucloud/gss.hpp": "eb688a2056277bc17371b36e70ceb76ac24f6cbf7af96a1786248a6b72c68f98",
-    "tests/nfs_gss_backchannel.py": "999350f7c7e5dc7e0cb27f6423cbea446bdc6785d215790bb0318dacaa1595d6",
+    "tests/nfs_gss_backchannel.py": "d00668aeda918769f1c231f3cd8ce3fbb634097fbb869bc1452b32b72b052573",
     ".github/workflows/smb-metadata.yml": "c1558d7c8359c45999f9e94ff8f2524facb6829584ff156d0b8d2d5317997c60",
-    "scripts/run_m7.py": "38321ff8274d5b4f2457ade7d29985ebc5613e5bb3ea650fa48639c0f4d53671"
+    "scripts/run_m7.py": "38321ff8274d5b4f2457ade7d29985ebc5613e5bb3ea650fa48639c0f4d53671",
+    "tests/pynfs_gss_handle_diagnostic.py": "c79b283c4cba573792821b74bdeeb4c2b16c80153fa413edd6d9b6ce48f9d960",
+    ".github/workflows/backend.yml": "8420fef402757e3caba25eb06f4fa4972e8401865a3e2e53b95118c250ad7d42"
   },
   "local": {
     "authenticated_callbacks": {
@@ -5698,6 +5700,35 @@
         "CREATE_SESSION retries preserve the original negotiated session; subsequent SEQUENCE/GETFH and explicit destruction work"
       ],
       "sanitizers": true
+    },
+    "placeholder_handle_diagnostic": {
+      "status": "upstream-expectation-conflict",
+      "upstream_passed": 0,
+      "upstream_failed": 2,
+      "specification": "https://www.rfc-editor.org/rfc/rfc8881.html#section-18.36.3",
+      "reason": "Both upstream cases offer the literal unestablished Handle from server. RFC 8881 requires NOENT for a handle absent on the server, even in a mixed flavor array. The original failures remain failures; this diagnostic checks their exact cause.",
+      "cases": [
+        {
+          "classname": "st_create_session",
+          "code": "CSESS16a",
+          "failure": {
+            "err": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/testmod.py\", line 234, in run\n    self.runtest(self, environment)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_create_session.py\", line 274, in testCbSecParmsDec\n    sess1 = c1.create_session(sec=sec)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/nfs4client.py\", line 425, in create_session\n    nfs4lib.check(res)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/nfs4lib.py\", line 624, in check\n    raise NFS4Error(res.status, check_msg=msg)\nnfs4lib.NFS4Error: OP_CREATE_SESSION should return NFS4_OK, instead got NFS4ERR_NOENT\n",
+            "message": "nfs4lib.NFS4Error: OP_CREATE_SESSION should return NFS4_OK, instead got NFS4ERR_NOENT\n"
+          },
+          "name": "testCbSecParmsDec",
+          "time": "0.33786606788635254"
+        },
+        {
+          "classname": "st_create_session",
+          "code": "CSESS16",
+          "failure": {
+            "err": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/testmod.py\", line 234, in run\n    self.runtest(self, environment)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_create_session.py\", line 258, in testCbSecParms\n    sess1 = c1.create_session(sec=sec)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/nfs4client.py\", line 425, in create_session\n    nfs4lib.check(res)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/nfs4lib.py\", line 624, in check\n    raise NFS4Error(res.status, check_msg=msg)\nnfs4lib.NFS4Error: OP_CREATE_SESSION should return NFS4_OK, instead got NFS4ERR_NOENT\n",
+            "message": "nfs4lib.NFS4Error: OP_CREATE_SESSION should return NFS4_OK, instead got NFS4ERR_NOENT\n"
+          },
+          "name": "testCbSecParms",
+          "time": "0.006021261215209961"
+        }
+      ]
     }
   },
   "core": {
@@ -5711,5 +5742,6 @@
     "SP4_MACH_CRED and SP4_SSV",
     "Windows GSS acceptor",
     "Other Full SMB/NFS gates in TODO.md"
-  ]
+  ],
+  "followup_base": "895f4f0d077fb892946120a5af07952d2ead2eb9"
 }

@@ -64,7 +64,12 @@ jobs:
           python3 tests/pynfs_acceptance.py --bin build/linux/x86_64/release --output build/acceptance/pynfs.json OPEN1 OPEN2 OPEN6 OPEN7 OPEN8 OPEN30 OPEN31 CSID1 CSID2 CSID3 CSID4 CSID5 CSID6 CSID8 CSID9 CSID10 sequence reclaim_complete
       - name: Upstream NFS session and client lifecycle
         if: always() && matrix.compiler == 'gcc'
-        run: python3 tests/pynfs_acceptance.py --bin build/linux/x86_64/release --output build/acceptance/pynfs-control.json SECNN3 SECNN4 DESCID7 DSESS9005 DSESS9004 DSESS9001 CSESS23 CSESS5a CSESS5b CSESS26 CSESS9 CSESS10 CSESS29 CSESS16 CSESS16a CSESS15 COMP5 COMP3 EID6 EID6a EID6b EID6c EID6d EID6e EID6f EID6g EID7 EID8 EID5d EID5e EID5f EID5fb EID9 EID4
+        run: python3 tests/pynfs_acceptance.py --bin build/linux/x86_64/release --output build/acceptance/pynfs-control.json SECNN3 SECNN4 DESCID7 DSESS9005 DSESS9004 DSESS9001 CSESS23 CSESS5a CSESS5b CSESS26 CSESS9 CSESS10 CSESS29 CSESS15 COMP5 COMP3 EID6 EID6a EID6b EID6c EID6d EID6e EID6f EID6g EID7 EID8 EID5d EID5e EID5f EID5fb EID9 EID4
+      # These two upstream tests use unestablished literal GSS handles but
+      # expect success. Preserve their failures and verify the required NOENT.
+      - name: Original pynfs GSS placeholder-handle expectation conflicts
+        if: always() && matrix.compiler == 'gcc'
+        run: python3 tests/pynfs_gss_handle_diagnostic.py --bin build/linux/x86_64/release --output build/acceptance/pynfs-gss-placeholder-handles.json
       - name: NFS competing clients and restart recovery
         if: always() && matrix.compiler == 'gcc'
         run: python3 tests/nfs_state_integration.py --bin build/linux/x86_64/release --output build/acceptance/nfs-state.json
@@ -76,7 +81,7 @@ jobs:
         run: python3 tests/nfs_attributes_integration.py --bin build/linux/x86_64/release --output build/acceptance/nfs-attributes.json
       - name: Upstream NFS regular-file/directory profile including lease expiry
         if: always() && matrix.compiler == 'gcc'
-        run: python3 tests/pynfs_acceptance.py --bin build/linux/x86_64/release --output build/acceptance/pynfs-regular.json all nodeleg noblock nochar nofifo nosocket nosymlink noRNM20
+        run: python3 tests/pynfs_acceptance.py --bin build/linux/x86_64/release --output build/acceptance/pynfs-regular.json all nodeleg noblock nochar nofifo nosocket nosymlink noRNM20 noCSESS16 noCSESS16a
       - name: NFS creation attributes and safe truncation
         if: always() && matrix.compiler == 'gcc'
         run: python3 tests/nfs_create_integration.py --bin build/linux/x86_64/release --output build/acceptance/nfs-create.json
@@ -131,6 +136,11 @@ jobs:
       - run: python scripts/run_m7.py --compiler msvc
         env:
           PYTHONUTF8: '1'
+      # These two upstream tests use unestablished literal GSS handles but
+      # expect success. Preserve their failures and verify the required NOENT.
+      - name: Original pynfs GSS placeholder-handle expectation conflicts
+        if: always() && matrix.compiler == 'gcc'
+        run: python3 tests/pynfs_gss_handle_diagnostic.py --bin build/linux/x86_64/release --output build/acceptance/pynfs-gss-placeholder-handles.json
       - name: NFS competing clients and restart recovery
         run: python tests/nfs_state_integration.py --bin build/windows/x64/release --output build/acceptance/nfs-state.json
       - name: NFS native attributes and aliases

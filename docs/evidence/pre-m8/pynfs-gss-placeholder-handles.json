@@ -1,0 +1,34 @@
+{
+  "errors": 0,
+  "failures": 2,
+  "name": "all",
+  "skipped": 264,
+  "testcase": [
+    {
+      "classname": "st_create_session",
+      "code": "CSESS16a",
+      "failure": {
+        "err": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/testmod.py\", line 234, in run\n    self.runtest(self, environment)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_create_session.py\", line 274, in testCbSecParmsDec\n    sess1 = c1.create_session(sec=sec)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/nfs4client.py\", line 425, in create_session\n    nfs4lib.check(res)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/nfs4lib.py\", line 624, in check\n    raise NFS4Error(res.status, check_msg=msg)\nnfs4lib.NFS4Error: OP_CREATE_SESSION should return NFS4_OK, instead got NFS4ERR_NOENT\n",
+        "message": "nfs4lib.NFS4Error: OP_CREATE_SESSION should return NFS4_OK, instead got NFS4ERR_NOENT\n"
+      },
+      "name": "testCbSecParmsDec",
+      "time": "0.12361598014831543"
+    },
+    {
+      "classname": "st_create_session",
+      "code": "CSESS16",
+      "failure": {
+        "err": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/testmod.py\", line 234, in run\n    self.runtest(self, environment)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_create_session.py\", line 258, in testCbSecParms\n    sess1 = c1.create_session(sec=sec)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/nfs4client.py\", line 425, in create_session\n    nfs4lib.check(res)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/nfs4lib.py\", line 624, in check\n    raise NFS4Error(res.status, check_msg=msg)\nnfs4lib.NFS4Error: OP_CREATE_SESSION should return NFS4_OK, instead got NFS4ERR_NOENT\n",
+        "message": "nfs4lib.NFS4Error: OP_CREATE_SESSION should return NFS4_OK, instead got NFS4ERR_NOENT\n"
+      },
+      "name": "testCbSecParms",
+      "time": "0.006709098815917969"
+    }
+  ],
+  "tests": 266,
+  "time": 0.1303250789642334,
+  "timestamp": "2026-11-04 10:12:29.941959",
+  "source": "895f4f0d077fb892946120a5af07952d2ead2eb9",
+  "status": "failed",
+  "scope": "Unmodified upstream CSESS16/CSESS16a use absent literal GSS handles, expecting OK instead of RFC 8881 NOENT; neither case is counted as passing."
+}

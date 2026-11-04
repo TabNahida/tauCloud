@@ -184,11 +184,14 @@ def main():
         window.close(); peer.close(); third.close()
         passed('one context shared across 32 sessions and three TCP paths admits only its 64-entry RPC window; completing the oldest request releases the next authenticated callback')
         holder = client(); holder.session(); root = holder.root()
+        def mixed(offer):
+            return [t4.callback_sec_parms4(0), offer,
+                    t4.callback_sec_parms4(1, t4.authsys_parms(5, b'callback-client', 7, 11, [13, 17]))]
         for service in (1, 2, 3):
             c = client(); offer = c.offer(service)
             # Forward and reverse RPC replay windows cannot share their counters.
             c.contexts[(100003, 4)][2] = 256
-            c.session_back([offer]); c.path(True)
+            c.session_back(mixed(offer)); c.path(True)
             assert c.received[0]['sequence'] == 1 and len(c.sequences) == 1
             assert not c.flags() & 6
             name = ('secure-callback-' + str(service)).encode()
@@ -209,6 +212,11 @@ def main():
 
         c = client(); c.session_back([c.offer(3)]); c.path(True)
         bad = t4.callback_sec_parms4(6, cbsp_gss_handles=t4.gss_cb_handles4(3, b'missing', b'back'))
+        channel = t4.channel_attrs4(0, 8192, 8192, 0, 16, 4, [])
+        for security in (mixed(bad), list(reversed(mixed(bad)))):
+            r = c.compound([op.create_session(c.cid, 2, 2, channel, channel, c.program, security)], False)
+            assert r.status == 2, r
+            c.path(True)
         r = c.compound([op.backchannel_ctl(c.program+1, [bad])]); assert r.status == 2, r
         c.path(True); bind(c); c.path(True)  # Reprobe must still use original program.
         invalid = c.offer(3); invalid.cbsp_gss_handles.gcbp_service = 0
