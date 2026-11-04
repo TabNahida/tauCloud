@@ -195,7 +195,7 @@ def main():
         info=invoke('info');assert info['capabilities']['api_version']=='1.52' and info['capabilities']['paths']=='engine-filesystem' and not info['capabilities']['host_path_translation']
         checks.append('typed Docker API negotiation, four inventories, one-shot stats, bounded multiplexed logs and authorized lifecycle; increased grants require approval, arbitrary routes/create/paths reject')
         for mode,code in [('disconnect','engine_disconnected'),('oversized','engine_response_limit'),('ambiguous','bad_http'),('redirect','engine_rejected'),('forbidden','engine_forbidden'),('deep','bad_engine_json')]:
-            engine.mode=mode;assert invoke('inventory',503)['error']['code']==code,(mode,code)
+            engine.mode=mode;actual=invoke('inventory',503)['error']['code'];assert actual==code,(mode,code,actual)
         engine.mode='chunked';assert invoke('inventory')['complete'];engine.mode='normal'
         engine.minimum='1.53';assert invoke('info',503)['error']['code']=='engine_api_incompatible';engine.minimum='1.44'
         engine.os='windows';assert invoke('info',503)['error']['code']=='engine_platform_mismatch'

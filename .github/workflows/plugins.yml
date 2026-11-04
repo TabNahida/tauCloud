@@ -2,7 +2,7 @@ name: M8 Plugins and Docker
 on:
   workflow_dispatch:
   push:
-    paths: ['src/plugins.cpp', 'src/docker.cpp', 'src/ipc.cpp', 'src/identity.cpp', 'src/api.cpp', 'include/taucloud/plugins.hpp', 'tests/m8*', 'scripts/*m8*', 'scripts/package_plugin.py', '.github/workflows/plugins.yml']
+    paths: ['src/plugins.cpp', 'src/docker.cpp', 'src/ipc.cpp', 'src/identity.cpp', 'src/api.cpp', 'src/gss.cpp', 'include/taucloud/gss.hpp', 'xmake.lua', 'include/taucloud/plugins.hpp', 'tests/m8*', 'scripts/*m8*', 'scripts/package_plugin.py', '.github/workflows/plugins.yml']
 permissions:
   contents: read
 jobs:
@@ -23,6 +23,8 @@ jobs:
           xmake-version: '3.1.1'
       - run: python scripts/fetch_pace.py
       - run: python scripts/fetch_pace.py --dependency recipes
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libssl-dev libexpat1-dev libkrb5-dev
       - run: python scripts/run_m8.py --compiler ${{ matrix.compiler }} ${{ matrix.flags }}
       - name: Real Linux Docker Engine
         if: matrix.compiler == 'gcc'
