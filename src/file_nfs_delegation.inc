@@ -22,8 +22,8 @@ void maintain_nfs_delegations() {
           auto observed = nfs_owner->inspect(d.owner_id);
           auto state = observed.at("state").get<std::string>();
           using status = nfs_detail::delegation_lifetime::state;
-          if (state == "recalling") d.lifetime.recall(time);
-          else if (state == "expired" || state == "revoked") {
+          d.lifetime.constrain(observed.at("lease_expires_ms"), observed.at("recall_deadline_ms"));
+          if (state == "expired" || state == "revoked") {
             d.lifetime.observe_terminal(state == "expired" ? status::expired : status::revoked);
             observed_terminal = true;
           }
@@ -63,21 +63,25 @@ void nfs_delegation_conflict(const std::string &space, const std::string &path) 
 }
 json nfs_delegation_snapshot(const std::string &cookie, const nfs_delegation_guard &d) const {
   using state = nfs_detail::delegation_lifetime::state;
+  auto time = cache_clock();
+  auto lifetime = d.lifetime;
+  lifetime.expire(time);
   const char *status = "active";
-  switch (d.lifetime.status()) {
+  switch (lifetime.status()) {
   case state::active: break;
   case state::recalling: status = "recalling"; break;
   case state::returned: status = "returned"; break;
   case state::revoked: status = "revoked"; break;
   case state::expired: status = "expired"; break;
   }
-  auto time = cache_clock();
-  return {{"cookie", cookie}, {"granted", d.lifetime.held() && !d.owner_failed}, {"state", status},
+  return {{"cookie", cookie}, {"granted", lifetime.held() && !d.owner_failed}, {"state", status},
       {"provider", d.owner_backed ? "independent-owner" : "local-primitive"},
       {"owner_available", d.owner_backed && !d.owner_failed},
-      {"lease_remaining_ms", std::max<int64_t>(0, d.lifetime.expires() - time)},
-      {"recall_remaining_ms", d.lifetime.recall_until()
-          ? std::max<int64_t>(0, d.lifetime.recall_until() - time) : 0}};
+      {"lease_expires_ms", lifetime.expires()}, {"recall_deadline_ms", lifetime.recall_until()},
+      {"protected_until_ms", d.owner_failed ? 0 : lifetime.protected_until()},
+      {"lease_remaining_ms", std::max<int64_t>(0, lifetime.expires() - time)},
+      {"recall_remaining_ms", lifetime.recall_until()
+          ? std::max<int64_t>(0, lifetime.recall_until() - time) : 0}};
 }
 json nfs_delegation_dispatch(const json &body, const call_context &ctx) {
   require(ctx.caller == "nfs", "forbidden");
@@ -185,15 +189,19 @@ json nfs_delegation_dispatch(const json &body, const call_context &ctx) {
         if (op == "retain" && !d.owner_recalled) {
           nfs_owner->recall(d.owner_id); d.owner_recalled = true;
         }
-        nfs_owner->renew(d.owner_id, interval);
+        auto confirmed = nfs_owner->renew(d.owner_id, interval);
+        // Preserve the acknowledged coherence extension even when the short
+        // data grant expires during IPC. That failure cannot authorize IO, but
+        // must not discard retention the native owner has already accepted.
+        require(d.lifetime.renew(accepted, interval), "stale_handle");
+        d.lifetime.constrain(confirmed.at("lease_expires_ms"), confirmed.at("recall_deadline_ms"));
         if (op == "renew") lease(g, ctx);
       } catch (const error &e) {
         d.owner_failed |= std::string_view(e.what()) == "delegation_owner_lost";
         d.lifetime.recall(accepted);
         throw;
       }
-    }
-    require(d.lifetime.renew(accepted, interval), "stale_handle");
+    } else require(d.lifetime.renew(accepted, interval), "stale_handle");
   } else if (op == "recall") d.lifetime.recall(time);
   else if (op == "return") d.lifetime.returned(time);
   else if (op == "forget") require(!d.lifetime.held(), "locked");

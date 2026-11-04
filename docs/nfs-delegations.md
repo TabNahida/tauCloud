@@ -431,3 +431,28 @@ five-second lease expires and reads its original OPEN after expiry. The fixture
 checks timings, successful SEQUENCE replies and unchanged worker identity, and
 always resumes the file process during cleanup. See
 [local evidence](evidence/pre-m8/nfs-arrival-local.json).
+
+## Native acknowledged deadlines
+
+The independent owner now returns absolute monotonic lease expiry and recall
+deadlines in its private versioned IPC protocol. File authority imports the
+confirmed upper bound; delayed observation cannot start a new recall interval.
+Snapshots expose `lease_expires_ms`, `recall_deadline_ms` and
+`protected_until_ms`; terminal or unavailable protection reports no usable
+protection window. Local time passing does not itself clear an owned native
+descriptor: release still requires confirmed owner termination or an explicit
+release acknowledgment.
+
+Renewal imports the owner's acknowledgment before rechecking a short-lived data
+grant. If that grant expires during IPC, data authorization still fails, but
+the already acknowledged coherence retention is preserved. Importing a later
+observation cannot extend an earlier recall deadline or revive terminal state.
+These timestamps are private to processes sharing one host's monotonic clock;
+they are not persistent restart identifiers or NFS wire timestamps.
+
+[Local evidence](evidence/pre-m8/nfs-native-deadline-local.json) records 222 native
+lifecycle checks, 1074 protocol checks and 576 Linux 6.19 VM checks on tmpfs/ext4.
+The VM delays file-domain observation after a real native write conflict and
+verifies that the imported recall deadline remains anchored to the owner.
+Acknowledged reservations across network admission, execution and full reply
+delivery remain separate requirements; production handout stays disabled.

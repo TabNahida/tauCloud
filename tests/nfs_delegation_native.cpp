@@ -51,6 +51,20 @@ int main(int argc, char **argv) {
       delegation_lifetime shorter(0, period, period);
       check(shorter.renew(1, 1) && shorter.expires() == period);
       check(!shorter.renew(1, 0) && !shorter.renew(1, period + 1));
+      delegation_lifetime observed(1000, period, period);
+      auto original_recall = 1100 + period / 2;
+      observed.constrain(1000 + period, original_recall);
+      check(observed.status() == state::recalling && observed.protected_until() == original_recall);
+      observed.constrain(2000 + period, original_recall + 500);
+      check(observed.expires() == 1000 + period && observed.recall_until() == original_recall);
+      check(observed.renew(1200, period) && observed.protected_until() == original_recall);
+      observed.expire(original_recall);
+      check(observed.status() == state::revoked && observed.protected_until() == 0);
+      observed.constrain(original_recall + period, 0);
+      check(!observed.held() && !observed.renew(original_recall + 1, period));
+      delegation_lifetime bounded(1000, period, period);
+      bounded.constrain(1500, 0); bounded.expire(1500);
+      check(bounded.status() == state::expired && bounded.protected_until() == 0);
     }
     std::cout << "PASS monotonic recall, expiry, return and non-resurrection boundaries\n";
 
@@ -106,6 +120,7 @@ int main(int argc, char **argv) {
     unauthorized["grant"]["write"] = false;
     rejects([&] { store->dispatch("nfs_delegation", unauthorized, ctx()); }, "grant_denied");
     auto d = call("acquire"); check(d.at("granted") && d.at("state") == "active");
+    check(d.at("protected_until_ms") == d.at("lease_expires_ms") && d.at("recall_deadline_ms") == 0);
     auto cookie = d.at("cookie");
     auto retried = call("acquire");
     check(retried.at("cookie") == cookie && retried.at("lease_remaining_ms") <= d.at("lease_remaining_ms"));
@@ -188,9 +203,13 @@ int main(int argc, char **argv) {
     d = store->dispatch("nfs_delegation", retained, ctx());
     check(d.at("granted") && d.at("state") == "recalling");
     auto recall_remaining = d.at("recall_remaining_ms").get<int64_t>();
+    auto recall_deadline = d.at("recall_deadline_ms").get<int64_t>();
     std::this_thread::sleep_for(std::chrono::milliseconds(1200));
     d = store->dispatch("nfs_delegation", retained, ctx());
     check(d.at("granted") && d.at("recall_remaining_ms").get<int64_t>() < recall_remaining);
+    check(d.at("recall_deadline_ms") == recall_deadline &&
+          d.at("protected_until_ms").get<int64_t>() ==
+              std::min(d.at("lease_expires_ms").get<int64_t>(), recall_deadline));
     rejects([&] { native.open("space/cached", false, false, true); }, "locked");
     retained["op"] = "renew";
     rejects([&] { store->dispatch("nfs_delegation", retained, ctx()); }, "lease_expired");

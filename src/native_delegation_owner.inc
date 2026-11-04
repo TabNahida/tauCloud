@@ -4,7 +4,7 @@ struct native_delegation_owner::impl {
   static inline std::atomic_bool entry_registered = false;
 #ifdef __linux__
   struct packet {
-    uint32_t magic = 0x54434431, op = 0;
+    uint32_t magic = 0x54434432, op = 0;
     uint32_t native_flags = 0, reserved = 0;
     uint64_t id = 0;
     int64_t period = 0, remaining = 0;
@@ -18,6 +18,17 @@ struct native_delegation_owner::impl {
   static int64_t clock() {
     return std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::steady_clock::now().time_since_epoch()).count();
+  }
+  static json snapshot(const packet &r) {
+    auto state = (r.op >> 8) & 255;
+    require(state <= 4 && r.period > 0 && r.remaining >= 0, "delegation_owner_io");
+    const char *names[] = {"active", "recalling", "returned", "revoked", "expired"};
+    auto time = clock();
+    auto until = state < 2 ? (r.remaining ? std::min(r.period, r.remaining) : r.period) : 0;
+    return {{"state", names[state]}, {"held", state < 2},
+        {"lease_expires_ms", r.period}, {"recall_deadline_ms", r.remaining}, {"protected_until_ms", until},
+        {"lease_remaining_ms", std::max<int64_t>(0, r.period - time)},
+        {"recall_remaining_ms", r.remaining ? std::max<int64_t>(0, r.remaining - time) : 0}};
   }
   static bool send(int socket, const packet &p, int descriptor = -1) {
     iovec data{const_cast<packet *>(&p), sizeof(p)};
@@ -51,7 +62,7 @@ struct native_delegation_owner::impl {
         if (++count == 1) descriptor.handle = fd; else ::close(fd);
       }
     }
-    return valid && result == sizeof(p) && !(message.msg_flags & (MSG_TRUNC | MSG_CTRUNC)) && count <= 1 && p.magic == 0x54434431;
+    return valid && result == sizeof(p) && !(message.msg_flags & (MSG_TRUNC | MSG_CTRUNC)) && count <= 1 && p.magic == 0x54434432;
   }
   void start() {
     int sockets[2];
@@ -196,8 +207,8 @@ struct native_delegation_owner::impl {
           else if (op == release) { records.erase(found); }
           if (op != release) {
             response.op |= static_cast<unsigned>(r.lifetime.status()) << 8;
-            response.period = std::max<int64_t>(0, r.lifetime.expires() - clock());
-            response.remaining = r.lifetime.recall_until() ? std::max<int64_t>(0, r.lifetime.recall_until() - clock()) : 0;
+            response.period = r.lifetime.expires();
+            response.remaining = r.lifetime.recall_until();
           }
         }
       } catch (const error &e) {
@@ -259,22 +270,21 @@ json native_delegation_owner::inspect(uint64_t id) {
   auto r = impl_->exchange(request);
   auto state = (r.op >> 8) & 255;
   require(state <= 4, "delegation_owner_io");
-  const char *names[] = {"active", "recalling", "returned", "revoked", "expired"};
   if (state >= 2 && impl_->owned.contains(id)) {
     impl_->owned.at(id)->cache_owned = false;
     impl_->owned.erase(id);
   }
-  return {{"state", names[state]}, {"held", state < 2}, {"lease_remaining_ms", r.period}, {"recall_remaining_ms", r.remaining}};
+  return impl::snapshot(r);
 #else
   (void)id; throw error("not_supported");
 #endif
 }
-void native_delegation_owner::renew(uint64_t id, int64_t remaining) {
+json native_delegation_owner::renew(uint64_t id, int64_t remaining) {
 #ifdef __linux__
   std::lock_guard lock(impl_->mutex);
   require(remaining > 0 && remaining <= 3600000, "invalid_request");
   impl::packet request; request.op = impl::renew; request.id = id; request.remaining = impl::clock() + remaining;
-  impl_->exchange(request);
+  return impl::snapshot(impl_->exchange(request));
 #else
   (void)id; (void)remaining; throw error("not_supported");
 #endif

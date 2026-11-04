@@ -19,6 +19,10 @@ using namespace tc;
 using namespace std::chrono_literals;
 static int checks;
 static void check(bool value, const char *message) { require(value, message); ++checks; }
+static int64_t monotonic_ms() {
+  return std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::steady_clock::now().time_since_epoch()).count();
+}
 
 // A child executes an ordinary host syscall, outside the file-domain API.
 // Prove it stays blocked until explicit release, then completes successfully.
@@ -162,20 +166,38 @@ static void owner_suite(const fs::path &base, bool mandatory) {
     return;
   }
   check(owner.inspect(id).at("state") == "active", "owner_not_active");
+  auto confirmed = owner.inspect(id);
+  check(confirmed.at("protected_until_ms") == confirmed.at("lease_expires_ms") &&
+      confirmed.at("recall_deadline_ms") == 0, "owner_deadline_not_absolute");
+  auto original_expiry = confirmed.at("lease_expires_ms").get<int64_t>();
+  std::this_thread::sleep_for(100ms);
+  auto observed_at = monotonic_ms();
+  confirmed = owner.inspect(id);
+  check(confirmed.at("lease_expires_ms") == original_expiry &&
+      confirmed.at("lease_remaining_ms").get<int64_t>() <= original_expiry - observed_at,
+      "owner_observation_extended_expiry");
   try { owner.inspect(id + 1000); throw error("unknown_owner_id_accepted"); }
   catch (const error &e) { check(std::string_view(e.what()) == "stale_handle", "owner_wrong_unknown_id_error"); }
   check(!file.cache_guard(false) && !owner.acquire(file, 5000, 5000), "owner_local_duplicate");
   check(file.read(0, 8) == "retained", "owner_read_access");
   { auto reader = root.open("owned"); check(reader.read(0, 8) == "retained", "owner_compatible_reader"); }
   owner.recall(id);
-  auto remaining = owner.inspect(id).at("recall_remaining_ms").get<int64_t>();
+  confirmed = owner.inspect(id);
+  auto remaining = confirmed.at("recall_remaining_ms").get<int64_t>();
+  auto recall_deadline = confirmed.at("recall_deadline_ms").get<int64_t>();
   auto until = std::chrono::steady_clock::now() + 7s;
   json snapshot;
   do {
     std::this_thread::sleep_for(100ms);
     snapshot = owner.inspect(id);
     if (snapshot.at("state") == "revoked") break;
-    try { owner.renew(id, 5000); }
+    try {
+      auto acknowledged = owner.renew(id, 5000);
+      check(acknowledged.at("recall_deadline_ms") == recall_deadline &&
+          acknowledged.at("protected_until_ms").get<int64_t>() ==
+              std::min(acknowledged.at("lease_expires_ms").get<int64_t>(), recall_deadline),
+          "owner_renew_ack_exceeded_recall");
+    }
     catch (const error &e) {
       if (std::string_view(e.what()) != "stale_handle" || owner.inspect(id).at("state") != "revoked") throw;
     }
@@ -352,12 +374,21 @@ static void file_domain_suite(const fs::path &base) {
   auto listed = nfs("list", dir).at("entries");
   check(listed.size() == 1 && listed.at(0).at("handle") == fh, "domain_list_lost_incarnation");
   check(call("poll", cookie).at("state") == "active", "domain_namespace_read_recalled_delegation");
+  auto native_recall_started = monotonic_ms();
   int writer = open((base / "root/space/cached").c_str(), O_WRONLY | O_NONBLOCK);
   check(writer < 0 && errno == EWOULDBLOCK, "domain_native_conflict_not_blocked");
+  // Let the independent owner observe the native break before the file
+  // authority polls. Importing it must not start a fresh five-second interval.
+  std::this_thread::sleep_for(800ms);
   auto limit = std::chrono::steady_clock::now() + 1s;
   do { d = call("poll", cookie); if (d.at("state") == "recalling") break; std::this_thread::sleep_for(5ms); }
   while (std::chrono::steady_clock::now() < limit);
   check(d.at("state") == "recalling", "domain_native_recall_not_imported");
+  check(d.at("recall_deadline_ms").get<int64_t>() <= native_recall_started + 5500,
+      "domain_restarted_native_recall_deadline");
+  check(d.at("protected_until_ms").get<int64_t>() ==
+      std::min(d.at("lease_expires_ms").get<int64_t>(), d.at("recall_deadline_ms").get<int64_t>()),
+      "domain_overstated_native_protection");
   check(call("return", cookie).at("state") == "returned", "domain_return_failed"); call("forget", cookie);
   d = call("acquire", "", 1000); check(d.at("granted"), "domain_cleanup_acquire"); cookie = d.at("cookie");
   auto cleanup = control("retain", cookie, 5000);

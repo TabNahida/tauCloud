@@ -17,7 +17,8 @@ public:
   uint64_t acquire(const native_file &, int64_t period_ms, int64_t remaining_ms,
                    bool write = false);
   json inspect(uint64_t id);
-  void renew(uint64_t id, int64_t remaining_ms);
+  // Returns acknowledged absolute monotonic lease/recall/protection deadlines.
+  json renew(uint64_t id, int64_t remaining_ms);
   void recall(uint64_t id);
   void release(uint64_t id);
   // Diagnostics only; use a pidfd/verified process identity for signaling.

@@ -18,6 +18,19 @@ public:
   bool held() const { return state_ == state::active || state_ == state::recalling; }
   int64_t expires() const { return expires_; }
   int64_t recall_until() const { return recall_until_; }
+  int64_t protected_until() const {
+    return held() ? (recall_until_ ? std::min(expires_, recall_until_) : expires_) : 0;
+  }
+  // Import a native authority's absolute monotonic deadlines. Observation may
+  // shorten protection, never extend it or restart a recall after IPC delay.
+  void constrain(int64_t expires, int64_t recall_until) {
+    if (!held()) return;
+    expires_ = std::min(expires_, expires);
+    if (recall_until) {
+      state_ = state::recalling;
+      recall_until_ = recall_until_ ? std::min(recall_until_, recall_until) : recall_until;
+    }
+  }
   // A remote native authority may observe expiry/revocation first. Such an
   // observation can retire local state, never revive or renew it.
   void observe_terminal(state value) {
