@@ -1,0 +1,183 @@
+{
+  "recorded_at": "2026-11-04T14:35:30.175593+00:00",
+  "base_source": "0e69a2f1fda0888248a92d991a2ffd55ed4ffa5c",
+  "status": "targeted-local-passed-reauth5-failed-native-remote-pending",
+  "sanitizers": "Linux Clang ASan/UBSan/LSan",
+  "scope": "SET_SECURITY preserves classic oplocks; own EXCLUSIVE/BATCH EOF and allocation preserve their native description and cache; Level II size changes invalidate all readers; missing WRITE_DATA fails before recall. Full SMB/NFS remains unfinished.",
+  "source_sha256": {
+    "src/file_smb.inc": "5cb246fea0bdf66aaf0725dabe165625c75c3b34979fc136a7ca6dd5d10235e3",
+    "tests/smb_security_oplocks.py": "9c0828ce7cbe9f92932c19d6ab897dfcbe726dd7c6dcda541277bfec39aa0176",
+    "tests/smb_oplock_integration.py": "71e72a81a3ce102414834c228a422878e3a400f26f5afdd461db3ba0a1ae4ff8",
+    ".github/workflows/smb-metadata.yml": "0a9dd7874f70f6198b76132b59e3149c123b8d24440c917b9d05a433fb2fd8c1"
+  },
+  "reports": {
+    "smb-security-oplocks-local": {
+      "sha256": "49b037d65cb0dd8052c0b31d2110dd301aa9160952c22badccd1b0c5c4367fb5",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "210/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "210/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "210/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "300/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "300/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "300/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "302/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "302/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "302/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "311/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "311/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "311/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK"
+        ]
+      },
+      "phase": "final source"
+    },
+    "smb-security-oplocks-acl": {
+      "sha256": "67a379cc4b82505f33241d48b35ef18941b673dbfaa565e65345639bd9703b5f",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "schema 5 migration backs up each file authority before adding persistent security descriptors",
+          "self-relative owner/group/DACL query, requested sections, required buffer size and READ_CONTROL/WRITE_DAC/SACL boundaries",
+          "ordered deny/allow access checks, MAXIMUM_ALLOWED and explicit-right intersection; existing handles retain granted rights",
+          "SMB denial enforced by NFSv3 READ/ACCESS, NFSv4 ACCESS, core API and WebDAV readonly aliases",
+          "ACE order, empty versus NULL DACL, implicit owner rights and OWNER RIGHTS SID",
+          "malformed offsets, overlaps, truncation and unsupported ACEs rejected atomically; ownership cannot be assigned to another user",
+          "file/directory inheritance with CREATOR OWNER substitution and multi-generation propagation; ACL follows rename",
+          "SecD CREATE persists protected initial ACL, validates ownership and rejects duplicate/malformed contexts before mutation",
+          "group ACE enforcement and membership revocation use freshly signed identity grants",
+          "schema 7 durability across process restart; replacement object receives fresh owner and ACL",
+          "NFS writer publication still enforces file DACL; WRITE and chmod cannot bypass SMB restrictions",
+          "DAV writer cannot bypass ACL; staged PUT retains restrictions, recursive COPY checks descendants and inherits destination ACL through private staging parents",
+          "DAV LOCK on unmapped URL checks parent create rights and persists inherited DACL"
+        ]
+      },
+      "phase": "final source"
+    },
+    "smb-security-oplocks-exclusive": {
+      "sha256": "2e5f2b49dae1eedb83d437d6ea543338e0fa493843b31caef3ce84c54acf3295",
+      "report": {
+        "status": "passed",
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "checks": [
+          "210: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "210: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "210: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "300: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "300: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "300: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "302: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "302: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "302: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "311: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "311: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "311: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "210: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "300: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "302: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "311: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "sharing violations do not recall dirty caches; readonly, directory, delete-on-close and conflicting native opens receive no unsupported cache grant",
+          "a lease-form ACK for a classic oplock is rejected and finishes the recall without leaving native exclusion stuck",
+          "two encrypted sessions on one transport renew independent cache authority and route breaks/ACKs with their own keys; a foreign-session ACK cannot release another open",
+          "native host reads/writes wait for SMB recall; dirty client data flushes before host access and the original handle observes subsequent native writes",
+          "own EXCLUSIVE SET_INFO EOF completes synchronously and preserves its cache without a self-recall",
+          "related cached CREATE/SET_INFO/READ preserves the inherited FileId and completes without an unnecessary self-recall",
+          "NFSv3 READ on an existing handle returns JUKEBOX during native recall; repeated retries leave SMB flush/ACK live and the next read returns current data",
+          "DAV GET returns a retryable response while a cache recall is pending and reads freshly flushed bytes after ACK",
+          "another transport cannot ACK the holder FileId; CLOSE flushes/releases authority and wakes the peer CREATE",
+          "unacknowledged recall fences the holder transport and open while the conflicting client completes after native exclusion releases",
+          "credential revocation closes the cache-bearing transport and releases native exclusion without requiring a client request",
+          "stalled identity RPC cannot hold the cache transport past its authority: independent watchdog closes it before IPC timeout and autonomous worker expiry releases native exclusion"
+        ],
+        "recorded_at": "2026-11-04T14:30:05.503905+00:00"
+      },
+      "phase": "after security/size cache corrections, before moving WRITE_DATA rejection ahead of recall",
+      "file_smb_sha256": "01ddc9200b91332d6b0c299b6f79a723cb5cb94f2e63f02067ffa69185f279c0",
+      "note": "28 groups passed. The final permission-order change was then tested with the 12 targeted groups, core checks, ACL regression and original Samba selectors; this older broad run is not labeled final-source validation."
+    },
+    "samba-security-oplocks": {
+      "sha256": "6b87e495bcbd4a255d08dd7139cb16dfc7e17afa322e94b0e4f0f1f1db873148",
+      "report": {
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "recorded_at": "2026-11-04T14:33:33.930716+00:00",
+        "tests": [
+          {
+            "selector": "smb2.session.reauth2",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-security-oplocks-smb2.session.reauth2.log",
+            "service_generations_unchanged": true
+          },
+          {
+            "selector": "smb2.session.reauth3",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-security-oplocks-smb2.session.reauth3.log",
+            "service_generations_unchanged": true
+          },
+          {
+            "selector": "smb2.session.reauth4",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-security-oplocks-smb2.session.reauth4.log",
+            "service_generations_unchanged": true
+          },
+          {
+            "selector": "smb2.session.reauth5",
+            "returncode": 1,
+            "status": "failed",
+            "counts": {
+              "success": 0,
+              "failure": 1,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-security-oplocks-smb2.session.reauth5.log",
+            "service_generations_unchanged": true
+          }
+        ],
+        "standard_differences_not_counted_as_passes": [],
+        "memory_limit_mib": 1024,
+        "status": "failed"
+      },
+      "phase": "final source"
+    }
+  },
+  "core_m5": {
+    "checks": 12583,
+    "status": "passed",
+    "phase": "final source",
+    "log_sha256": "a4f7d98c0443980058c108a00a29454230da9dbe937584208d15992bb288f388"
+  },
+  "upstream_logs": {
+    "smb-security-oplocks-reauth2.log": "7c0b4057c9b5ae73c8a98c76a5269ddbddffafee274a2ea9e69c9707d8430f3a",
+    "smb-security-oplocks-reauth3.log": "e3a6c757528b8b2879a5fe0fd27bdaff8710ed36160dfe5a66120d837eea8d1f",
+    "smb-security-oplocks-reauth4.log": "798b1db5ef3c4d10bf0f0af1a18c0f02d3ec12bd9799203d7a275434cd768948",
+    "smb-security-oplocks-reauth5.log": "b3b69e4e55eb6eb23aaf6bb2d35774c8b573fed762e9680dfabe9847ce1531be"
+  },
+  "limitations": [
+    "Original reauth5 fails at unlink of a nonexistent destination with OBJECT_NAME_NOT_FOUND; later assertions remain unverified.",
+    "Windows native first-write failure at e9c7f8b requires reacceptance. Its encrypted size-shaped SET_INFO and self-recall support this correction but do not prove the native test is fixed.",
+    "SMB leases, other metadata transitions, namespace handle exclusion, NFS delegation and broader Full SMB/NFS gates remain open.",
+    "Windows NFS OPEN INVAL and earlier EXCHANGE_ID timeout root causes remain unresolved; a subsequent passing NFS run does not explain them."
+  ],
+  "diagnostic_note": "A local transparent proxy observed original reauth4 sending SET_INFO and receiving STATUS_PENDING followed by an oplock break, then failing INVALID_NETWORK_RESPONSE. Correcting the inapplicable classic-oplock recall makes the unmodified case pass. The proxy recorded only frame headers and NTLM flags/lengths, no credentials or data. Condensed upstream report omits service snapshots/server log; sha256 identifies the original full report."
+}

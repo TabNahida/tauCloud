@@ -124,7 +124,8 @@ An explicit EXCLUSIVE request on a writable regular-file open with both READ_DAT
 and WRITE_DATA may now receive an EXCLUSIVE grant if the file domain obtains
 native exclusion. Read-only opens, directories, delete-on-close and conflicting
 native access receive NONE for EXCLUSIVE requests. Explicit Level II requests
-can receive shared read caching as described below. BATCH/lease requests are not granted yet.
+can receive shared read caching as described below. BATCH is implemented below;
+lease requests are not granted yet.
 An incompatible sharing request fails without recalling the existing cache.
 An attribute-only OPEN/OPEN_IF (READ_ATTRIBUTES, WRITE_ATTRIBUTES, SYNCHRONIZE)
 against a cached file retains its pinned native description and receives NONE
@@ -152,11 +153,32 @@ can recall to NONE or downgrade to Level II. Invalid classic ACK levels
 release the native recall and return the appropriate protocol error.
 
 The holder can write/flush while a competing CREATE waits. ACK flushes native
-file data before admitting the contender. SET_INFO and directory enumeration
+file data before admitting the contender. Cache-conflicting SET_INFO and directory enumeration
 recall affected caches before mutations/enumeration; their asynchronous retries
 cannot replay a mutation that occurred before the recall boundary. Closing the
 holder completes recall; CANCEL drops the waiter; timeout, credential revocation,
 worker-authority loss and disconnect invalidate the old open.
+
+SET_SECURITY preserves classic Level II, EXCLUSIVE and BATCH grants. MS-FSA
+2.1.4.12 requests only lease HANDLE_CACHING invalidation for this operation;
+it does not set the classic break flags. Existing opens retain their granted
+rights while every new open checks the updated descriptor. Own-handle EOF and
+allocation updates also preserve EXCLUSIVE/BATCH, using the same guarded native
+description. Level II EOF/allocation still invalidates all readers, including
+the initiating open, without requiring an ACK. Missing WRITE_DATA is rejected
+before initiating a recall. Related CREATE/EOF/READ therefore needs no self-recall.
+
+The [local correction evidence](evidence/pre-m8/smb-security-oplocks-local.json)
+covers twelve four-dialect/cache-level groups, denied/malformed mutations,
+continued data coherence and new-open ACL enforcement. It corrects the earlier
+test expectations that a cache holder should recall itself for SET_INFO.
+Original Samba reauth4 now passes. The [Windows native failure at `e9c7f8b`](evidence/pre-m8/smb-native-e9c-windows-failure.json)
+occurs during the first write after a size-shaped SET_INFO triggered a self-recall;
+native reacceptance of this correction remains pending. SMB lease transitions,
+broader metadata semantics and full cache conformance remain open.
+
+References: [MS-FSA oplock break algorithm](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fsa/306239fb-cb60-49fe-b293-df4d1a5f757a),
+[setting security information](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fsa/2e97fa70-e1f5-410b-ba87-f1ffda39a8ed).
 
 [Local wire evidence](evidence/pre-m8/smb-oplock-local.json) covers four dialects,
 same-transport and related CREATE/READ/CLOSE waits, nested session keys, CANCEL,

@@ -658,14 +658,21 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     });
     if (readers) cache_conflict(space, path);
   }
-  // Recall before any namespace/metadata mutation. Repeating a deferred SMB
+  if (op == "smb_resize" || op == "smb_allocation")
+    require(h.access & 2, "forbidden");
+  // Recall before cache-conflicting namespace/metadata mutation. Repeating a deferred SMB
   // request is safe only when no mutation has happened before this boundary.
   if (op == "smb_rename" || op == "smb_disposition" || op == "smb_attributes" ||
-      op == "smb_set_eas" || op == "smb_set_security" || op == "smb_resize" ||
+      op == "smb_set_eas" || op == "smb_resize" ||
       op == "smb_allocation" || op == "smb_list") {
     // Delete-pending changes namespace visibility, not the cached file data;
     // existing Level II readers retain their opens until the last close.
-    cache_conflict(space, path, "", op == "smb_disposition" ? 1 : 0);
+    // MS-FSA 2.1.4.12 excludes the originating exclusive open from data
+    // invalidation. A Level II holder still invalidates every reader,
+    // including itself. Native I/O uses h.file, the guarded open description.
+    auto cache_owner = (op == "smb_resize" || op == "smb_allocation") && h.cache &&
+                               (h.cache_level == 8 || h.cache_level == 9) ? id : "";
+    cache_conflict(space, path, cache_owner, op == "smb_disposition" ? 1 : 0);
     if (op == "smb_rename") {
       auto target = verify(body.at("target"), true);
       require(target.at("space").at("id") == space && target.at("actor") == actor &&
@@ -713,6 +720,9 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     return {{"pending", !overflow && events.empty()}, {"overflow", overflow}, {"events", events}};
   }
   if (op == "smb_security" || op == "smb_set_security") {
+    // MS-FSA 2.1.4.12 SET_SECURITY only breaks lease HANDLE_CACHING.
+    // Classic Level II/EXCLUSIVE/BATCH oplocks are not broken. Existing opens
+    // retain granted access; every new open checks the updated descriptor.
     uint32_t information = body.at("information");
     if (op == "smb_security") {
       // QUERY_INFO has its own flag namespace. In particular, protection
@@ -1114,7 +1124,6 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     return {{"data", encode_bytes(data)}, {"read", data.size()}};
   }
   if (op == "smb_resize" || op == "smb_allocation") {
-    require(h.access & 2, "forbidden");
     auto size = number(body, "size");
     auto native = meta.at("object").get<std::string>();
     auto reservation = allocation_reservation(native);

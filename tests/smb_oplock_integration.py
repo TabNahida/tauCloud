@@ -292,12 +292,11 @@ def main():
         set_info = SMB2SetInfoRequest(); set_info['info_type'] = 1
         set_info['file_info_class'] = eof.INFO_CLASS; set_info['file_id'] = holder.file_id
         set_info['buffer'] = eof
-        request = c.send(set_info, s.session_id, t.tree_connect_id); pending(request)
-        recalled(q, s, holder); holder.write(b'latest!!'); ack(c, s, t, holder)
+        request = c.send(set_info, s.session_id, t.tree_connect_id)
         response = c.receive(request, timeout=10)
-        assert response['flags'].get_value() & 2 and response['credit_response'].get_value() == 0
-        assert holder.read(0, 4) == b'late'; holder.close()
-        passed('SET_INFO recalls before mutation, permits cached flush while pending and applies EOF after ACK without replaying side effects')
+        assert not response['flags'].get_value() & 2
+        assert holder.read(0, 4) == b'orig' and q.empty(); holder.close()
+        passed('own EXCLUSIVE SET_INFO EOF completes synchronously and preserves its cache without a self-recall')
 
         holder = Open(t, 'create-then-eof')
         opening, receive_open = holder.create(2, 0x13019f, 0x80, 7, 3, 0x40, oplock_level=8, send=False)
@@ -305,11 +304,11 @@ def main():
         reader, receive_read = holder.read(0, 4, send=False); reader['file_id'] = b'\xff'*16
         requests = c.send_compound([opening, set_info, reader], s.session_id, t.tree_connect_id, related=True)
         receive_open(requests[0]); assert holder.oplock_level == 8
-        pending(requests[1]); pending(requests[2]); recalled(q, s, holder)
-        holder.write(b'content!'); ack(c, s, t, holder)
-        c.receive(requests[1], timeout=10); assert receive_read(requests[2]) == b'cont'
+        response = c.receive(requests[1], timeout=10)
+        assert not response['flags'].get_value() & 2
+        assert receive_read(requests[2]) == bytes(4) and q.empty()
         holder.close()
-        passed('a new cached CREATE is announced before its own compound SET_INFO recall; asynchronous retries preserve the inherited FileId through the dependent READ')
+        passed('related cached CREATE/SET_INFO/READ preserves the inherited FileId and completes without an unnecessary self-recall')
 
         # Obtain an NFS handle before the SMB cache exists; otherwise LOOKUP
         # itself may legitimately need a recall to obtain fresh attributes.

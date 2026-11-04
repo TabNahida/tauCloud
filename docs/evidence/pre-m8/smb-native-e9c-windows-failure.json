@@ -1,0 +1,420 @@
+{
+  "source": "e9c7f8b05152ce5360c259cf0f8fa6e64a1fc9bb",
+  "workflow_run": 41844795095,
+  "job": 126625388605,
+  "url": "https://github.com/TabNahida/tauCloud/actions/runs/41844795095/job/126625388605",
+  "status": "windows-job-failed",
+  "artifact": 13331917370,
+  "artifact_sha256": "76a22568a7efafca0d947b0f7c7ef45bd49d5c3ba01278252a803ed3b5f07347",
+  "independent_checks": {
+    "security-query.json": {
+      "status": "passed",
+      "groups": 20
+    },
+    "nfs-notify-lock.json": {
+      "status": "passed",
+      "groups": 9
+    }
+  },
+  "native_report": {
+    "status": "failed",
+    "host": "Windows-2025Server-10.0.26100-SP0",
+    "returncode": 1,
+    "stdout": "",
+    "stderr": "\u001b[31;1mParentContainsErrorRecordException: \u001b[0mC:\\Users\\runneradmin\\AppData\\Local\\Temp\\tc3-myw89a7q\\native-smb.ps1:19\u001b[0m\n\u001b[31;1m\u001b[0m\u001b[36;1mLine |\u001b[0m\n\u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m  19 | \u001b[0m     try { \u001b[36;1m$file.Write($data,0,$data.Length)\u001b[0m; $file.Flush($true) } fin \u2026\u001b[0m\n\u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m     | \u001b[31;1m           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\u001b[0m\n\u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[31;1m\u001b[31;1m\u001b[36;1m     | \u001b[31;1mException calling \"Write\" with \"3\" argument(s): \"An unexpected network error occurred. :\u001b[0m\n\u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[31;1m\u001b[31;1m\u001b[36;1m\u001b[31;1m\u001b[36;1m     | \u001b[31;1m'Z:\\native-roundtrip\\payload'.\"\u001b[0m\n",
+    "smb_headers": [
+      {
+        "direction": "request",
+        "size": 69,
+        "magic": "ff534d42",
+        "time": 912.625
+      },
+      {
+        "direction": "response",
+        "size": 158,
+        "magic": "fe534d42",
+        "time": 912.625,
+        "command": 0,
+        "flags": 1,
+        "message_id": 0,
+        "credit_charge": 0,
+        "credits": 1,
+        "status": "0x0",
+        "dialect": "0x2ff"
+      },
+      {
+        "direction": "request",
+        "size": 284,
+        "magic": "fe534d42",
+        "time": 912.625,
+        "command": 0,
+        "flags": 0,
+        "message_id": 1,
+        "credit_charge": 0,
+        "credits": 0,
+        "dialects": [
+          "0x202",
+          "0x210",
+          "0x300",
+          "0x302",
+          "0x311"
+        ]
+      },
+      {
+        "direction": "response",
+        "size": 236,
+        "magic": "fe534d42",
+        "time": 912.625,
+        "command": 0,
+        "flags": 1,
+        "message_id": 1,
+        "credit_charge": 1,
+        "credits": 1,
+        "status": "0x0",
+        "dialect": "0x311"
+      },
+      {
+        "direction": "request",
+        "size": 162,
+        "magic": "fe534d42",
+        "time": 912.625,
+        "command": 1,
+        "flags": 16,
+        "message_id": 2,
+        "credit_charge": 1,
+        "credits": 33,
+        "ntlm_type": 1,
+        "ntlm_flags": "0xe2088297"
+      },
+      {
+        "direction": "response",
+        "size": 243,
+        "magic": "fe534d42",
+        "time": 912.625,
+        "command": 1,
+        "flags": 1,
+        "message_id": 2,
+        "credit_charge": 1,
+        "credits": 33,
+        "status": "0xc0000016",
+        "ntlm_type": 2,
+        "ntlm_flags": "0xe28a8215"
+      },
+      {
+        "direction": "request",
+        "size": 557,
+        "magic": "fe534d42",
+        "time": 912.64,
+        "command": 1,
+        "flags": 16,
+        "message_id": 3,
+        "credit_charge": 1,
+        "credits": 1,
+        "ntlm_type": 3,
+        "ntlm_flags": "0xe2888215",
+        "ntlm_mic_present": true,
+        "ntlm_response_bytes": 248,
+        "ntlm_target_echo": {
+          "1": true,
+          "2": true,
+          "7": true
+        },
+        "ntlm_av_mic_flag": true,
+        "ntlm_channel_bindings_zero": true,
+        "ntlm_clock_delta_ms": 0,
+        "fixture_domain": "TAUCLOUD",
+        "fixture_user": "alice"
+      },
+      {
+        "direction": "response",
+        "size": 81,
+        "magic": "fe534d42",
+        "time": 912.656,
+        "command": 1,
+        "flags": 9,
+        "message_id": 3,
+        "credit_charge": 1,
+        "credits": 1,
+        "status": "0x0"
+      },
+      {
+        "direction": "request",
+        "size": 104,
+        "magic": "fe534d42",
+        "time": 912.656,
+        "command": 3,
+        "flags": 24,
+        "message_id": 4,
+        "credit_charge": 1,
+        "credits": 1,
+        "fixture_share_path": "\\\\127.0.0.1\\IPC$"
+      },
+      {
+        "direction": "response",
+        "size": 80,
+        "magic": "fe534d42",
+        "time": 912.656,
+        "command": 3,
+        "flags": 9,
+        "message_id": 4,
+        "credit_charge": 1,
+        "credits": 1,
+        "status": "0x0"
+      },
+      {
+        "direction": "request",
+        "size": 102,
+        "magic": "fe534d42",
+        "time": 912.656,
+        "command": 3,
+        "flags": 24,
+        "message_id": 5,
+        "credit_charge": 1,
+        "credits": 1,
+        "fixture_share_path": "\\\\127.0.0.1\\smb"
+      },
+      {
+        "direction": "response",
+        "size": 80,
+        "magic": "fe534d42",
+        "time": 912.687,
+        "command": 3,
+        "flags": 9,
+        "message_id": 5,
+        "credit_charge": 1,
+        "credits": 1,
+        "status": "0x0"
+      },
+      {
+        "direction": "request",
+        "size": 228,
+        "magic": "fd534d42",
+        "time": 912.703
+      },
+      {
+        "direction": "response",
+        "size": 125,
+        "magic": "fd534d42",
+        "time": 912.718
+      },
+      {
+        "direction": "request",
+        "size": 204,
+        "magic": "fd534d42",
+        "time": 912.718
+      },
+      {
+        "direction": "response",
+        "size": 260,
+        "magic": "fd534d42",
+        "time": 912.734
+      },
+      {
+        "direction": "request",
+        "size": 204,
+        "magic": "fd534d42",
+        "time": 912.734
+      },
+      {
+        "direction": "response",
+        "size": 260,
+        "magic": "fd534d42",
+        "time": 912.75
+      },
+      {
+        "direction": "request",
+        "size": 254,
+        "magic": "fd534d42",
+        "time": 912.75
+      },
+      {
+        "direction": "response",
+        "size": 205,
+        "magic": "fd534d42",
+        "time": 912.875
+      },
+      {
+        "direction": "request",
+        "size": 254,
+        "magic": "fd534d42",
+        "time": 912.875
+      },
+      {
+        "direction": "response",
+        "size": 421,
+        "magic": "fd534d42",
+        "time": 912.984
+      },
+      {
+        "direction": "request",
+        "size": 156,
+        "magic": "fd534d42",
+        "time": 912.984
+      },
+      {
+        "direction": "response",
+        "size": 128,
+        "magic": "fd534d42",
+        "time": 913.015
+      },
+      {
+        "direction": "request",
+        "size": 173,
+        "magic": "fd534d42",
+        "time": 913.015
+      },
+      {
+        "direction": "response",
+        "size": 204,
+        "magic": "fd534d42",
+        "time": 913.046
+      },
+      {
+        "direction": "request",
+        "size": 140,
+        "magic": "fd534d42",
+        "time": 913.046
+      },
+      {
+        "direction": "response",
+        "size": 176,
+        "magic": "fd534d42",
+        "time": 913.078
+      },
+      {
+        "direction": "request",
+        "size": 140,
+        "magic": "fd534d42",
+        "time": 913.078
+      },
+      {
+        "direction": "response",
+        "size": 176,
+        "magic": "fd534d42",
+        "time": 913.109
+      },
+      {
+        "direction": "request",
+        "size": 284,
+        "magic": "fd534d42",
+        "time": 913.109
+      },
+      {
+        "direction": "response",
+        "size": 260,
+        "magic": "fd534d42",
+        "time": 913.14
+      },
+      {
+        "direction": "request",
+        "size": 140,
+        "magic": "fd534d42",
+        "time": 913.14
+      },
+      {
+        "direction": "response",
+        "size": 176,
+        "magic": "fd534d42",
+        "time": 913.187
+      },
+      {
+        "direction": "request",
+        "size": 228,
+        "magic": "fd534d42",
+        "time": 913.875
+      },
+      {
+        "direction": "response",
+        "size": 260,
+        "magic": "fd534d42",
+        "time": 913.875
+      },
+      {
+        "direction": "request",
+        "size": 254,
+        "magic": "fd534d42",
+        "time": 913.875
+      },
+      {
+        "direction": "response",
+        "size": 421,
+        "magic": "fd534d42",
+        "time": 913.968
+      },
+      {
+        "direction": "request",
+        "size": 156,
+        "magic": "fd534d42",
+        "time": 913.968
+      },
+      {
+        "direction": "response",
+        "size": 160,
+        "magic": "fd534d42",
+        "time": 914.0
+      },
+      {
+        "direction": "request",
+        "size": 140,
+        "magic": "fd534d42",
+        "time": 914.0
+      },
+      {
+        "direction": "response",
+        "size": 176,
+        "magic": "fd534d42",
+        "time": 914.046
+      },
+      {
+        "direction": "request",
+        "size": 300,
+        "magic": "fd534d42",
+        "time": 914.046
+      },
+      {
+        "direction": "response",
+        "size": 260,
+        "magic": "fd534d42",
+        "time": 914.093
+      },
+      {
+        "direction": "request",
+        "size": 156,
+        "magic": "fd534d42",
+        "time": 914.093
+      },
+      {
+        "direction": "response",
+        "size": 125,
+        "magic": "fd534d42",
+        "time": 914.125
+      },
+      {
+        "direction": "response",
+        "size": 140,
+        "magic": "fd534d42",
+        "time": 914.375
+      }
+    ],
+    "server_log": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793802152322}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"supervisor\",\"time\":1793802156831}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793802156969}\n",
+    "worker_logs": {
+      "api.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793802154329}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"api\",\"time\":1793802155627}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793802158988}\n",
+      "file.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793802152526}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file\",\"time\":1793802156689}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793802157221}\n",
+      "file_1.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793802152652}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_1\",\"time\":1793802156602}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793802157373}\n",
+      "file_2.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793802152788}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_2\",\"time\":1793802156548}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793802157482}\n",
+      "file_3.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793802152918}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_3\",\"time\":1793802156476}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793802157611}\n",
+      "ftp.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793802153777}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"ftp\",\"time\":1793802155923}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793802158471}\n",
+      "helper.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793802153511}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"helper\",\"time\":1793802156111}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793802158214}\n",
+      "identity.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793802152402}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"identity\",\"time\":1793802156768}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793802157073}\n",
+      "monitor.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793802153135}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"monitor\",\"time\":1793802156330}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793802157812}\n",
+      "nfs.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793802154038}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"nfs\",\"time\":1793802155767}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793802158737}\n",
+      "protocol.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793802153011}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"protocol\",\"time\":1793802156392}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793802157674}\n",
+      "smb.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793802153903}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"smb\",\"time\":1793802155830}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793802158672}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793802161196}\n{\"code\":\"128\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793802161196}\n{\"code\":\"3221225659\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793802161320}\n{\"code\":\"3221225659\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793802161352}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793802161462}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793802162452}\n{\"code\":\"cache_break_pending\",\"event\":\"command_17\",\"role\":\"smb\",\"time\":1793802162608}\n",
+      "storage_admin.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793802153390}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"storage_admin\",\"time\":1793802156205}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793802158098}\n",
+      "supervisor.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793802152322}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"supervisor\",\"time\":1793802156831}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793802156969}\n",
+      "updater.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793802153268}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"updater\",\"time\":1793802156267}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793802157956}\n",
+      "webdav.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793802153648}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"webdav\",\"time\":1793802156018}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793802158353}\n"
+    }
+  },
+  "assessment": "The native script fails on its first .NET Write before ACL manipulation. SMB log reports command_17 cache_break_pending; the encrypted client request is 156 bytes (104 plaintext, consistent with an 8-byte SET_INFO input), followed by interim and break-sized replies. Security-query checks and NFS callback checks pass independently. Own size/allocation self-recall is corrected locally; native reacceptance remains required."
+}

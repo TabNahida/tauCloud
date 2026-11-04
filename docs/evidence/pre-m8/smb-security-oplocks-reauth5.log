@@ -1,0 +1,9 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793802822
+time: 2026-11-04 14:33:42.293014
+test: reauth5
+time: 2026-11-04 14:33:42.293542
+time: 2026-11-04 14:33:42.655145
+failure: reauth5 [
+source4/torture/smb2/session.c:730: status was NT_STATUS_OBJECT_NAME_NOT_FOUND, expected NT_STATUS_OK: smb2_util_unlink failed
+]

@@ -43,6 +43,7 @@ on:
       - 'src/file_dav.inc'
       - 'tests/smb_security_integration.py'
       - 'tests/smb_security_query.py'
+      - 'tests/smb_security_oplocks.py'
       - 'tests/smb_owner_integration.py'
       - 'tests/samba_torture.py'
       - 'tests/windows_native_smb.py'
@@ -155,6 +156,9 @@ jobs:
       - name: SMB security query flags and dialect-specific error contexts
         if: ${{ !cancelled() && steps.compile.outcome == 'success' }}
         run: python tests/smb_security_query.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/security-query.json
+      - name: SMB security and size updates preserve classic oplock ownership
+        if: ${{ !cancelled() && steps.compile.outcome == 'success' }}
+        run: python tests/smb_security_oplocks.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/security-oplocks.json
       - name: SMB3.1.1 negotiated signing and GMAC nonce domains
         run: python tests/smb_signing_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/smb-signing.json
       - name: Native SMB directory notifications and asynchronous lifecycle
@@ -193,7 +197,7 @@ jobs:
         run: python tests/samba_torture.py ${{ matrix.test_options }} --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/samba-oplock-sharing.json smb2.oplock.exclusive1 smb2.oplock.exclusive2 smb2.oplock.exclusive3 smb2.oplock.exclusive4 smb2.oplock.exclusive5 smb2.oplock.exclusive9 smb2.oplock.batch1 smb2.oplock.batch2 smb2.oplock.batch3 smb2.oplock.batch4 smb2.oplock.batch5 smb2.oplock.batch6 smb2.oplock.batch7 smb2.oplock.batch8 smb2.oplock.batch9 smb2.oplock.batch9a smb2.oplock.batch10 smb2.oplock.batch11 smb2.oplock.batch12 smb2.oplock.batch13 smb2.oplock.batch14 smb2.oplock.batch15 smb2.oplock.batch16 smb2.oplock.batch21 smb2.oplock.batch23 smb2.oplock.batch24 smb2.oplock.batch25 smb2.oplock.doc smb2.oplock.brl1 smb2.oplock.brl2 smb2.oplock.brl3 smb2.oplock.levelii500 smb2.oplock.levelii501 smb2.oplock.levelii502 smb2.oplock.statopen1
       - name: Original Samba BATCH session replacement and reauthentication
         if: ${{ !cancelled() && steps.compile.outcome == 'success' && runner.os == 'Linux' }}
-        run: python tests/samba_torture.py ${{ matrix.test_options }} --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/samba-batch-session.json smb2.session.reconnect1 smb2.session.reconnect2 smb2.session.reauth1 smb2.session.reauth2 smb2.session.reauth3 smb2.session.reauth6 smb2.session.two_logoff
+        run: python tests/samba_torture.py ${{ matrix.test_options }} --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/samba-batch-session.json smb2.session.reconnect1 smb2.session.reconnect2 smb2.session.reauth1 smb2.session.reauth2 smb2.session.reauth3 smb2.session.reauth4 smb2.session.reauth6 smb2.session.two_logoff
       - name: Related asynchronous SMB compounds and dependent cancellation
         run: python tests/smb_compound_async.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/compound-async.json
       - name: Unmodified Samba asynchronous locks
