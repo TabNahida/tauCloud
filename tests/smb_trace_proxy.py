@@ -20,6 +20,22 @@ class HeaderProxy:
             if len(self.trace)>=512:continue
             item=dict(direction=direction,size=size,magic=frame[:4].hex(),time=time.monotonic())
             if frame[:4]==b'\xfeSMB' and len(frame)>=64:
+                # Keep actual receive boundaries and every compound header.
+                # Looking only at the first command hides a pending suffix.
+                item['segments']=[];offset=0
+                for _ in range(16):
+                    part=frame[offset:]
+                    if len(part)<64 or part[:4]!=b'\xfeSMB':break
+                    next_command=int.from_bytes(part[20:24],'little')
+                    flags=int.from_bytes(part[16:20],'little')
+                    entry=dict(offset=offset,size=next_command or len(part),
+                               command=int.from_bytes(part[12:14],'little'),flags=flags,
+                               message_id=int.from_bytes(part[24:32],'little'),next_command=next_command)
+                    if direction=='response':entry['status']=hex(int.from_bytes(part[8:12],'little'))
+                    if flags&2:entry['async_id']=int.from_bytes(part[32:40],'little')
+                    item['segments'].append(entry)
+                    if not next_command or next_command<64 or next_command%8 or next_command>=len(part):break
+                    offset+=next_command
                 command=int.from_bytes(frame[12:14],'little')
                 item.update(command=command,flags=int.from_bytes(frame[16:20],'little'),
                             message_id=int.from_bytes(frame[24:32],'little'),

@@ -1,0 +1,7 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793828093
+time: 2026-11-04 21:34:53.334085
+test: flush_flush
+time: 2026-11-04 21:34:53.334264
+time: 2026-11-04 21:34:55.495603
+success: flush_flush

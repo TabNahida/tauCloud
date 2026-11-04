@@ -140,6 +140,14 @@ Selected-profile acceptance: [M7 guide](docs/m7.md), [中文](docs/m7.zh-CN.md),
 
 ## Full SMB/NFS compatibility prerequisite (user decision, 2026-10-31)
 
+Native Linux CIFS and macOS failures at `0bf303f` exposed pending responses
+inside compound frames. The dispatcher now splits asynchronous batches into
+independently signed/encrypted frames while preserving request dependencies.
+Local four-dialect checks pass; fixed-source native reacceptance and the
+remaining upstream compound cases are still required. See
+[transport behavior](docs/smb-async.md) and
+[local evidence](docs/evidence/pre-m8/smb-compound-framing-local.json).
+
 NFS TCP replies now carry private completion pins from validated SEQUENCE/replay through actual transport completion, with bounded tracking, duplicate-safe cleanup and disconnect handling. Client state and SSV use the shared client lifetime rather than independent session expiry. Native owner reservations covering the same interval, pre-dispatch receipt timing and reclaim remain open ([details](docs/nfs-delegations.md#reply-delivery-lifetime)).
 
 Client lease renewal now refreshes sibling sessions, isolates automatic coherence authorization from user reply-cache scopes, and retains recalled native guards after data authority expires. Slow COMPOUND execution refreshes the client lease on completion. Transport delivery accounting, owner-failure ACK ordering and delegation reclaim remain open ([details](docs/nfs-delegations.md#client-lease-and-coherence-retention)).

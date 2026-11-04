@@ -5,16 +5,17 @@ import datetime
 import json
 from pathlib import Path
 import platform
+import struct
 import traceback
 import uuid
 
-from smbprotocol.connection import Connection, SMB2Echo
+from smbprotocol.connection import Connection, SMB2Echo, SMB2TransformHeader
 from smbprotocol.session import SMB2Logoff
 from smbprotocol.tree import SMB2TreeDisconnect
 from smbprotocol.change_notify import SMB2ChangeNotifyRequest
 from smbprotocol.session import Session
 from smbprotocol.tree import TreeConnect
-from smbprotocol.open import Open
+from smbprotocol.open import Open, SMB2QueryInfoRequest
 from m5_integration import Fixture, Lock, create, denied, lock
 from smb_blocking_locks import pending, completed
 
@@ -39,13 +40,38 @@ def main():
                     require_encryption=dialect >= 0x300, auth_protocol='ntlm')
         s.connect()
         t = TreeConnect(s, r'\\127.0.0.1\smb'); t.connect()
+        c.reply_frames = []
+        receive = c.transport.recv
+        def record(timeout):
+            raw = receive(timeout)
+            plain = raw
+            if raw[:4] == b'\xfdSMB':
+                transform = SMB2TransformHeader(); transform.unpack(raw)
+                plain = c._decrypt(transform)
+            frame = []
+            while len(plain) >= 64:
+                status, = struct.unpack_from('<I', plain, 8)
+                flags, next_command = struct.unpack_from('<II', plain, 16)
+                message, = struct.unpack_from('<Q', plain, 24)
+                frame.append((message, status, flags))
+                if not next_command: break
+                plain = plain[next_command:]
+            c.reply_frames.append(frame)
+            return raw
+        c.transport.recv = record
         return c, s, t
+    def separate_pending(c):
+        for frame in c.reply_frames:
+            if any(status == 0x103 for _, status, _ in frame):
+                assert len(frame) == 1 and not frame[0][2] & 4, (
+                    'interim response shares a frame with another compound result', frame)
     def chain(c, s, t, bodies):
         requests = c.send_compound(bodies, s.session_id, t.tree_connect_id, related=True)
         for request in requests: pending(request)
         ids = [request.async_id for request in requests]
         assert len(set(ids)) == len(ids), 'dependent operations share an AsyncId'
         c.echo(sid=s.session_id, timeout=5)
+        separate_pending(c)
         return requests
     def final(c, request, status=0):
         if status:
@@ -65,6 +91,21 @@ def main():
             waiter = create(t, holder.file_name)
             holder.write(b'old data')
             lock(holder, (0, 8, 0x12))
+            # Native clients must not interpret a synchronous prefix plus
+            # pending suffix as the complete results of their compound.
+            info = SMB2QueryInfoRequest()
+            info['info_type'] = 1; info['file_info_class'] = 5
+            info['output_buffer_length'] = 24; info['file_id'] = waiter.file_id
+            mixed = c.send_compound([info, Lock(waiter.file_id, [(0, 8, 2)]),
+                                     SMB2Echo()], s.session_id, t.tree_connect_id, related=True)
+            c.receive(mixed[0], timeout=10)
+            pending(mixed[1]); pending(mixed[2]); separate_pending(c)
+            prefix_id = mixed[0].message['message_id'].get_value()
+            assert any(len(frame) == 1 and frame[0][0] == prefix_id and not frame[0][2] & 4
+                       for frame in c.reply_frames), 'synchronous prefix was not split'
+            lock(holder, (0, 8, 4)); completed(c, mixed[1]); final(c, mixed[2])
+            lock(waiter, (0, 8, 4)); lock(holder, (0, 8, 0x12))
+            passed(f'{dialect:x}: mixed synchronous/asynchronous compound uses separate protected frames, completes in order and leaves the transport usable')
             write, receive_write = waiter.write(b'new data', send=False)
             read, receive_read = waiter.read(0, 8, send=False)
             close, receive_close = waiter.close(send=False)

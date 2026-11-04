@@ -1,0 +1,271 @@
+{
+  "recorded_at": "2026-11-04T21:35:45.569830+00:00",
+  "base_source": "20b8d66d4cc1be88b106f7c714f8c725526a94fe",
+  "status": "local_transport_regression_passed_native_reacceptance_pending",
+  "full_conformance": false,
+  "sanitizers": "Clang ASan/UBSan/LSan",
+  "files_sha256": {
+    "src/smb.cpp": "20d98263a36a9ecac9238e5830516fd02c00133d064764a77bf8abd3789c4de8",
+    "tests/smb_compound_async.py": "2b91cb57c79e049013c566a1cc0d27e84d9d337f0fb919b5d14c9600274d07fb",
+    "tests/smb_trace_proxy.py": "4fbe318146fc55fa3feda169b49fee7f25b3bfc91e270f5efea3b3049e3970c5",
+    "tests/linux_native_smb_gss.py": "9dca59ddc043fa72f9f725dbf25e4a92ba6815767884c564ef1cf4e34d2ba763"
+  },
+  "reports": {
+    "framing-before": {
+      "report_sha256": "f3035d432b5ad8c7ca3820da3048d71f2d3fc469eacc6c87f8dad774c7a4b215",
+      "report": {
+        "status": "failed",
+        "checks": [],
+        "error": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/tests/smb_compound_async.py\", line 99, in main\n    pending(mixed[1]); pending(mixed[2]); separate_pending(c)\n                                          ^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/tests/smb_compound_async.py\", line 66, in separate_pending\n    assert len(frame) == 1 and not frame[0][2] & 4, (\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ('interim response shares a frame with another compound result', [(9, 0, 9), (10, 259, 7), (11, 259, 7)])\n",
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "recorded_at": "2026-11-04T21:30:23.370847+00:00"
+      }
+    },
+    "framing-after": {
+      "report_sha256": "312cab071ba6f9f2523531bd2c0c9b9212d6706fefc6b4803f8d50b9084c1d75",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "210: mixed synchronous/asynchronous compound uses separate protected frames, completes in order and leaves the transport usable",
+          "210: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+          "210: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+          "210: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+          "210: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+          "300: mixed synchronous/asynchronous compound uses separate protected frames, completes in order and leaves the transport usable",
+          "300: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+          "300: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+          "300: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+          "300: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+          "302: mixed synchronous/asynchronous compound uses separate protected frames, completes in order and leaves the transport usable",
+          "302: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+          "302: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+          "302: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+          "302: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+          "311: mixed synchronous/asynchronous compound uses separate protected frames, completes in order and leaves the transport usable",
+          "311: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+          "311: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+          "311: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+          "311: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+          "deferred CHANGE_NOTIFY keeps its AsyncId, honors actual registration FIFO and releases its dependent ECHO only after notification",
+          "deferred TREE_DISCONNECT and LOGOFF complete successfully without cancelling their own response",
+          "128 dependent-command bound rejects excess work and its descendants without side effects; cancellation releases all capacity for reuse",
+          "TREE_DISCONNECT and LOGOFF finish pending dependencies under their owning encryption keys"
+        ],
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "recorded_at": "2026-11-04T21:31:39.946628+00:00"
+      }
+    },
+    "oplock": {
+      "report_sha256": "5f5dcd473bb09b8498634b5bd809db1f91c4d6cffe60ea04432b482551d7f735",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "210: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "210: READ_CONTROL-only CREATE recalls classic EXCLUSIVE and does not gain READ_DATA; its stat-open exemption applies only to leases",
+          "210: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "210: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "300: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "300: READ_CONTROL-only CREATE recalls classic EXCLUSIVE and does not gain READ_DATA; its stat-open exemption applies only to leases",
+          "300: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "300: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "302: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "302: READ_CONTROL-only CREATE recalls classic EXCLUSIVE and does not gain READ_DATA; its stat-open exemption applies only to leases",
+          "302: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "302: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "311: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "311: READ_CONTROL-only CREATE recalls classic EXCLUSIVE and does not gain READ_DATA; its stat-open exemption applies only to leases",
+          "311: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "311: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "210: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "300: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "302: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "311: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "sharing violations do not recall dirty caches; readonly, directory, delete-on-close and conflicting native opens receive no unsupported cache grant",
+          "a lease-form ACK for a classic oplock is rejected and finishes the recall without leaving native exclusion stuck",
+          "two encrypted sessions on one transport renew independent cache authority and route breaks/ACKs with their own keys; a foreign-session ACK cannot release another open",
+          "native host reads/writes wait for SMB recall; dirty client data flushes before host access and the original handle observes subsequent native writes",
+          "own EXCLUSIVE SET_INFO EOF completes synchronously and preserves its cache without a self-recall",
+          "related cached CREATE/SET_INFO/READ preserves the inherited FileId and completes without an unnecessary self-recall",
+          "NFSv3 READ on an existing handle returns JUKEBOX during native recall; repeated retries leave SMB flush/ACK live and the next read returns current data",
+          "DAV GET returns a retryable response while a cache recall is pending and reads freshly flushed bytes after ACK",
+          "another transport cannot ACK the holder FileId; CLOSE flushes/releases authority and wakes the peer CREATE",
+          "unacknowledged recall fences the holder transport and open while the conflicting client completes after native exclusion releases",
+          "credential revocation closes the cache-bearing transport and releases native exclusion without requiring a client request",
+          "stalled identity RPC cannot hold the cache transport past its authority: independent watchdog closes it before IPC timeout and autonomous worker expiry releases native exclusion"
+        ],
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "recorded_at": "2026-11-04T21:31:39.898481+00:00"
+      }
+    },
+    "sessions": {
+      "report_sha256": "bd83d5804e565a65f457df23303816ae7a3c2ce83ff59aa9fb687e49c8834b00",
+      "report": {
+        "status": "failed",
+        "checks": [],
+        "error": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/tests/smb_multisession.py\", line 52, in main\n    f = Fixture(a.bin, 512 if a.sanitizers else 256)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/tests/m5_integration.py\", line 20, in __init__\n    super().__init__(binary,memory)\n  File \"/media/data1/Project/Network/tauCloud/tests/m3_integration.py\", line 34, in __init__\n    self.api('users', self.admin, dict(username='alice', password=self.password))\n  File \"/media/data1/Project/Network/tauCloud/tests/m3_integration.py\", line 88, in api\n    r=c.getresponse(); b=r.read(); assert r.status==expected,(path,r.status,b)\n                                          ^^^^^^^^^^^^^^^^^^\nAssertionError: ('users', 503, b'{\"error\":{\"code\":\"transport_closed\"}}')\n"
+      }
+    },
+    "sessions-after": {
+      "report_sha256": "bb47908539ebe4cc6ab65f394a7c942df569ec1db50c318b6020f4417ba3cc4d",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "four dialects multiplex independent signing/encryption, scoped tree/file IDs, shared locks and rename across inactive opens; LOGOFF preserves the other session and its pending watch",
+          "interleaved SMB3.1.1 authentication exchanges retain separate preauthentication transcripts and independently verified encryption keys",
+          "failed new authentication preserves established sessions; valid different-user authentication cannot replace a guessed PreviousSessionId",
+          "same-transport replacement authenticates first, completes old watches under old keys and releases old exclusive opens while another session survives",
+          "cross-transport replacement drains only the matching old session and keeps its transport and unrelated sessions usable",
+          "four simultaneous reciprocal replacement races complete without holding transport gates in a cycle, and both new encrypted sessions remain usable",
+          "abrupt transport loss releases every session and all exclusive opens, including the inactive context",
+          "known-session requests signed or encrypted with a different session key are rejected at the transport boundary",
+          "sixteen-session transport bound rejects excess authentication without damaging peers; LOGOFF and expired abandoned handshakes release capacity"
+        ]
+      }
+    },
+    "samba": {
+      "report_sha256": "01abe4a61dcdfa0f43b36e2116273d06fdf680aa02f032eec5d6fa8f1cb93c6c",
+      "report": {
+        "status": "failed",
+        "recorded_at": "2026-11-04T21:32:39.274176+00:00",
+        "tests": [
+          {
+            "selector": "smb2.compound",
+            "returncode": 1,
+            "status": "failed",
+            "counts": {
+              "success": 14,
+              "failure": 1,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "taucloud-compound-samba-smb2.compound.log",
+            "log_sha256": "0da0c206483d1e530888dc06bbe94f440e40ba4a525d69edccd6586888bc919c"
+          },
+          {
+            "selector": "smb2.compound_async",
+            "returncode": 1,
+            "status": "failed",
+            "counts": {
+              "success": 2,
+              "failure": 2,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "taucloud-compound-samba-smb2.compound_async.log",
+            "log_sha256": "9f30e5d6088ba3d546921308f1b3e8bbc8e13cfec439b075f3188afeb188f851"
+          }
+        ]
+      }
+    },
+    "regression": {
+      "report_sha256": "6a09458f1fe1bdb1fe889038a5de2ce0d65193949177e08d99cbef6bbcd4bc69",
+      "report": {
+        "status": "failed",
+        "recorded_at": "2026-11-04T21:34:42.979943+00:00",
+        "tests": [
+          {
+            "selector": "smb2.compound.interim1",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "taucloud-compound-regression-smb2.compound.interim1.log",
+            "log_sha256": "c550bf692422f124d2142ce29f04461495205829f5b4b4914014ba27911584c9"
+          },
+          {
+            "selector": "smb2.compound.compound-break",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "taucloud-compound-regression-smb2.compound.compound-break.log",
+            "log_sha256": "61e6f63cd1a2b29fe488f04739f51fe433404c8133b4445775f52fb42b44462c"
+          },
+          {
+            "selector": "smb2.compound.compound-padding",
+            "returncode": 1,
+            "status": "failed",
+            "counts": {
+              "success": 0,
+              "failure": 1,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "taucloud-compound-regression-smb2.compound.compound-padding.log",
+            "log_sha256": "bba2a06981227eef9031d25eeb18c391a5eb24d0f3f13c8d2e1a4e4b41047417"
+          },
+          {
+            "selector": "smb2.compound.create-write-close",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "taucloud-compound-regression-smb2.compound.create-write-close.log",
+            "log_sha256": "ffeb43d106b26ba04f4652117d948167c2d301563bc1913fa5ab24c12d941a5d"
+          },
+          {
+            "selector": "smb2.compound_async.flush_close",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "taucloud-compound-regression-smb2.compound_async.flush_close.log",
+            "log_sha256": "800d2f6e1b6081b7a7ccb5b2f04763029d6339574f9f29a17e9fa3fb20aa2e01"
+          },
+          {
+            "selector": "smb2.compound_async.flush_flush",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "taucloud-compound-regression-smb2.compound_async.flush_flush.log",
+            "log_sha256": "da00c8845f8e21143638c4033c441b5910bf5b6d8023f716e2a3c146f7c7138c"
+          }
+        ]
+      }
+    }
+  },
+  "native_baseline": {
+    "source": "0bf303f66715ba0febfbda24bd6a41658522f5f7",
+    "linux_run": "https://github.com/TabNahida/tauCloud/actions/runs/41907622252",
+    "linux_error": "EAGAIN on directory enumeration after successful write/read/rename/truncate; RFC 1002 unknown response type 0xfe",
+    "macos_run": "https://github.com/TabNahida/tauCloud/actions/runs/41907622432",
+    "macos_profiles": [
+      {
+        "name": "macos-native-smb",
+        "status": "failed",
+        "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 6, in <module>\n    f.rename(p/'renamed');f=p/'renamed'\n    ~~~~~~~~^^^^^^^^^^^^^\n  File \"/usr/local/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/pathlib/__init__.py\", line 1076, in rename\n    os.rename(self, target)\n    ~~~~~~~~~^^^^^^^^^^^^^^\nOSError: [Errno 72] RPC struct is bad: '/Users/runner/work/tauCloud/tauCloud/build/mac-vm/mount/native-probe/payload' -> '/Users/runner/work/tauCloud/tauCloud/build/mac-vm/mount/native-probe/renamed'\n"
+      },
+      {
+        "name": "macos-native-nfs3",
+        "status": "passed"
+      }
+    ]
+  },
+  "notes": [
+    "Pre-fix reproduction used a synchronous ECHO prefix; final regression uses QUERY_INFO to preserve an explicit FileId for the related LOCK. The transport-boundary assertion is identical.",
+    "The first multi-session invocation omitted --sanitizers and hit the 256 MiB identity budget during fixture setup. Correct invocation with the existing 512 MiB sanitizer budget passes nine groups; production settings unchanged.",
+    "Full Samba diagnostics retain failures, including interim2 runtime termination; a separate run exercises selectors after that blocking case.",
+    "No local kernel CIFS/macOS pass is claimed. Remote Actions must validate this source."
+  ]
+}

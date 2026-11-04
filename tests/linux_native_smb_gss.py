@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Real kernel CIFS/Kerberos acceptance on a disposable sudo Actions runner."""
 import os
+import json
 from pathlib import Path
 import shutil
 import subprocess
 import sys
 import time
 import uuid
+from smb_trace_proxy import HeaderProxy
 
 
 def exercise(fixture, kdc, host, output, report):
@@ -38,6 +40,7 @@ def exercise(fixture, kdc, host, output, report):
     rule.write_text(f'create cifs.spnego ver=0x2;host={host};* * {helper} -k {config} %k\n')
     installed = '/etc/request-key.d/00-taucloud-' + uuid.uuid4().hex + '.conf'
     installed_rule = False
+    proxy = HeaderProxy(fixture.smbport)
     try:
         run(['sudo', '-n', 'modprobe', 'cifs'])
         run(['sudo', '-n', 'install', '-m', '644', str(rule), installed])
@@ -57,7 +60,7 @@ p.unlink();d.rmdir()
         for dialect in ('2.1', '3.0', '3.02', '3.1.1'):
             profile = dict(dialect=dialect, security='krb5', status='failed')
             report['profiles'].append(profile)
-            options = f'ip=127.0.0.1,port={fixture.smbport},vers={dialect},sec=krb5,sign,cruid={os.getuid()},cache=none,nosharesock,soft'
+            options = f'ip=127.0.0.1,port={proxy.port},vers={dialect},sec=krb5,sign,cruid={os.getuid()},cache=none,nosharesock,soft'
             if dialect != '2.1':
                 options += ',seal'
             try:
@@ -71,6 +74,8 @@ p.unlink();d.rmdir()
                 run(['sudo', '-n', 'umount', '-fl', str(mount)], timeout=15, check=False)
         report['status'] = 'passed'
     finally:
+        proxy.close()
+        output.resolve().with_suffix('.native-metadata.json').write_text(json.dumps(proxy.trace, indent=2)+'\n')
         if installed_rule:
             run(['sudo', '-n', 'rm', '--', installed], check=False)
         log = run(['sudo', '-n', 'dmesg', '--ctime'], check=False)

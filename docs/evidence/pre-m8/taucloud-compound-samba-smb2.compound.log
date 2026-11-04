@@ -1,0 +1,75 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793827966
+time: 2026-11-04 21:32:46.390841
+progress: 19
+test: related1
+time: 2026-11-04 21:32:46.390978
+time: 2026-11-04 21:32:46.506593
+success: related1
+test: related2
+time: 2026-11-04 21:32:46.506605
+time: 2026-11-04 21:32:46.612613
+success: related2
+test: related3
+time: 2026-11-04 21:32:46.612629
+time: 2026-11-04 21:32:46.680147
+failure: related3 [
+source4/torture/smb2/compound.c:442: Incorrect status NT_STATUS_NOT_SUPPORTED - should be NT_STATUS_OK
+]
+test: related4
+time: 2026-11-04 21:32:46.680162
+set a sec desc allowing no write by CREATOR_OWNER
+try open for write
+time: 2026-11-04 21:32:46.815130
+success: related4
+test: related5
+time: 2026-11-04 21:32:46.815143
+time: 2026-11-04 21:32:46.858065
+success: related5
+test: related6
+time: 2026-11-04 21:32:46.858076
+try open for read
+time: 2026-11-04 21:32:47.015830
+success: related6
+test: related7
+time: 2026-11-04 21:32:47.015843
+set a sec desc allowing no write by CREATOR_OWNER
+try open for write
+time: 2026-11-04 21:32:47.165038
+success: related7
+test: related8
+time: 2026-11-04 21:32:47.165050
+try open for write
+time: 2026-11-04 21:32:47.271940
+success: related8
+test: related9
+time: 2026-11-04 21:32:47.271951
+time: 2026-11-04 21:32:47.376924
+success: related9
+test: unrelated1
+time: 2026-11-04 21:32:47.376936
+time: 2026-11-04 21:32:47.464451
+success: unrelated1
+test: invalid1
+time: 2026-11-04 21:32:47.464463
+time: 2026-11-04 21:32:47.506310
+success: invalid1
+test: invalid2
+time: 2026-11-04 21:32:47.506320
+time: 2026-11-04 21:32:47.619386
+success: invalid2
+test: invalid3
+time: 2026-11-04 21:32:47.619399
+time: 2026-11-04 21:32:47.703327
+success: invalid3
+test: invalid4
+time: 2026-11-04 21:32:47.703338
+time: 2026-11-04 21:32:47.816312
+success: invalid4
+test: interim1
+time: 2026-11-04 21:32:47.816323
+time: 2026-11-04 21:32:48.003431
+success: interim1
+test: interim2
+time: 2026-11-04 21:32:48.003445
+maximum runtime exceeded for smbtorture - terminating

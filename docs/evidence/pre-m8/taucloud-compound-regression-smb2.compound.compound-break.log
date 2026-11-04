@@ -1,0 +1,10 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793828090
+time: 2026-11-04 21:34:50.408048
+test: compound-break
+time: 2026-11-04 21:34:50.408183
+TEST2: open a file with an batch oplock (share mode: all)
+TEST2: Opening second time with compound
+Acking to level II [0x01] in oplock handler
+time: 2026-11-04 21:34:50.550913
+success: compound-break

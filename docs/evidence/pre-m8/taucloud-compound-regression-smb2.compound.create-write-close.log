@@ -1,0 +1,7 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793828090
+time: 2026-11-04 21:34:50.840920
+test: create-write-close
+time: 2026-11-04 21:34:50.841044
+time: 2026-11-04 21:34:50.968186
+success: create-write-close

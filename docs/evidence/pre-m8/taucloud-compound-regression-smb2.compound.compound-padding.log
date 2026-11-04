@@ -1,0 +1,9 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793828090
+time: 2026-11-04 21:34:50.675310
+test: compound-padding
+time: 2026-11-04 21:34:50.675462
+time: 2026-11-04 21:34:50.766544
+failure: compound-padding [
+source4/torture/smb2/compound.c:1126: Incorrect status NT_STATUS_OBJECT_NAME_INVALID - should be NT_STATUS_OK
+]

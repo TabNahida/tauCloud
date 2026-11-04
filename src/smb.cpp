@@ -1832,7 +1832,17 @@ struct client : session_state, std::enable_shared_from_this<client> {
         for (auto sid : session_ids()) find_session(sid)->related_file.clear();
         uint32_t inherited_tree = 0, inherited_failure = 0;
         uint64_t inherited_async = 0;
-        bytes output;
+        std::vector<std::pair<bytes, bytes>> responses;
+        // Retain only the keys needed to reframe this bounded batch. A later
+        // operation can retire its session before we send the earlier reply.
+        struct response_keys {
+          std::vector<std::pair<bytes, bytes>> &items;
+          ~response_keys() {
+            for (auto &[packet, signing_key] : items)
+              if (!signing_key.empty()) OPENSSL_cleanse(signing_key.data(), signing_key.size());
+          }
+        } wipe_keys{responses};
+        bool asynchronous = false;
         for (size_t i = 0; i < requests.size(); ++i) {
           auto &p = requests[i];
           auto cmd = get(p, 12, 2);
@@ -1957,7 +1967,8 @@ struct client : session_state, std::enable_shared_from_this<client> {
             transcript = preauth(transcript, response);
           if (cmd == 0 && !code)
             negotiate_transcript = transcript;
-          output += response;
+          asynchronous |= code == 0x103;
+          responses.emplace_back(std::move(response), sign ? key : bytes{});
           inherited_tree = tid;
           auto previous_async = inherited_async;
           inherited_async = code == 0x103 ? next_async_id - 1 : 0;
@@ -1967,7 +1978,24 @@ struct client : session_state, std::enable_shared_from_this<client> {
         if (!socket.is_open())
           break;
         if (encrypted) check(select_session(encrypted_session));
-        if (!output.empty()) co_await send_packet(std::move(output), encrypted);
+        if (asynchronous) {
+          // Linux CIFS stops parsing a receive at STATUS_PENDING; macOS also
+          // treats a compound buffer as the final results for that chain.
+          // MS-SMB2 permits separate responses. Split the whole batch so no
+          // synchronous prefix implies that its pending suffix is complete.
+          // Re-sign the final headers/padding before exposing any response.
+          for (auto &[response, signing_key] : responses) {
+            put(response, 20, 0, 4);
+            put(response, 16, get(response, 16, 4) & ~4ull, 4);
+            if (!signing_key.empty())
+              response.replace(48, 16, signature(signing_key, response, selected.signing));
+            co_await send_packet(std::move(response), encrypted);
+          }
+        } else {
+          bytes output;
+          for (const auto &[response, signing_key] : responses) output += response;
+          if (!output.empty()) co_await send_packet(std::move(output), encrypted);
+        }
         announce_caches();
         co_await poll_caches_locked();
         co_await complete_frame_notifications();

@@ -1,0 +1,24 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793828056
+time: 2026-11-04 21:34:16.498906
+progress: 4
+test: flush_close
+time: 2026-11-04 21:34:16.499035
+time: 2026-11-04 21:34:18.651378
+success: flush_close
+test: flush_flush
+time: 2026-11-04 21:34:18.651389
+time: 2026-11-04 21:34:20.798927
+success: flush_flush
+test: write_write
+time: 2026-11-04 21:34:20.798938
+time: 2026-11-04 21:34:20.936010
+failure: write_write [
+(source4/torture/smb2/compound.c:2395) Incorrect value req[1]->cancel.can_cancel=0 - should be 1
+]
+test: read_read
+time: 2026-11-04 21:34:20.936023
+time: 2026-11-04 21:34:21.072214
+failure: read_read [
+(source4/torture/smb2/compound.c:2499) Incorrect value req[1]->cancel.can_cancel=0 - should be 1
+]
