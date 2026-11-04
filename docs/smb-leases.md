@@ -87,11 +87,11 @@ ACKs use ClientGuid/LeaseKey, can arrive through another authenticated connectio
 and reauthorize the owning open before applying the file-domain transition.
 Cross-connection dispatch releases its own gate before waiting on a peer.
 
-Twenty-five independent wire groups pass locally under ASan/UBSan/LSan, including
+Thirty independent wire groups pass locally under ASan/UBSan/LSan, including
 four dialects, same-key joins during recall, client isolation, invalid ACKs,
 shared upgrades, native no-ACK invalidation, failed CREATE cleanup and timeout
-fencing. Updated state checks total 3,243; native checks total 73. See
-[current network evidence](evidence/pre-m8/smb-lease-chain-local.json).
+fencing. Updated state checks total 3,271; native checks total 85. See
+[current network evidence](evidence/pre-m8/smb-lease-rh-local.json).
 The initial 13-group network step passes GCC/Clang/MSVC at `3450ec6`, while
 that run fails a Windows security/oplock regression after eight cases. Its
 root cause remains open ([remote evidence](evidence/pre-m8/smb-lease-wire-3450-remote.json)).
@@ -99,7 +99,15 @@ The 17-group metadata version passes its wire step on all three platforms at
 `ceddb7b`; its Windows native redirector test fails while restoring the original
 DACL with Set-Acl (error 59), with the root cause still unresolved
 ([remote evidence](evidence/pre-m8/smb-lease-metadata-ced-remote.json)).
-Sharing/chained-recall additions still await remote acceptance.
+All three platforms pass the 25-group sharing/chained-recall wire step,
+core and native steps at `d88c55e`; both Linux compilers also pass the strict
+original Samba selection ([remote evidence](evidence/pre-m8/smb-lease-chain-d88-remote.json)).
+Those whole jobs were still running when recorded. RH delivery/timeout changes
+still await remote acceptance.
+The diagnostic version `7f741bc` again fails Windows native Set-Acl restoration
+with error 59, while the classic cache/security regression passes. Captured
+SMB logs have no cache deadline/watchdog/poll-failure event; the native failure
+remains unresolved ([diagnostic evidence](evidence/pre-m8/smb-native-security-7f-remote.json)).
 
 Metadata-only and write-only opens can hold native-backed RWH without gaining
 READ_DATA or WRITE_DATA. Renewal and ACK use the open's actual authority,
@@ -120,14 +128,14 @@ WRITE, taking RW to R. READ_CONTROL is exempt from recalling a lease, while a
 classic oplock retains the narrower attribute/SYNCHRONIZE exemption required
 by MS-FSA 2.1.4.12. These distinctions are covered by four-dialect wire tests
 and the original Samba break_twice, statopen4 and oplock.statopen1 cases.
-The full original suite now reports 27 passed, nine failed and three skipped
+The sharing-recall snapshot reports 27 passed, nine failed and three skipped
 ([sharing-recall evidence](evidence/pre-m8/smb-lease-sharing-local.json)).
 
 All four original Samba statopen cases and its bidirectional oplock/lease
 matrix pass, alongside 17 independent wire groups, 61 native checks, 12 security
 and oplock regression groups and 12,583 M5 checks; see
 [metadata lease evidence](evidence/pre-m8/smb-lease-metadata-local.json).
-The full unmodified lease suite on this source now reports **26 passed,
+The metadata-only snapshot reports **26 passed,
 10 failed, three skipped**, up from 19/17/3 before the two correction rounds.
 These are local results; their remote acceptance remains pending.
 
@@ -143,7 +151,7 @@ each phase; invalid ACKs and stale delivery completions do not advance the
 state. Native exclusion remains held until the final notification is sent.
 Four-dialect network tests verify that the original open and overwrite stay
 pending through the intermediate ACK and that truncation occurs afterwards.
-The original Samba `breaking3` case passes; the full unmodified suite now
+The original Samba `breaking3` case passes; the chained-recall snapshot
 reports **28 passed, eight failed and three skipped**
 ([evidence](evidence/pre-m8/smb-lease-chain-local.json)). Samba 4.19.5 `v2_breaking3` still
 expects unchanged epochs for chained notifications; its failure is retained.
@@ -153,8 +161,28 @@ current MS-SMB2 3.3.4.7 recommendation. Microsoft's
 documents the older Windows exception. The independent v2 tests check the
 incrementing behavior; the original test is neither changed nor counted as passed.
 
-Known remaining work includes nonblocking RH data invalidation, notification connection selection,
-rename/delete/recreate lifetime, timeout behavior that preserves usable opens,
+An RH-to-NONE notification now releases native exclusion after confirmed
+delivery, while the lease still reports RH/BREAK_IN_PROGRESS until its HANDLE
+ACK arrives. Compatible SMB overwrite, write, EOF, allocation and byte-range
+lock operations can proceed; sharing conflicts and namespace mutations still
+wait for HANDLE confirmation. Native data access also becomes available after
+delivery. Each open continues to require fresh authorization even when no
+native cache guard remains. The HANDLE ACK uses a 35-second protocol timer;
+expiration completes to NONE and preserves usable opens, while a late ACK
+receives STATUS_UNSUCCESSFUL. A real 35-second wire case verifies this, and
+the original Samba `breaking4` now passes. Cache-conflicting commands have a
+fixed 40-second wait budget so they can recheck sharing after that timer;
+retries do not restart it and CANCEL remains effective. Dirty W recalls and undelivered
+notifications retain the existing bounded native-exclusion/fencing behavior.
+The final source passes 30 wire groups, 85 native checks, 3,271 state checks,
+32 classic oplock groups and 12,583 M5 checks locally. The unmodified Samba
+lease suite reports **29 passed, seven failed and three skipped**
+([evidence](evidence/pre-m8/smb-lease-rh-local.json)).
+See [MS-FSA RH break processing](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fsa/306239fb-cb60-49fe-b293-df4d1a5f757a)
+and [MS-SMB2 acknowledgment timers](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/0a2c6b57-693a-4a48-a90d-0a48735674e9).
+
+Known remaining work includes notification connection selection,
+rename/delete/recreate lifetime, other cache timeout paths that preserve usable opens,
 ADS and directory/parent leases.
 Durable handles and multichannel session binding remain separate open gates.
 

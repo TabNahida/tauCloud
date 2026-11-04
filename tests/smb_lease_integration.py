@@ -16,10 +16,11 @@ import uuid
 from smbprotocol.connection import Connection, SMB2HeaderResponse, SMB2TransformHeader
 from smbprotocol.session import Session
 from smbprotocol.tree import TreeConnect
-from smbprotocol.open import Open
+from smbprotocol.open import Open, SMB2SetInfoRequest
 from smbprotocol.create_contexts import SMB2CreateContextRequest
 from smbprotocol.structure import Structure, IntField, BytesField
-from m5_integration import Fixture, create, denied, query
+from m5_integration import Fixture, create, denied, query, setinfo, lock
+from smbprotocol.file_info import FileEndOfFileInformation
 from smb_blocking_locks import pending
 from smb_oplock_integration import native_read, native_write
 
@@ -360,6 +361,78 @@ def main():
             for h in (reader, overwrite, holder): h.close()
             owner.disconnect(); peer.disconnect()
             passed(f'{dialect:x}: queued overwrite chains RWH to RH to R to NONE, preserves same-key opens and dirty flush, and waits through both ACKs before truncating')
+        for dialect in (0x210, 0x300, 0x302, 0x311):
+            version = 1 if dialect == 0x210 else 2
+            owner, os, ot, oq = connect(dialect)
+            peer, ps, pt, _ = connect(dialect)
+            key = uuid.uuid4().bytes; name = f'rh-invalidation-{dialect:x}'
+            holder, ctx = leased(ot, name, key, state=3, version=version, epoch=10)
+            response(ctx, key, 3, version, 11); holder.write(b'original')
+            overwrite = Open(pt, name)
+            result = overwrite.create(2, 0x13019f, 0x80, 7, 4, 0x40, send=False)
+            request, receive = begin(overwrite, result)
+            assert oq.get(timeout=10) == (key, 3, 0, 0 if version == 1 else 12, 1, os.encrypt_data)
+            # No ACK yet: compatible data operations complete through pinned
+            # descriptors, while CREATE still reports the outstanding RH break.
+            receive(request)
+            assert struct.unpack_from('<Q', query(holder, 5), 8)[0] == 0
+            overwrite.write(b'after'); assert holder.read(0, 5) == b'after'
+            join, ctx = leased(ot, name, key, state=0, version=version)
+            response(ctx, key, 3, version, 12, breaking=True)
+            eof = FileEndOfFileInformation(); eof['end_of_file'] = 3; setinfo(overwrite, eof)
+            assert struct.unpack_from('<Q', query(holder, 5), 8)[0] == 3
+            allocation = SMB2SetInfoRequest(); allocation['info_type'] = 1
+            allocation['file_info_class'] = 19; allocation['file_id'] = overwrite.file_id
+            allocation['buffer'] = struct.pack('<Q', 4096)
+            peer.receive(peer.send(allocation, ps.session_id, pt.tree_connect_id))
+            lock(overwrite, (0, 1, 0x12))
+            denied(lambda: holder.read(0, 1), 0xc0000054)
+            lock(overwrite, (0, 1, 4))
+            again = create(pt, name, disposition=4); again.write(b'new')
+            assert holder.read(0, 3) == b'new'
+            conflict = Open(pt, name)
+            result = conflict.create(2, 0x13019f, 0x80, 1, 1, 0x40, send=False)
+            conflict_request, conflict_receive = begin(conflict, result)
+            if dialect == 0x311:
+                time.sleep(6)
+                owner.echo(sid=os.session_id, timeout=5)
+            assert oq.empty()
+            denied(lambda: ack(owner, os, ot, key, 1), 0xc00000d0)
+            pending(conflict_request)
+            ack(owner, os, ot, key, 0)
+            denied(lambda: conflict_receive(conflict_request), 0xc0000043)
+            for h in (holder, join, overwrite, again): h.close()
+            owner.disconnect(); peer.disconnect()
+            passed(f'{dialect:x}: delivered RH invalidation allows overwrite/write/EOF/allocation/lock before HANDLE ACK, preserves breaking CREATE state and still waits for incompatible sharing')
+        owner, os, ot, oq = connect()
+        peer, ps, pt, _ = connect()
+        key = uuid.uuid4().bytes; name = 'rh-ack-expiry'
+        holder, ctx = leased(ot, name, key, state=3)
+        response(ctx, key, 3, epoch=1)
+        overwrite = Open(pt, name)
+        result = overwrite.create(2, 0x13019f, 0x80, 7, 4, 0x40, send=False)
+        request, receive = begin(overwrite, result)
+        assert oq.get(timeout=10) == (key, 3, 0, 2, 1, True)
+        receive(request); overwrite.write(b'current')
+        conflict = Open(pt, name)
+        result = conflict.create(2, 0x13019f, 0x80, 1, 1, 0x40, send=False)
+        conflict_request, conflict_receive = begin(conflict, result)
+        deadline = time.monotonic() + 36
+        while time.monotonic() < deadline:
+            time.sleep(min(1, deadline - time.monotonic()))
+            owner.echo(sid=os.session_id, timeout=5)
+            if deadline - time.monotonic() > 4:
+                pending(conflict_request)
+        denied(lambda: conflict_receive(conflict_request), 0xc0000043)
+        denied(lambda: ack(owner, os, ot, key, 0), 0xc0000001)
+        join, ctx = leased(ot, name, key, state=0)
+        response(ctx, key, 0, epoch=2)
+        assert holder.read(0, 7) == b'current'
+        holder.write(b'usable!'); assert overwrite.read(0, 7) == b'usable!'
+        assert oq.empty()
+        for h in (join, holder, overwrite): h.close()
+        owner.disconnect(); peer.disconnect()
+        passed('unacknowledged delivered RH invalidation completes to NONE after 35 seconds, lets a pending CREATE recheck sharing, rejects late ACK and preserves authenticated transport and usable opens')
         report['status'] = 'passed'
     except Exception:
         report['error'] = traceback.format_exc(); print(report['error'], flush=True)

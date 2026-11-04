@@ -1,0 +1,134 @@
+{
+  "recorded_at": "2026-11-04T17:56:28.503907+00:00",
+  "base_source": "d88c55ec3da8460760eb029f036019911f5293b9",
+  "status": "targeted-local-passed-full-suite-29-pass-7-fail-3-skip-remote-pending",
+  "scope": "Delivered RH invalidation releases native exclusion; data operations proceed while HANDLE ACK remains pending. Independent 35-second protocol timeout preserves usable opens and allows pending CREATE sharing recheck. Full SMB/NFS remains unfinished.",
+  "sanitizers": "Linux Clang ASan/UBSan/LSan",
+  "source_sha256": {
+    "include/taucloud/smb_lease.hpp": "eb8e1479f7f723ef21ebf0108ba904bf923c99fd7d0399c844d951e41ee2fe0d",
+    "src/smb_lease.cpp": "252d561d328dda5d878c2f41136510202e008456ad24cbc9126305ffeb3ac434",
+    "src/file_cache.inc": "5725656a5220ded22ac4e04100e0f0182994fda4cabdd860dd44f9a3b7dce468",
+    "src/file_smb.inc": "7dc4ecb7e6cdd8841981ee784e39795f316b524dd6fcfa2f7d9592ae84d88b78",
+    "src/smb_cache.inc": "2a2678733ee5a2afd78e0a4dc97f028108e7086b5e81848764fc81a6fe88bcc2",
+    "src/smb_async.inc": "2c0b255d3c181c61c7e402320a996f803238a450d526f415cd5f535dbdca2844",
+    "tests/smb_lease_core.cpp": "226d49c5cbd4bba29444abaa8428c71c734038947ff625b6e258d337b61f01ba",
+    "tests/smb_lease_native.cpp": "44232ba2cb7c0e2312fc948482d9686ecec6a65ef4d06ed15070f421fb8441d3",
+    "tests/smb_lease_integration.py": "29e65e9fad497d0ded348ab9191ac4ee661ad91a040e656d725df5b669a25368",
+    ".github/workflows/smb-metadata.yml": "ed916fce4b179de587d3f1a6879110128c3d3e57a105517f603146d7c098149e"
+  },
+  "core": {
+    "smb_lease": 3271,
+    "smb_lease_native": 85,
+    "M5": 12583
+  },
+  "reports": {
+    "taucloud-lease-rh-wire": {
+      "sha256": "bc6c8ff653f80be48abd5c4e66a4c53c39293ffd90245b68950c716107935614",
+      "report": {
+        "status": "passed",
+        "recorded_at": "2026-11-04T17:51:35.842980+00:00",
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "checks": [
+          "210: v1 shared lease survives renewal, joins during recall, validates client/key/ACK state and coherently breaks RWH to RH to NONE",
+          "300: v2 shared lease survives renewal, joins during recall, validates client/key/ACK state and coherently breaks RWH to RH to NONE",
+          "302: v2 shared lease survives renewal, joins during recall, validates client/key/ACK state and coherently breaks RWH to RH to NONE",
+          "311: v2 shared lease survives renewal, joins during recall, validates client/key/ACK state and coherently breaks RWH to RH to NONE",
+          "same-client authenticated transport without an open routes the native recall ACK to the owning connection",
+          "R-only native invalidation delivers an encrypted no-ACK break before releasing exclusion",
+          "global key/name reservation covers NONE leases, rejects another path and is released after final close or failed CREATE",
+          "all eight v1/v2 requested state combinations return legal grants; H/W without READ succeeds with NONE",
+          "an original NONE member renews promoted shared authority after the promoting member closes",
+          "a conflicting lease prevents partial promotion of an existing R lease to RH when RWH was requested",
+          "malformed sizes, unknown state bits and duplicate lease contexts fail; reserved flags are ignored and v2 is ignored on SMB 2.1",
+          "the same LeaseKey under different client GUIDs identifies independent leases",
+          "unacknowledged native recall fences stale lease authority before admitting the native writer",
+          "metadata-only and write-only opens hold renewable RWH without gaining READ/WRITE rights; foreign leases recall to shared RH",
+          "a pre-existing metadata-only handle shares native identity with a later write-only leased handle without adding data access",
+          "READ_CONTROL, attribute and synchronize-only opens retain native exclusion without a data-cache recall",
+          "read-only-share metadata lease renews and ACKs without obtaining write authority or data access",
+          "210: incompatible sharing recalls only HANDLE (RWH to RW), preserves dirty writes on denial, then a compatible open recalls WRITE (RW to R)",
+          "300: incompatible sharing recalls only HANDLE (RWH to RW), preserves dirty writes on denial, then a compatible open recalls WRITE (RW to R)",
+          "302: incompatible sharing recalls only HANDLE (RWH to RW), preserves dirty writes on denial, then a compatible open recalls WRITE (RW to R)",
+          "311: incompatible sharing recalls only HANDLE (RWH to RW), preserves dirty writes on denial, then a compatible open recalls WRITE (RW to R)",
+          "210: queued overwrite chains RWH to RH to R to NONE, preserves same-key opens and dirty flush, and waits through both ACKs before truncating",
+          "300: queued overwrite chains RWH to RH to R to NONE, preserves same-key opens and dirty flush, and waits through both ACKs before truncating",
+          "302: queued overwrite chains RWH to RH to R to NONE, preserves same-key opens and dirty flush, and waits through both ACKs before truncating",
+          "311: queued overwrite chains RWH to RH to R to NONE, preserves same-key opens and dirty flush, and waits through both ACKs before truncating",
+          "210: delivered RH invalidation allows overwrite/write/EOF/allocation/lock before HANDLE ACK, preserves breaking CREATE state and still waits for incompatible sharing",
+          "300: delivered RH invalidation allows overwrite/write/EOF/allocation/lock before HANDLE ACK, preserves breaking CREATE state and still waits for incompatible sharing",
+          "302: delivered RH invalidation allows overwrite/write/EOF/allocation/lock before HANDLE ACK, preserves breaking CREATE state and still waits for incompatible sharing",
+          "311: delivered RH invalidation allows overwrite/write/EOF/allocation/lock before HANDLE ACK, preserves breaking CREATE state and still waits for incompatible sharing",
+          "unacknowledged delivered RH invalidation completes to NONE after 35 seconds, lets a pending CREATE recheck sharing, rejects late ACK and preserves authenticated transport and usable opens"
+        ]
+      }
+    },
+    "taucloud-lease-rh-oplocks": {
+      "sha256": "82422fa439f13b5e9f8b1e2d701842e8bf9dcaaac2fc4afdaad6582e32aeb3bf",
+      "report": {
+        "status": "passed",
+        "recorded_at": "2026-11-04T17:51:36.863261+00:00",
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "checks": [
+          "210: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "210: READ_CONTROL-only CREATE recalls classic EXCLUSIVE and does not gain READ_DATA; its stat-open exemption applies only to leases",
+          "210: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "210: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "300: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "300: READ_CONTROL-only CREATE recalls classic EXCLUSIVE and does not gain READ_DATA; its stat-open exemption applies only to leases",
+          "300: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "300: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "302: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "302: READ_CONTROL-only CREATE recalls classic EXCLUSIVE and does not gain READ_DATA; its stat-open exemption applies only to leases",
+          "302: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "302: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "311: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "311: READ_CONTROL-only CREATE recalls classic EXCLUSIVE and does not gain READ_DATA; its stat-open exemption applies only to leases",
+          "311: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "311: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "210: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "300: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "302: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "311: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "sharing violations do not recall dirty caches; readonly, directory, delete-on-close and conflicting native opens receive no unsupported cache grant",
+          "a lease-form ACK for a classic oplock is rejected and finishes the recall without leaving native exclusion stuck",
+          "two encrypted sessions on one transport renew independent cache authority and route breaks/ACKs with their own keys; a foreign-session ACK cannot release another open",
+          "native host reads/writes wait for SMB recall; dirty client data flushes before host access and the original handle observes subsequent native writes",
+          "own EXCLUSIVE SET_INFO EOF completes synchronously and preserves its cache without a self-recall",
+          "related cached CREATE/SET_INFO/READ preserves the inherited FileId and completes without an unnecessary self-recall",
+          "NFSv3 READ on an existing handle returns JUKEBOX during native recall; repeated retries leave SMB flush/ACK live and the next read returns current data",
+          "DAV GET returns a retryable response while a cache recall is pending and reads freshly flushed bytes after ACK",
+          "another transport cannot ACK the holder FileId; CLOSE flushes/releases authority and wakes the peer CREATE",
+          "unacknowledged recall fences the holder transport and open while the conflicting client completes after native exclusion releases",
+          "credential revocation closes the cache-bearing transport and releases native exclusion without requiring a client request",
+          "stalled identity RPC cannot hold the cache transport past its authority: independent watchdog closes it before IPC timeout and autonomous worker expiry releases native exclusion"
+        ]
+      }
+    },
+    "taucloud-lease-rh-full": {
+      "sha256": "3a7ced60d2fe94d8e2d22bff915f1d5ddf5811027aef993eeb776726ff86199a",
+      "report": {
+        "status": "failed",
+        "recorded_at": "2026-11-04T17:51:38.338942+00:00",
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "tests": [
+          {
+            "selector": "smb2.lease",
+            "status": "failed",
+            "returncode": 1,
+            "counts": {
+              "success": 29,
+              "failure": 7,
+              "error": 0,
+              "skip": 3
+            },
+            "log": "taucloud-lease-rh-full-smb2.lease.log"
+          }
+        ]
+      }
+    }
+  },
+  "full_suite_log": {
+    "file": "smb-lease-full-rh.log",
+    "sha256": "99f721d09ea56bba678995ac0efc1cd769202683ade4d83903288181897b2c76"
+  }
+}

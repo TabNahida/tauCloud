@@ -98,8 +98,11 @@ pace::task<void> pump_commands(uint64_t sid) {
         auto cmd = get(item.request, 12, 2);
         if ((cmd == 5 || cmd == 9 || cmd == 10 || cmd == 14 || cmd == 17) && std::string_view(e.what()) == "cache_break_pending") {
           auto current = pending_commands.find(id);
+          // A sharing/namespace operation can wait for the independent RH
+          // HANDLE ACK timer. Bound that wait beyond the protocol deadline;
+          // retries never restart it, and native dirty-cache fencing stays 5s.
           if (current != pending_commands.end() && !current->second.deadline)
-            current->second.deadline = async_clock() + 10000;
+            current->second.deadline = async_clock() + lease_handle_ack_ms + 5000;
           executing_command = 0;
           continue;
         }

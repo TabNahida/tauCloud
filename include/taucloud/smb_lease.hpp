@@ -6,6 +6,7 @@
 #include <set>
 
 namespace tc::smb_detail {
+inline constexpr int64_t lease_handle_ack_ms = 35000;
 // Protocol state shared by every open carrying one (ClientGuid, LeaseKey).
 // This class grants no file authority: the caller must first obtain native
 // exclusion, and keep it until a break is delivered/acknowledged or fenced.
@@ -32,6 +33,11 @@ public:
   const bytes &parent() const { return parent_; }
   bool breaking() const { return breaking_; }
   bool unsettled() const { return breaking_ || pending_.has_value(); }
+  // RH has no dirty write cache. Once its NONE notification is delivered,
+  // data operations may proceed while HANDLE invalidation still awaits ACK.
+  bool data_invalidated() const {
+    return state_ == 3 && breaking_ && notified_target_ == 0 && !pending_;
+  }
   const std::optional<lease_break> &pending() const { return pending_; }
   int64_t deadline() const { return deadline_; }
   // A subsequent CREATE cannot downgrade a lease, promote during a break, or
@@ -46,6 +52,9 @@ public:
   // An ACK can overtake the asynchronous send completion on another transport.
   uint32_t acknowledge(unsigned state);
   bool timed_out(int64_t time) const;
+  // A delivered RH -> NONE notification already invalidated all data. Its
+  // HANDLE ACK timeout can complete to NONE without fencing usable opens.
+  bool expire_read_invalidation(int64_t time);
   // Call only after the associated opens/transports have been fenced/closed.
   void fence();
   bytes response() const;

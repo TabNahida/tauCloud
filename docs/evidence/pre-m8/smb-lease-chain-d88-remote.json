@@ -1,0 +1,103 @@
+{
+  "source_commit": "d88c55ec3da8460760eb029f036019911f5293b9",
+  "run_url": "https://github.com/TabNahida/tauCloud/actions/runs/41879288200",
+  "scope": "25-group wire lease regression, state transitions and native authority steps pass GCC/Clang/MSVC. Whole jobs were still in progress; the full Samba diagnostic is non-gating and its step conclusion is not conformance evidence.",
+  "jobs": [
+    {
+      "id": 126747302195,
+      "name": "clang metadata",
+      "status": "in_progress",
+      "conclusion": null,
+      "targeted_steps": [
+        {
+          "name": "SMB shared lease state, wire vectors and break transitions",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14
+        },
+        {
+          "name": "SMB shared lease native exclusion and file-domain authority",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15
+        },
+        {
+          "name": "SMB file lease CREATE, shared recall and cross-connection acknowledgments",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 16
+        },
+        {
+          "name": "Original Samba lease grants, upgrades, recalls and epochs",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 17
+        }
+      ]
+    },
+    {
+      "id": 126747302292,
+      "name": "gcc metadata",
+      "status": "in_progress",
+      "conclusion": null,
+      "targeted_steps": [
+        {
+          "name": "SMB shared lease state, wire vectors and break transitions",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14
+        },
+        {
+          "name": "SMB shared lease native exclusion and file-domain authority",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15
+        },
+        {
+          "name": "SMB file lease CREATE, shared recall and cross-connection acknowledgments",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 16
+        },
+        {
+          "name": "Original Samba lease grants, upgrades, recalls and epochs",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 17
+        }
+      ]
+    },
+    {
+      "id": 126747302354,
+      "name": "msvc metadata",
+      "status": "in_progress",
+      "conclusion": null,
+      "targeted_steps": [
+        {
+          "name": "SMB shared lease state, wire vectors and break transitions",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14
+        },
+        {
+          "name": "SMB shared lease native exclusion and file-domain authority",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15
+        },
+        {
+          "name": "SMB file lease CREATE, shared recall and cross-connection acknowledgments",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 16
+        },
+        {
+          "name": "Original Samba lease grants, upgrades, recalls and epochs",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 17
+        }
+      ]
+    }
+  ]
+}

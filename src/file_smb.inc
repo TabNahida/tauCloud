@@ -582,7 +582,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
                    (((data_open || attribute_open) && preserving_open) ||
                        (shared_read_open && preserving_data)) &&
                        !needs_write_handle ? 1 : 0, exempt_lease,
-                   preserving_data && !needs_write_handle ? 3 : 0);
+                   preserving_data && !needs_write_handle ? 3 : 0, true);
     // Validate all initial metadata and quota before creating or truncating a file.
     if (!existing && body.contains("eas"))
       smb_merge_eas(json::object(), body.at("eas"));
@@ -750,7 +750,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
       return held.cache && held.space == space && held.path == path &&
           (held.lease_cache_state ? held.lease_cache_state != h.lease_cache_state : held.cache_level == 1);
     });
-    if (readers) cache_conflict(space, path, "", 0, h.lease_cache_state);
+    if (readers) cache_conflict(space, path, "", 0, h.lease_cache_state, 0, true);
   }
   if (op == "smb_resize" || op == "smb_allocation")
     require(h.access & 2, "forbidden");
@@ -768,7 +768,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
                                (h.cache_level == 8 || h.cache_level == 9) ? id : "";
     cache_conflict(space, path, cache_owner, op == "smb_disposition" ? 1 : 0,
         (op == "smb_resize" || op == "smb_allocation") ? h.lease_cache_state : nullptr,
-        op == "smb_disposition" ? 3 : 0);
+        op == "smb_disposition" ? 3 : 0, op == "smb_resize" || op == "smb_allocation");
     if (op == "smb_rename") {
       auto target = verify(body.at("target"), true);
       require(target.at("space").at("id") == space && target.at("actor") == actor &&

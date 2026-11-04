@@ -188,6 +188,39 @@ int main() {
       check(poll("handle-cache", h, cookie).at("state") == 3);
       close("handle-cache", classic); close("handle-cache", h);
 
+      {
+        const std::string path = "rh-data";
+        auto holder = open(path, client); write(path, holder, "before");
+        auto cookie = acquire(path, holder, 3).at("cookie");
+        auto writer = open(path, "");
+        rejects([&] { write(path, writer, "after!"); }, "cache_break_pending");
+        auto state = poll(path, holder, cookie);
+        auto serial = state.at("notification").at("serial").get<uint64_t>();
+        call("cache_sent", path, {{"handle", holder}, {"cookie", cookie}, {"serial", serial + 1}});
+        rejects([&] { write(path, writer, "after!"); }, "cache_break_pending");
+        call("cache_sent", path, {{"handle", holder}, {"cookie", cookie}, {"serial", serial}});
+        write(path, writer, "after!");
+        check(poll(path, holder, cookie).at("state") == 3 && poll(path, holder, cookie).at("ack_required"));
+        auto sibling = open(path, client);
+        check(acquire(path, sibling).at("breaking"));
+        rejects([&] { open(path, peer, 0x13019f, 1); }, "cache_break_pending");
+        check(native.open("space/rh-data").read(0, 6) == "after!");
+        auto overwritten = call("open", path, {{"access", 0x13019f}, {"sharing", 7},
+            {"disposition", 4}, {"options", 0x40}}).at("handle").get<std::string>();
+        write(path, overwritten, "latest");
+        check(ack(path, holder, cookie, 1).at("status") == 0xc00000d0u);
+        store->dispatch("smb_cache_poll", {{"grant", grant(path, true, 100)},
+            {"handle", holder}, {"cookie", cookie}}, ctx());
+        std::this_thread::sleep_for(std::chrono::milliseconds(130));
+        check(poll(path, sibling, cookie).at("ack_required"));
+        rejects([&] { call("read", path, {{"handle", holder}, {"offset", 0}, {"count", 1}}); }, "stale_handle");
+        check(ack(path, sibling, cookie, 0).at("status") == 0);
+        check(native.open("space/rh-data").read(0, 6) == "latest");
+        rejects([&] { open(path, peer, 0x13019f, 1); }, "sharing_violation");
+        for (auto handle : {sibling, writer, overwritten}) close(path, handle);
+        std::cout << "PASS delivered RH invalidation permits SMB/native data operations before ACK while sharing waits and expired authority still fences its open\n";
+      }
+
       h = open("expiry", client); auto sibling = open("expiry", client);
       cookie = acquire("expiry", h).at("cookie");
       store->dispatch("smb_cache_poll", {{"grant", grant("expiry", true, 100)},

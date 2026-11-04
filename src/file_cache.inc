@@ -1,5 +1,6 @@
 // File-domain cache authority. Protocol workers receive a cookie, never a
-// native handle. Native exclusion ends only after ACK, close or fencing.
+// native handle. A delivered RH -> NONE invalidation has no dirty data and
+// releases native exclusion while its HANDLE acknowledgment remains pending.
 static int64_t cache_clock() {
   return std::chrono::duration_cast<std::chrono::milliseconds>(
       std::chrono::steady_clock::now().time_since_epoch()).count();
@@ -18,7 +19,7 @@ static bool cache_native_deadline_safe() {
 void sync_lease_cache(const std::shared_ptr<lease_cache> &group) {
   auto state = group->state.state();
   if (!group->state.unsettled()) group->break_until = 0;
-  if (!state && !group->state.unsettled()) group->guard.reset();
+  if ((!state && !group->state.unsettled()) || group->state.data_invalidated()) group->guard.reset();
   for (auto &[id, member] : handles) {
     if (member.lease_cache_state != group) continue;
     member.cache = group->guard;
@@ -55,10 +56,12 @@ bool native_cache_breaks() {
 }
 void cache_conflict(const std::string &space, const std::string &path,
                     const std::string &owner = "", unsigned level = 0,
-                    const std::shared_ptr<lease_cache> &lease_owner = {}, unsigned lease_target = 0) {
+                    const std::shared_ptr<lease_cache> &lease_owner = {}, unsigned lease_target = 0,
+                    bool lease_data_only = false) {
   bool pending = false;
   for (auto &[id, h] : handles) {
-    if (h.cache && id != owner && (!lease_owner || h.lease_cache_state != lease_owner) && h.space == space &&
+    if ((h.cache || (h.lease_cache_state && h.lease_cache_state->state.unsettled())) &&
+        id != owner && (!lease_owner || h.lease_cache_state != lease_owner) && h.space == space &&
         (beneath(h.path, path) || beneath(path, h.path))) {
       auto target = level;
       if (target == 1 && (h.cache_level == 8 || h.cache_level == 9) && !locks.empty()) {
@@ -67,24 +70,32 @@ void cache_conflict(const std::string &space, const std::string &path,
             [&](const auto &held) { return held.object == native; })) target = 0;
       }
       cache_break(h, target, lease_target);
-      pending |= h.cache_break_until != 0;
+      // MS-FSA 2.1.4.12 permits data mutation after RH invalidation without
+      // waiting for the HANDLE ACK. Sharing and namespace operations still
+      // wait for that ACK even after native exclusion has been released.
+      bool delivered = lease_data_only && h.lease_cache_state &&
+                       h.lease_cache_state->state.data_invalidated();
+      pending |= h.cache_break_until != 0 && !delivered;
     }
   }
   require(!pending, "cache_break_pending");
 }
 void maintain_caches() {
   bool any = std::any_of(handles.begin(), handles.end(),
-      [](const auto &entry) { return bool(entry.second.cache); });
+      [](const auto &entry) { return bool(entry.second.cache) ||
+          (entry.second.lease_cache_state && entry.second.lease_cache_state->state.unsettled()); });
   if (!any) return;
   auto time = cache_clock();
   bool native_safe = cache_native_deadline_safe();
   for (auto it = handles.begin(); it != handles.end();) {
     auto &h = it->second;
-    if (!h.cache) { ++it; continue; }
-    bool lost = !native_safe || h.cache_authority_until <= time ||
+    auto group = h.lease_cache_state;
+    if (group && group->state.expire_read_invalidation(time)) sync_lease_cache(group);
+    if (!h.cache && !(group && group->state.unsettled())) { ++it; continue; }
+    bool lost = (!native_safe && h.cache) || h.cache_authority_until <= time ||
                 (h.cache_break_until && h.cache_break_until <= time);
     if (!lost) {
-      try { if (h.cache->breaking()) cache_break(h); }
+      try { if (h.cache && h.cache->breaking()) cache_break(h); }
       catch (...) { lost = true; }
     }
     if (!lost) { ++it; continue; }
@@ -105,6 +116,7 @@ json cache_snapshot(const opened &h) const {
         {"lease", true}, {"state", g.state.state()}, {"epoch", g.state.epoch()},
         {"context", encode_bytes(g.state.response())},
         {"breaking", g.state.unsettled()}, {"ack_required", g.state.breaking()},
+        {"data_invalidated", g.state.data_invalidated()},
         {"remaining_ms", g.break_until ? std::max<int64_t>(0, g.break_until - cache_clock()) : 0}};
     if (auto &pending = g.state.pending(); pending)
       value["notification"] = {{"serial", pending->serial},
@@ -172,7 +184,15 @@ json lease_cache_dispatch(const std::string &op, const json &body, const json &g
   cache_renew(h, grant);
   if (op == "smb_cache_poll") return cache_snapshot(h);
   if (op == "smb_cache_sent") {
-    group->state.sent(body.at("serial"), cache_clock(), 5000);
+    // RH invalidation has no outstanding dirty data after delivery, so its
+    // protocol ACK uses the normal 35-second lease timer independently of
+    // the short native-exclusion deadline. Dirty W recalls remain bounded.
+    auto serial = body.at("serial").get<uint64_t>();
+    auto notification = group->state.pending();
+    bool rh = notification && notification->serial == serial &&
+              notification->current == 3 && notification->target == 0;
+    group->state.sent(serial, cache_clock(), rh ? smb_detail::lease_handle_ack_ms : 5000);
+    if (rh && group->state.data_invalidated()) group->break_until = group->state.deadline();
     sync_lease_cache(group);
     return cache_snapshot(h);
   }

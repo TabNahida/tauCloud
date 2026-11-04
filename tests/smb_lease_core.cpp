@@ -117,6 +117,37 @@ int main() {
       chained.sent(final.serial, 104, 5000);
       check(chained.state() == 0 && !chained.unsettled());
     }
+    for (unsigned version : {1u, 2u}) {
+      lease_state rh(lease_request{key, {}, 3, version, 0});
+      rh.promote(3, 3); rh.recall(0);
+      auto notice = *rh.pending();
+      check(!rh.data_invalidated());
+      rh.sent(notice.serial + 1, 100, 5000);
+      check(!rh.data_invalidated());
+      rh.sent(notice.serial, 100, 5000);
+      check(rh.data_invalidated() && rh.state() == 3 && rh.breaking());
+      check(!rh.expire_read_invalidation(5099));
+      rh.recall(5); // A sharing conflict still needs the outstanding HANDLE ACK.
+      check(rh.data_invalidated() && rh.acknowledge(1) == 0xc00000d0);
+      check(rh.acknowledge(0) == 0 && !rh.data_invalidated());
+      rh.promote(3, 3); rh.recall(1);
+      rh.sent(rh.pending()->serial, 200, 5000);
+      check(!rh.data_invalidated());
+      rh.recall(0); rh.acknowledge(1);
+      check(!rh.data_invalidated());
+      lease_state dirty(lease_request{key, {}, 7, version, 0});
+      dirty.promote(7, 7); dirty.recall(0);
+      dirty.sent(dirty.pending()->serial, 300, 5000);
+      check(!dirty.data_invalidated());
+      check(!dirty.expire_read_invalidation(5300) && dirty.state() == 7);
+      lease_state expired(lease_request{key, {}, 3, version, 0});
+      expired.promote(3, 3); expired.recall(0);
+      check(!expired.expire_read_invalidation(INT64_MAX));
+      expired.sent(expired.pending()->serial, 500, 35000);
+      check(!expired.expire_read_invalidation(35499));
+      check(expired.expire_read_invalidation(35500));
+      check(expired.state() == 0 && !expired.unsettled() && expired.acknowledge(0) == 0xc0000001);
+    }
     // Exhaust every supported initial/target/ACK combination independently of
     // implementation branches. ACK may only remove bits of the notified target.
     for (unsigned version : {1u, 2u})

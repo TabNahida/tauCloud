@@ -1,0 +1,96 @@
+{
+  "source_commit": "7f741bc4a060abfc39e94ef943462835c17e9e80",
+  "run_url": "https://github.com/TabNahida/tauCloud/actions/runs/41878363971",
+  "scope": "Windows native Set-Acl restoration still fails with error 59. Cache deadline/watchdog/poll failure diagnostics are absent from the captured SMB log; this does not establish the cause. Windows classic cache security regression passes on this run.",
+  "windows_job": {
+    "id": 126744001440,
+    "status": "completed",
+    "conclusion": "failure",
+    "steps": [
+      {
+        "name": "Run xmake f -y -c -p windows -a x64 -m release --m0=n --m1=y --toolchain=msvc --sanitizers=n",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 10
+      },
+      {
+        "name": "Native cache exclusion, cancellation and allocation safety",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 12
+      },
+      {
+        "name": "SMB shared lease state, wire vectors and break transitions",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 14
+      },
+      {
+        "name": "SMB shared lease native exclusion and file-domain authority",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 15
+      },
+      {
+        "name": "SMB file lease CREATE, shared recall and cross-connection acknowledgments",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 16
+      },
+      {
+        "name": "Original Samba lease grants, upgrades, recalls and epochs",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 17
+      },
+      {
+        "name": "Full Samba lease diagnostic (known incomplete compatibility)",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 18
+      },
+      {
+        "name": "SMB security and size updates preserve classic oplock ownership",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 34
+      },
+      {
+        "name": "Native Windows security descriptor operations",
+        "status": "completed",
+        "conclusion": "failure",
+        "number": 41
+      },
+      {
+        "name": "SMB native cache grants, recall, ACK and cross-protocol coherence",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 46
+      },
+      {
+        "name": "SMB BATCH cached closes, sharing conflicts and read-only authority",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 48
+      },
+      {
+        "name": "Original Samba EXCLUSIVE, BATCH and Level II transitions",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 49
+      },
+      {
+        "name": "Original Samba BATCH session replacement and reauthentication",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 50
+      }
+    ]
+  },
+  "native_failure": {
+    "status": "failed",
+    "returncode": 1,
+    "stderr": "\u001b[31;1mSet-Acl: \u001b[0mC:\\Users\\runneradmin\\AppData\\Local\\Temp\\tc3-c_azoais\\native-smb.ps1:49\u001b[0m\n\u001b[31;1m\u001b[0m\u001b[36;1mLine |\u001b[0m\n\u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m  49 | \u001b[0m     \u001b[36;1mSet-Acl -LiteralPath $path -AclObject $restore\u001b[0m\n\u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m     | \u001b[31;1m     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\u001b[0m\n\u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[31;1m\u001b[31;1m\u001b[36;1m     | \u001b[31;1mMethod failed with unexpected error code 59.\u001b[0m\n",
+    "smb_log": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793814664979}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"smb\",\"time\":1793814667020}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793814669867}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793814674116}\n{\"code\":\"128\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793814674116}\n{\"code\":\"3221225659\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793814674166}\n{\"code\":\"3221225659\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793814674182}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793814674244}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793814676702}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793814677653}\n{\"code\":\"1048705\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793814677654}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793814677988}\n{\"code\":\"privilege_not_held\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793814678208}\n{\"code\":\"17694848\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793814678209}\n{\"code\":\"privilege_not_held\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793814678225}\n{\"code\":\"17694848\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793814678225}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793814678572}\n{\"code\":\"1180054\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793814678573}\n{\"code\":\"privilege_not_held\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793814678635}\n{\"code\":\"17694848\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793814678636}\n{\"code\":\"privilege_not_held\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793814678639}\n{\"code\":\"17694848\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793814678639}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793814678746}\n{\"code\":\"131200\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793814678747}\n"
+  }
+}
