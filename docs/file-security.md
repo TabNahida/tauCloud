@@ -42,7 +42,7 @@ Twenty independent signed/encrypted groups cover these semantics across four
 dialects; existing rename, cache and cross-protocol ACL regressions also pass
 locally ([evidence](evidence/pre-m8/smb-security-metadata-local.json)).
 GCC, Clang sanitizers and MSVC acceptance is configured in `smb-metadata.yml`;
-remote acceptance of this increment is pending.
+Windows acceptance passes at `0276cbb` ([evidence](evidence/pre-m8/smb-security-metadata-027-windows.json)); Linux acceptance of this increment is pending.
 
 ## Security QUERY_INFO
 

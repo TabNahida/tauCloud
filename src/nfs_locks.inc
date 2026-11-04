@@ -151,16 +151,22 @@ void lock_operation(const identity &who, const json &a, const std::string &sid,
     for (const auto &[key, o] : opens)
       if (key.substr(8) == id.substr(8)) {
         open_key(id, sid);
-        check(o.principal == who.key, 10025);
+        check(o.principal == who.key || machine_cleanup(sid, who, op),
+              client_ids.at(client).protection ? 10082 : 10025);
         check(false, 10037);
       }
     auto key = lock_key(id, sid);
-    check(byte_locks.at(key).principal == who.key, 10025);
+    check(byte_locks.at(key).principal == who.key || machine_cleanup(sid, who, op),
+          client_ids.at(client).protection ? 10082 : 10025);
     check(byte_locks.at(key).ranges.empty(), 10037);
     byte_locks.erase(key);
     return;
   }
-  auto m = meta4(who, current);
+  json m;
+  if (op == 14 && machine_cleanup(sid, who, op)) {
+    const auto &open = state4(io_state(a.at("state"), sid), sid, current, 0, who, op);
+    m = {{"directory", false}, {"object", open.object}};
+  } else m = meta4(who, current);
   check(!m.at("directory").get<bool>(), 21);
   auto range = lock_interval(a);
   if (op == 13) {
@@ -183,7 +189,9 @@ void lock_operation(const identity &who, const json &a, const std::string &sid,
     key = lock_key(a.at("state"), sid);
     state = byte_locks.at(key);
     check(state.fh == current, 10025);
-    state4(io_state(key, sid), sid, current, range.type == 1 ? 1 : 2, who);
+    // Unlocking releases existing authority, including after OPEN_DOWNGRADE.
+    state4(io_state(key, sid), sid, current, op == 14 ? 0 : range.type == 1 ? 1 : 2,
+           who, op == 14 ? op : 0);
   }
   bool recovering = op == 12 && a.at("reclaim").get<bool>();
   if (op == 12) {

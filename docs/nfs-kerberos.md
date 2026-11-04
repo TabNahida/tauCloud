@@ -49,13 +49,51 @@ Names are exact GSS-verified principal names, including realm. There is no impli
 - Authenticated DESTROY invalidates a context. Contexts survive a TCP reconnect, but never a service restart. Capacity is 128 contexts, a pending context expires after 60 seconds, and an established context expires at the shorter of its GSS lifetime or one hour. Context handles are random 32-byte values and are never persisted.
 - Each new context acquires credentials from the configured keytab. Atomic keytab replacement supports rotation without killing established contexts. Retain old key versions during a production rollover if old service tickets must continue to establish new contexts. An unreadable/replaced keytab cannot cause authentication downgrade.
 
+## Machine credential state protection
+
+`EXCHANGE_ID` now accepts `SP4_MACH_CRED` over Kerberos integrity or privacy.
+The authenticated principal and Kerberos mechanism identify the machine; a
+local UID mapping is not sufficient. The returned `spo_must_enforce` bitmap is
+enforced for client/session maintenance and in-session operations, including
+before `CREATE_SESSION` replay. When it includes `BIND_CONN_TO_SESSION`, an
+unbound connection cannot attach itself with `SEQUENCE`. An authenticated
+explicit bind admits the transport, on which ordinary user credentials may
+subsequently operate subject to the negotiated bitmap and export policy.
+
+The confirmed protection method and both operation lists are immutable, even
+under an explicit `EXCHANGE_ID` update. Confirmed-owner requests cannot replace
+the machine principal or downgrade its authentication. Protected session replay
+distinguishes integrity/privacy from authentication-only requests; switching
+between integrity and privacy preserves valid replay. `SP4_NONE` retains its
+existing implicit connection binding.
+
+The negotiated `spo_must_allow` result accepts requested `CLOSE`, `LOCKU`,
+`OPEN_DOWNGRADE` and `FREE_STATEID` bits. These permit the machine to release
+this client's user-owned state after a user mapping or credential is gone.
+They do not grant file data/namespace access, cross-client authority, or the
+ability to close an open with outstanding locks. `PUTFH` permits the exact
+known handle for the agreed cleanup operation. All other file operations keep
+their ordinary authorization checks. Write locks can still be unlocked after
+an open has been downgraded to read-only. Protected clients advertise
+`EXCHGID4_FLAG_BIND_PRINC_STATEID` with these negotiated cleanup exceptions.
+
+Sixteen real-KDC groups exercise both integrity and privacy, hostile
+principals/services, connection binding, immutable policy, replay, mapping
+revocation and bounded cleanup. Shared session tests verify AUTH_SYS rejection and are scheduled on all
+configured platforms. Local evidence is recorded in
+[machine protection acceptance](evidence/pre-m8/nfs-machine-local.json);
+remote GCC/Clang acceptance is pending. Windows GSS, `SP4_SSV`, delegation and
+other remaining protocol gates are still unfinished. This increment follows
+[RFC 8881 state protection](https://www.rfc-editor.org/rfc/rfc8881.html#section-2.10.8.3)
+and [EXCHANGE_ID](https://www.rfc-editor.org/rfc/rfc8881.html#section-18.35.3).
+
 ## Authenticated backchannel
 
 NFSv4.1 CREATE_SESSION and BACKCHANNEL_CTL accept established NFSv4 RPCSEC_GSS context handles with the client's reverse handle and requested `krb5`, `krb5i` or `krb5p` service. CB_NULL, CB_SEQUENCE and CB_NOTIFY_LOCK use that shared Kerberos context in the reverse direction. The RPC counter is independent of the forechannel and shared by all reverse handles using one context, so reply verifiers cannot be substituted between equal-numbered requests on different handles. Outstanding callbacks cannot advance beyond the peer's 64-entry replay window. The existing one-slot NFS callback replay mechanism remains separate: uncertain completion closes the original transport, then resends identical NFS plaintext with a fresh authenticated RPC sequence.
 
 BACKCHANNEL_CTL adds GSS tuples, retains prior live tuples, and validates the entire offer before changing the callback program or credentials. Unknown/expired handles return NOENT; invalid service/oversized RPC credentials return INVAL; more than sixteen live tuples returns RESOURCE. Repeated tuples do not consume capacity. The server verifies the exact reply sequence, header verifier, integrity MIC or encrypted wrap, complete result and transport before advancing the callback slot or renewing a lease. Crypto failures never trigger an unoffered AUTH_NONE fallback. Negotiated request/response limits account for the full credential, MIC, XDR padding and GSS wrap overhead using `gss_wrap_size_limit`.
 
-Context expiration, authenticated DESTROY and service restart invalidate the associated reverse authority. SEQUENCE reports when all assigned contexts are within one lease of expiry, or expired/destroyed; the latter remains visible until a fresh context is assigned. Reconfiguration can restore callbacks without recreating the NFS session. This increment does not implement CB_RECALL, delegations, SSV/machine-credential state protection or Windows GSS.
+Context expiration, authenticated DESTROY and service restart invalidate the associated reverse authority. SEQUENCE reports when all assigned contexts are within one lease of expiry, or expired/destroyed; the latter remains visible until a fresh context is assigned. Reconfiguration can restore callbacks without recreating the NFS session. This increment does not implement CB_RECALL, delegations, SSV state protection or Windows GSS; machine credentials are implemented above.
 
 `tests/nfs_gss_backchannel.py` uses a disposable real MIT KDC and an independent reverse-RPC client. Eight local groups cover the three services and lock notifications, atomic invalid offers, additive handles, capacity, a 32-session shared-context replay window, exact packet limits, forged replies and exact retry, expiry/destroy/recovery. All pass with Clang ASan/UBSan/LSan. The ordinary nineteen-group callback regression, 98 core checks, forward GSS/pynfs and session negotiation are also exercised. [GCC/Clang remote callback acceptance at `70838b7`](evidence/pre-m8/nfs-gss-backchannel-708-remote.json) passes all eight groups; MSVC passes shared AUTH_SYS regression. See [local evidence](evidence/pre-m8/nfs-gss-backchannel-local.json).
 

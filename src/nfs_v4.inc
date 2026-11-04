@@ -6,6 +6,8 @@ struct client_id {
   bool reclaim_complete = false;
   std::set<std::string> reclaimed_filesystems;
   uint64_t replaces = 0;
+  uint32_t protection = 0;
+  std::vector<uint32_t> enforce, allow;
 };
 struct slot {
   uint32_t seq = 0;
@@ -166,6 +168,23 @@ void put_bitmap(writer &w, const std::vector<uint32_t> &bits) {
 }
 bool has(const std::vector<uint32_t> &bits, unsigned i) {
   return i / 32 < bits.size() && (bits[i / 32] & (1u << (i % 32)));
+}
+bool protected_gss(const identity &who) {
+  auto service = who.credential.value("service", 0u);
+  return who.credential.value("auth", "") == "rpcsec-gss" && (service == 2 || service == 3);
+}
+bool machine_credential(const client_id &client, const identity &who) {
+  // The RPCSEC_GSS acceptor currently accepts only Kerberos; who.key includes
+  // both that mechanism and the authenticated principal, never the local UID.
+  return client.protection == 1 && protected_gss(who) && client.principal == who.key;
+}
+void enforce_machine(const client_id &client, const identity &who, uint32_t op) {
+  if (client.protection == 1 && has(client.enforce, op))
+    check(machine_credential(client, who), 10082);
+}
+bool machine_cleanup(const std::string &sid, const identity &who, uint32_t op) {
+  const auto &client = client_ids.at(sessions.at(sid).client);
+  return has(client.allow, op) && machine_credential(client, who);
 }
 std::vector<uint32_t> supported_attrs() {
   std::vector<uint32_t> b(3);
@@ -524,7 +543,11 @@ json parse4(reader &r) {
     a["owner"] = encode_bytes(r.opaque(1024));
     a["flags"] = r.u32();
     a["protect"] = r.u32();
-    check(a["protect"] == 0, 10006);
+    check(a["protect"] == 0 || a["protect"] == 1, 10006);
+    if (a["protect"] == 1) {
+      a["enforce"] = bitmap(r);
+      a["allow"] = bitmap(r);
+    }
     auto n = r.u32();
     if (n > 1)
       throw xdr_error();
@@ -804,10 +827,11 @@ std::string next_state(const std::string &id) {
   return encode_bytes(st.data);
 }
 open_state &state4(const std::string &id, const std::string &sid, const std::string &h,
-                   uint32_t access, const identity &who) {
+                   uint32_t access, const identity &who, uint32_t cleanup_op = 0) {
   auto it = opens.find(open_key(id, sid));
   check(it->second.fh == h, 10025);
-  check(it->second.principal == who.key, 10025);
+  check(it->second.principal == who.key || machine_cleanup(sid, who, cleanup_op),
+        client_ids.at(sessions.at(sid).client).protection ? 10082 : 10025);
   check((it->second.access & access) == access, 10038);
   return it->second;
 }
@@ -891,8 +915,10 @@ std::string v4(const identity &who, reader &r) {
       if (a.value("unknown", false)) check(false, 10044);
       if (index > 0)
         check(op != 53, 10064);
+      if (!sid.empty()) enforce_machine(client_ids.at(sessions.at(sid).client), who, op);
       if (op == 42) {
-        check(a.at("protect") == 0, 10006);
+        auto protection = a.at("protect").get<uint32_t>();
+        check(!protection || protected_gss(who), 1);
         auto flags = a.at("flags").get<uint32_t>();
         check((flags & ~0x40070103u) == 0);
         uint64_t id = 0;
@@ -905,6 +931,11 @@ std::string v4(const identity &who, reader &r) {
             else existing = n;
           }
         uint64_t replaces = 0;
+        if (existing && client_ids.at(existing).protection == 1) {
+          // A downgrade or another principal cannot replace even an idle,
+          // confirmed machine-protected client during its lease.
+          check(machine_credential(client_ids.at(existing), who), flags & 0x40000000 ? 1 : 10017);
+        }
         if (flags & 0x40000000) {
           check(existing != 0, 2);
           auto &c = client_ids.at(existing);
@@ -929,11 +960,31 @@ std::string v4(const identity &who, reader &r) {
           client_ids[id] = {a.at("owner"), who.key, a.at("verifier"), 1, "", ""};
           client_ids.at(id).replaces = replaces;
         }
+        auto &client = client_ids.at(id);
+        if (confirmed) check(client.protection == protection, 10027);
+        // RFC 8881 18.35.3: the protection method and both operation lists
+        // become immutable at confirmation, including explicit UPDATE calls.
+        if (!confirmed) {
+          client.protection = protection;
+          if (protection) {
+            client.enforce = a.at("enforce").get<std::vector<uint32_t>>();
+            auto requested = a.at("allow").get<std::vector<uint32_t>>();
+            // These operations only release state; they cannot grant machine
+            // credentials the user's data or namespace access.
+            client.allow = {0, 0};
+            for (auto cleanup : {4u, 14u, 21u, 45u})
+              if (has(requested, cleanup)) client.allow[cleanup / 32] |= 1u << (cleanup % 32);
+          }
+        }
         body.u64(id)
             .u32(client_ids.at(id).sequence)
-            .u32(0x10000 | (confirmed ? 0x80000000u : 0))
-            .u32(0)
-            .u64(1)
+            .u32(0x10000 | (client.protection ? 0x100u : 0) | (confirmed ? 0x80000000u : 0))
+            .u32(client.protection);
+        if (client.protection) {
+          put_bitmap(body, client.enforce);
+          put_bitmap(body, client.allow);
+        }
+        body.u64(1)
             .opaque("tauCloud")
             .opaque("tauCloud-loopback")
             .u32(0);
@@ -942,6 +993,8 @@ std::string v4(const identity &who, reader &r) {
         auto it = client_ids.find(id);
         check(it != client_ids.end(), 10022);
         auto &c = it->second;
+        enforce_machine(c, who, op);
+        if (c.protection && c.create_reply.empty()) check(machine_credential(c, who), 10082);
         check(!c.create_reply.empty() || c.principal == who.key, 10017);
         auto seq = a.at("seq").get<uint32_t>();
         if (seq + 1 == c.sequence && !c.create_reply.empty()) {
@@ -997,8 +1050,15 @@ std::string v4(const identity &who, reader &r) {
       } else if (op == 53) {
         sid = a.at("session");
         auto &s = session_check(sid);
+        auto &client = client_ids.at(s.client);
+        enforce_machine(client, who, op);
+        if (client.protection && has(client.enforce, 41))
+          check(s.connections.contains(connection), 10055);
         check(s.connections.contains(connection) || s.connections.size() < 64, 10018);
-        s.connections.insert(connection); // SP4_NONE permits implicit binding.
+        s.connections.insert(connection);
+        // Do not replay a protected result using authentication-only GSS.
+        // Integrity and privacy are interchangeable for this protection rule.
+        if (client.protection) hash = digest(hash + (protected_gss(who) ? ":protected" : ":unprotected"));
         check(r.data.size() <= s.channel[1], 10065);
         check(count <= s.channel[4], 10070);
         check(bound <= s.channel[2], 10066);
@@ -1036,6 +1096,7 @@ std::string v4(const identity &who, reader &r) {
       } else if (op == 41) {
         auto id = a.at("session").get<std::string>();
         auto &s = session_check(id);
+        enforce_machine(client_ids.at(s.client), who, op);
         auto requested = a.at("dir").get<uint32_t>();
         check(requested == 1 || requested == 2 || requested == 3 || requested == 7);
         check(!a.at("rdma").get<bool>(), 10004);
@@ -1058,6 +1119,7 @@ std::string v4(const identity &who, reader &r) {
       } else if (op == 44) {
         auto target = a.at("session").get<std::string>();
         auto &s = session_check(target);
+        enforce_machine(client_ids.at(s.client), who, op);
         check(s.connections.contains(connection), 10055);
         check(target != sid || index + 1 == ops.size(), 10081);
         if (target == sid) { active = nullptr; recording_authority = nullptr; }
@@ -1065,6 +1127,7 @@ std::string v4(const identity &who, reader &r) {
       } else if (op == 57) {
         auto id = a.at("client").get<uint64_t>();
         auto i = client_ids.find(id);
+        if (i != client_ids.end()) enforce_machine(i->second, who, op);
         check(i != client_ids.end() && i->second.principal == who.key, 10022);
         for (const auto &[n, s] : sessions)
           check(s.client != id, 10074);
@@ -1106,8 +1169,20 @@ std::string v4(const identity &who, reader &r) {
               following == 31 || following == 15 || following == 16 || following == 33 || following == 52 ||
               (following == 18 && ops[next].value("claim", 0u) == 0);
           if (handle != pseudo) {
-            if (discovery) file(who, handle, "stat", json::object(), "", "", true);
-            else meta4(who, handle);
+            bool cleanup_handle = false;
+            if (next < ops.size() && ops[next].contains("state") && machine_cleanup(sid, who, following)) {
+              // Permit PUTFH for releasing this client's known state even if
+              // the user's mapping/ticket is gone. Never use this for data I/O.
+              try {
+                auto state = ops[next].at("state").get<std::string>();
+                auto key = following == 14 ? io_state(state, sid) : open_key(state, sid);
+                cleanup_handle = opens.at(key).fh == handle;
+              } catch (const failure &) {}
+            }
+            if (!cleanup_handle) {
+              if (discovery) file(who, handle, "stat", json::object(), "", "", true);
+              else meta4(who, handle);
+            }
           }
           current = handle;
           current_state.clear();
@@ -1343,7 +1418,7 @@ std::string v4(const identity &who, reader &r) {
           put_bitmap(body, attrset); body.u32(0);
         } else if (op == 4) {
           auto id = open_key(a.at("state"), sid);
-          auto &o = state4(id, sid, current, 0, who);
+          auto &o = state4(id, sid, current, 0, who, op);
           for (const auto &[key, l] : byte_locks)
             check(l.open_other != id.substr(8) || l.ranges.empty(), 10037);
           std::erase_if(byte_locks, [&](const auto &l) { return l.second.open_other == id.substr(8); });
@@ -1354,7 +1429,7 @@ std::string v4(const identity &who, reader &r) {
           body.fixed(decode_bytes(current_state));
         } else if (op == 21) {
           auto id = open_key(a.at("state"), sid);
-          auto &o = state4(id, sid, current, 0, who);
+          auto &o = state4(id, sid, current, 0, who, op);
           auto access = a.at("access").get<uint32_t>(), deny = a.at("deny").get<uint32_t>();
           check(access > 0 && access <= 3 && deny <= 3);
           check((access & o.access) == access && (deny & o.deny) == deny);

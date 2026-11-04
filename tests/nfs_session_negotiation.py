@@ -18,6 +18,9 @@ def run(args):
         for size, operations, requests in ((128, 2, 2), (256, 16, 8),
                                            (4095, 128, 64), (8192, 0xffffffff, 0xffffffff)):
             owner = t4.client_owner4(b'12345678', uuid.uuid4().hex.encode())
+            protection = t4.state_protect4_a(1, t4.state_protect_ops4([0, 0x20001f00], [16, 0]))
+            denied = c.compound([op.exchange_id(owner, 0, protection, [])], False)
+            assert denied.status == 1 and denied.resarray[0].resop == 42, denied
             r = c.compound([op.exchange_id(owner, 0, t4.state_protect4_a(0), [])], False)
             assert r.status == 0, r
             exchanged = r.resarray[0].opexchange_id.eir_resok4
@@ -60,6 +63,7 @@ def run(args):
             r = c.compound([op.destroy_clientid(exchanged.eir_clientid)], False); assert r.status == 0, r
         checks.append('four backchannel offers preserve operation/concurrency counts and never increase buffer/RDMA limits; forechannel stays bounded')
         checks.append('CREATE_SESSION retries preserve the original negotiated session; subsequent SEQUENCE/GETFH and explicit destruction work')
+        checks.append('AUTH_SYS machine-protection negotiation is denied per operation; the same owner can establish an ordinary SP4_NONE client afterward')
         report = dict(status='passed', checks=checks, sanitizers=args.sanitizers)
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(report, indent=2) + '\n')

@@ -1,0 +1,110 @@
+{
+  "recorded_at": "2026-11-04T15:15:45.227532+00:00",
+  "base_source": "e2306de017800ad5b4bb936072bff7b68eae3605",
+  "status": "targeted-local-passed-remote-pending",
+  "sanitizers": "Linux Clang ASan/UBSan/LSan",
+  "scope": "RPCSEC_GSS Kerberos SP4_MACH_CRED negotiation, immutable confirmed policy, enforcement, explicit binding, replay downgrade protection and negotiated CLOSE/LOCKU/OPEN_DOWNGRADE/FREE_STATEID cleanup. Full SMB/NFS remains unfinished.",
+  "source_sha256": {
+    "src/nfs_v4.inc": "a758d082bc0c2d8adcc05481b9c2e9fb3c7a50e5fadd236a6b10e8a513e2aff4",
+    "src/nfs_locks.inc": "ff9e7699086b2e5a30fffcd85449f608de38caff6fe5a18ad92c161ab71e1777",
+    "tests/nfs_machine_credentials.py": "88bdb8e7a3aff63906e3ffaa3f57556d3e156252a0d1cd3b880bd42fe2ad04a3",
+    "tests/nfs_session_negotiation.py": "a98f338659dc23cdd07176862e6f186c81846c2406434ab20839cf08043ec07d",
+    ".github/workflows/smb-metadata.yml": "60d442f91c752fd8da8e0e2315f0ad7b1ca4084a6a2fb034df0ba0c04f65dc0c"
+  },
+  "reports": {
+    "local": {
+      "sha256": "01129207e2a35ae811e1317c61d4a81760d833255d354203fd5a9cc3a98ae653",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "krb5 service 2: negotiates exact enforced operations and cleanup-only allow set; confirmation and CREATE_SESSION replay require the machine",
+          "krb5 service 2: confirmed EXCHANGE_ID retains its policy and rejects credential or protection downgrade",
+          "krb5 service 2: unbound SEQUENCE cannot attach a connection; authenticated bind works; user session maintenance is denied without damaging the live session",
+          "krb5 service 2: an unmapped machine releases user locks/open state after mapping revocation, but cannot read user data",
+          "krb5 service 2: cleanup cannot cross client IDs, confirmed protection lists are immutable, and write locks remain releasable after OPEN_DOWNGRADE",
+          "krb5 service 2: negotiated SEQUENCE protection rejects a user before slot consumption",
+          "krb5 service 2: cached success cannot be downgraded to authentication-only; integrity/privacy replay and authorized destruction succeed",
+          "krb5 service 3: negotiates exact enforced operations and cleanup-only allow set; confirmation and CREATE_SESSION replay require the machine",
+          "krb5 service 3: confirmed EXCHANGE_ID retains its policy and rejects credential or protection downgrade",
+          "krb5 service 3: unbound SEQUENCE cannot attach a connection; authenticated bind works; user session maintenance is denied without damaging the live session",
+          "krb5 service 3: an unmapped machine releases user locks/open state after mapping revocation, but cannot read user data",
+          "krb5 service 3: cleanup cannot cross client IDs, confirmed protection lists are immutable, and write locks remain releasable after OPEN_DOWNGRADE",
+          "krb5 service 3: negotiated SEQUENCE protection rejects a user before slot consumption",
+          "krb5 service 3: cached success cannot be downgraded to authentication-only; integrity/privacy replay and authorized destruction succeed",
+          "machine state cleanup requires an agreed allow bit; ordinary owner cleanup remains usable",
+          "AUTH_SYS and authentication-only GSS cannot negotiate machine protection; SP4_NONE implicit binding remains available"
+        ]
+      }
+    },
+    "state": {
+      "sha256": "02406db8dafaad61cdf97e2eae64cb8ac74cc8b2496b3ccb303622b1e14bd96e",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "BIND_CONN_TO_SESSION on a fresh connection, PUTPUBFH, TEST_STATEID old/current states, FREE_STATEID held/unlocked states and read-only OPEN_DOWNGRADE",
+          "one kernel-style session accepts multiple mapped users without sharing their open authority",
+          "exclusive lock conflicts, denied owner details, disjoint writes and CLOSE with held locks",
+          "partial unlock splits ranges and preserves neighboring conflicts",
+          "process restart persists split lock ranges; matching client reclaims OPEN and locks before RECLAIM_COMPLETE"
+        ]
+      }
+    },
+    "session": {
+      "sha256": "f15977f397d5752100b71403b242d858c1a9f45032be2a789c00e3551856e458",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "four backchannel offers preserve operation/concurrency counts and never increase buffer/RDMA limits; forechannel stays bounded",
+          "CREATE_SESSION retries preserve the original negotiated session; subsequent SEQUENCE/GETFH and explicit destruction work",
+          "AUTH_SYS machine-protection negotiation is denied per operation; the same owner can establish an ordinary SP4_NONE client afterward"
+        ],
+        "sanitizers": true
+      }
+    },
+    "gss": {
+      "sha256": "eeae6ad8c175b5064ef93187eee173797ce243aa60e969011a64e677eefdd972",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "RPCSEC_GSS rejects Kerberos contexts without mutual authentication even though SMB uses separate channel protection",
+          "real MIT tickets: mutual authentication and NFSv3/v4.1 read/write in krb5, krb5i and krb5p; AUTH_SYS downgrade denied; MOUNT and SECINFO advertise Kerberos",
+          "header/body MIC and encrypted-body tampering rejected; 64-entry replay window drops duplicates/old requests and accepts out-of-order requests; MAXSEQ and body sequence enforced",
+          "v3 duplicate mutation with fresh GSS sequence replays its result and rechecks revoked authority; context survives TCP reconnect; authenticated DESTROY invalidates the handle",
+          "SECINFO negotiates across disallowed weaker/stronger tuples, AUTH_SYS and authorized anonymous discovery; bare/repeated/saved PUTFH and LOOKUPP obey WRONGSEC placement; discovery consumes FH, replays safely and enforces traversal ACLs",
+          "unmapped principals and wrong acceptor tickets denied; per-export privacy requirement prevents downgrade; existing contexts lose access after principal mapping revocation",
+          "atomic service-key rotation accepts newly issued tickets while established contexts continue; live group-membership revocation denies existing contexts",
+          "expired tickets and pre-restart context handles are rejected; fresh mutual authentication preserves access to stable file handles"
+        ]
+      }
+    },
+    "callbacks": {
+      "sha256": "61196ef2a8c3b55f66a770165b516a8477dedb66ccc87bb80c5f507d616de05f",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "one context shared across 32 sessions and three TCP paths admits only its 64-entry RPC window; completing the oldest request releases the next authenticated callback",
+          "krb5/krb5i/krb5p CB_NULL, CB_SEQUENCE and CB_NOTIFY_LOCK use real Kerberos, independent RPC counters and exact referring calls; notifications grant no lock",
+          "BACKCHANNEL_CTL rejects unknown handles/invalid services/oversized RPC credentials atomically; existing handles are idempotent and counters never reset",
+          "BACKCHANNEL_CTL adds handles instead of replacing them; empty additions retain GSS, and destruction of another context preserves the live path",
+          "sixteen live callback tuples are bounded; exhaustion preserves the existing channel and duplicate offers consume no extra capacity",
+          "negotiated channel sizes include exact GSS credential, MIC and wrapped-body overhead; exact request limits succeed and one-byte-short channels send no oversized callbacks",
+          "unsigned, bad MIC/ciphertext and wrong authenticated sequences cannot complete callbacks; disconnect/rebind retries exact CB_SEQUENCE plaintext with fresh RPC authentication",
+          "nearly expired and expired contexts set SEQUENCE flags; expiry/destroy removes path authority without AUTH_NONE fallback, and fresh contexts restore it"
+        ]
+      }
+    }
+  },
+  "core": {
+    "report": {
+      "checks": 98,
+      "status": "passed"
+    },
+    "log_sha256": "1ab6994c15b868b8106508b840801fe2e75bcd93ea4a7a95d900bff59fb22fe7"
+  },
+  "limits": [
+    "Windows GSS acceptor remains unavailable; shared AUTH_SYS negotiation runs in the MSVC workflow.",
+    "SP4_SSV, delegations/CB_RECALL, pNFS and broader native-client state protection acceptance remain open.",
+    "The machine cleanup allow bitmap supports only the four implemented release operations. It grants no file-data/namespace permission.",
+    "Full SMB metadata/session/lease/durable-handle gates and separate DAV lease_expired diagnostics remain open."
+  ]
+}

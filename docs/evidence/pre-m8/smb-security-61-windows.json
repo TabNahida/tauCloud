@@ -1,0 +1,1776 @@
+{
+  "recorded_at": "2026-11-04T15:02:12.711945+00:00",
+  "source": "61b1bbd41f9d0b443756c5262cca993b5ce231fe",
+  "run_id": 41849167829,
+  "job_id": 126640506876,
+  "job_conclusion": "success",
+  "url": "https://github.com/TabNahida/tauCloud/actions/runs/41849167829/job/126640506876",
+  "artifact_id": 13335087901,
+  "artifact_sha256": "2709e10b7138aa764cec3c5ffa4e29e862d11e2d5e05f15c416189f29c40b91c",
+  "reports": {
+    "windows-native-security.json": {
+      "sha256": "e794ae1a3e68c1460e5f0ad7b033ae61d14bf9d62ff1ae07e9be370be932ff55",
+      "report": {
+        "status": "passed",
+        "host": "Windows-2025Server-10.0.26100-SP0",
+        "returncode": 0,
+        "stdout": "{\n  \"payload_sha256\": \"631B84027D6B9E52B539C4E8373622D23032DFADC64D60AF87339C9037E4F769\",\n  \"connection\": {\n    \"ServerName\": \"127.0.0.1\",\n    \"ShareName\": \"smb\",\n    \"Dialect\": \"3.1.1\",\n    \"Encrypted\": true,\n    \"Signed\": false\n  },\n  \"client\": \"Windows native SMB redirector\",\n  \"status\": \"passed\",\n  \"security\": \"native Get-Acl/Set-Acl, SID roundtrip, deny write and preserve read\"\n}\n",
+        "stderr": "",
+        "payload_sha256": "631B84027D6B9E52B539C4E8373622D23032DFADC64D60AF87339C9037E4F769",
+        "connection": {
+          "ServerName": "127.0.0.1",
+          "ShareName": "smb",
+          "Dialect": "3.1.1",
+          "Encrypted": true,
+          "Signed": false
+        },
+        "client": "Windows native SMB redirector",
+        "security": "native Get-Acl/Set-Acl, SID roundtrip, deny write and preserve read",
+        "smb_headers": [
+          {
+            "direction": "request",
+            "size": 69,
+            "magic": "ff534d42",
+            "time": 1002.125
+          },
+          {
+            "direction": "response",
+            "size": 158,
+            "magic": "fe534d42",
+            "time": 1002.125,
+            "command": 0,
+            "flags": 1,
+            "message_id": 0,
+            "credit_charge": 0,
+            "credits": 1,
+            "status": "0x0",
+            "dialect": "0x2ff"
+          },
+          {
+            "direction": "request",
+            "size": 284,
+            "magic": "fe534d42",
+            "time": 1002.125,
+            "command": 0,
+            "flags": 0,
+            "message_id": 1,
+            "credit_charge": 0,
+            "credits": 0,
+            "dialects": [
+              "0x202",
+              "0x210",
+              "0x300",
+              "0x302",
+              "0x311"
+            ]
+          },
+          {
+            "direction": "response",
+            "size": 236,
+            "magic": "fe534d42",
+            "time": 1002.125,
+            "command": 0,
+            "flags": 1,
+            "message_id": 1,
+            "credit_charge": 1,
+            "credits": 1,
+            "status": "0x0",
+            "dialect": "0x311"
+          },
+          {
+            "direction": "request",
+            "size": 162,
+            "magic": "fe534d42",
+            "time": 1002.125,
+            "command": 1,
+            "flags": 16,
+            "message_id": 2,
+            "credit_charge": 1,
+            "credits": 33,
+            "ntlm_type": 1,
+            "ntlm_flags": "0xe2088297"
+          },
+          {
+            "direction": "response",
+            "size": 243,
+            "magic": "fe534d42",
+            "time": 1002.14,
+            "command": 1,
+            "flags": 1,
+            "message_id": 2,
+            "credit_charge": 1,
+            "credits": 33,
+            "status": "0xc0000016",
+            "ntlm_type": 2,
+            "ntlm_flags": "0xe28a8215"
+          },
+          {
+            "direction": "request",
+            "size": 557,
+            "magic": "fe534d42",
+            "time": 1002.14,
+            "command": 1,
+            "flags": 16,
+            "message_id": 3,
+            "credit_charge": 1,
+            "credits": 1,
+            "ntlm_type": 3,
+            "ntlm_flags": "0xe2888215",
+            "ntlm_mic_present": true,
+            "ntlm_response_bytes": 248,
+            "ntlm_target_echo": {
+              "1": true,
+              "2": true,
+              "7": true
+            },
+            "ntlm_av_mic_flag": true,
+            "ntlm_channel_bindings_zero": true,
+            "ntlm_clock_delta_ms": 0,
+            "fixture_domain": "TAUCLOUD",
+            "fixture_user": "alice"
+          },
+          {
+            "direction": "response",
+            "size": 81,
+            "magic": "fe534d42",
+            "time": 1002.14,
+            "command": 1,
+            "flags": 9,
+            "message_id": 3,
+            "credit_charge": 1,
+            "credits": 1,
+            "status": "0x0"
+          },
+          {
+            "direction": "request",
+            "size": 104,
+            "magic": "fe534d42",
+            "time": 1002.14,
+            "command": 3,
+            "flags": 24,
+            "message_id": 4,
+            "credit_charge": 1,
+            "credits": 1,
+            "fixture_share_path": "\\\\127.0.0.1\\IPC$"
+          },
+          {
+            "direction": "response",
+            "size": 80,
+            "magic": "fe534d42",
+            "time": 1002.156,
+            "command": 3,
+            "flags": 9,
+            "message_id": 4,
+            "credit_charge": 1,
+            "credits": 1,
+            "status": "0x0"
+          },
+          {
+            "direction": "request",
+            "size": 102,
+            "magic": "fe534d42",
+            "time": 1002.156,
+            "command": 3,
+            "flags": 24,
+            "message_id": 5,
+            "credit_charge": 1,
+            "credits": 1,
+            "fixture_share_path": "\\\\127.0.0.1\\smb"
+          },
+          {
+            "direction": "response",
+            "size": 80,
+            "magic": "fe534d42",
+            "time": 1002.187,
+            "command": 3,
+            "flags": 9,
+            "message_id": 5,
+            "credit_charge": 1,
+            "credits": 1,
+            "status": "0x0"
+          },
+          {
+            "direction": "request",
+            "size": 228,
+            "magic": "fd534d42",
+            "time": 1002.187
+          },
+          {
+            "direction": "response",
+            "size": 125,
+            "magic": "fd534d42",
+            "time": 1002.203
+          },
+          {
+            "direction": "request",
+            "size": 204,
+            "magic": "fd534d42",
+            "time": 1002.203
+          },
+          {
+            "direction": "response",
+            "size": 260,
+            "magic": "fd534d42",
+            "time": 1002.218
+          },
+          {
+            "direction": "request",
+            "size": 204,
+            "magic": "fd534d42",
+            "time": 1002.218
+          },
+          {
+            "direction": "response",
+            "size": 260,
+            "magic": "fd534d42",
+            "time": 1002.234
+          },
+          {
+            "direction": "request",
+            "size": 254,
+            "magic": "fd534d42",
+            "time": 1002.234
+          },
+          {
+            "direction": "response",
+            "size": 205,
+            "magic": "fd534d42",
+            "time": 1002.328
+          },
+          {
+            "direction": "request",
+            "size": 254,
+            "magic": "fd534d42",
+            "time": 1002.328
+          },
+          {
+            "direction": "response",
+            "size": 421,
+            "magic": "fd534d42",
+            "time": 1002.406
+          },
+          {
+            "direction": "request",
+            "size": 156,
+            "magic": "fd534d42",
+            "time": 1002.406
+          },
+          {
+            "direction": "response",
+            "size": 128,
+            "magic": "fd534d42",
+            "time": 1002.421
+          },
+          {
+            "direction": "request",
+            "size": 173,
+            "magic": "fd534d42",
+            "time": 1002.421
+          },
+          {
+            "direction": "response",
+            "size": 204,
+            "magic": "fd534d42",
+            "time": 1002.437
+          },
+          {
+            "direction": "request",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1002.437
+          },
+          {
+            "direction": "response",
+            "size": 176,
+            "magic": "fd534d42",
+            "time": 1002.468
+          },
+          {
+            "direction": "request",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1002.468
+          },
+          {
+            "direction": "response",
+            "size": 176,
+            "magic": "fd534d42",
+            "time": 1002.5
+          },
+          {
+            "direction": "request",
+            "size": 284,
+            "magic": "fd534d42",
+            "time": 1002.5
+          },
+          {
+            "direction": "response",
+            "size": 260,
+            "magic": "fd534d42",
+            "time": 1002.546
+          },
+          {
+            "direction": "request",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1002.546
+          },
+          {
+            "direction": "response",
+            "size": 176,
+            "magic": "fd534d42",
+            "time": 1002.562
+          },
+          {
+            "direction": "request",
+            "size": 228,
+            "magic": "fd534d42",
+            "time": 1004.453
+          },
+          {
+            "direction": "response",
+            "size": 260,
+            "magic": "fd534d42",
+            "time": 1004.453
+          },
+          {
+            "direction": "request",
+            "size": 254,
+            "magic": "fd534d42",
+            "time": 1004.453
+          },
+          {
+            "direction": "response",
+            "size": 421,
+            "magic": "fd534d42",
+            "time": 1004.515
+          },
+          {
+            "direction": "request",
+            "size": 156,
+            "magic": "fd534d42",
+            "time": 1004.515
+          },
+          {
+            "direction": "response",
+            "size": 160,
+            "magic": "fd534d42",
+            "time": 1004.531
+          },
+          {
+            "direction": "request",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1004.531
+          },
+          {
+            "direction": "response",
+            "size": 176,
+            "magic": "fd534d42",
+            "time": 1004.562
+          },
+          {
+            "direction": "request",
+            "size": 300,
+            "magic": "fd534d42",
+            "time": 1004.562
+          },
+          {
+            "direction": "response",
+            "size": 260,
+            "magic": "fd534d42",
+            "time": 1004.593
+          },
+          {
+            "direction": "request",
+            "size": 156,
+            "magic": "fd534d42",
+            "time": 1004.593
+          },
+          {
+            "direction": "response",
+            "size": 118,
+            "magic": "fd534d42",
+            "time": 1004.609
+          },
+          {
+            "direction": "request",
+            "size": 65700,
+            "magic": "fd534d42",
+            "time": 1004.609
+          },
+          {
+            "direction": "request",
+            "size": 65700,
+            "magic": "fd534d42",
+            "time": 1004.609
+          },
+          {
+            "direction": "request",
+            "size": 65700,
+            "magic": "fd534d42",
+            "time": 1004.609
+          },
+          {
+            "direction": "request",
+            "size": 65700,
+            "magic": "fd534d42",
+            "time": 1004.64
+          },
+          {
+            "direction": "response",
+            "size": 132,
+            "magic": "fd534d42",
+            "time": 1004.656
+          },
+          {
+            "direction": "response",
+            "size": 132,
+            "magic": "fd534d42",
+            "time": 1004.656
+          },
+          {
+            "direction": "request",
+            "size": 65700,
+            "magic": "fd534d42",
+            "time": 1004.656
+          },
+          {
+            "direction": "request",
+            "size": 65700,
+            "magic": "fd534d42",
+            "time": 1004.671
+          },
+          {
+            "direction": "response",
+            "size": 132,
+            "magic": "fd534d42",
+            "time": 1004.687
+          },
+          {
+            "direction": "response",
+            "size": 132,
+            "magic": "fd534d42",
+            "time": 1004.687
+          },
+          {
+            "direction": "request",
+            "size": 65700,
+            "magic": "fd534d42",
+            "time": 1004.687
+          },
+          {
+            "direction": "request",
+            "size": 65700,
+            "magic": "fd534d42",
+            "time": 1004.718
+          },
+          {
+            "direction": "response",
+            "size": 132,
+            "magic": "fd534d42",
+            "time": 1004.734
+          },
+          {
+            "direction": "response",
+            "size": 132,
+            "magic": "fd534d42",
+            "time": 1004.734
+          },
+          {
+            "direction": "request",
+            "size": 65700,
+            "magic": "fd534d42",
+            "time": 1004.734
+          },
+          {
+            "direction": "request",
+            "size": 65700,
+            "magic": "fd534d42",
+            "time": 1004.75
+          },
+          {
+            "direction": "response",
+            "size": 132,
+            "magic": "fd534d42",
+            "time": 1004.765
+          },
+          {
+            "direction": "response",
+            "size": 132,
+            "magic": "fd534d42",
+            "time": 1004.765
+          },
+          {
+            "direction": "request",
+            "size": 65700,
+            "magic": "fd534d42",
+            "time": 1004.765
+          },
+          {
+            "direction": "request",
+            "size": 65700,
+            "magic": "fd534d42",
+            "time": 1004.781
+          },
+          {
+            "direction": "response",
+            "size": 132,
+            "magic": "fd534d42",
+            "time": 1004.796
+          },
+          {
+            "direction": "response",
+            "size": 132,
+            "magic": "fd534d42",
+            "time": 1004.796
+          },
+          {
+            "direction": "request",
+            "size": 65700,
+            "magic": "fd534d42",
+            "time": 1004.796
+          },
+          {
+            "direction": "request",
+            "size": 65700,
+            "magic": "fd534d42",
+            "time": 1004.812
+          },
+          {
+            "direction": "response",
+            "size": 132,
+            "magic": "fd534d42",
+            "time": 1004.828
+          },
+          {
+            "direction": "response",
+            "size": 132,
+            "magic": "fd534d42",
+            "time": 1004.828
+          },
+          {
+            "direction": "request",
+            "size": 65700,
+            "magic": "fd534d42",
+            "time": 1004.828
+          },
+          {
+            "direction": "request",
+            "size": 65700,
+            "magic": "fd534d42",
+            "time": 1004.89
+          },
+          {
+            "direction": "response",
+            "size": 132,
+            "magic": "fd534d42",
+            "time": 1004.921
+          },
+          {
+            "direction": "response",
+            "size": 132,
+            "magic": "fd534d42",
+            "time": 1004.921
+          },
+          {
+            "direction": "response",
+            "size": 132,
+            "magic": "fd534d42",
+            "time": 1004.937
+          },
+          {
+            "direction": "response",
+            "size": 132,
+            "magic": "fd534d42",
+            "time": 1004.953
+          },
+          {
+            "direction": "request",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1004.953
+          },
+          {
+            "direction": "response",
+            "size": 120,
+            "magic": "fd534d42",
+            "time": 1004.953
+          },
+          {
+            "direction": "request",
+            "size": 156,
+            "magic": "fd534d42",
+            "time": 1004.953
+          },
+          {
+            "direction": "response",
+            "size": 180,
+            "magic": "fd534d42",
+            "time": 1004.968
+          },
+          {
+            "direction": "request",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1004.968
+          },
+          {
+            "direction": "response",
+            "size": 176,
+            "magic": "fd534d42",
+            "time": 1004.984
+          },
+          {
+            "direction": "request",
+            "size": 300,
+            "magic": "fd534d42",
+            "time": 1005.0
+          },
+          {
+            "direction": "response",
+            "size": 260,
+            "magic": "fd534d42",
+            "time": 1005.015
+          },
+          {
+            "direction": "request",
+            "size": 165,
+            "magic": "fd534d42",
+            "time": 1005.015
+          },
+          {
+            "direction": "request",
+            "size": 165,
+            "magic": "fd534d42",
+            "time": 1005.015
+          },
+          {
+            "direction": "request",
+            "size": 165,
+            "magic": "fd534d42",
+            "time": 1005.015
+          },
+          {
+            "direction": "request",
+            "size": 165,
+            "magic": "fd534d42",
+            "time": 1005.015
+          },
+          {
+            "direction": "request",
+            "size": 165,
+            "magic": "fd534d42",
+            "time": 1005.015
+          },
+          {
+            "direction": "request",
+            "size": 165,
+            "magic": "fd534d42",
+            "time": 1005.015
+          },
+          {
+            "direction": "request",
+            "size": 165,
+            "magic": "fd534d42",
+            "time": 1005.015
+          },
+          {
+            "direction": "request",
+            "size": 165,
+            "magic": "fd534d42",
+            "time": 1005.015
+          },
+          {
+            "direction": "request",
+            "size": 165,
+            "magic": "fd534d42",
+            "time": 1005.015
+          },
+          {
+            "direction": "request",
+            "size": 165,
+            "magic": "fd534d42",
+            "time": 1005.015
+          },
+          {
+            "direction": "request",
+            "size": 165,
+            "magic": "fd534d42",
+            "time": 1005.015
+          },
+          {
+            "direction": "request",
+            "size": 165,
+            "magic": "fd534d42",
+            "time": 1005.015
+          },
+          {
+            "direction": "request",
+            "size": 165,
+            "magic": "fd534d42",
+            "time": 1005.015
+          },
+          {
+            "direction": "request",
+            "size": 165,
+            "magic": "fd534d42",
+            "time": 1005.015
+          },
+          {
+            "direction": "request",
+            "size": 165,
+            "magic": "fd534d42",
+            "time": 1005.015
+          },
+          {
+            "direction": "request",
+            "size": 165,
+            "magic": "fd534d42",
+            "time": 1005.015
+          },
+          {
+            "direction": "response",
+            "size": 65668,
+            "magic": "fd534d42",
+            "time": 1005.031
+          },
+          {
+            "direction": "response",
+            "size": 65668,
+            "magic": "fd534d42",
+            "time": 1005.046
+          },
+          {
+            "direction": "response",
+            "size": 65668,
+            "magic": "fd534d42",
+            "time": 1005.062
+          },
+          {
+            "direction": "response",
+            "size": 65668,
+            "magic": "fd534d42",
+            "time": 1005.078
+          },
+          {
+            "direction": "response",
+            "size": 65668,
+            "magic": "fd534d42",
+            "time": 1005.093
+          },
+          {
+            "direction": "response",
+            "size": 65668,
+            "magic": "fd534d42",
+            "time": 1005.109
+          },
+          {
+            "direction": "response",
+            "size": 65668,
+            "magic": "fd534d42",
+            "time": 1005.125
+          },
+          {
+            "direction": "response",
+            "size": 65668,
+            "magic": "fd534d42",
+            "time": 1005.14
+          },
+          {
+            "direction": "response",
+            "size": 65668,
+            "magic": "fd534d42",
+            "time": 1005.156
+          },
+          {
+            "direction": "response",
+            "size": 65668,
+            "magic": "fd534d42",
+            "time": 1005.187
+          },
+          {
+            "direction": "response",
+            "size": 65668,
+            "magic": "fd534d42",
+            "time": 1005.203
+          },
+          {
+            "direction": "response",
+            "size": 65668,
+            "magic": "fd534d42",
+            "time": 1005.203
+          },
+          {
+            "direction": "response",
+            "size": 65668,
+            "magic": "fd534d42",
+            "time": 1005.218
+          },
+          {
+            "direction": "response",
+            "size": 65668,
+            "magic": "fd534d42",
+            "time": 1005.234
+          },
+          {
+            "direction": "response",
+            "size": 65668,
+            "magic": "fd534d42",
+            "time": 1005.25
+          },
+          {
+            "direction": "response",
+            "size": 65668,
+            "magic": "fd534d42",
+            "time": 1005.265
+          },
+          {
+            "direction": "request",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1005.265
+          },
+          {
+            "direction": "response",
+            "size": 176,
+            "magic": "fd534d42",
+            "time": 1005.281
+          },
+          {
+            "direction": "request",
+            "size": 276,
+            "magic": "fd534d42",
+            "time": 1005.281
+          },
+          {
+            "direction": "response",
+            "size": 204,
+            "magic": "fd534d42",
+            "time": 1005.296
+          },
+          {
+            "direction": "request",
+            "size": 216,
+            "magic": "fd534d42",
+            "time": 1005.296
+          },
+          {
+            "direction": "response",
+            "size": 118,
+            "magic": "fd534d42",
+            "time": 1005.343
+          },
+          {
+            "direction": "request",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1005.343
+          },
+          {
+            "direction": "response",
+            "size": 176,
+            "magic": "fd534d42",
+            "time": 1005.375
+          },
+          {
+            "direction": "request",
+            "size": 300,
+            "magic": "fd534d42",
+            "time": 1005.375
+          },
+          {
+            "direction": "response",
+            "size": 260,
+            "magic": "fd534d42",
+            "time": 1005.39
+          },
+          {
+            "direction": "request",
+            "size": 156,
+            "magic": "fd534d42",
+            "time": 1005.406
+          },
+          {
+            "direction": "response",
+            "size": 118,
+            "magic": "fd534d42",
+            "time": 1005.421
+          },
+          {
+            "direction": "request",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1005.421
+          },
+          {
+            "direction": "response",
+            "size": 120,
+            "magic": "fd534d42",
+            "time": 1005.421
+          },
+          {
+            "direction": "request",
+            "size": 156,
+            "magic": "fd534d42",
+            "time": 1005.421
+          },
+          {
+            "direction": "response",
+            "size": 180,
+            "magic": "fd534d42",
+            "time": 1005.437
+          },
+          {
+            "direction": "request",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1005.437
+          },
+          {
+            "direction": "response",
+            "size": 176,
+            "magic": "fd534d42",
+            "time": 1005.468
+          },
+          {
+            "direction": "request",
+            "size": 276,
+            "magic": "fd534d42",
+            "time": 1005.468
+          },
+          {
+            "direction": "response",
+            "size": 204,
+            "magic": "fd534d42",
+            "time": 1005.5
+          },
+          {
+            "direction": "request",
+            "size": 165,
+            "magic": "fd534d42",
+            "time": 1005.5
+          },
+          {
+            "direction": "request",
+            "size": 165,
+            "magic": "fd534d42",
+            "time": 1005.5
+          },
+          {
+            "direction": "response",
+            "size": 65668,
+            "magic": "fd534d42",
+            "time": 1005.515
+          },
+          {
+            "direction": "response",
+            "size": 133,
+            "magic": "fd534d42",
+            "time": 1005.515
+          },
+          {
+            "direction": "request",
+            "size": 284,
+            "magic": "fd534d42",
+            "time": 1005.531
+          },
+          {
+            "direction": "response",
+            "size": 125,
+            "magic": "fd534d42",
+            "time": 1005.546
+          },
+          {
+            "direction": "response",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1005.796
+          },
+          {
+            "direction": "request",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1005.796
+          },
+          {
+            "direction": "response",
+            "size": 176,
+            "magic": "fd534d42",
+            "time": 1005.828
+          },
+          {
+            "direction": "response",
+            "size": 260,
+            "magic": "fd534d42",
+            "time": 1005.859
+          },
+          {
+            "direction": "request",
+            "size": 254,
+            "magic": "fd534d42",
+            "time": 1005.859
+          },
+          {
+            "direction": "response",
+            "size": 541,
+            "magic": "fd534d42",
+            "time": 1005.937
+          },
+          {
+            "direction": "request",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1005.937
+          },
+          {
+            "direction": "response",
+            "size": 176,
+            "magic": "fd534d42",
+            "time": 1005.968
+          },
+          {
+            "direction": "request",
+            "size": 269,
+            "magic": "fd534d42",
+            "time": 1005.968
+          },
+          {
+            "direction": "response",
+            "size": 248,
+            "magic": "fd534d42",
+            "time": 1006.0
+          },
+          {
+            "direction": "request",
+            "size": 244,
+            "magic": "fd534d42",
+            "time": 1006.0
+          },
+          {
+            "direction": "response",
+            "size": 260,
+            "magic": "fd534d42",
+            "time": 1006.015
+          },
+          {
+            "direction": "request",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1006.015
+          },
+          {
+            "direction": "response",
+            "size": 176,
+            "magic": "fd534d42",
+            "time": 1006.062
+          },
+          {
+            "direction": "request",
+            "size": 300,
+            "magic": "fd534d42",
+            "time": 1006.062
+          },
+          {
+            "direction": "response",
+            "size": 260,
+            "magic": "fd534d42",
+            "time": 1006.078
+          },
+          {
+            "direction": "request",
+            "size": 156,
+            "magic": "fd534d42",
+            "time": 1006.078
+          },
+          {
+            "direction": "response",
+            "size": 228,
+            "magic": "fd534d42",
+            "time": 1006.109
+          },
+          {
+            "direction": "request",
+            "size": 284,
+            "magic": "fd534d42",
+            "time": 1006.109
+          },
+          {
+            "direction": "response",
+            "size": 260,
+            "magic": "fd534d42",
+            "time": 1006.125
+          },
+          {
+            "direction": "request",
+            "size": 156,
+            "magic": "fd534d42",
+            "time": 1006.125
+          },
+          {
+            "direction": "response",
+            "size": 228,
+            "magic": "fd534d42",
+            "time": 1006.171
+          },
+          {
+            "direction": "request",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1006.171
+          },
+          {
+            "direction": "response",
+            "size": 176,
+            "magic": "fd534d42",
+            "time": 1006.187
+          },
+          {
+            "direction": "request",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1006.187
+          },
+          {
+            "direction": "response",
+            "size": 176,
+            "magic": "fd534d42",
+            "time": 1006.218
+          },
+          {
+            "direction": "request",
+            "size": 300,
+            "magic": "fd534d42",
+            "time": 1006.234
+          },
+          {
+            "direction": "response",
+            "size": 125,
+            "magic": "fd534d42",
+            "time": 1006.25
+          },
+          {
+            "direction": "request",
+            "size": 300,
+            "magic": "fd534d42",
+            "time": 1006.25
+          },
+          {
+            "direction": "response",
+            "size": 125,
+            "magic": "fd534d42",
+            "time": 1006.281
+          },
+          {
+            "direction": "request",
+            "size": 300,
+            "magic": "fd534d42",
+            "time": 1006.281
+          },
+          {
+            "direction": "response",
+            "size": 260,
+            "magic": "fd534d42",
+            "time": 1006.296
+          },
+          {
+            "direction": "request",
+            "size": 156,
+            "magic": "fd534d42",
+            "time": 1006.296
+          },
+          {
+            "direction": "response",
+            "size": 228,
+            "magic": "fd534d42",
+            "time": 1006.343
+          },
+          {
+            "direction": "request",
+            "size": 284,
+            "magic": "fd534d42",
+            "time": 1006.343
+          },
+          {
+            "direction": "response",
+            "size": 260,
+            "magic": "fd534d42",
+            "time": 1006.359
+          },
+          {
+            "direction": "request",
+            "size": 156,
+            "magic": "fd534d42",
+            "time": 1006.359
+          },
+          {
+            "direction": "response",
+            "size": 228,
+            "magic": "fd534d42",
+            "time": 1006.406
+          },
+          {
+            "direction": "request",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1006.406
+          },
+          {
+            "direction": "response",
+            "size": 176,
+            "magic": "fd534d42",
+            "time": 1006.437
+          },
+          {
+            "direction": "request",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1006.437
+          },
+          {
+            "direction": "response",
+            "size": 176,
+            "magic": "fd534d42",
+            "time": 1006.468
+          },
+          {
+            "direction": "request",
+            "size": 300,
+            "magic": "fd534d42",
+            "time": 1006.468
+          },
+          {
+            "direction": "response",
+            "size": 260,
+            "magic": "fd534d42",
+            "time": 1006.484
+          },
+          {
+            "direction": "request",
+            "size": 284,
+            "magic": "fd534d42",
+            "time": 1006.484
+          },
+          {
+            "direction": "response",
+            "size": 260,
+            "magic": "fd534d42",
+            "time": 1006.5
+          },
+          {
+            "direction": "request",
+            "size": 156,
+            "magic": "fd534d42",
+            "time": 1006.5
+          },
+          {
+            "direction": "response",
+            "size": 172,
+            "magic": "fd534d42",
+            "time": 1006.546
+          },
+          {
+            "direction": "request",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1006.546
+          },
+          {
+            "direction": "response",
+            "size": 176,
+            "magic": "fd534d42",
+            "time": 1006.578
+          },
+          {
+            "direction": "request",
+            "size": 156,
+            "magic": "fd534d42",
+            "time": 1006.578
+          },
+          {
+            "direction": "response",
+            "size": 228,
+            "magic": "fd534d42",
+            "time": 1006.609
+          },
+          {
+            "direction": "request",
+            "size": 308,
+            "magic": "fd534d42",
+            "time": 1006.609
+          },
+          {
+            "direction": "response",
+            "size": 118,
+            "magic": "fd534d42",
+            "time": 1006.64
+          },
+          {
+            "direction": "request",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1006.64
+          },
+          {
+            "direction": "response",
+            "size": 176,
+            "magic": "fd534d42",
+            "time": 1006.671
+          },
+          {
+            "direction": "request",
+            "size": 244,
+            "magic": "fd534d42",
+            "time": 1006.671
+          },
+          {
+            "direction": "response",
+            "size": 260,
+            "magic": "fd534d42",
+            "time": 1006.687
+          },
+          {
+            "direction": "request",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1006.687
+          },
+          {
+            "direction": "response",
+            "size": 176,
+            "magic": "fd534d42",
+            "time": 1006.718
+          },
+          {
+            "direction": "request",
+            "size": 300,
+            "magic": "fd534d42",
+            "time": 1006.718
+          },
+          {
+            "direction": "response",
+            "size": 260,
+            "magic": "fd534d42",
+            "time": 1006.734
+          },
+          {
+            "direction": "request",
+            "size": 156,
+            "magic": "fd534d42",
+            "time": 1006.734
+          },
+          {
+            "direction": "response",
+            "size": 284,
+            "magic": "fd534d42",
+            "time": 1006.781
+          },
+          {
+            "direction": "request",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1006.781
+          },
+          {
+            "direction": "response",
+            "size": 176,
+            "magic": "fd534d42",
+            "time": 1006.828
+          },
+          {
+            "direction": "request",
+            "size": 300,
+            "magic": "fd534d42",
+            "time": 1006.843
+          },
+          {
+            "direction": "response",
+            "size": 125,
+            "magic": "fd534d42",
+            "time": 1006.859
+          },
+          {
+            "direction": "request",
+            "size": 300,
+            "magic": "fd534d42",
+            "time": 1006.859
+          },
+          {
+            "direction": "response",
+            "size": 260,
+            "magic": "fd534d42",
+            "time": 1006.89
+          },
+          {
+            "direction": "request",
+            "size": 165,
+            "magic": "fd534d42",
+            "time": 1006.89
+          },
+          {
+            "direction": "request",
+            "size": 165,
+            "magic": "fd534d42",
+            "time": 1006.89
+          },
+          {
+            "direction": "response",
+            "size": 65668,
+            "magic": "fd534d42",
+            "time": 1006.921
+          },
+          {
+            "direction": "response",
+            "size": 133,
+            "magic": "fd534d42",
+            "time": 1006.921
+          },
+          {
+            "direction": "request",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1006.937
+          },
+          {
+            "direction": "response",
+            "size": 176,
+            "magic": "fd534d42",
+            "time": 1006.984
+          },
+          {
+            "direction": "request",
+            "size": 276,
+            "magic": "fd534d42",
+            "time": 1006.984
+          },
+          {
+            "direction": "response",
+            "size": 125,
+            "magic": "fd534d42",
+            "time": 1007.015
+          },
+          {
+            "direction": "request",
+            "size": 300,
+            "magic": "fd534d42",
+            "time": 1007.015
+          },
+          {
+            "direction": "response",
+            "size": 125,
+            "magic": "fd534d42",
+            "time": 1007.031
+          },
+          {
+            "direction": "request",
+            "size": 300,
+            "magic": "fd534d42",
+            "time": 1007.031
+          },
+          {
+            "direction": "response",
+            "size": 260,
+            "magic": "fd534d42",
+            "time": 1007.046
+          },
+          {
+            "direction": "request",
+            "size": 156,
+            "magic": "fd534d42",
+            "time": 1007.046
+          },
+          {
+            "direction": "response",
+            "size": 284,
+            "magic": "fd534d42",
+            "time": 1007.078
+          },
+          {
+            "direction": "request",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1007.078
+          },
+          {
+            "direction": "response",
+            "size": 176,
+            "magic": "fd534d42",
+            "time": 1007.109
+          },
+          {
+            "direction": "request",
+            "size": 300,
+            "magic": "fd534d42",
+            "time": 1007.109
+          },
+          {
+            "direction": "response",
+            "size": 260,
+            "magic": "fd534d42",
+            "time": 1007.125
+          },
+          {
+            "direction": "request",
+            "size": 284,
+            "magic": "fd534d42",
+            "time": 1007.125
+          },
+          {
+            "direction": "response",
+            "size": 260,
+            "magic": "fd534d42",
+            "time": 1007.14
+          },
+          {
+            "direction": "request",
+            "size": 156,
+            "magic": "fd534d42",
+            "time": 1007.14
+          },
+          {
+            "direction": "response",
+            "size": 172,
+            "magic": "fd534d42",
+            "time": 1007.171
+          },
+          {
+            "direction": "request",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1007.171
+          },
+          {
+            "direction": "response",
+            "size": 176,
+            "magic": "fd534d42",
+            "time": 1007.203
+          },
+          {
+            "direction": "request",
+            "size": 156,
+            "magic": "fd534d42",
+            "time": 1007.203
+          },
+          {
+            "direction": "response",
+            "size": 284,
+            "magic": "fd534d42",
+            "time": 1007.234
+          },
+          {
+            "direction": "request",
+            "size": 252,
+            "magic": "fd534d42",
+            "time": 1007.234
+          },
+          {
+            "direction": "response",
+            "size": 118,
+            "magic": "fd534d42",
+            "time": 1007.25
+          },
+          {
+            "direction": "request",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1007.25
+          },
+          {
+            "direction": "response",
+            "size": 176,
+            "magic": "fd534d42",
+            "time": 1007.281
+          },
+          {
+            "direction": "request",
+            "size": 300,
+            "magic": "fd534d42",
+            "time": 1007.281
+          },
+          {
+            "direction": "response",
+            "size": 260,
+            "magic": "fd534d42",
+            "time": 1007.296
+          },
+          {
+            "direction": "request",
+            "size": 149,
+            "magic": "fd534d42",
+            "time": 1007.296
+          },
+          {
+            "direction": "response",
+            "size": 118,
+            "magic": "fd534d42",
+            "time": 1007.312
+          },
+          {
+            "direction": "request",
+            "size": 156,
+            "magic": "fd534d42",
+            "time": 1007.312
+          },
+          {
+            "direction": "response",
+            "size": 176,
+            "magic": "fd534d42",
+            "time": 1007.343
+          },
+          {
+            "direction": "request",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1007.343
+          },
+          {
+            "direction": "response",
+            "size": 176,
+            "magic": "fd534d42",
+            "time": 1007.421
+          },
+          {
+            "direction": "request",
+            "size": 284,
+            "magic": "fd534d42",
+            "time": 1007.437
+          },
+          {
+            "direction": "response",
+            "size": 260,
+            "magic": "fd534d42",
+            "time": 1007.437
+          },
+          {
+            "direction": "request",
+            "size": 149,
+            "magic": "fd534d42",
+            "time": 1007.437
+          },
+          {
+            "direction": "response",
+            "size": 118,
+            "magic": "fd534d42",
+            "time": 1007.453
+          },
+          {
+            "direction": "request",
+            "size": 156,
+            "magic": "fd534d42",
+            "time": 1007.453
+          },
+          {
+            "direction": "response",
+            "size": 160,
+            "magic": "fd534d42",
+            "time": 1007.484
+          },
+          {
+            "direction": "request",
+            "size": 140,
+            "magic": "fd534d42",
+            "time": 1007.484
+          },
+          {
+            "direction": "response",
+            "size": 176,
+            "magic": "fd534d42",
+            "time": 1007.5
+          }
+        ],
+        "server_log": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793803857138}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"supervisor\",\"time\":1793803862254}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793803862869}\n",
+        "worker_logs": {
+          "api.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793803859627}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"api\",\"time\":1793803860902}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793803864911}\n",
+          "file.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793803857549}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file\",\"time\":1793803862079}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793803863157}\n",
+          "file_1.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793803857775}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_1\",\"time\":1793803861984}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793803863320}\n",
+          "file_2.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793803857858}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_2\",\"time\":1793803861746}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793803863457}\n",
+          "file_3.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793803858005}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_3\",\"time\":1793803861693}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793803863543}\n",
+          "ftp.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793803858898}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"ftp\",\"time\":1793803861187}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793803864427}\n",
+          "helper.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793803858648}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"helper\",\"time\":1793803861329}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793803864164}\n",
+          "identity.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793803857327}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"identity\",\"time\":1793803862221}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793803863111}\n",
+          "monitor.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793803858274}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"monitor\",\"time\":1793803861567}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793803863785}\n",
+          "nfs.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793803859158}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"nfs\",\"time\":1793803861060}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793803864669}\n",
+          "protocol.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793803858139}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"protocol\",\"time\":1793803861620}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793803863628}\n",
+          "smb.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793803859027}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"smb\",\"time\":1793803861123}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793803864629}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793803867483}\n{\"code\":\"128\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793803867484}\n{\"code\":\"3221225659\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793803867592}\n{\"code\":\"3221225659\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793803867610}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793803867688}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793803869795}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793803870823}\n{\"code\":\"1048705\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793803870823}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793803871218}\n{\"code\":\"privilege_not_held\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793803871533}\n{\"code\":\"17694848\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793803871533}\n{\"code\":\"privilege_not_held\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793803871564}\n{\"code\":\"17694848\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793803871564}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793803872134}\n{\"code\":\"1180054\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793803872135}\n{\"code\":\"privilege_not_held\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793803872291}\n{\"code\":\"17694848\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793803872291}\n{\"code\":\"privilege_not_held\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793803872308}\n{\"code\":\"17694848\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793803872308}\n",
+          "storage_admin.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793803858531}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"storage_admin\",\"time\":1793803861424}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793803864037}\n",
+          "supervisor.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793803857138}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"supervisor\",\"time\":1793803862254}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793803862869}\n",
+          "updater.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793803858394}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"updater\",\"time\":1793803861488}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793803863911}\n",
+          "webdav.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793803858782}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"webdav\",\"time\":1793803861250}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793803864294}\n"
+        }
+      }
+    },
+    "security-oplocks.json": {
+      "sha256": "2b5c26b1200a631dc29a85841791cf73acef6a67afbd0c857e88b6e66029d62c",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "210/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "210/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "210/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "300/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "300/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "300/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "302/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "302/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "302/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "311/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "311/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "311/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK"
+        ]
+      }
+    },
+    "security-query.json": {
+      "sha256": "573cbeddc792dd9e840f5fe7a7b4eff9d9984e4f0e17924e44f4b20043d38c44",
+      "report": {
+        "status": "passed",
+        "host": "Windows-2025Server-10.0.26100-SP0",
+        "checks": [
+          "210: QUERY ignores unknown and SET-only protection flags, including both protection bits; unused input fields are ignored",
+          "210: empty selector returns only self-relative header; section selection filters offsets and control flags",
+          "210: ignored flags do not bypass READ_CONTROL/SACL checks; known unsupported security selectors remain explicit",
+          "210: exact required length, SMB3.1.1 error context and older-dialect raw error data; exact-fit retry succeeds",
+          "210: related CREATE/QUERY resumed after cache recall preserves required-size error body, AsyncId and zero extra credits",
+          "300: QUERY ignores unknown and SET-only protection flags, including both protection bits; unused input fields are ignored",
+          "300: empty selector returns only self-relative header; section selection filters offsets and control flags",
+          "300: ignored flags do not bypass READ_CONTROL/SACL checks; known unsupported security selectors remain explicit",
+          "300: exact required length, SMB3.1.1 error context and older-dialect raw error data; exact-fit retry succeeds",
+          "300: related CREATE/QUERY resumed after cache recall preserves required-size error body, AsyncId and zero extra credits",
+          "302: QUERY ignores unknown and SET-only protection flags, including both protection bits; unused input fields are ignored",
+          "302: empty selector returns only self-relative header; section selection filters offsets and control flags",
+          "302: ignored flags do not bypass READ_CONTROL/SACL checks; known unsupported security selectors remain explicit",
+          "302: exact required length, SMB3.1.1 error context and older-dialect raw error data; exact-fit retry succeeds",
+          "302: related CREATE/QUERY resumed after cache recall preserves required-size error body, AsyncId and zero extra credits",
+          "311: QUERY ignores unknown and SET-only protection flags, including both protection bits; unused input fields are ignored",
+          "311: empty selector returns only self-relative header; section selection filters offsets and control flags",
+          "311: ignored flags do not bypass READ_CONTROL/SACL checks; known unsupported security selectors remain explicit",
+          "311: exact required length, SMB3.1.1 error context and older-dialect raw error data; exact-fit retry succeeds",
+          "311: related CREATE/QUERY resumed after cache recall preserves required-size error body, AsyncId and zero extra credits"
+        ],
+        "recorded_at": "2026-11-04T14:48:34.111622+00:00"
+      }
+    },
+    "nfs-notify-lock.json": {
+      "sha256": "9ccbf21ed7bc20a2c1461dd606fa2da483f9ca89c6bea233cc33830a2912e35f",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "OPEN advertises MAY_NOTIFY_LOCK; READW conflict release delivers exact handle/owner/referring request; the hint neither grants nor reserves the lock",
+          "nonblocking LOCK denial does not enroll a waiter and cancels a previous blocking request for the same owner/file",
+          "closing the waiting OPEN removes its unsent notification without granting lock state",
+          "fresh write-policy authority is required before dispatch; revocation drops the waiter and restoring rights does not resurrect it",
+          "inconsistent operation status and lost notification reply cause disconnect then exact two-operation replay; RETRY_UNCACHED_REP consumes the slot without granting a lock",
+          "multiple waiting owners share one bounded callback slot and no second notification is sent before the first completes",
+          "client NOTSUPP completes the optional callback; foreground polling and explicit lock acquisition remain usable",
+          "two-operation callbacks respect negotiated operation and full RPC size limits; constrained clients can still poll for locks",
+          "expired client and OPEN state remove the queued hint; releasing the competing lock never notifies or revives the expired session"
+        ],
+        "sanitizers": false
+      }
+    }
+  },
+  "limits": [
+    "This is the Windows job only; Linux jobs were still running when this record was written.",
+    "The native SMB first-write and ACL operations now pass; this does not resolve separate DAV lease_expired or establish Full SMB/NFS.",
+    "This source predates deferred SET_SECURITY metadata and NFS machine-credential state protection."
+  ]
+}

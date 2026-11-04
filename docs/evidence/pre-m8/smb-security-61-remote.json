@@ -1,0 +1,344 @@
+{
+  "recorded_at": "2026-11-04T15:10:18.071114+00:00",
+  "source": "61b1bbd41f9d0b443756c5262cca993b5ce231fe",
+  "run_id": 41849167829,
+  "url": "https://github.com/TabNahida/tauCloud/actions/runs/41849167829",
+  "status": "targeted-metadata-matrix-passed",
+  "jobs": [
+    {
+      "compiler": "gcc",
+      "job_id": 126640507265,
+      "conclusion": "success",
+      "artifact_id": 13335888585,
+      "artifact_sha256": "3de71ab8e02bb29dbf133ae5eba97f17f2ee6d3611cbca107d18e1798ff03615",
+      "reports": {
+        "security-oplocks.json": {
+          "sha256": "49b037d65cb0dd8052c0b31d2110dd301aa9160952c22badccd1b0c5c4367fb5",
+          "report": {
+            "status": "passed",
+            "checks": [
+              "210/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+              "210/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+              "210/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+              "300/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+              "300/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+              "300/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+              "302/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+              "302/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+              "302/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+              "311/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+              "311/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+              "311/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK"
+            ]
+          }
+        },
+        "security-query.json": {
+          "sha256": "120379ee41e073d600338b0e75f4e29251ae544750ab7d76892cfabc6df8564f",
+          "report": {
+            "status": "passed",
+            "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+            "checks": [
+              "210: QUERY ignores unknown and SET-only protection flags, including both protection bits; unused input fields are ignored",
+              "210: empty selector returns only self-relative header; section selection filters offsets and control flags",
+              "210: ignored flags do not bypass READ_CONTROL/SACL checks; known unsupported security selectors remain explicit",
+              "210: exact required length, SMB3.1.1 error context and older-dialect raw error data; exact-fit retry succeeds",
+              "210: related CREATE/QUERY resumed after cache recall preserves required-size error body, AsyncId and zero extra credits",
+              "300: QUERY ignores unknown and SET-only protection flags, including both protection bits; unused input fields are ignored",
+              "300: empty selector returns only self-relative header; section selection filters offsets and control flags",
+              "300: ignored flags do not bypass READ_CONTROL/SACL checks; known unsupported security selectors remain explicit",
+              "300: exact required length, SMB3.1.1 error context and older-dialect raw error data; exact-fit retry succeeds",
+              "300: related CREATE/QUERY resumed after cache recall preserves required-size error body, AsyncId and zero extra credits",
+              "302: QUERY ignores unknown and SET-only protection flags, including both protection bits; unused input fields are ignored",
+              "302: empty selector returns only self-relative header; section selection filters offsets and control flags",
+              "302: ignored flags do not bypass READ_CONTROL/SACL checks; known unsupported security selectors remain explicit",
+              "302: exact required length, SMB3.1.1 error context and older-dialect raw error data; exact-fit retry succeeds",
+              "302: related CREATE/QUERY resumed after cache recall preserves required-size error body, AsyncId and zero extra credits",
+              "311: QUERY ignores unknown and SET-only protection flags, including both protection bits; unused input fields are ignored",
+              "311: empty selector returns only self-relative header; section selection filters offsets and control flags",
+              "311: ignored flags do not bypass READ_CONTROL/SACL checks; known unsupported security selectors remain explicit",
+              "311: exact required length, SMB3.1.1 error context and older-dialect raw error data; exact-fit retry succeeds",
+              "311: related CREATE/QUERY resumed after cache recall preserves required-size error body, AsyncId and zero extra credits"
+            ],
+            "recorded_at": "2026-11-04T14:48:09.091173+00:00"
+          }
+        },
+        "nfs-notify-lock.json": {
+          "sha256": "ef6ff7c4987731d477f9884fffb22ddf9edcb36ce0f03bc1eaf87f79119ec4ca",
+          "report": {
+            "status": "passed",
+            "checks": [
+              "OPEN advertises MAY_NOTIFY_LOCK; READW conflict release delivers exact handle/owner/referring request; the hint neither grants nor reserves the lock",
+              "nonblocking LOCK denial does not enroll a waiter and cancels a previous blocking request for the same owner/file",
+              "closing the waiting OPEN removes its unsent notification without granting lock state",
+              "fresh write-policy authority is required before dispatch; revocation drops the waiter and restoring rights does not resurrect it",
+              "inconsistent operation status and lost notification reply cause disconnect then exact two-operation replay; RETRY_UNCACHED_REP consumes the slot without granting a lock",
+              "multiple waiting owners share one bounded callback slot and no second notification is sent before the first completes",
+              "client NOTSUPP completes the optional callback; foreground polling and explicit lock acquisition remain usable",
+              "two-operation callbacks respect negotiated operation and full RPC size limits; constrained clients can still poll for locks",
+              "expired client and OPEN state remove the queued hint; releasing the competing lock never notifies or revives the expired session"
+            ],
+            "sanitizers": false
+          }
+        },
+        "samba-batch-session.json": {
+          "sha256": "7d26b41a26967f74c996c20baf3e5949d9e658b5a48132bc5c923094ab48953b",
+          "tests": [
+            {
+              "selector": "smb2.session.reconnect1",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              }
+            },
+            {
+              "selector": "smb2.session.reconnect2",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              }
+            },
+            {
+              "selector": "smb2.session.reauth1",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              }
+            },
+            {
+              "selector": "smb2.session.reauth2",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              }
+            },
+            {
+              "selector": "smb2.session.reauth3",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              }
+            },
+            {
+              "selector": "smb2.session.reauth4",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              }
+            },
+            {
+              "selector": "smb2.session.reauth6",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              }
+            },
+            {
+              "selector": "smb2.session.two_logoff",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "compiler": "clang",
+      "job_id": 126640507638,
+      "conclusion": "success",
+      "artifact_id": 13335204675,
+      "artifact_sha256": "b8b2fcb0dcb22a44714ffcd75d6fc73f2000cdad0173d7d839771d5195c6fa41",
+      "reports": {
+        "security-oplocks.json": {
+          "sha256": "49b037d65cb0dd8052c0b31d2110dd301aa9160952c22badccd1b0c5c4367fb5",
+          "report": {
+            "status": "passed",
+            "checks": [
+              "210/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+              "210/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+              "210/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+              "300/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+              "300/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+              "300/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+              "302/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+              "302/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+              "302/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+              "311/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+              "311/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+              "311/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK"
+            ]
+          }
+        },
+        "security-query.json": {
+          "sha256": "ae2200afcd88e0da4d02636928b782d8d2bae752671259ae8f6caaba7c327362",
+          "report": {
+            "status": "passed",
+            "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+            "checks": [
+              "210: QUERY ignores unknown and SET-only protection flags, including both protection bits; unused input fields are ignored",
+              "210: empty selector returns only self-relative header; section selection filters offsets and control flags",
+              "210: ignored flags do not bypass READ_CONTROL/SACL checks; known unsupported security selectors remain explicit",
+              "210: exact required length, SMB3.1.1 error context and older-dialect raw error data; exact-fit retry succeeds",
+              "210: related CREATE/QUERY resumed after cache recall preserves required-size error body, AsyncId and zero extra credits",
+              "300: QUERY ignores unknown and SET-only protection flags, including both protection bits; unused input fields are ignored",
+              "300: empty selector returns only self-relative header; section selection filters offsets and control flags",
+              "300: ignored flags do not bypass READ_CONTROL/SACL checks; known unsupported security selectors remain explicit",
+              "300: exact required length, SMB3.1.1 error context and older-dialect raw error data; exact-fit retry succeeds",
+              "300: related CREATE/QUERY resumed after cache recall preserves required-size error body, AsyncId and zero extra credits",
+              "302: QUERY ignores unknown and SET-only protection flags, including both protection bits; unused input fields are ignored",
+              "302: empty selector returns only self-relative header; section selection filters offsets and control flags",
+              "302: ignored flags do not bypass READ_CONTROL/SACL checks; known unsupported security selectors remain explicit",
+              "302: exact required length, SMB3.1.1 error context and older-dialect raw error data; exact-fit retry succeeds",
+              "302: related CREATE/QUERY resumed after cache recall preserves required-size error body, AsyncId and zero extra credits",
+              "311: QUERY ignores unknown and SET-only protection flags, including both protection bits; unused input fields are ignored",
+              "311: empty selector returns only self-relative header; section selection filters offsets and control flags",
+              "311: ignored flags do not bypass READ_CONTROL/SACL checks; known unsupported security selectors remain explicit",
+              "311: exact required length, SMB3.1.1 error context and older-dialect raw error data; exact-fit retry succeeds",
+              "311: related CREATE/QUERY resumed after cache recall preserves required-size error body, AsyncId and zero extra credits"
+            ],
+            "recorded_at": "2026-11-04T14:49:05.476306+00:00"
+          }
+        },
+        "nfs-notify-lock.json": {
+          "sha256": "027c953efcf1d6f60c5ceaa6ae1e82180cc9cac1632831ab3945c6f15a13bb29",
+          "report": {
+            "status": "passed",
+            "checks": [
+              "OPEN advertises MAY_NOTIFY_LOCK; READW conflict release delivers exact handle/owner/referring request; the hint neither grants nor reserves the lock",
+              "nonblocking LOCK denial does not enroll a waiter and cancels a previous blocking request for the same owner/file",
+              "closing the waiting OPEN removes its unsent notification without granting lock state",
+              "fresh write-policy authority is required before dispatch; revocation drops the waiter and restoring rights does not resurrect it",
+              "inconsistent operation status and lost notification reply cause disconnect then exact two-operation replay; RETRY_UNCACHED_REP consumes the slot without granting a lock",
+              "multiple waiting owners share one bounded callback slot and no second notification is sent before the first completes",
+              "client NOTSUPP completes the optional callback; foreground polling and explicit lock acquisition remain usable",
+              "two-operation callbacks respect negotiated operation and full RPC size limits; constrained clients can still poll for locks",
+              "expired client and OPEN state remove the queued hint; releasing the competing lock never notifies or revives the expired session"
+            ],
+            "sanitizers": true
+          }
+        },
+        "samba-batch-session.json": {
+          "sha256": "231ef2a397cdd485bda160fd006dd4191be39deb2176c3c87cdb4daf8f44ae60",
+          "tests": [
+            {
+              "selector": "smb2.session.reconnect1",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              }
+            },
+            {
+              "selector": "smb2.session.reconnect2",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              }
+            },
+            {
+              "selector": "smb2.session.reauth1",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              }
+            },
+            {
+              "selector": "smb2.session.reauth2",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              }
+            },
+            {
+              "selector": "smb2.session.reauth3",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              }
+            },
+            {
+              "selector": "smb2.session.reauth4",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              }
+            },
+            {
+              "selector": "smb2.session.reauth6",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              }
+            },
+            {
+              "selector": "smb2.session.two_logoff",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "compiler": "msvc",
+      "job_id": 126640506876,
+      "conclusion": "success",
+      "evidence": "smb-security-61-windows.json"
+    }
+  ],
+  "windows_evidence": "smb-security-61-windows.json",
+  "limits": [
+    "This targeted matrix does not establish Full SMB/NFS; full upstream session/oplock suites and outstanding features remain open.",
+    "The distinct Backend M7 DAV lease_expired failure is not resolved by these results."
+  ]
+}
