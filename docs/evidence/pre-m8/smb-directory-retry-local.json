@@ -1,0 +1,99 @@
+{
+  "status": "passed",
+  "recorded_at": "2026-11-04T22:27:59.172647+00:00",
+  "source_base": "d66ff7cc3d948f8ecab85cef57ab5bb8eea9cfd8",
+  "change": "Commit SMB directory-search initialization only after awaited metadata operations succeed",
+  "before": {
+    "status": "failed",
+    "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "checks": [
+      "210: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+      "210: READ_CONTROL-only CREATE recalls classic EXCLUSIVE and does not gain READ_DATA; its stat-open exemption applies only to leases",
+      "210: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK"
+    ],
+    "recorded_at": "2026-11-04T22:25:08.451164+00:00",
+    "error": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/tests/smb_oplock_integration.py\", line 217, in main\n    names = [entry['file_name'].get_value().decode('utf-16-le') for entry in receive_entries(request)]\n                                                                             ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/.deps/nfs-venv/lib/python3.12/site-packages/smbprotocol/open.py\", line 1444, in _query_directory_response\n    response = self.connection.receive(request)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/.deps/nfs-venv/lib/python3.12/site-packages/smbprotocol/connection.py\", line 1103, in receive\n    raise SMBResponseException(response)\nsmbprotocol.exceptions.NoMoreFiles: Received unexpected status from the server: No more files were found which match the file specification. (2147483654) STATUS_NO_MORE_FILES: 0x80000006\n",
+    "smb_log": "{\"code\":\"service_unavailable\",\"event\":\"worker_unhealthy\",\"role\":\"smb\",\"time\":1793831116813}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793831117473}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"smb\",\"time\":1793831120944}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793831123170}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"smb\",\"time\":1793831124409}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793831126446}\n{\"code\":\"3221225768\",\"event\":\"command_11\",\"role\":\"smb\",\"time\":1793831127323}\n{\"code\":\"3221225860\",\"event\":\"command_18\",\"role\":\"smb\",\"time\":1793831127374}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793831129991}\n{\"code\":\"1245599\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793831129999}\n{\"code\":\"3221225768\",\"event\":\"command_18\",\"role\":\"smb\",\"time\":1793831130001}\n{\"code\":\"3221225860\",\"event\":\"command_18\",\"role\":\"smb\",\"time\":1793831130062}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793831130122}\n{\"code\":\"131072\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793831130129}\n{\"code\":\"forbidden\",\"event\":\"command_8\",\"role\":\"smb\",\"time\":1793831130175}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793831130254}\n{\"code\":\"1245599\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793831130262}\n{\"code\":\"cache_break_pending\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793831130425}\n"
+  },
+  "after": {
+    "oplocks": {
+      "status": "passed",
+      "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+      "checks": [
+        "210: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+        "210: READ_CONTROL-only CREATE recalls classic EXCLUSIVE and does not gain READ_DATA; its stat-open exemption applies only to leases",
+        "210: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+        "210: first directory query survives a native cache recall without losing initialization or returning premature EOF",
+        "210: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+        "300: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+        "300: READ_CONTROL-only CREATE recalls classic EXCLUSIVE and does not gain READ_DATA; its stat-open exemption applies only to leases",
+        "300: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+        "300: first directory query survives a native cache recall without losing initialization or returning premature EOF",
+        "300: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+        "302: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+        "302: READ_CONTROL-only CREATE recalls classic EXCLUSIVE and does not gain READ_DATA; its stat-open exemption applies only to leases",
+        "302: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+        "302: first directory query survives a native cache recall without losing initialization or returning premature EOF",
+        "302: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+        "311: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+        "311: READ_CONTROL-only CREATE recalls classic EXCLUSIVE and does not gain READ_DATA; its stat-open exemption applies only to leases",
+        "311: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+        "311: first directory query survives a native cache recall without losing initialization or returning premature EOF",
+        "311: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+        "210: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+        "300: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+        "302: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+        "311: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+        "sharing violations do not recall dirty caches; readonly, directory, delete-on-close and conflicting native opens receive no unsupported cache grant",
+        "a lease-form ACK for a classic oplock is rejected and finishes the recall without leaving native exclusion stuck",
+        "two encrypted sessions on one transport renew independent cache authority and route breaks/ACKs with their own keys; a foreign-session ACK cannot release another open",
+        "native host reads/writes wait for SMB recall; dirty client data flushes before host access and the original handle observes subsequent native writes",
+        "own EXCLUSIVE SET_INFO EOF completes synchronously and preserves its cache without a self-recall",
+        "related cached CREATE/SET_INFO/READ preserves the inherited FileId and completes without an unnecessary self-recall",
+        "NFSv3 READ on an existing handle returns JUKEBOX during native recall; repeated retries leave SMB flush/ACK live and the next read returns current data",
+        "DAV GET returns a retryable response while a cache recall is pending and reads freshly flushed bytes after ACK",
+        "another transport cannot ACK the holder FileId; CLOSE flushes/releases authority and wakes the peer CREATE",
+        "unacknowledged recall fences the holder transport and open while the conflicting client completes after native exclusion releases",
+        "credential revocation closes the cache-bearing transport and releases native exclusion without requiring a client request",
+        "stalled identity RPC cannot hold the cache transport past its authority: independent watchdog closes it before IPC timeout and autonomous worker expiry releases native exclusion"
+      ],
+      "recorded_at": "2026-11-04T22:26:32.578634+00:00"
+    },
+    "compounds": {
+      "status": "passed",
+      "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+      "checks": [
+        "210: mixed synchronous/asynchronous compound uses separate protected frames, completes in order and leaves the transport usable",
+        "210: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+        "210: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+        "210: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+        "210: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+        "300: mixed synchronous/asynchronous compound uses separate protected frames, completes in order and leaves the transport usable",
+        "300: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+        "300: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+        "300: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+        "300: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+        "302: mixed synchronous/asynchronous compound uses separate protected frames, completes in order and leaves the transport usable",
+        "302: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+        "302: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+        "302: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+        "302: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+        "311: mixed synchronous/asynchronous compound uses separate protected frames, completes in order and leaves the transport usable",
+        "311: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+        "311: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+        "311: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+        "311: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+        "deferred CHANGE_NOTIFY keeps its AsyncId, honors actual registration FIFO and releases its dependent ECHO only after notification",
+        "deferred TREE_DISCONNECT and LOGOFF complete successfully without cancelling their own response",
+        "128 dependent-command bound rejects excess work and its descendants without side effects; cancellation releases all capacity for reuse",
+        "TREE_DISCONNECT and LOGOFF finish pending dependencies under their owning encryption keys"
+      ],
+      "recorded_at": "2026-11-04T22:26:34.916691+00:00"
+    }
+  },
+  "remote_trigger": {
+    "sha": "ed77b4d05570932b3a1f8f16de63f0b727b4b42e",
+    "url": "https://github.com/TabNahida/tauCloud/actions/runs/41917606460",
+    "failure": "Linux CIFS directory enumeration returned no children after cache recall; signed standalone asynchronous replies reached the client"
+  }
+}

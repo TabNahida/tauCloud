@@ -140,6 +140,17 @@ Selected-profile acceptance: [M7 guide](docs/m7.md), [中文](docs/m7.zh-CN.md),
 
 ## Full SMB/NFS compatibility prerequisite (user decision, 2026-10-31)
 
+Native NFS owner ACKs now carry absolute monotonic lease/recall deadlines.
+Delayed observation cannot restart recall, and an expired data grant cannot
+discard an already acknowledged coherence extension. Local component and Linux
+6.19 tmpfs/ext4 checks pass; network reservations and recovery remain open
+([details](docs/nfs-delegations.md#native-acknowledged-deadlines)).
+
+SMB directory-search initialization now survives native cache recall/retry.
+The regression fails on the old binary and passes on all four tested dialects;
+Linux CIFS/macOS native reacceptance remains pending
+([evidence](docs/evidence/pre-m8/smb-directory-retry-local.json)).
+
 NFS receipt tracking now preserves protocol state while complete records wait
 in the executor or for its protocol mutex. Failed/cancelled requests cannot
 renew leases; bounded admissions exclude expired and future clients. A real

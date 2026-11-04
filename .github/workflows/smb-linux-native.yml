@@ -1,0 +1,39 @@
+name: Linux native SMB diagnostics
+on:
+  push:
+    paths:
+      - '.github/workflows/smb-linux-native.yml'
+      - 'src/smb*'
+      - 'src/file_smb.inc'
+      - 'src/file_cache.inc'
+      - 'src/native_cache.inc'
+      - 'tests/linux_native_smb_gss.py'
+      - 'tests/smb_gss_integration.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONUTF8: '1'
+      PIP_BREAK_SYSTEM_PACKAGES: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: '3.1.1'
+      - run: python scripts/fetch_pace.py
+      - run: python scripts/fetch_pace.py --dependency recipes
+      - run: sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libssl-dev libexpat1-dev libkrb5-dev krb5-kdc krb5-admin-server krb5-user smbclient cifs-utils keyutils
+      - run: python -m pip install -r tests/smb-requirements.txt -r tests/nfs-requirements.txt -r tests/kerberos-requirements.txt
+      - run: xmake f -y -c -p linux -a x86_64 -m release --m0=n --m1=y --toolchain=gcc --sanitizers=n
+      - run: xmake -y -j 8
+      - name: Kerberos, signed SMB 2.1 and encrypted SMB3 kernel mounts
+        run: python tests/smb_gss_integration.py --bin build/linux/x86_64/release --smbclient smbclient --native --output build/acceptance/smb-gss.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: linux-native-smb-diagnostics
+          path: build/acceptance/*

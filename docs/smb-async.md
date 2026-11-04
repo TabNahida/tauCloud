@@ -51,3 +51,27 @@ asynchronous scheduling for otherwise immediately completed I/O. The separate
 `compound-padding` case stops at its unsupported named-stream prerequisite;
 it does not yet reach its padding assertions. Original `interim1`,
 `compound-break`, `create-write-close`, `flush_close` and `flush_flush` pass.
+
+## Directory initialization after cache recall
+
+Fixed-source Linux CIFS acceptance at `ed77b4d` gets past the earlier transport
+framing error but receives premature NO_MORE_FILES during its first directory
+query. A related CREATE/QUERY_DIRECTORY compound triggers a child-file cache
+recall; QUERY_DIRECTORY saved its search pattern before the file-domain list
+completed. Retrying the operation then treated the unfinished first query as
+a continuation of an empty enumeration.
+
+The search pattern, entries and initial cursor are now published together only
+after list, self metadata and parent metadata operations succeed. A cache break
+leaves the original initialization state intact. The independent signed/encrypted
+client regression reproduces NO_MORE_FILES on the old binary, then passes across
+SMB 2.1, 3.0, 3.0.2 and 3.1.1 with the fix. It requires an actual pending request
+and unsolicited cache recall, keeps ECHO responsive, flushes/acknowledges the
+holder, checks all entries and then checks normal end-of-enumeration. Existing
+asynchronous compound tests also pass. See
+[before/after evidence](evidence/pre-m8/smb-directory-retry-local.json).
+
+A dedicated Linux Actions job now runs real Kerberos CIFS mounts directly after
+build, in addition to the full metadata matrix. Native reacceptance on this
+change is pending. macOS SMB still fails at `ed77b4d`; its NFSv3 client passes.
+No full native-client compatibility is claimed from the independent-client tests.

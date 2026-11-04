@@ -1441,11 +1441,11 @@ struct client : session_state, std::enable_shared_from_this<client> {
       auto pattern = utf8(slice(p, get(p, 88, 2), get(p, 90, 2), 96));
       bool initial_query = h.pattern.empty() || (flags & 0x11);
       if (initial_query) {
-        if (!pattern.empty())
-          h.pattern = pattern;
-        else if (h.pattern.empty())
-          h.pattern = "*";
-        h.entries = co_await operation(h, "list", false);
+        auto next_pattern = !pattern.empty() ? pattern : h.pattern.empty() ? "*" : h.pattern;
+        // A native cache conflict can suspend and retry this request. Publish
+        // initialization only after every awaited operation succeeds, otherwise
+        // the retry mistakes an unfinished first query for continuation/EOF.
+        auto entries = co_await operation(h, "list", false);
         // Include the directory entries expected by native enumeration clients.
         // Resolve '..' through a fresh grant within the share; the share root
         // points to itself and never exposes its host parent.
@@ -1458,8 +1458,10 @@ struct client : session_state, std::enable_shared_from_this<client> {
                                       "smb_path_stat", parent_request);
         self["name"] = ".";
         parent["name"] = "..";
-        h.entries.insert(h.entries.begin(), parent);
-        h.entries.insert(h.entries.begin(), self);
+        entries.insert(entries.begin(), parent);
+        entries.insert(entries.begin(), self);
+        h.entries = std::move(entries);
+        h.pattern = std::move(next_pattern);
         h.cursor = 0;
       } else {
         // Preserve enumeration cookies while dropping entries removed by other

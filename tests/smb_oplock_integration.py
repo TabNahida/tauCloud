@@ -206,6 +206,20 @@ def main():
             other._close_response(requests[2]); holder.close()
             passed(f'{dialect:x}: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK')
 
+            directory = create(t, f'enumerate-cache-{dialect:x}', options=1, access=0x120089)
+            holder = cached(t, directory.file_name + '/child')
+            holder.write(b'visible after recall')
+            message, receive_entries = directory.query_directory('*', 12, send=False)
+            request = c.send(message, s.session_id, t.tree_connect_id)
+            pending(request); recalled(q, s, holder)
+            c.echo(sid=s.session_id, timeout=5)
+            holder.flush(); ack(c, s, t, holder)
+            names = [entry['file_name'].get_value().decode('utf-16-le') for entry in receive_entries(request)]
+            assert sorted(names) == ['.', '..', 'child'], names
+            denied(lambda: directory.query_directory('*', 12), 0x80000006)
+            holder.close(); directory.close()
+            passed(f'{dialect:x}: first directory query survives a native cache recall without losing initialization or returning premature EOF')
+
             holder = cached(t, f'cancel-cache-{dialect:x}')
             other, request, receive = begin(t, holder.file_name)
             recalled(q, s, holder); request.cancel()

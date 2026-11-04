@@ -54,7 +54,8 @@ assert p.read_bytes()==data
 p.rename(d/'renamed');p=d/'renamed'
 with p.open('r+b') as f:f.seek(17);f.write(b'kerberos');f.truncate(65537);f.flush();os.fsync(f.fileno())
 assert p.read_bytes()==(data[:17]+b'kerberos'+data[25:])[:65537]
-assert sorted(x.name for x in d.iterdir())==['renamed']
+names=sorted(x.name for x in d.iterdir())
+assert names==['renamed'], ('directory contents after rename', names)
 p.unlink();d.rmdir()
 '''
         for dialect in ('2.1', '3.0', '3.02', '3.1.1'):
