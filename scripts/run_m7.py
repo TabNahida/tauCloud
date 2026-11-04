@@ -84,6 +84,9 @@ def main():
     commands += [[sys.executable, 'tests/nfs_acl_integration.py', '--bin', str(binary),
                   '--output', str(output.with_suffix('.nfs-acl.json'))]
                  + (['--sanitizers'] if args.sanitizers else [])]
+    commands += [[sys.executable, 'tests/nfs_mode_integration.py', '--bin', str(binary),
+                  '--output', str(output.with_suffix('.nfs-mode.json'))]
+                 + (['--sanitizers'] if args.sanitizers else [])]
     commands += [[sys.executable, 'tests/smb_attributes_integration.py', '--bin', str(binary),
                   '--output', str(output.with_suffix('.smb-attributes.json'))]]
     commands += [[sys.executable, 'tests/smb_blocking_locks.py', '--bin', str(binary),

@@ -747,6 +747,8 @@ struct file_store::impl {
       pending(request, hash);
       lease(grant, ctx);
       try {
+        if (!data.empty())
+          security_data_changed(s, info);
         auto written = h.file.write(offset, data);
         if (body.value("flush", false))
           h.file.flush();
@@ -882,6 +884,7 @@ struct file_store::impl {
       auto previous_security = dav_exists(s, path);
       security_save(file.info(), previous_security ? security_get(s, security_info(s, path))
                                                    : security_new(s, grant, path, false));
+      security_data_changed(s, file.info());
       lease(grant, ctx);
       j["status"] = "committing";
       save_job(j);

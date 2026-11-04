@@ -25,7 +25,7 @@ int main() {
     auto mode_owner = security::principal("mode-owner"),
          mode_group = security::principal("mode-group", true);
     auto mode_base = security::defaults(mode_owner, mode_group);
-    for (unsigned mode = 0; mode <= 0777; ++mode) {
+    for (unsigned mode = 0; mode <= 07777; ++mode) {
       auto descriptor = security::chmod(mode_base, mode, false);
       ok(security::mode(descriptor) == mode);
       auto other = security::allowed(
@@ -34,6 +34,13 @@ int main() {
       auto twice = security::chmod(descriptor, mode, false);
       ok(twice == descriptor);
     }
+    auto setgid_parent = security::chmod(mode_base, 02770, true);
+    auto inherited_dir = security::inherit(setgid_parent, security::principal("child"),
+                                           security::principal("other", true), true);
+    auto inherited_file = security::inherit(setgid_parent, security::principal("child"),
+                                            security::principal("other", true), false);
+    ok(inherited_dir.at("group") == mode_group && (security::mode(inherited_dir) & 02000));
+    ok(inherited_file.at("group") == mode_group && !(security::mode(inherited_file) & 07000));
     ok(encode_bytes(nt_hash("Password")) == "a4f49c406510bdcab6824ee7c30fd852");
     ok(encode_bytes(hmac(nt_hash("Password"), utf16("USERDomain"))) ==
        "0c868a403bfd7a93a3001ef22ef02e3f");

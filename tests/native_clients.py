@@ -163,10 +163,21 @@ assert p.read_bytes()==b'private'
 p.chmod(0o640)
 assert stat.S_IMODE(p.stat().st_mode)==0o640
 print(before,after,subprocess.check_output(['nfs4_getfacl',str(p)],text=True),sep=chr(10))
+p.chmod(0o4755)
+assert stat.S_IMODE(p.stat().st_mode)==0o4755
+with p.open('ab') as out: out.write(b'changed');out.flush();os.fsync(out.fileno())
+assert stat.S_IMODE(p.stat().st_mode)==0o755
+d=p.parent/'mode-parent'
+d.mkdir();d.chmod(0o3777)
+sub=d/'sub';sub.mkdir()
+assert stat.S_IMODE(sub.stat().st_mode)&0o2000
+assert sub.stat().st_gid==d.stat().st_gid
+sub.rmdir();d.rmdir()
 p.unlink()
 '''
                         run(['python3','-c',acl_code,str(mount)])
                         current['checks'].append('native chmod plus unmodified nfs4_getfacl/nfs4_setfacl ACL roundtrip and mode synchronization')
+                        current['checks'].append('native setuid clearing on write and setgid directory inheritance, with sticky mode accepted')
                 assert not args.require_mic_rejection, 'client unexpectedly authenticated without the required rejection'
                 current.update(status='passed',payload_sha256=hashlib.sha256(payload).hexdigest())
             except Exception:

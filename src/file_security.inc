@@ -16,6 +16,15 @@ void security_save(const json &info, const json &descriptor) {
   q.bind(2, descriptor.dump());
   q.row();
 }
+void security_data_changed(space_state &s, const json &info) {
+  if (info.at("directory").get<bool>())
+    return;
+  auto descriptor = security_get(s, info);
+  if (descriptor.value("mode_special", 0u) & 06000) {
+    descriptor["mode_special"] = descriptor.value("mode_special", 0u) & ~06000u;
+    security_save(info, descriptor);
+  }
+}
 static std::string security_parent(const std::string &path) {
   auto slash = path.rfind('/');
   return slash == std::string::npos ? "" : path.substr(0, slash);
@@ -52,8 +61,17 @@ json security_new(space_state &s, const json &grant, const std::string &path, bo
 void security_add(space_state &s, const json &grant, const std::string &path, bool directory) {
   security_path(s, grant, security_parent(path), directory ? 4 : 2);
 }
-void security_delete(space_state &s, const json &grant, const std::string &path) {
+void security_sticky(space_state &s, const json &grant, const std::string &path) {
   require(!path.empty(), "forbidden");
+  auto parent = security_get(s, security_info(s, security_parent(path)));
+  if (!(parent.value("mode_special", 0u) & 01000))
+    return;
+  auto actor = security::principal(grant.at("actor"));
+  auto child = security_get(s, security_info(s, path));
+  require(parent.at("owner") == actor || child.at("owner") == actor, "forbidden");
+}
+void security_delete(space_state &s, const json &grant, const std::string &path) {
+  security_sticky(s, grant, path);
   auto info = security_info(s, path);
   auto parent = security_info(s, security_parent(path));
   require((security_allowed(s, grant, info) & 0x10000) ||

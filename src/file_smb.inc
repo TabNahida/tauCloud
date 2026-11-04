@@ -355,6 +355,8 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     require(!truncate || (!directory && (access & 2)), "forbidden");
     require(disposition != 0 || (access & 0x10000), "forbidden");
     require(!(options & 0x1000) || (!path.empty() && (access & 0x10000)), "forbidden");
+    if ((options & 0x1000) && existing)
+      security_sticky(s, grant, path);
     if ((options & 0x1000) && directory && existing) {
       auto dir = s.directory.open(path, true);
       require(dir.list().empty(), "directory_not_empty");
@@ -375,6 +377,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
       file = s.directory.open(path, false, false, bool(access & 6));
     if (truncate) {
       auto before = file.info();
+      security_data_changed(s, before);
       if (allocating && allocation) {
         auto native = before.at("object").get<std::string>();
         allocation_reservation(native, std::max(allocation_reservation(native), allocation));
@@ -491,6 +494,8 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     require(!(information & 3) || (h.access & 0x80000), "forbidden");
     require(!(information & 0xa0000000) || (information & 4), "invalid_request");
     auto replacement = security::decode(decode_bytes(body.at("data").get<std::string>()));
+    if (!h.directory && (information & 3))
+      descriptor["mode_special"] = descriptor.value("mode_special", 0u) & ~06000u;
     auto subjects = security::token(grant);
     if (information & 1) {
       require(replacement.at("owner") == subjects.at(0), "invalid_owner");
@@ -731,6 +736,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
   if (op == "smb_disposition") {
     require(!path.empty() && (h.access & 0x10000), "forbidden");
     if (body.at("delete").get<bool>()) {
+      security_sticky(s, grant, path);
       require(h.directory || !(meta.at("attributes").get<uint32_t>() & 1), "cannot_delete");
       for (auto &[other, x] : handles)
         if (other != id && x.space == space && x.path == path)
@@ -757,6 +763,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
   if (op == "smb_rename") {
     require(!path.empty() && (h.access & 0x10000) && !meta.at("delete_pending").get<bool>(),
             "forbidden");
+    security_sticky(s, grant, path);
     auto target = verify(body.at("target"), true);
     require(target.at("protocol") == "smb" && target.at("space").at("id") == space &&
                 target.at("actor") == actor && target.at("share") == grant.at("share"),
@@ -833,6 +840,8 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     dav_guard(s, path, actor, body);
     lease(grant, ctx);
     try {
+      if (op == "smb_resize" || size < meta.at("size").get<uint64_t>())
+        security_data_changed(s, meta);
       if (op == "smb_allocation") {
         // Reserve before touching storage. Failure/crash retains the higher
         // bound until a successful retry/shrink or object deletion releases it.
@@ -873,6 +882,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
       return *result;
     pending(request, hash);
     try {
+      security_data_changed(s, meta);
       auto written = h.file.write(offset, data);
       smb_preserve_times(h.file, h, meta);
       smb_save_attributes(meta, (meta.at("attributes").get<uint32_t>() & ~0x80u) | 0x20u);

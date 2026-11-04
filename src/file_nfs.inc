@@ -257,6 +257,8 @@ json nfs_meta(space_state &s, const json &g, const std::string &path, native_fil
   return info;
 }
 json nfs_updated_security(const json &g, json descriptor, const json &attrs, bool directory) {
+  if (!directory && (attrs.contains("uid") || attrs.contains("gid")))
+    descriptor["mode_special"] = descriptor.value("mode_special", 0u) & ~06000u;
   if (attrs.contains("uid")) {
     auto uid = std::to_string(number(attrs, "uid"));
     auto name = g.at("export").at("uids").value(uid, "");
@@ -277,6 +279,31 @@ json nfs_updated_security(const json &g, json descriptor, const json &attrs, boo
   }
   if (attrs.contains("mode"))
     descriptor = security::chmod(descriptor, number(attrs, "mode"), directory);
+  if (attrs.contains("mode_mask")) {
+    require(!attrs.contains("mode"), "invalid_mode");
+    auto mask = number(attrs.at("mode_mask"), "mask");
+    auto value = number(attrs.at("mode_mask"), "value");
+    require(mask <= 07777 && value <= 07777, "invalid_mode");
+    auto updated = (security::mode(descriptor) & ~mask) | (value & mask);
+    if (mask & 0777)
+      descriptor = security::chmod(descriptor, updated, directory);
+    else
+      descriptor["mode_special"] = updated & 07000;
+  }
+  bool setting_group_bit =
+      attrs.contains("mode") ||
+      (attrs.contains("mode_mask") && (number(attrs.at("mode_mask"), "mask") & 02000));
+  bool setting_user_bit =
+      attrs.contains("mode") ||
+      (attrs.contains("mode_mask") && (number(attrs.at("mode_mask"), "mask") & 04000));
+  if (setting_user_bit && (descriptor.value("mode_special", 0u) & 04000))
+    require(descriptor.at("owner") == security::principal(g.at("actor")), "forbidden");
+  if (setting_group_bit && (descriptor.value("mode_special", 0u) & 02000) &&
+      !attrs.value("inherit_setgid", false)) {
+    auto subjects = security::token(g);
+    require(std::find(subjects.begin(), subjects.end(), descriptor.at("group")) != subjects.end(),
+            "forbidden");
+  }
   if (attrs.contains("acl"))
     descriptor = nfs_decode_acl(g, descriptor, attrs.at("acl"), directory);
   return descriptor;
@@ -302,11 +329,12 @@ void nfs_apply_attrs(space_state &s, const json &g, const std::string &path, nat
     q.bind(1, id); q.bind(2, int64_t(attrs.value("uid", meta.at("uid").get<uint64_t>())));
     q.bind(3, int64_t(attrs.value("gid", meta.at("gid").get<uint64_t>()))); q.row();
   }
-  if (attrs.contains("mode") || attrs.contains("uid") || attrs.contains("gid") ||
-      attrs.contains("acl"))
+  if (attrs.contains("mode") || attrs.contains("mode_mask") || attrs.contains("uid") ||
+      attrs.contains("gid") || attrs.contains("acl"))
     security_save(meta, descriptor);
-  if (attrs.contains("mode") || attrs.contains("acl") || attrs.contains("uid") ||
-      attrs.contains("gid") || attrs.contains("atime_ns") || attrs.contains("mtime_ns")) {
+  if (attrs.contains("mode") || attrs.contains("mode_mask") || attrs.contains("acl") ||
+      attrs.contains("uid") || attrs.contains("gid") || attrs.contains("atime_ns") ||
+      attrs.contains("mtime_ns")) {
     statement q(*nfs_db, "INSERT INTO metadata_times VALUES(?,?) ON CONFLICT(token) DO UPDATE SET changed_ns=MAX(changed_ns,excluded.changed_ns)");
     q.bind(1, id);q.bind(2, now() * int64_t(1000000));q.row();
   }
@@ -453,7 +481,8 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
   auto op = body.at("op").get<std::string>();
   bool mutation = op == "write" || op == "resize" || op == "create" || op == "mkdir" ||
                   op == "remove" || op == "rename" || op == "setattr";
-  if (body.contains("mode")) require(number(body, "mode") <= 0777, "not_supported");
+  if (body.contains("mode"))
+    require(number(body, "mode") <= 07777, "invalid_mode");
   auto g = verify(body.at("grant"), mutation);
   require(g.at("protocol") == "nfs" && g.contains("export"), "forbidden");
   auto &s = attach(g, ctx);
@@ -481,7 +510,7 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     required = body.contains("atime_ns") || body.contains("mtime_ns") ? 0x100 : 0;
     if (body.contains("size"))
       required |= 2;
-    if (body.contains("mode") || body.contains("acl"))
+    if (body.contains("mode") || body.contains("mode_mask") || body.contains("acl"))
       required |= 0x40000;
     if (body.contains("uid") || body.contains("gid"))
       required |= 0x80000;
@@ -601,6 +630,8 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     quota(s, growth(before, end));
     pending(request, hash);
     try {
+      if ((op == "write" && !data.empty()) || body.contains("size"))
+        security_data_changed(s, before);
       if (op == "write") {
         size_t written = 0;
         while (written < data.size()) {
@@ -628,7 +659,8 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     auto n = name("name"), child = p.empty() ? n : p + "/" + n;
     auto mode = body.value("create_mode", 1u);
     require(mode <= 3, "invalid_request");
-    if (body.contains("mode")) require(number(body, "mode") <= 0777, "not_supported");
+    if (body.contains("mode"))
+      require(number(body, "mode") <= 07777, "invalid_mode");
     if (auto existing = dav_exists(s, child)) {
       require(op == "create" && !existing->at("directory").get<bool>() && mode != 1, "already_exists");
       auto f = nfs_open(s, child, false);
@@ -646,12 +678,18 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     case_check(s.directory, child);
     if (body.contains("size")) quota(s, number(body, "size"));
     auto initial = body;
+    auto inherited = security_new(s, g, child, op == "mkdir");
+    bool setgid_parent = security_get(s, before).value("mode_special", 0u) & 02000;
     if (!initial.contains("uid"))
       initial["uid"] = g.value("nfs_uid", 65534u);
-    if (!initial.contains("gid"))
+    if (!initial.contains("gid") && !setgid_parent)
       initial["gid"] = g.value("nfs_gid", 65534u);
-    auto descriptor =
-        nfs_updated_security(g, security_new(s, g, child, op == "mkdir"), initial, op == "mkdir");
+    if (setgid_parent && op == "mkdir" && !initial.contains("gid")) {
+      if (initial.contains("mode"))
+        initial["mode"] = number(initial, "mode") | 02000;
+      initial["inherit_setgid"] = true;
+    }
+    auto descriptor = nfs_updated_security(g, inherited, initial, op == "mkdir");
     pending(request, hash);
     auto f = s.directory.open(child, op == "mkdir", true, op == "create");
     security_save(f.info(), descriptor);

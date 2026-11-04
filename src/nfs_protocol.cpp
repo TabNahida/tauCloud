@@ -365,7 +365,7 @@ struct server::impl {
         if (proc == 9) attrs.erase("size");
         args.update(attrs);
         if (attrs.contains("mode")) {
-          check(attrs.at("mode").get<uint32_t>() <= 0777, 10004);
+          check(attrs.at("mode").get<uint32_t>() <= 07777);
           args["mode"] = attrs.at("mode");
         }
       }

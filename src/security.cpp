@@ -141,7 +141,11 @@ json defaults(const std::string &owner, const std::string &group) {
 }
 json inherit(const json &parent, const std::string &owner, const std::string &group, bool directory,
              bool fallback) {
-  auto result = defaults(owner, group);
+  bool setgid = parent.value("mode_special", 0u) & 02000;
+  auto inherited_group = setgid ? parent.at("group").get<std::string>() : group;
+  auto result = defaults(owner, inherited_group);
+  if (setgid && directory)
+    result["mode_special"] = 02000;
   if (parent.at("dacl").is_null()) {
     result["dacl"] = nullptr;
     return result;
@@ -162,11 +166,11 @@ json inherit(const json &parent, const std::string &owner, const std::string &gr
     }
     entry["flags"] = next;
     if (entry.value("nfs_who", "") == "GROUP@")
-      entry["sid"] = group;
+      entry["sid"] = inherited_group;
     auto trustee = entry.at("sid").get<std::string>();
     if (!(next & 8) && (trustee == creator_owner || trustee == creator_group)) {
       auto effective = entry;
-      effective["sid"] = trustee == creator_owner ? owner : group;
+      effective["sid"] = trustee == creator_owner ? owner : inherited_group;
       effective["flags"] = inherited_flag;
       inherited.push_back(effective);
       if (!(next & 3))
@@ -209,7 +213,7 @@ unsigned mode(const json &descriptor) {
       auto who = entry.value("nfs_who", "");
       return !who.empty() && who != "OWNER@" && who != "GROUP@" && who != "EVERYONE@";
     });
-  unsigned result = 0;
+  unsigned result = descriptor.value("mode_special", 0u) & 07000;
   for (unsigned category = 0; category < 3; ++category) {
     json subjects = json::array(
         {category == 0 ? descriptor.at("owner").get<std::string>() : std::string("mode-non-owner"),
@@ -224,7 +228,8 @@ unsigned mode(const json &descriptor) {
   return result;
 }
 json chmod(json descriptor, unsigned value, bool directory) {
-  require(value <= 0777, "not_supported");
+  require(value <= 07777, "invalid_mode");
+  descriptor["mode_special"] = value & 07000;
   const uint32_t data = directory ? 0x67 : 0x27;
   auto rights = [directory](unsigned bits) {
     return ((bits & 4) ? 1u : 0u) | ((bits & 2) ? (directory ? 0x46u : 6u) : 0u) |

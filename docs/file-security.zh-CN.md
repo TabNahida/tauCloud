@@ -12,7 +12,7 @@ SMB 支持查询/设置 owner、group、DACL，以及 CREATE SecD 初始描述�
 
 NFSv3 读写/命名空间操作、NFSv4 OPEN/ACCESS、core/WebDAV/FTP 文件操作均检查同一 DACL。NFS 修改 mode/属主需要相应文件权限；ACCESS 与导出权限相交。分阶段上传在发布前再次检查权限并保留目标描述符；复制检查每个来源及被覆盖的后代，私有分阶段复制目录也传递继承权限。DAV 对不存在的 URL 执行 LOCK 时，检查父目录添加权限并持久化新资源的继承描述符。NFS 的 mode/UID/GID 现从共享描述符派生，chmod 会真正改变所有协议后续访问的权限。
 
-NFSv4 已支持 `acl`/`aclsupport` 的允许/拒绝 ACE，覆盖 GETATTR、VERIFY/NVERIFY、READDIR、SETATTR 和创建。READ_ACL/WRITE_ACL 分别检查；同时修改 mode 和 ACL 时先应用 mode；仅设置 ACL 时重新计算低九位 mode。目录继承保留特殊主体，普通 acl 属性按 RFC 清除继承来源标志；无效 ACL 在创建或截断前拒绝。上限为 1024 个 ACE、64 KiB 属性/描述符。高三位 mode、audit/alarm、单独 dacl/sacl、完整所有权和域映射仍待完成。
+NFSv4 已支持 `acl`/`aclsupport` 的允许/拒绝 ACE，覆盖 GETATTR、VERIFY/NVERIFY、READDIR、SETATTR 和创建。READ_ACL/WRITE_ACL 分别检查；同时修改 mode 和 ACL 时先应用 mode；仅设置 ACL 时重新计算低九位 mode。目录继承保留特殊主体，普通 acl 属性按 RFC 清除继承来源标志；无效 ACL 在创建或截断前拒绝。上限为 1024 个 ACE、64 KiB 属性/描述符。audit/alarm、单独 dacl/sacl、完整所有权和域映射仍待完成。
 
 主体支持 OWNER@、GROUP@、EVERYONE@、导出映射中的 `用户名@taucloud`/`组名@taucloud`；无法命名的 SMB SID 使用 `sid-十六进制SID@taucloud` 往返。GROUP@ 随所属组修改和子对象继承更新。AUTH_SYS 只使用已验证且实际提交的组，root squash 清空组，不能靠未提交的数据库成员关系取得文件权限。NFS 按 RFC 允许读取具有执行权限的普通文件，SMB 仍按原始 ACL 检查。旧对象的有效访问保持不变，回报 mode 改为反映真实 DACL。
 
@@ -25,3 +25,7 @@ SMB 共享可设置 `access_based_enumeration:true`，按 DACL 隐藏无完整�
 Windows Server 2025 原生加密 SMB 重定向器已通过 PowerShell Get-Acl/Set-Acl 验收：SID/DACL 回读、拒绝写入但允许读取、恢复权限及删除文件。这仅验证普通 DACL，不代表 SACL 或特权所有权已实现。
 
 完整 SMB/NFS 验收仍开放：特权属主/SACL/审计/条件 ACE、域身份映射、Kerberos/RPCSEC_GSS、完整 NFS 权限、原生安全编辑器、流/链接、lease/durable/replay/multichannel、delegation/callback 等尚待完成。详见 [TODO](../TODO.md) 和[英文技术说明](file-security.md)。
+
+NFS 的完整 12 位 mode 已实现。`mode_set_masked` 仅供 SETATTR 使用，不能与 mode 同时设置；只修改高三位时不会重写 DACL。setgid 目录向新对象传递组，向新目录传递 setgid；显式设置 setgid 需要调用者属于对应组；设置 setuid 还要求调用者是对象所有者，单独授予 WRITE_ACL 不足以越过此限制。sticky 目录的删除、重命名和覆盖同时受父目录/目标所有者限制，NFS、SMB、core、DAV、FTP 共用此检查；已接受的 SMB 删除意图保留原授权直到回收。
+
+普通文件数据写入、截断和所有权修改会清除 setuid/setgid，分阶段上传在发布前清除目标复制过来的位。为防止部分写入失败后仍保留 set-ID 内容，清除发生在可能修改数据的原生操作前。主机文件权限仍不改变，服务也不执行客户端文件。新增独立 mode 测试及 Linux 原生 chmod/继承验收已接入 Actions。

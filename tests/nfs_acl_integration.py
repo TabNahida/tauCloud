@@ -16,8 +16,8 @@ from smbprotocol.tree import TreeConnect
 FULL = 0x1f01ff
 ZERO = t4.stateid4(0, b'\0'*12)
 
-def attrs(acl=None, mode=None, size=None, gid=None):
-    bits = [0, 0]
+def attrs(acl=None, mode=None, size=None, gid=None, mode_mask=None):
+    bits = [0, 0, 0]
     p = p4.NFS4Packer()
     if size is not None:
         bits[0] |= 1 << 4
@@ -33,6 +33,12 @@ def attrs(acl=None, mode=None, size=None, gid=None):
     if gid is not None:
         bits[1] |= 1 << 5
         p.pack_string(str(gid).encode())
+    if mode_mask is not None:
+        bits[2] |= 1 << 10
+        p.pack_uint(mode_mask[0])
+        p.pack_uint(mode_mask[1])
+    while bits and not bits[-1]:
+        bits.pop()
     return t4.fattr4(bits, p.get_buffer())
 
 def main():

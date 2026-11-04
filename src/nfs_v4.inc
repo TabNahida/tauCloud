@@ -145,7 +145,7 @@ bool has(const std::vector<uint32_t> &bits, unsigned i) {
 std::vector<uint32_t> supported_attrs() {
   std::vector<uint32_t> b(3);
   for (unsigned n : {0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 19, 20, 27, 28, 29,
-                     30, 31, 33, 35, 36, 37, 42, 43, 44, 45, 47, 48, 51, 52, 53, 54, 55, 75})
+                     30, 31, 33, 35, 36, 37, 42, 43, 44, 45, 47, 48, 51, 52, 53, 54, 55, 74, 75})
     b[n / 32] |= 1u << (n % 32);
   return b;
 }
@@ -176,7 +176,8 @@ json meta4(const identity &who, const std::string &h, bool acl = false) {
   return result;
 }
 void attributes4(writer &out, const std::vector<uint32_t> &requested, const json &m) {
-  check(!has(requested, 48) && !has(requested, 54)); // Write-only time attributes.
+  check(!has(requested, 48) && !has(requested, 54) &&
+        !has(requested, 74)); // Write-only attributes.
   auto supported = supported_attrs();
   std::vector<uint32_t> returned(supported.size());
   writer values;
@@ -306,11 +307,95 @@ json parse_attrs4(reader &r) {
   auto bytes = r.opaque(65536);
   return {{"bits", bits}, {"bytes", encode_bytes(bytes)}};
 }
+void validate_verify4(const json &a) {
+  auto bits = a.at("bits").get<std::vector<uint32_t>>();
+  auto bytes = decode_bytes(a.at("bytes").get<std::string>());
+  reader r(bytes);
+  for (unsigned i = 0; i < bits.size() * 32; ++i) {
+    if (!has(bits, i))
+      continue;
+    switch (i) {
+    case 0:
+    case 75:
+      bitmap(r);
+      break;
+    case 5:
+    case 6:
+    case 7:
+    case 9:
+      r.boolean();
+      break;
+    case 1:
+    case 2:
+    case 10:
+    case 13:
+    case 28:
+    case 29:
+    case 35:
+      r.u32();
+      break;
+    case 3:
+    case 4:
+    case 20:
+    case 27:
+    case 30:
+    case 31:
+    case 42:
+    case 43:
+    case 44:
+    case 45:
+    case 55:
+      r.u64();
+      break;
+    case 8:
+      r.u64();
+      r.u64();
+      break;
+    case 19:
+    case 36:
+    case 37:
+      r.opaque(1024);
+      break;
+    case 33:
+      check(r.u32() <= 07777);
+      break;
+    case 47:
+    case 51:
+    case 52:
+    case 53:
+      r.u64();
+      check(r.u32() < 1000000000);
+      break;
+    case 12: {
+      auto n = r.u32();
+      check(n <= 1024);
+      while (n--) {
+        r.u32();
+        r.u32();
+        r.u32();
+        r.opaque(1024);
+      }
+      break;
+    }
+    // RDATTR_ERROR and write-only attributes cannot participate in VERIFY.
+    case 11:
+    case 48:
+    case 54:
+    case 74:
+      check(false);
+      break;
+    default:
+      check(false, 10032);
+    }
+  }
+  r.end();
+}
 json create_attrs4(const json &a, bool dir, bool create = true) {
   auto bits = a.at("bits").get<std::vector<uint32_t>>();
   auto bytes = decode_bytes(a.at("bytes").get<std::string>());
   reader r(bytes);
   json attrs = json::object();
+  check(!has(bits, 74) || (!create && !has(bits, 33)));
   for (unsigned i = 0; i < bits.size() * 32; ++i)
     if (has(bits, i)) {
       if (i == 12) {
@@ -329,8 +414,12 @@ json create_attrs4(const json &a, bool dir, bool create = true) {
         }
       } else if (i == 33) {
         auto mode = r.u32();
-        check(mode <= 0777, 10032);
+        check(mode <= 07777);
         attrs["mode"] = mode;
+      } else if (i == 74) {
+        auto value = r.u32(), mask = r.u32();
+        check(value <= 07777 && mask <= 07777);
+        attrs["mode_mask"] = {{"value", value}, {"mask", mask}};
       } else if (i == 4) {
         auto size = r.u64();
         check(size <= uint64_t(INT64_MAX), 27);
@@ -994,6 +1083,7 @@ std::string v4(const identity &who, reader &r) {
           auto supported = supported_attrs();
           for (size_t i = 0; i < bits.size(); ++i)
             check((bits[i] & ~(i < supported.size() ? supported[i] : 0u)) == 0, 10032);
+          validate_verify4(a.at("attrs"));
           writer attrs;
           attributes4(attrs, bits, meta4(who, current, has(bits, 12)));
           reader actual(attrs.data);
@@ -1244,7 +1334,7 @@ std::string v4(const identity &who, reader &r) {
         } else if (op == 26) {
           check(!current.empty(), 10020);
           auto bits = a.at("bits").get<std::vector<uint32_t>>();
-          check(!has(bits, 48) && !has(bits, 54));
+          check(!has(bits, 48) && !has(bits, 54) && !has(bits, 74));
           auto m = current == pseudo ? export_view(who) : file(who, current, "list");
           if (current == pseudo) {
             m["verifier"] = digest(who.key + m.dump()).substr(0, 16);
