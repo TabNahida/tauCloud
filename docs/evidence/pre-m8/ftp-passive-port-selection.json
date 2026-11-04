@@ -1,0 +1,63 @@
+{
+  "recorded_at": "2026-11-04T10:46:22.363314+00:00",
+  "status": "partial",
+  "failure": {
+    "source": "70838b75fb2a291e7831f12fd20e3a252aa763e9",
+    "run": "https://github.com/TabNahida/tauCloud/actions/runs/41813742507",
+    "job": 126519152864,
+    "stage": "tests/m4_integration.py during run_m7.py",
+    "line": 89,
+    "error": "ftplib.error_temp: 425 Passive ports exhausted",
+    "observation": "Failure while acquiring four listeners, before the test had made any FTP data connection; failed before NFS regression started.",
+    "log_sha256": "5ce935deae2eb73c70016b55897e133d9f878f84a5249eb6ad3224b4e876abf1"
+  },
+  "diagnosis": "Fixture selected passive ports adjacent to an OS-assigned ephemeral control port and released the probes before control/API/TLS connections. These ports can subsequently be allocated as client source ports. This is a plausible collision path inferred from code; the failing runner did not retain a socket table.",
+  "change": "Probe four random ports in 20000..29999, outside default Windows/Linux ephemeral client ranges; keep production four-port capacity and exhaustion assertions unchanged.",
+  "files_sha256": {
+    "tests/m4_integration.py": "2ef54bce0e910462c55d9de6ed6ecc7112e40fef87b2cb3018a18717861ab53d"
+  },
+  "local": {
+    "status": "passed",
+    "checks": [
+      "M3 state adds isolated FTP worker; plaintext default deny, anonymous/active/FXP/downgrade denied",
+      "stdlib FTP client: UTF-8, PASV, MLSD/MLST facts, directories/rename/delete, binary roundtrip and safe REST upload/download",
+      "EPSV ALL and TLS certificate verification; fresh or different-control TLS sessions rejected on data channel",
+      "configured passive port exhaustion returns 425 and releases listeners on ABOR/QUIT",
+      "in-band ABOR and missing TLS close_notify discard staging, preserve existing file, release quota",
+      "bounded malformed commands, mismatched data peer, stalled TLS, quota overflow and changed-source resume rejection",
+      "share revocation during STOR cleans unpublished data; disabled credentials invalidate existing control sessions",
+      "FTP kill/restart reclaims stages; API, identity, file and DAV processes survive; mixed writer gate retained",
+      "independent curl explicit FTPS probe (strict session binding retained)",
+      "bounded streaming upload/download 1 MiB with digest verification",
+      "explicit plaintext opt-in works after restart with stdlib and curl; default remains TLS only"
+    ],
+    "clients": {
+      "curl_ftps": {
+        "version": "curl 8.5.0 (x86_64-pc-linux-gnu) libcurl/8.5.0 OpenSSL/3.0.13 zlib/1.3 brotli/1.1.0 zstd/1.5.5 libidn2/2.3.7 libpsl/0.21.2 (+libidn2/2.3.7) libssh/0.10.6/openssl/zlib nghttp2/1.59.0 librtmp/2.3 OpenLDAP/2.6.10",
+        "returncode": 0,
+        "status": "passed"
+      },
+      "python": {
+        "version": "3.12.3",
+        "tls": "OpenSSL 3.0.13 30 Jan 2024",
+        "status": "passed",
+        "adapter": "stdlib FTP_TLS plus explicit SSL session reuse"
+      },
+      "large_transfer": {
+        "bytes": 1048576,
+        "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+        "seconds": 1.1679710999596864,
+        "worker_memory_mb": 512
+      },
+      "curl_plain": {
+        "version": "curl 8.5.0 (x86_64-pc-linux-gnu) libcurl/8.5.0 OpenSSL/3.0.13 zlib/1.3 brotli/1.1.0 zstd/1.5.5 libidn2/2.3.7 libpsl/0.21.2 (+libidn2/2.3.7) libssh/0.10.6/openssl/zlib nghttp2/1.59.0 librtmp/2.3 OpenLDAP/2.6.10",
+        "status": "passed"
+      }
+    },
+    "filezilla": {
+      "status": "not_tested",
+      "reason": "No installed automatable FileZilla GUI on either acceptance host"
+    }
+  },
+  "remote_fix_validation": "pending"
+}

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Disposable FTP/explicit FTPS acceptance; no system services or real datasets."""
-import argparse, ftplib, hashlib, io, json, os, platform, shutil, signal, socket, ssl, struct, subprocess, threading, time
+import argparse, ftplib, hashlib, io, json, os, platform, secrets, shutil, signal, socket, ssl, struct, subprocess, threading, time
 from pathlib import Path
 from m3_integration import Fixture as DavFixture
 from m1_integration import wait
@@ -22,8 +22,11 @@ class Fixture(DavFixture):
             sockets=[]
             try:
                 probe=socket.socket();probe.bind(('127.0.0.1',0));self.ftpport=probe.getsockname()[1];sockets.append(probe)
-                first=self.ftpport+1
-                if first+3>65535:continue
+                # Keep passive listeners outside the default Windows/Linux
+                # dynamic client-port ranges. Picking ftpport+1 lets the OS
+                # allocate a probed passive port to a later control/TLS/API
+                # connection before EPSV binds it (Windows exclusive bind).
+                first=20000+secrets.randbelow(9997)
                 for port in range(first,first+4):
                     probe=socket.socket();probe.bind(('127.0.0.1',port));sockets.append(probe)
                 break
