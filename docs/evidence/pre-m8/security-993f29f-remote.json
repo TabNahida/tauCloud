@@ -1,0 +1,1334 @@
+{
+  "source": "993f29fe031cad19d09bda02ac0e004686f9619a",
+  "workflow": {
+    "conclusion": "success",
+    "headSha": "993f29fe031cad19d09bda02ac0e004686f9619a",
+    "jobs": [
+      {
+        "completedAt": "2026-11-03T23:59:06Z",
+        "conclusion": "success",
+        "databaseId": 126287633497,
+        "name": "clang metadata",
+        "startedAt": "2026-11-03T23:53:13Z",
+        "status": "completed",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake-io/github-action-setup-xmake@v1",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_pace.py",
+            "number": 4,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_pace.py --dependency recipes",
+            "number": 5,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run sudo apt-get update && sudo apt-get install -y libssl-dev libexpat1-dev samba-testsuite",
+            "number": 6,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python -m pip install -r tests/smb-requirements.txt -r tests/nfs-requirements.txt",
+            "number": 7,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_nfs_client.py",
+            "number": 8,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake f -y -c -p linux -a x86_64 -m debug --m0=n --m1=y --toolchain=clang --sanitizers=y",
+            "number": 9,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake -y -j 8",
+            "number": 10,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Native allocation failure safety",
+            "number": 11,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB authority and failed CREATE cleanup",
+            "number": 12,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Persistent ACLs and cross-protocol permission checks",
+            "number": 13,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Native Windows security descriptor operations",
+            "number": 14,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Unmodified Samba ACL conformance",
+            "number": 15,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "DOS metadata, timestamps, EAs and modes",
+            "number": 16,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Asynchronous SMB blocking locks and cancellation",
+            "number": 17,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Unmodified Samba asynchronous locks",
+            "number": 18,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Native allocation and durable quota",
+            "number": 19,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFS attributes and native allocation",
+            "number": 20,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB3 dialects and encrypted allocation",
+            "number": 21,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/upload-artifact@v4",
+            "number": 22,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run xmake-io/github-action-setup-xmake@v1",
+            "number": 43,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 44,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 45,
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/TabNahida/tauCloud/actions/runs/41742617875/job/126287633497"
+      },
+      {
+        "completedAt": "2026-11-04T00:02:52Z",
+        "conclusion": "success",
+        "databaseId": 126287633733,
+        "name": "gcc metadata",
+        "startedAt": "2026-11-03T23:53:13Z",
+        "status": "completed",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake-io/github-action-setup-xmake@v1",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_pace.py",
+            "number": 4,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_pace.py --dependency recipes",
+            "number": 5,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run sudo apt-get update && sudo apt-get install -y libssl-dev libexpat1-dev samba-testsuite",
+            "number": 6,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python -m pip install -r tests/smb-requirements.txt -r tests/nfs-requirements.txt",
+            "number": 7,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_nfs_client.py",
+            "number": 8,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake f -y -c -p linux -a x86_64 -m release --m0=n --m1=y --toolchain=gcc --sanitizers=n",
+            "number": 9,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake -y -j 8",
+            "number": 10,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Native allocation failure safety",
+            "number": 11,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB authority and failed CREATE cleanup",
+            "number": 12,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Persistent ACLs and cross-protocol permission checks",
+            "number": 13,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Native Windows security descriptor operations",
+            "number": 14,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Unmodified Samba ACL conformance",
+            "number": 15,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "DOS metadata, timestamps, EAs and modes",
+            "number": 16,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Asynchronous SMB blocking locks and cancellation",
+            "number": 17,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Unmodified Samba asynchronous locks",
+            "number": 18,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Native allocation and durable quota",
+            "number": 19,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFS attributes and native allocation",
+            "number": 20,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB3 dialects and encrypted allocation",
+            "number": 21,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/upload-artifact@v4",
+            "number": 22,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run xmake-io/github-action-setup-xmake@v1",
+            "number": 43,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 44,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 45,
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/TabNahida/tauCloud/actions/runs/41742617875/job/126287633733"
+      },
+      {
+        "completedAt": "2026-11-04T00:04:07Z",
+        "conclusion": "success",
+        "databaseId": 126287633966,
+        "name": "msvc metadata",
+        "startedAt": "2026-11-03T23:53:13Z",
+        "status": "completed",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake-io/github-action-setup-xmake@v1",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_pace.py",
+            "number": 4,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_pace.py --dependency recipes",
+            "number": 5,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Run sudo apt-get update && sudo apt-get install -y libssl-dev libexpat1-dev samba-testsuite",
+            "number": 6,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python -m pip install -r tests/smb-requirements.txt -r tests/nfs-requirements.txt",
+            "number": 7,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_nfs_client.py",
+            "number": 8,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake f -y -c -p windows -a x64 -m release --m0=n --m1=y --toolchain=msvc --sanitizers=n",
+            "number": 9,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake -y -j 8",
+            "number": 10,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Native allocation failure safety",
+            "number": 11,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB authority and failed CREATE cleanup",
+            "number": 12,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Persistent ACLs and cross-protocol permission checks",
+            "number": 13,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Native Windows security descriptor operations",
+            "number": 14,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Unmodified Samba ACL conformance",
+            "number": 15,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "DOS metadata, timestamps, EAs and modes",
+            "number": 16,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Asynchronous SMB blocking locks and cancellation",
+            "number": 17,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Unmodified Samba asynchronous locks",
+            "number": 18,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Native allocation and durable quota",
+            "number": 19,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFS attributes and native allocation",
+            "number": 20,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB3 dialects and encrypted allocation",
+            "number": 21,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/upload-artifact@v4",
+            "number": 22,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run xmake-io/github-action-setup-xmake@v1",
+            "number": 43,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 44,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 45,
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/TabNahida/tauCloud/actions/runs/41742617875/job/126287633966"
+      }
+    ],
+    "status": "completed",
+    "url": "https://github.com/TabNahida/tauCloud/actions/runs/41742617875"
+  },
+  "hosts": {
+    "gcc": {
+      "allocation": {
+        "status": "passed",
+        "checks": [
+          "schema v4 migration preserves a pre-v5 backup before adding durable reservations",
+          "native space allocation preserves EOF, charges quota once, rejects over-quota growth before mutation and enforces WRITE_DATA",
+          "durable logical quota survives restart while allocation reports native close-time trimming; EOF extension consumes reservations; shrink and deletion release quota",
+          "AlSi CREATE/overwrite preallocation preserves zero EOF, charges durable quota, ignores existing opens/directories, validates context shape and fails over-quota before namespace/data mutation"
+        ],
+        "native_allocation_after_reopen": [
+          [
+            4096,
+            14
+          ],
+          [
+            4096,
+            0
+          ]
+        ]
+      },
+      "blocking-locks": {
+        "status": "passed",
+        "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+        "recorded_at": "2026-11-03T23:58:33.181861+00:00",
+        "checks": [
+          "210: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "210: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "210: cross-connection FIFO for conflicts and queued writer fairness",
+          "210: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "300: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "300: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "300: cross-connection FIFO for conflicts and queued writer fairness",
+          "300: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "302: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "302: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "302: cross-connection FIFO for conflicts and queued writer fairness",
+          "302: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "311: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "311: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "311: cross-connection FIFO for conflicts and queued writer fairness",
+          "311: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "compound LOCK/ECHO and LOCK/CLOSE preserve interim/final ordering and connection progress",
+          "TREE_DISCONNECT cancels pending locks before removing the tree",
+          "session teardown cancels pending locks before discarding signing and encryption keys",
+          "peer disconnect removes a pending waiter before granting the next connection",
+          "holder disconnect releases locks and wakes the surviving client",
+          "32 concurrent CANCEL/unlock races produce one final result and no leaked lock or duplicate response",
+          "16 concurrent CLOSE/unlock races produce one final result and release every acquired range",
+          "bounded pending requests return INSUFFICIENT_RESOURCES and all cancelled capacity is reusable",
+          "credential revocation drains all session locks before its final reply, without transport teardown",
+          "a frame started before idle expiry retains its independent five-second body deadline",
+          "pending lock survives 65 seconds without client traffic; normal idle expiry resumes after its final response"
+        ]
+      },
+      "metadata": {
+        "status": "passed",
+        "checks": [
+          "CREATE/QUERY/SET persistent DOS attributes, zero/no-change and NORMAL semantics; readonly open/delete checks and granted-handle authority",
+          "four independent timestamps, native mtime, zero/no-change, per-handle explicit/-1 freeze and -2 re-enable; invalid times reject before attribute mutation",
+          "binary extended attributes on CREATE/QUERY/SET, case-insensitive updates, deletion, restart, NEED_EA and access rights; malformed chains reject atomically",
+          "attributes follow native object across rename/restart, directory invariants hold, replacement object does not inherit stale metadata",
+          "per-open mode CREATE/QUERY/SET and FileAllInformation agreement, write-through writes, independent handles, invalid synchronous/immutable modes and SMB2 ignored synchronous CREATE flags",
+          "EA cursor paging, restart, single-entry and explicit indexes, independent opens, bounded whole-entry overflow and undersized-buffer retries",
+          "selected-name EA queries preserve request order and scan cursor, ignore index/restart, match case-insensitively, return absent names, bound output and reject malformed chains without cursor changes",
+          "MxAc maximal access uses fresh policy and readonly restrictions, supports optional change-time comparison and chained QFid replies, rejects malformed/duplicate contexts before mutation",
+          "EA writes atomically update change time/archive while respecting frozen timestamps; exact 65531-byte aggregate limit and standard invalid-name/list statuses"
+        ]
+      },
+      "nfs-attributes": {
+        "status": "passed",
+        "checks": [
+          "v3 CREATE preserves mode, mapped ownership and explicit atime/mtime on native handles",
+          "v3 ctime differs from preserved mtime and advances for mode-only metadata changes across export aliases",
+          "v4 SETATTR updates aliases consistently; GETATTR rejects write-only time attributes",
+          "durable change counters detect equal-size writes with restored mtime, share alias state and return real namespace change_info; reads do not advance them",
+          "v3 used and v4 space_used match independent native allocation for empty, small, sparse/extended and truncated files, separately from logical size",
+          "paged v4 READDIR skips reserved cookies 1/2 and resumes without duplicate or missing entries",
+          "mode/ownership and exact timestamps survive server restart through stable alias handles"
+        ],
+        "sanitizers": false
+      },
+      "samba-acls": {
+        "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+        "recorded_at": "2026-11-03T23:58:03.171030+00:00",
+        "tests": [
+          {
+            "selector": "smb2.acls.CREATOR",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-acls-smb2.acls.CREATOR.log"
+          },
+          {
+            "selector": "smb2.acls.GENERIC",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-acls-smb2.acls.GENERIC.log"
+          },
+          {
+            "selector": "smb2.acls.OWNER",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-acls-smb2.acls.OWNER.log"
+          },
+          {
+            "selector": "smb2.acls.INHERITANCE",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-acls-smb2.acls.INHERITANCE.log"
+          },
+          {
+            "selector": "smb2.acls.INHERITFLAGS",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-acls-smb2.acls.INHERITFLAGS.log"
+          },
+          {
+            "selector": "smb2.acls.DYNAMIC",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-acls-smb2.acls.DYNAMIC.log"
+          },
+          {
+            "selector": "smb2.acls.ACCESSBASED",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-acls-smb2.acls.ACCESSBASED.log"
+          },
+          {
+            "selector": "smb2.acls.OWNER-RIGHTS",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-acls-smb2.acls.OWNER-RIGHTS.log"
+          },
+          {
+            "selector": "smb2.acls.OWNER-RIGHTS-DENY",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-acls-smb2.acls.OWNER-RIGHTS-DENY.log"
+          },
+          {
+            "selector": "smb2.acls.OWNER-RIGHTS-DENY1",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-acls-smb2.acls.OWNER-RIGHTS-DENY1.log"
+          },
+          {
+            "selector": "smb2.acls.DENY1",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-acls-smb2.acls.DENY1.log"
+          },
+          {
+            "selector": "smb2.acls.MXAC-NOT-GRANTED",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-acls-smb2.acls.MXAC-NOT-GRANTED.log"
+          },
+          {
+            "selector": "smb2.acls.OVERWRITE_READ_ONLY_FILE",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-acls-smb2.acls.OVERWRITE_READ_ONLY_FILE.log"
+          }
+        ],
+        "status": "passed"
+      },
+      "samba-async": {
+        "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+        "recorded_at": "2026-11-04T00:01:51.117070+00:00",
+        "tests": [
+          {
+            "selector": "smb2.lock.async",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-async-smb2.lock.async.log"
+          },
+          {
+            "selector": "smb2.lock.cancel",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-async-smb2.lock.cancel.log"
+          },
+          {
+            "selector": "smb2.lock.cancel-tdis",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-async-smb2.lock.cancel-tdis.log"
+          },
+          {
+            "selector": "smb2.lock.cancel-logoff",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-async-smb2.lock.cancel-logoff.log"
+          }
+        ],
+        "status": "passed"
+      },
+      "security": {
+        "status": "passed",
+        "checks": [
+          "schema 5 migration backs up each file authority before adding persistent security descriptors",
+          "self-relative owner/group/DACL query, requested sections, required buffer size and READ_CONTROL/WRITE_DAC/SACL boundaries",
+          "ordered deny/allow access checks, MAXIMUM_ALLOWED and explicit-right intersection; existing handles retain granted rights",
+          "SMB denial enforced by NFSv3 READ/ACCESS, NFSv4 ACCESS, core API and WebDAV readonly aliases",
+          "ACE order, empty versus NULL DACL, implicit owner rights and OWNER RIGHTS SID",
+          "malformed offsets, overlaps, truncation and unsupported ACEs rejected atomically; ownership cannot be assigned to another user",
+          "file/directory inheritance with CREATOR OWNER substitution and multi-generation propagation; ACL follows rename",
+          "SecD CREATE persists protected initial ACL, validates ownership and rejects duplicate/malformed contexts before mutation",
+          "group ACE enforcement and membership revocation use freshly signed identity grants",
+          "schema 6 durability across process restart; replacement object receives fresh owner and ACL",
+          "NFS writer publication still enforces file DACL; WRITE and chmod cannot bypass SMB restrictions",
+          "DAV writer cannot bypass ACL; staged PUT retains restrictions, recursive COPY checks descendants and inherits destination ACL through private staging parents",
+          "DAV LOCK on unmapped URL checks parent create rights and persists inherited DACL"
+        ]
+      },
+      "smb3": {
+        "status": "passed",
+        "checks": [
+          "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+          "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+          "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+          "0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+          "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+          "leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent",
+          "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+          "unsupported signing/cipher/hash and malformed contexts fail without dialect fallback",
+          "independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+          "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+          "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+          "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+        ],
+        "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+        "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+        "authentication_provider": "pyspnego NTLM",
+        "large_mib": 1,
+        "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+        "port": 55655,
+        "sanitizers": false
+      }
+    },
+    "clang": {
+      "allocation": {
+        "status": "passed",
+        "checks": [
+          "schema v4 migration preserves a pre-v5 backup before adding durable reservations",
+          "native space allocation preserves EOF, charges quota once, rejects over-quota growth before mutation and enforces WRITE_DATA",
+          "durable logical quota survives restart while allocation reports native close-time trimming; EOF extension consumes reservations; shrink and deletion release quota",
+          "AlSi CREATE/overwrite preallocation preserves zero EOF, charges durable quota, ignores existing opens/directories, validates context shape and fails over-quota before namespace/data mutation"
+        ],
+        "native_allocation_after_reopen": [
+          [
+            4096,
+            14
+          ],
+          [
+            4096,
+            0
+          ]
+        ]
+      },
+      "blocking-locks": {
+        "status": "passed",
+        "host": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+        "recorded_at": "2026-11-03T23:57:49.120477+00:00",
+        "checks": [
+          "210: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "210: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "210: cross-connection FIFO for conflicts and queued writer fairness",
+          "210: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "300: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "300: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "300: cross-connection FIFO for conflicts and queued writer fairness",
+          "300: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "302: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "302: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "302: cross-connection FIFO for conflicts and queued writer fairness",
+          "302: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "311: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "311: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "311: cross-connection FIFO for conflicts and queued writer fairness",
+          "311: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "compound LOCK/ECHO and LOCK/CLOSE preserve interim/final ordering and connection progress",
+          "TREE_DISCONNECT cancels pending locks before removing the tree",
+          "session teardown cancels pending locks before discarding signing and encryption keys",
+          "peer disconnect removes a pending waiter before granting the next connection",
+          "holder disconnect releases locks and wakes the surviving client",
+          "32 concurrent CANCEL/unlock races produce one final result and no leaked lock or duplicate response",
+          "16 concurrent CLOSE/unlock races produce one final result and release every acquired range",
+          "bounded pending requests return INSUFFICIENT_RESOURCES and all cancelled capacity is reusable",
+          "credential revocation drains all session locks before its final reply, without transport teardown"
+        ]
+      },
+      "metadata": {
+        "status": "passed",
+        "checks": [
+          "CREATE/QUERY/SET persistent DOS attributes, zero/no-change and NORMAL semantics; readonly open/delete checks and granted-handle authority",
+          "four independent timestamps, native mtime, zero/no-change, per-handle explicit/-1 freeze and -2 re-enable; invalid times reject before attribute mutation",
+          "binary extended attributes on CREATE/QUERY/SET, case-insensitive updates, deletion, restart, NEED_EA and access rights; malformed chains reject atomically",
+          "attributes follow native object across rename/restart, directory invariants hold, replacement object does not inherit stale metadata",
+          "per-open mode CREATE/QUERY/SET and FileAllInformation agreement, write-through writes, independent handles, invalid synchronous/immutable modes and SMB2 ignored synchronous CREATE flags",
+          "EA cursor paging, restart, single-entry and explicit indexes, independent opens, bounded whole-entry overflow and undersized-buffer retries",
+          "selected-name EA queries preserve request order and scan cursor, ignore index/restart, match case-insensitively, return absent names, bound output and reject malformed chains without cursor changes",
+          "MxAc maximal access uses fresh policy and readonly restrictions, supports optional change-time comparison and chained QFid replies, rejects malformed/duplicate contexts before mutation",
+          "EA writes atomically update change time/archive while respecting frozen timestamps; exact 65531-byte aggregate limit and standard invalid-name/list statuses"
+        ]
+      },
+      "nfs-attributes": {
+        "status": "passed",
+        "checks": [
+          "v3 CREATE preserves mode, mapped ownership and explicit atime/mtime on native handles",
+          "v3 ctime differs from preserved mtime and advances for mode-only metadata changes across export aliases",
+          "v4 SETATTR updates aliases consistently; GETATTR rejects write-only time attributes",
+          "durable change counters detect equal-size writes with restored mtime, share alias state and return real namespace change_info; reads do not advance them",
+          "v3 used and v4 space_used match independent native allocation for empty, small, sparse/extended and truncated files, separately from logical size",
+          "paged v4 READDIR skips reserved cookies 1/2 and resumes without duplicate or missing entries",
+          "mode/ownership and exact timestamps survive server restart through stable alias handles"
+        ],
+        "sanitizers": true
+      },
+      "samba-acls": {
+        "host": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+        "recorded_at": "2026-11-03T23:57:09.902802+00:00",
+        "tests": [
+          {
+            "selector": "smb2.acls.CREATOR",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-acls-smb2.acls.CREATOR.log"
+          },
+          {
+            "selector": "smb2.acls.GENERIC",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-acls-smb2.acls.GENERIC.log"
+          },
+          {
+            "selector": "smb2.acls.OWNER",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-acls-smb2.acls.OWNER.log"
+          },
+          {
+            "selector": "smb2.acls.INHERITANCE",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-acls-smb2.acls.INHERITANCE.log"
+          },
+          {
+            "selector": "smb2.acls.INHERITFLAGS",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-acls-smb2.acls.INHERITFLAGS.log"
+          },
+          {
+            "selector": "smb2.acls.DYNAMIC",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-acls-smb2.acls.DYNAMIC.log"
+          },
+          {
+            "selector": "smb2.acls.ACCESSBASED",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-acls-smb2.acls.ACCESSBASED.log"
+          },
+          {
+            "selector": "smb2.acls.OWNER-RIGHTS",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-acls-smb2.acls.OWNER-RIGHTS.log"
+          },
+          {
+            "selector": "smb2.acls.OWNER-RIGHTS-DENY",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-acls-smb2.acls.OWNER-RIGHTS-DENY.log"
+          },
+          {
+            "selector": "smb2.acls.OWNER-RIGHTS-DENY1",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-acls-smb2.acls.OWNER-RIGHTS-DENY1.log"
+          },
+          {
+            "selector": "smb2.acls.DENY1",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-acls-smb2.acls.DENY1.log"
+          },
+          {
+            "selector": "smb2.acls.MXAC-NOT-GRANTED",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-acls-smb2.acls.MXAC-NOT-GRANTED.log"
+          },
+          {
+            "selector": "smb2.acls.OVERWRITE_READ_ONLY_FILE",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-acls-smb2.acls.OVERWRITE_READ_ONLY_FILE.log"
+          }
+        ],
+        "status": "passed"
+      },
+      "samba-async": {
+        "host": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+        "recorded_at": "2026-11-03T23:58:03.700179+00:00",
+        "tests": [
+          {
+            "selector": "smb2.lock.async",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-async-smb2.lock.async.log"
+          },
+          {
+            "selector": "smb2.lock.cancel",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-async-smb2.lock.cancel.log"
+          },
+          {
+            "selector": "smb2.lock.cancel-tdis",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-async-smb2.lock.cancel-tdis.log"
+          },
+          {
+            "selector": "smb2.lock.cancel-logoff",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "samba-async-smb2.lock.cancel-logoff.log"
+          }
+        ],
+        "status": "passed"
+      },
+      "security": {
+        "status": "passed",
+        "checks": [
+          "schema 5 migration backs up each file authority before adding persistent security descriptors",
+          "self-relative owner/group/DACL query, requested sections, required buffer size and READ_CONTROL/WRITE_DAC/SACL boundaries",
+          "ordered deny/allow access checks, MAXIMUM_ALLOWED and explicit-right intersection; existing handles retain granted rights",
+          "SMB denial enforced by NFSv3 READ/ACCESS, NFSv4 ACCESS, core API and WebDAV readonly aliases",
+          "ACE order, empty versus NULL DACL, implicit owner rights and OWNER RIGHTS SID",
+          "malformed offsets, overlaps, truncation and unsupported ACEs rejected atomically; ownership cannot be assigned to another user",
+          "file/directory inheritance with CREATOR OWNER substitution and multi-generation propagation; ACL follows rename",
+          "SecD CREATE persists protected initial ACL, validates ownership and rejects duplicate/malformed contexts before mutation",
+          "group ACE enforcement and membership revocation use freshly signed identity grants",
+          "schema 6 durability across process restart; replacement object receives fresh owner and ACL",
+          "NFS writer publication still enforces file DACL; WRITE and chmod cannot bypass SMB restrictions",
+          "DAV writer cannot bypass ACL; staged PUT retains restrictions, recursive COPY checks descendants and inherits destination ACL through private staging parents",
+          "DAV LOCK on unmapped URL checks parent create rights and persists inherited DACL"
+        ]
+      },
+      "smb3": {
+        "status": "passed",
+        "checks": [
+          "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+          "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+          "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+          "0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+          "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+          "leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent",
+          "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+          "unsupported signing/cipher/hash and malformed contexts fail without dialect fallback",
+          "independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+          "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+          "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+          "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+        ],
+        "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+        "host": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+        "authentication_provider": "pyspnego NTLM",
+        "large_mib": 1,
+        "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+        "port": 36745,
+        "sanitizers": true
+      }
+    },
+    "msvc": {
+      "allocation": {
+        "status": "passed",
+        "checks": [
+          "schema v4 migration preserves a pre-v5 backup before adding durable reservations",
+          "native space allocation preserves EOF, charges quota once, rejects over-quota growth before mutation and enforces WRITE_DATA",
+          "durable logical quota survives restart while allocation reports native close-time trimming; EOF extension consumes reservations; shrink and deletion release quota",
+          "AlSi CREATE/overwrite preallocation preserves zero EOF, charges durable quota, ignores existing opens/directories, validates context shape and fails over-quota before namespace/data mutation"
+        ],
+        "native_allocation_after_reopen": [
+          [
+            4096,
+            14
+          ],
+          [
+            0,
+            0
+          ]
+        ]
+      },
+      "blocking-locks": {
+        "status": "passed",
+        "host": "Windows-2025Server-10.0.26100-SP0",
+        "recorded_at": "2026-11-04T00:02:48.850566+00:00",
+        "checks": [
+          "210: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "210: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "210: cross-connection FIFO for conflicts and queued writer fairness",
+          "210: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "300: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "300: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "300: cross-connection FIFO for conflicts and queued writer fairness",
+          "300: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "302: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "302: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "302: cross-connection FIFO for conflicts and queued writer fairness",
+          "302: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "311: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "311: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "311: cross-connection FIFO for conflicts and queued writer fairness",
+          "311: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "compound LOCK/ECHO and LOCK/CLOSE preserve interim/final ordering and connection progress",
+          "TREE_DISCONNECT cancels pending locks before removing the tree",
+          "session teardown cancels pending locks before discarding signing and encryption keys",
+          "peer disconnect removes a pending waiter before granting the next connection",
+          "holder disconnect releases locks and wakes the surviving client",
+          "32 concurrent CANCEL/unlock races produce one final result and no leaked lock or duplicate response",
+          "16 concurrent CLOSE/unlock races produce one final result and release every acquired range",
+          "bounded pending requests return INSUFFICIENT_RESOURCES and all cancelled capacity is reusable",
+          "credential revocation drains all session locks before its final reply, without transport teardown"
+        ]
+      },
+      "metadata": {
+        "status": "passed",
+        "checks": [
+          "CREATE/QUERY/SET persistent DOS attributes, zero/no-change and NORMAL semantics; readonly open/delete checks and granted-handle authority",
+          "four independent timestamps, native mtime, zero/no-change, per-handle explicit/-1 freeze and -2 re-enable; invalid times reject before attribute mutation",
+          "binary extended attributes on CREATE/QUERY/SET, case-insensitive updates, deletion, restart, NEED_EA and access rights; malformed chains reject atomically",
+          "attributes follow native object across rename/restart, directory invariants hold, replacement object does not inherit stale metadata",
+          "per-open mode CREATE/QUERY/SET and FileAllInformation agreement, write-through writes, independent handles, invalid synchronous/immutable modes and SMB2 ignored synchronous CREATE flags",
+          "EA cursor paging, restart, single-entry and explicit indexes, independent opens, bounded whole-entry overflow and undersized-buffer retries",
+          "selected-name EA queries preserve request order and scan cursor, ignore index/restart, match case-insensitively, return absent names, bound output and reject malformed chains without cursor changes",
+          "MxAc maximal access uses fresh policy and readonly restrictions, supports optional change-time comparison and chained QFid replies, rejects malformed/duplicate contexts before mutation",
+          "EA writes atomically update change time/archive while respecting frozen timestamps; exact 65531-byte aggregate limit and standard invalid-name/list statuses"
+        ]
+      },
+      "nfs-attributes": {
+        "status": "passed",
+        "checks": [
+          "v3 CREATE preserves mode, mapped ownership and explicit atime/mtime on native handles",
+          "v3 ctime differs from preserved mtime and advances for mode-only metadata changes across export aliases",
+          "v4 SETATTR updates aliases consistently; GETATTR rejects write-only time attributes",
+          "durable change counters detect equal-size writes with restored mtime, share alias state and return real namespace change_info; reads do not advance them",
+          "v3 used and v4 space_used match independent native allocation for empty, small, sparse/extended and truncated files, separately from logical size",
+          "paged v4 READDIR skips reserved cookies 1/2 and resumes without duplicate or missing entries",
+          "mode/ownership and exact timestamps survive server restart through stable alias handles"
+        ],
+        "sanitizers": false
+      },
+      "security": {
+        "status": "passed",
+        "checks": [
+          "schema 5 migration backs up each file authority before adding persistent security descriptors",
+          "self-relative owner/group/DACL query, requested sections, required buffer size and READ_CONTROL/WRITE_DAC/SACL boundaries",
+          "ordered deny/allow access checks, MAXIMUM_ALLOWED and explicit-right intersection; existing handles retain granted rights",
+          "SMB denial enforced by NFSv3 READ/ACCESS, NFSv4 ACCESS, core API and WebDAV readonly aliases",
+          "ACE order, empty versus NULL DACL, implicit owner rights and OWNER RIGHTS SID",
+          "malformed offsets, overlaps, truncation and unsupported ACEs rejected atomically; ownership cannot be assigned to another user",
+          "file/directory inheritance with CREATOR OWNER substitution and multi-generation propagation; ACL follows rename",
+          "SecD CREATE persists protected initial ACL, validates ownership and rejects duplicate/malformed contexts before mutation",
+          "group ACE enforcement and membership revocation use freshly signed identity grants",
+          "schema 6 durability across process restart; replacement object receives fresh owner and ACL",
+          "NFS writer publication still enforces file DACL; WRITE and chmod cannot bypass SMB restrictions",
+          "DAV writer cannot bypass ACL; staged PUT retains restrictions, recursive COPY checks descendants and inherits destination ACL through private staging parents",
+          "DAV LOCK on unmapped URL checks parent create rights and persists inherited DACL"
+        ]
+      },
+      "smb3": {
+        "status": "passed",
+        "checks": [
+          "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+          "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+          "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+          "0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+          "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+          "leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent",
+          "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+          "unsupported signing/cipher/hash and malformed contexts fail without dialect fallback",
+          "independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+          "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+          "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+          "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+        ],
+        "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+        "host": "Windows-2025Server-10.0.26100-SP0",
+        "authentication_provider": "Windows SSPI (sspilib)",
+        "large_mib": 1,
+        "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+        "port": 61096,
+        "sanitizers": false
+      },
+      "windows-native-security": {
+        "status": "passed",
+        "host": "Windows-2025Server-10.0.26100-SP0",
+        "returncode": 0,
+        "security": "native Get-Acl/Set-Acl, SID roundtrip, deny write and preserve read",
+        "payload_sha256": "631B84027D6B9E52B539C4E8373622D23032DFADC64D60AF87339C9037E4F769",
+        "client": "Windows native SMB redirector",
+        "connection": {
+          "ServerName": "127.0.0.1",
+          "ShareName": "smb",
+          "Dialect": "3.1.1",
+          "Encrypted": true,
+          "Signed": false
+        }
+      }
+    }
+  },
+  "scope": "Persistent simple DACL and shared permission increment; this passing targeted matrix does not establish Full SMB/NFS conformance."
+}

@@ -9,8 +9,8 @@
   },
   "full_backend": {
     "clang": "litmus locks.unmapped_lock failed with 404 (38/39 locks passed).",
-    "gcc": "Full runner failed, pending complete job logs.",
-    "windows": "Full runner and native SMB failed, pending complete job logs."
+    "gcc": "Full runner failed only at litmus unmapped_lock (404). Subsequent Linux native SMB/NFS, NLM recovery, Samba selection, FileZilla FTPS, upstream pynfs suites, NFS state/attributes/creation checks passed; whole job remains failed.",
+    "windows": "Full runner failed after backup restore: GET conditional returned HTTP 503 deadline_exceeded; cause unproven. Native SMB failed at Set-Acl. Native Windows NFSv3 roundtrip and FileZilla FTPS passed."
   },
   "logs": {
     "126282141480": [
