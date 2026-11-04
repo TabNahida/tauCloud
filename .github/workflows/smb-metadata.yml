@@ -104,6 +104,7 @@ on:
       - 'tests/linux_native_gss.py'
       - 'tests/kerberos-requirements.txt'
       - 'src/nfs_v4.inc'
+      - 'src/nfs_reply_lifetime.inc'
       - 'tests/nfs_attributes_integration.py'
       - 'tests/nfs_session_negotiation.py'
       - 'tests/nfs_delegation_negotiation.py'

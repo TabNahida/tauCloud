@@ -6,12 +6,28 @@ void gss_expire() {
     const auto &g = entry.second;
     if (!g.ssv) return g.expires <= time;
     auto c = client_ids.find(g.ssv_client);
-    return c == client_ids.end() || c->second.expires <= now() || c->second.ssv != g.ssv;
+    return c == client_ids.end() || !client_live(g.ssv_client) || c->second.ssv != g.ssv;
   });
 }
-std::string dispatch(std::string_view packet, std::string connection_id) {
+std::string dispatch(std::string_view packet, std::string connection_id, uint64_t *completion) {
   std::lock_guard guard(mutex);
   connection = std::move(connection_id);
+  if (completion) *completion = 0;
+  finish_replies();
+  current_reply = completion ? reserve_reply() : 0;
+  struct finish_tracking {
+    impl &self;
+    uint64_t *output;
+    ~finish_tracking() {
+      std::lock_guard lock(self.reply_mutex);
+      auto found = self.replies.find(self.current_reply);
+      if (found != self.replies.end()) {
+        if (found->second.client) *output = found->first;
+        else self.replies.erase(found);
+      }
+      self.current_reply = 0;
+    }
+  } tracking{*this, completion};
   reader r(packet);
   uint32_t xid = r.u32();
   auto denied = [&](uint32_t code) {

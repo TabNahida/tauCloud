@@ -25,7 +25,6 @@ struct callback_gss {
 struct session {
   uint64_t client;
   std::string principal;
-  int64_t expires;
   std::vector<slot> slots;
   std::vector<uint32_t> channel;
   std::set<std::string> connections;
@@ -85,11 +84,11 @@ std::map<std::string, lock_state> byte_locks;
 std::map<std::string, lock_waiter> lock_waiters;
 std::map<std::string, json> reclaim;
 int64_t grace_end = 0;
+#include "nfs_reply_lifetime.inc"
 void renew_client_lease(uint64_t id) {
   auto &client = client_ids.at(id);
   client.expires = std::max(client.expires, now() + int64_t(cfg.nfs_lease_seconds) * 1000);
   // RFC 8881 8.3: all sessions belonging to one client share one lease.
-  for (auto &[sid, s] : sessions) if (s.client == id) s.expires = client.expires;
   renew_delegations(id);
 }
 #include "nfs_backchannel.inc"
@@ -163,6 +162,7 @@ void retire_client(uint64_t client) {
   client_ids.erase(client);
 }
 void expire() {
+  finish_replies();
   expire_callback_probes();
   nlm_expire();
   expire_delegations();
@@ -175,7 +175,7 @@ void expire() {
   }
   for (auto it = byte_locks.begin(); it != byte_locks.end();) {
     auto c = client_ids.find(it->second.client);
-    if (c == client_ids.end() || c->second.expires <= now()) {
+    if (c == client_ids.end() || !client_live(it->second.client)) {
       persist_locks(it->second, {});
       it = byte_locks.erase(it);
     } else
@@ -183,14 +183,14 @@ void expire() {
   }
   for (auto it = opens.begin(); it != opens.end();) {
     auto s = client_ids.find(it->second.client);
-    if (s == client_ids.end() || s->second.expires <= now()) {
+    if (s == client_ids.end() || !client_live(it->second.client)) {
       remove_recovery(it->second.recovery);
       it = opens.erase(it);
     } else
       ++it;
   }
-  std::erase_if(sessions, [](const auto &s) { return s.second.expires <= now(); });
-  std::erase_if(client_ids, [](const auto &c) { return c.second.expires <= now(); });
+  std::erase_if(sessions, [&](const auto &s) { return !client_live(s.second.client); });
+  std::erase_if(client_ids, [&](const auto &c) { return !client_live(c.first); });
   reap_retained();
 }
 std::vector<uint32_t> bitmap(reader &r) {
@@ -1179,7 +1179,7 @@ std::string v4(const identity &who, reader &r) {
           // These bounds alone do not grant a backchannel; binding is negotiated below.
           std::vector<uint32_t> back = {0, std::min(back_offer[1], 4096u),
               std::min(back_offer[2], 4096u), 0, back_offer[4], back_offer[5]};
-          session prepared{id, who.key, now() + int64_t(cfg.nfs_lease_seconds) * 1000, std::vector<slot>(fore[5]), fore, {connection}};
+          session prepared{id, who.key, std::vector<slot>(fore[5]), fore, {connection}};
           configure_callback(prepared, a); // Validate every handle before replacing client state.
           auto idstr = random_hex(16);
           if (c.replaces) {
@@ -1232,6 +1232,7 @@ std::string v4(const identity &who, reader &r) {
         if (seq == sl.seq && sl.seq) {
           check(hash == sl.hash, 10076);
           check(!sl.pending && !sl.reply.empty(), 10008);
+          bind_reply(s.client);
           replay_authorized(who, sl.authority);
           s.callback_session_seen = true;
           sequence_callback(sid);
@@ -1240,6 +1241,7 @@ std::string v4(const identity &who, reader &r) {
         }
         check(seq == sl.seq + 1 && !sl.pending, 10063);
         compound_client = s.client;
+        bind_reply(s.client);
         s.callback_session_seen = true;
         sequence_callback(sid);
         sl.seq = seq;
@@ -1841,8 +1843,8 @@ std::string v4(const identity &who, reader &r) {
   out.u32(final_status).opaque(tag).u32(done).fixed(results.data);
   reap_retained();
   // Preserve the client lease across slow operations, including a failing
-  // operation after a successful SEQUENCE. Transport delivery still needs its
-  // own completion accounting; dispatch completion must not use receipt time.
+  // operation after a successful SEQUENCE. Tracked transports additionally
+  // retain the client until their completion token is recorded.
   if (compound_client && client_ids.contains(compound_client)) renew_client_lease(compound_client);
   if (active) {
     active->reply = out.data;

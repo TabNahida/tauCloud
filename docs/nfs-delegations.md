@@ -300,11 +300,56 @@ socket fixture tests two sessions of one client, renewal through exact replay,
 joint idle expiry, and recovery when the configured lease is reduced. The pinned
 kernel guest exercises `retain` through the actual independent owner on tmpfs and
 ext4. The local run passes 186 lifecycle checks, 703 protocol checks, 441 guest checks,
-four independent lease groups and 15 M7 regression groups. Results are recorded in [coherence lease evidence](evidence/pre-m8/nfs-coherence-lease-local.json).
+four independent lease groups and 15 M7 regression groups. The matching remote
+Linux 6.19 run succeeds ([remote evidence](evidence/pre-m8/nfs-coherence-ddcb-remote.json)).
+Results are recorded in [coherence lease evidence](evidence/pre-m8/nfs-coherence-lease-local.json).
 
 **Still required before production handout:** owner failure must not allow a
-successful network renewal to outlive confirmed protection. Outstanding COMPOUNDs
-and replies waiting in the transport queue need explicit lifetime accounting;
-dispatch completion alone is not the RFC's full response-delivery boundary.
-Callbacks also need a reservation covering the response window. Reattachment,
+successful network renewal to outlive confirmed protection. Validated COMPOUND replies now have explicit transport lifetime accounting as
+described below. Native protection still needs an acknowledged reservation for
+that entire lifetime, including slow execution and callback response windows. Reattachment,
 reclaim, complete restart fencing and Windows native ownership remain open.
+
+
+## Reply delivery lifetime
+
+The TCP runtime now requests a private completion token from the protocol engine.
+A validated new SEQUENCE or cached replay binds its own token to the client ID.
+The token is not part of XDR, GSS plaintext or ciphertext, and transmissions of the
+same RPC/XID have separate tokens. The table is bounded at 512 entries before
+protocol side effects. Calls with no valid session do not keep a token.
+
+Client state, OPENs, byte locks, lock notifications, sessions and SSV ownership
+use the client's expiry plus outstanding reply pins. The redundant per-session
+expiry field is removed. Maintenance attempts to refresh retained coherence while replies
+are pending. On completion it applies the actual recorded completion time, not
+the later maintenance time; duplicates and unknown tokens cannot extend leases.
+A retired client cannot be recreated by an old completion. Dispatch without a
+requested token retains the existing in-process convention that returning the
+response is delivery.
+
+A successful complete-frame write records completion. Cancellation, rejected
+queue admission, failed writes, discarded queued frames and connection loss also
+end their pins conservatively. Processing abandoned while a worker is still
+running is completed by the worker's eventual completion notification. A separate
+small mutex lets the I/O thread record completion without waiting for the main
+protocol mutex or any file-domain RPC. The engine consumes these events before
+expiration and before evaluating state-protection context lifetime.
+
+Component tests hold a real OPEN through a reply delayed beyond the lease,
+complete one of two independently pinned replays, and verify that a late duplicate
+cannot renew the client. They also check disconnect retention and eventual expiry,
+unknown-token handling, absence of pins for BADSESSION, and completion registration
+while a slow READ holds the protocol mutex. Independent TCP lease tests detect
+immortal transport pins by requiring idle sessions and OPENs to expire. M7,
+callback retry/recovery, real Kerberos callbacks and SSV checks cover the runtime
+integration. Local validation passes 835 protocol checks, four lease groups,
+15 M7 groups, six callback-recovery groups, nine real-Kerberos callback groups
+and 25 SSV groups. See [reply lifetime evidence](evidence/pre-m8/nfs-reply-lifetime-local.json).
+
+This is client-state lifetime accounting, not proof of full delegation retention.
+The independent native owner still needs reservations covering slow dispatch,
+transport completion and backchannel responses, with failure handling before wire
+success. Requests waiting in the executor before authenticated SEQUENCE admission
+also need receipt-time handling. Worker replacement/reclaim and full restart fencing
+remain open; production delegation handout remains disabled.

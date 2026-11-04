@@ -1,0 +1,134 @@
+{
+  "recorded_at": "2026-11-04T21:23:20.352190+00:00",
+  "base_source": "ddcb3bfe14ca498d077c2d9f87e8cc0ad4441ba7",
+  "status": "reply-delivery-client-lifetime-passed-native-reservation-and-reclaim-open",
+  "source_sha256": {
+    ".github/workflows/smb-metadata.yml": "48840b8c06570010d1fca4b546a8b0fa6d9a47f0dfa2a1bf5e182d23a7dc0a85",
+    "include/taucloud/nfs.hpp": "87b000b97684bfdf082837b02c646828caaf4afc141a8f1d6dade64832749027",
+    "src/nfs.cpp": "7989048b257ce800a503ea2df34fcd1567b4fb441af2ad9f719e331a279b7b96",
+    "src/nfs_backchannel.inc": "d55784fcb50279a561da0d8921ceef42b7c924d3ac5114e1b43a5e0dff546aee",
+    "src/nfs_delegations.inc": "8f9a3b91b35de844a65b3cd617195c309399b6e0c64414fe14679fdca0fb1333",
+    "src/nfs_gss.inc": "380fae3864cbec2a039821ce5017265f6713a4127c9b520a6baf376f2310e6c3",
+    "src/nfs_locks.inc": "612411593f59dfd078de0549afe2696bf4e9febc3620221d65d9456e99f16e4d",
+    "src/nfs_protocol.cpp": "c51a9c8e16b7eb08e6990edb006a4835a5f34cc3d2e7eb724c2c4db409a95eb7",
+    "src/nfs_v4.inc": "8a590535a715f0e6c1b37127e9446c75021ecd9bea65c3ec8afed25c9a7cf058",
+    "tests/nfs_delegation_protocol.cpp": "cf7c6e0905e4d8291e0a4a9dc406410ec848147c3796f69c15f32f509bc2ee52",
+    "src/nfs_reply_lifetime.inc": "8215758472e51e99f28074eb244f8dfe94355982aaa10ba5aa5e8ac92651d3b5"
+  },
+  "reference": "https://www.rfc-editor.org/rfc/rfc8881.html#section-8.3",
+  "protocol": {
+    "checks": 835,
+    "sha256": "5cf82650c8cf3e176c7a73a3f6d5f02c27d9977f517183905743877cc027e883",
+    "output": "PASS production file authority declines wire handout without creating a hidden native guard\nPASS slow COMPOUND completion preserves a full client lease after execution\n{\"code\":\"10037\",\"event\":\"operation_45\",\"role\":\"nfs\",\"time\":1793827173166}\n{\"code\":\"10038\",\"event\":\"operation_38\",\"role\":\"nfs\",\"time\":1793827173171}\n{\"code\":\"10025\",\"event\":\"operation_8\",\"role\":\"nfs\",\"time\":1793827173176}\n{\"code\":\"10025\",\"event\":\"operation_8\",\"role\":\"nfs\",\"time\":1793827173181}\n{\"code\":\"10025\",\"event\":\"operation_8\",\"role\":\"nfs\",\"time\":1793827173186}\n{\"code\":\"10025\",\"event\":\"operation_8\",\"role\":\"nfs\",\"time\":1793827173235}\nPASS distinct delegation state, CLAIM_DELEG_CUR_FH, CLOSE/disconnect independence and client/principal/file/access checks\n{\"code\":\"10008\",\"event\":\"operation_18\",\"role\":\"nfs\",\"time\":1793827173260}\n{\"code\":\"10008\",\"event\":\"operation_18\",\"role\":\"nfs\",\"time\":1793827173570}\nPASS WANT replay, typed CB_RECALL, definitive DELAY retry and acknowledgment without premature release\n{\"code\":\"10008\",\"event\":\"operation_18\",\"role\":\"nfs\",\"time\":1793827173611}\nPASS wrong callback operation preserves the exact slot until confirmed disconnect and replays on a replacement backchannel\n{\"code\":\"10008\",\"event\":\"operation_18\",\"role\":\"nfs\",\"time\":1793827173643}\n{\"code\":\"10087\",\"event\":\"operation_25\",\"role\":\"nfs\",\"time\":1793827179195}\nPASS recall deadline survives continued renewals; TEST_STATEID/FREE_STATEID acknowledge revocation while OPEN remains valid\nPASS authority loss renews coherence past the old lease under fixed recall and still permits authenticated return\nPASS validated CB_SEQUENCE renewal keeps an idle sibling session alive beyond its original lease\n{\"code\":\"10074\",\"event\":\"operation_57\",\"role\":\"nfs\",\"time\":1793827189854}\n{\"code\":\"10017\",\"event\":\"operation_42\",\"role\":\"nfs\",\"time\":1793827189855}\nPASS session destruction retains client-owned delegation; foreign owner replacement and premature client destruction are refused\n{\"code\":\"10052\",\"event\":\"operation_53\",\"role\":\"nfs\",\"time\":1793827204004}\nPASS independent reply/replay pins retain OPEN through delayed delivery; duplicate completion cannot extend expiry\n{\"code\":\"10052\",\"event\":\"operation_53\",\"role\":\"nfs\",\"time\":1793827214629}\nPASS disconnect conservatively ends pending transmission with a full lease and leaves no immortal client pin\nPASS 835 delegation protocol/native component checks; production handout remains gated\n"
+  },
+  "real_tcp_sanitizer_regression": {
+    "lease": {
+      "status": "passed",
+      "checks": [
+        "default lease is 60 seconds; configured five-second lease is advertised and SEQUENCE renews OPEN beyond its initial expiry",
+        "SEQUENCE and exact replay on either session renew the shared client lease and keep an idle sibling session and its OPEN usable",
+        "idle session and OPEN expire at the advertised lease; another client opens the file while the expired stateid remains invalid",
+        "reducing the lease preserves the old reclaim window across repeated restarts, then converges to the configured duration after grace"
+      ],
+      "recorded_at": "2026-11-04T21:17:38.837168+00:00"
+    },
+    "m7": {
+      "status": "passed",
+      "checks": [
+        "TCP record fragmentation and MOUNT v3 with independent XDR codecs",
+        "unknown UID/GID/groups rejected; root squashed to explicitly unprivileged subject",
+        "root squash uses anonymous read rights, strips privileged groups and rejects writes/revoked rights",
+        "read-only TCP portmapper advertises NFS and does not advertise unsupported NLM version 3",
+        "trailing XDR rejected before WRITE; previously persisted bytes remain intact",
+        "v3 guarded CREATE, 64 KiB UNSTABLE upgraded to FILE_SYNC, READ, COMMIT, exact duplicate WRITE",
+        "MAC tamper rejected; file handle survives external rename and all-service restart; durable v3 replay and new write verifier",
+        "deleted/recreated path cannot revive an old file handle",
+        "v3 MKDIR, cross-directory RENAME, READDIRPLUS, REMOVE/RMDIR type separation",
+        "pynfs v4.1 EXCHANGE_ID/CREATE_SESSION/SEQUENCE, guarded OPEN, WRITE/READ, exact slot replay",
+        "false slot replay and foreign stateid rejected; GETATTR subset independently decoded",
+        "old sessions/stateids invalidated on reboot; persisted owner can reclaim OPEN during grace; CLOSE releases recovery record",
+        "unrelated client cannot reclaim another owner after restart",
+        "export disable revokes existing handles through fresh identity grants",
+        "offline metadata backup strips NFS enrollment and excludes persistent capability/recovery databases"
+      ],
+      "client": "linux-nfs/pynfs cd4701827a8261fedbfb4c6e39029fb9671321a6 generated NFSv3/v4.1 codecs",
+      "full_conformance": false,
+      "test_sha256": "776728f813a438821f2192343c36c2091afe975e5d2101b785516c08734b77a3",
+      "data_sha256": "7daca2095d0438260fa849183dfc67faa459fdf4936e1bc91eec6b281b27e4c2"
+    },
+    "callback": {
+      "status": "passed",
+      "checks": [
+        "initial CB_SEQUENCE BADSESSION retries exact slot after session-installation race, without requiring forechannel SEQUENCE on a callback-only session",
+        "initial-callback classification is captured when sent, so a forechannel SEQUENCE overtaking its BADSESSION reply cannot create a false permanent fault",
+        "CB_SEQUENCE DELAY retains exact request/slot, retries after backoff on the live connection and leaves ordinary file operations usable",
+        "BADSESSION, BADSLOT, SEQ_MISORDERED and SEQ_FALSE_RETRY report BACKCHANNEL_FAULT without tearing down the shared TCP stream; a new session recovers",
+        "CONN_NOT_BOUND_TO_SESSION withdraws callback readiness; explicit rebind retries the same sequence without marking a permanent session fault",
+        "an error reply with trailing XDR remains invalid and must disconnect before an exact retry"
+      ]
+    },
+    "gss-callback": {
+      "status": "passed",
+      "checks": [
+        "one context shared across 32 sessions and three TCP paths admits only its 64-entry RPC window; completing the oldest request releases the next authenticated callback",
+        "krb5/krb5i/krb5p CB_NULL, CB_SEQUENCE and CB_NOTIFY_LOCK use real Kerberos, independent RPC counters and exact referring calls; notifications grant no lock",
+        "BACKCHANNEL_CTL rejects unknown handles/invalid services/oversized RPC credentials atomically; existing handles are idempotent and counters never reset",
+        "BACKCHANNEL_CTL adds handles instead of replacing them; empty additions retain GSS, and destruction of another context preserves the live path",
+        "sixteen live callback tuples are bounded; exhaustion preserves the existing channel and duplicate offers consume no extra capacity",
+        "negotiated channel sizes include exact GSS credential, MIC and wrapped-body overhead; exact request limits succeed and one-byte-short channels send no oversized callbacks",
+        "unsigned, bad MIC/ciphertext and wrong authenticated sequences cannot complete callbacks; disconnect/rebind retries exact CB_SEQUENCE plaintext with fresh RPC authentication",
+        "authenticated integrity/privacy DELAY replies retry unchanged slots on live transports; established slot faults report BACKCHANNEL_FAULT through the protected forechannel",
+        "nearly expired and expired contexts set SEQUENCE flags; expiry/destroy removes path authority without AUTH_NONE fallback, and fresh contexts restore it"
+      ]
+    },
+    "ssv": {
+      "status": "passed",
+      "checks": [
+        "AUTH_SYS and authentication-only Kerberos cannot establish SP4_SSV",
+        "empty algorithms, zero window, unsupported OIDs and forbidden hash/cipher combinations return protocol errors",
+        "SHA-1/AES-128: indexes, confirmation identity, zero-key rejection, SET_SSV digest/length and all three RPC protection services",
+        "SHA-1: reflected signatures and corrupted privacy payloads do not authenticate",
+        "SHA-1: handles have independent RPC counters, share key rotations, accept the negotiated old-key window and reject expired versions",
+        "SHA-1: self-protected SET_SSV and exact replay, immutable policy, additive handles, protected session maintenance and client destruction",
+        "SHA-224/AES-192: indexes, confirmation identity, zero-key rejection, SET_SSV digest/length and all three RPC protection services",
+        "SHA-224: reflected signatures and corrupted privacy payloads do not authenticate",
+        "SHA-224: handles have independent RPC counters, share key rotations, accept the negotiated old-key window and reject expired versions",
+        "SHA-224: self-protected SET_SSV and exact replay, immutable policy, additive handles, protected session maintenance and client destruction",
+        "SHA-256/AES-256: indexes, confirmation identity, zero-key rejection, SET_SSV digest/length and all three RPC protection services",
+        "SHA-256: reflected signatures and corrupted privacy payloads do not authenticate",
+        "SHA-256: handles have independent RPC counters, share key rotations, accept the negotiated old-key window and reject expired versions",
+        "SSV CB_NULL and CB_SEQUENCE authenticate all three services across distinct handles with one non-repeating reverse counter for the shared context",
+        "SSV state-only credentials cannot read user data but can close negotiated state after user mapping revocation",
+        "zero initial handles can be added after confirmation; foreign SSV credentials cannot bind or destroy another client; algorithms/window cannot silently change",
+        "SHA-256: self-protected SET_SSV and exact replay, immutable policy, additive handles, protected session maintenance and client destruction",
+        "SHA-384/AES-256: indexes, confirmation identity, zero-key rejection, SET_SSV digest/length and all three RPC protection services",
+        "SHA-384: reflected signatures and corrupted privacy payloads do not authenticate",
+        "SHA-384: handles have independent RPC counters, share key rotations, accept the negotiated old-key window and reject expired versions",
+        "SHA-384: self-protected SET_SSV and exact replay, immutable policy, additive handles, protected session maintenance and client destruction",
+        "SHA-512/AES-256: indexes, confirmation identity, zero-key rejection, SET_SSV digest/length and all three RPC protection services",
+        "SHA-512: reflected signatures and corrupted privacy payloads do not authenticate",
+        "SHA-512: handles have independent RPC counters, share key rotations, accept the negotiated old-key window and reject expired versions",
+        "SHA-512: self-protected SET_SSV and exact replay, immutable policy, additive handles, protected session maintenance and client destruction"
+      ]
+    }
+  },
+  "new_boundary_tests": [
+    "Hold an actual OPEN through a completed protocol reply retained beyond the five-second lease",
+    "Two transmissions of the same cached RPC receive distinct private pins; completing one leaves the other live",
+    "Completion registration returns while a slow READ holds the main protocol mutex",
+    "Duplicate or unknown completion cannot extend the lease; delayed event consumption uses its original completion timestamp",
+    "BADSESSION does not allocate a live client pin",
+    "Disconnect ends all matching transmission pins and preserves a complete final lease; the idle client then expires"
+  ],
+  "validation_notes": [
+    "First added fixture incorrectly expected OPEN_DELEGATE_NONE for WANT_NO_DELEG, which returns NONE_EXT. Fixture now requests ordinary READ access with production provider disabled; no protocol semantics were changed for this test assumption.",
+    "Final source change after runtime validation is a comment describing the now-integrated transport completion hook."
+  ],
+  "scope_limits": [
+    "Client-state pins do not prove independent native guard protection during arbitrarily slow dispatch/transport",
+    "Native owner ACK ordering, native lifetime reservation, backchannel response reservation and owner-failure recovery still required",
+    "Receipt timing before authenticated SEQUENCE dispatch remains open",
+    "Production wire delegation remains disabled; worker reattachment/reclaim and full-server fencing unproved",
+    "Full SMB/NFS checklist remains open"
+  ]
+}

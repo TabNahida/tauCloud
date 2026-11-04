@@ -47,7 +47,11 @@ class server {
 public:
   server(const config &, domain_call, callback_call = {}, backchannel_send = {}, backchannel_close = {});
   ~server();
-  std::string dispatch(std::string_view record, std::string connection = "test");
+  // A transport may request a private completion token. A nonzero token pins
+  // the client lease until complete_reply or disconnect; it is never on wire.
+  // Without a token, the caller treats return from dispatch as delivery.
+  std::string dispatch(std::string_view record, std::string connection = "test", uint64_t *completion = nullptr);
+  void complete_reply(uint64_t completion);
   void disconnect(const std::string &connection);
   void maintenance();
 };

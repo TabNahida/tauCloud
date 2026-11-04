@@ -63,7 +63,7 @@ void expire_delegations() {
   std::set<uint64_t> expired;
   for (const auto &[id, d] : delegations) {
     auto c = client_ids.find(d.client);
-    if (c == client_ids.end() || c->second.expires <= now()) expired.insert(d.client);
+    if (c == client_ids.end() || !client_live(d.client)) expired.insert(d.client);
   }
   for (auto client : expired) retire_delegations(client);
 }
@@ -131,7 +131,7 @@ void maintain_delegations() {
     if (queued) continue;
     auto target = std::find_if(sessions.begin(), sessions.end(), [&](const auto &entry) {
       const auto &s = entry.second;
-      return s.client == d.client && s.expires > now() && callback_available(s) &&
+      return s.client == d.client && client_live(s.client) && callback_available(s) &&
           !s.callback_up.empty() && !s.callback_unresolved && s.callback_extra.empty() &&
           s.callback_operations >= 2 && callback_fits(s, operation.data.size(), 8);
     });

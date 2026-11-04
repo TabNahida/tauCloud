@@ -98,7 +98,7 @@ void notify_lock_waiters() {
       return o.first.substr(8) == candidate.open_other && o.second.client == candidate.client &&
              o.second.principal == candidate.principal;
     });
-    if (client == client_ids.end() || client->second.expires <= now() || opened == opens.end()) {
+    if (client == client_ids.end() || !client_live(waiter.state.client) || opened == opens.end()) {
       it = lock_waiters.erase(it); continue;
     }
     try {
@@ -112,7 +112,7 @@ void notify_lock_waiters() {
     operation.u32(13).opaque(decode_bytes(candidate.fh)).u64(candidate.client).opaque(decode_bytes(candidate.owner));
     auto target = std::find_if(sessions.begin(), sessions.end(), [&](const auto &entry) {
       const auto &s = entry.second;
-      return s.client == candidate.client && s.expires > now() && callback_available(s) &&
+      return s.client == candidate.client && client_live(s.client) && callback_available(s) &&
              !s.callback_up.empty() && !s.callback_unresolved && s.callback_extra.empty() &&
              s.callback_operations >= 2 &&
              callback_fits(s, operation.data.size() + waiter.references.size() - 4, 8);

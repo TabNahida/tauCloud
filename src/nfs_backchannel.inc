@@ -42,7 +42,7 @@ const gss_session *callback_context(const callback_gss &c) const {
       g.expires <= std::chrono::steady_clock::now() || g.callback_counter() >= 0x7fffffffu) return nullptr;
   if (g.ssv) {
     auto client = client_ids.find(g.ssv_client);
-    if (client == client_ids.end() || client->second.expires <= now() ||
+    if (client == client_ids.end() || !client_live(g.ssv_client) ||
         client->second.create_reply.empty() || !g.ssv->sequence()) return nullptr;
   }
   return &g;
@@ -147,7 +147,7 @@ void sequence_callback(const std::string &id) {
   auto &s = sessions.at(id);
   if (s.callback_fault || now() < s.callback_retry_after) return;
   auto client = client_ids.find(s.client);
-  if (s.expires <= now() || client == client_ids.end() || client->second.expires <= now()) return;
+  if (client == client_ids.end() || !client_live(s.client)) return;
   if (!callback_available(s) || callback_probes.size() >= 128) return;
   // Only one CB_COMPOUND may own slot zero. Other validated NULL paths wait
   // for its result; a retry on another path uses the same unresolved sequence.
@@ -177,7 +177,7 @@ void expire_callback_probes() {
     auto found = sessions.find(probe.session);
     if (found == sessions.end()) return true;
     auto client = client_ids.find(found->second.client);
-    if (found->second.expires <= now() || client == client_ids.end() || client->second.expires <= now()) return true;
+    if (client == client_ids.end() || !client_live(found->second.client)) return true;
     if (probe.deadline > now()) return false;
     if (probe.compound) {
       // RFC 8881 2.10.6.2 prohibits retry on a live original transport.
@@ -216,7 +216,7 @@ void callback_reply(uint32_t xid, reader &r) {
   if (callback_closing.contains(connection)) return;
   auto &s = current->second;
   auto client = client_ids.find(s.client);
-  if (s.expires <= now() || client == client_ids.end() || client->second.expires <= now()) {
+  if (client == client_ids.end() || !client_live(s.client)) {
     callback_probes.erase(found);
     return; // A callback must not revive expired client/session authority.
   }

@@ -1,0 +1,15 @@
+{
+  "recorded_at": "2026-11-04T21:23:20.383939+00:00",
+  "source": "ddcb3bfe14ca498d077c2d9f87e8cc0ad4441ba7",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41913347113",
+  "conclusion": "success",
+  "proof_lines": [
+    "kernel\tHost capability refusal or native acceptance\t2026-11-04T21:16:10.5413258Z PASS native delegation 195 checks",
+    "kernel\tRequired tmpfs and ext4 native exclusion in QEMU\t2026-11-04T21:16:52.5300202Z PASS \"/tmp/domain\" FILE-DOMAIN/expired-authority-coherence-retention",
+    "kernel\tRequired tmpfs and ext4 native exclusion in QEMU\t2026-11-04T21:16:52.5306262Z PASS \"/disk/domain\" FILE-DOMAIN/expired-authority-coherence-retention",
+    "kernel\tRequired tmpfs and ext4 native exclusion in QEMU\t2026-11-04T21:16:52.5306964Z PASS native delegation 446 checks",
+    "kernel\tRequired tmpfs and ext4 native exclusion in QEMU\t2026-11-04T21:16:52.5307352Z TAUCLOUD_DELEGATION_VM_PASS"
+  ],
+  "log_sha256": "c2beb3a139c6425cc9362ad8960fdb6835e109f2b2d9f7e66ae9880157e87eab",
+  "scope": "Coherence retention through independent native owner on tmpfs/ext4; full wire delegation remains gated."
+}

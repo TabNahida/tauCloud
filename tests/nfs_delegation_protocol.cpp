@@ -2,6 +2,7 @@
 #include <taucloud/native_delegation_owner.hpp>
 #include <taucloud/nfs.hpp>
 #include <deque>
+#include <atomic>
 #include <iostream>
 #include <source_location>
 #include <thread>
@@ -45,6 +46,7 @@ int main(int argc, char **argv) {
     nfs("write", handle, {{"offset", 0}, {"data", encode_bytes("original")}});
     auto native = native_file::root(base / "root");
     bool component_provider = false, authorized = true, slow_read = false;
+    std::atomic_bool slow_read_entered = false;
     std::deque<std::pair<std::string, std::string>> callbacks;
     std::vector<std::string> closes;
     auto protocol = std::make_unique<server>(cfg, [&](std::string target, std::string op, json body) -> json {
@@ -60,6 +62,7 @@ int main(int argc, char **argv) {
       auto result = store->dispatch(op, body, ctx());
       if (slow_read && op == "nfs_file" && body.value("op", "") == "read") {
         slow_read = false;
+        slow_read_entered = true;
         std::this_thread::sleep_for(std::chrono::milliseconds(3500));
       }
       return result;
@@ -67,6 +70,8 @@ int main(int argc, char **argv) {
        [&](auto connection) { closes.push_back(connection); });
     struct peer { std::string connection, session; uint64_t client = 0; uint32_t sequence = 0, uid = 1000; };
     uint32_t xid = 0, last_flags = 0;
+    bool track_reply = false;
+    uint64_t completion = 0;
     std::string last_request, last_response;
     auto send = [&](peer &p, std::vector<writer> operations, uint32_t expected = 0, bool session = true) {
       writer auth;
@@ -77,7 +82,7 @@ int main(int argc, char **argv) {
       if (session) request.u32(53).fixed(p.session).u32(++p.sequence).u32(0).u32(0).boolean(true);
       for (auto &operation : operations) request.fixed(operation.data);
       last_request = request.data;
-      auto response = protocol->dispatch(request.data, p.connection);
+      auto response = protocol->dispatch(request.data, p.connection, track_reply ? &completion : nullptr);
       last_response = response;
       reader r(response);
       ok(r.u32() == xid && r.u32() == 1 && r.u32() == 0 && r.u32() == 0 && r.opaque().empty() && r.u32() == 0);
@@ -335,6 +340,57 @@ int main(int argc, char **argv) {
     send(orphan, {writer().u32(44).fixed(orphan.session)});
     send(orphan, {writer().u32(57).u64(orphan.client)}, 0, false);
     std::cout << "PASS session destruction retains client-owned delegation; foreign owner replacement and premature client destruction are refused\n";
+    component_provider = false;
+    auto pending = connect("pending-delivery"); establish_callback();
+    auto pending_open = open_result(send(pending, {put(), opening(pending, 1)}), 0).first;
+    track_reply = true;
+    send(pending, {put(), writer().u32(25).fixed(pending_open).u64(0).u32(8)});
+    auto first_completion = completion; ok(first_completion != 0);
+    uint64_t replay_completion = 0;
+    ok(protocol->dispatch(last_request, pending.connection, &replay_completion) == last_response);
+    ok(replay_completion && replay_completion != first_completion);
+    track_reply = false;
+    slow_read = true; slow_read_entered = false;
+    std::exception_ptr concurrent_failure;
+    std::jthread executing([&] {
+      try { send(pending, {put(), writer().u32(25).fixed(pending_open).u64(0).u32(8)}); }
+      catch (...) { concurrent_failure = std::current_exception(); }
+    });
+    auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
+    while (!slow_read_entered && std::chrono::steady_clock::now() < deadline)
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    auto completed_at = std::chrono::steady_clock::now();
+    protocol->complete_reply(first_completion);
+    auto completion_time = std::chrono::steady_clock::now() - completed_at;
+    executing.join();
+    if (concurrent_failure) std::rethrow_exception(concurrent_failure);
+    ok(slow_read_entered && completion_time < std::chrono::seconds(1));
+    protocol->complete_reply(first_completion);
+    protocol->complete_reply(UINT64_MAX);
+    std::this_thread::sleep_for(std::chrono::milliseconds(5300));
+    protocol->maintenance();
+    send(pending, {put(), writer().u32(25).fixed(pending_open).u64(0).u32(8)});
+    protocol->complete_reply(replay_completion);
+    std::this_thread::sleep_for(std::chrono::milliseconds(3500));
+    protocol->complete_reply(replay_completion); // A late duplicate cannot renew.
+    std::this_thread::sleep_for(std::chrono::milliseconds(1800));
+    protocol->maintenance();
+    track_reply = true; completion = 999;
+    send(pending, {}, 10052); ok(completion == 0); track_reply = false;
+    std::cout << "PASS independent reply/replay pins retain OPEN through delayed delivery; duplicate completion cannot extend expiry\n";
+
+    auto dropped = connect("dropped-delivery"); establish_callback();
+    auto dropped_open = open_result(send(dropped, {put(), opening(dropped, 1)}), 0).first;
+    track_reply = true; send(dropped, {}); ok(completion != 0); track_reply = false;
+    std::this_thread::sleep_for(std::chrono::milliseconds(3500));
+    protocol->disconnect(dropped.connection);
+    dropped.connection = "after-dropped-delivery";
+    std::this_thread::sleep_for(std::chrono::milliseconds(1800));
+    protocol->maintenance();
+    send(dropped, {put(), writer().u32(25).fixed(dropped_open).u64(0).u32(8)});
+    std::this_thread::sleep_for(std::chrono::milliseconds(5300));
+    protocol->maintenance(); send(dropped, {}, 10052);
+    std::cout << "PASS disconnect conservatively ends pending transmission with a full lease and leaves no immortal client pin\n";
     std::cout << "PASS " << checks << " delegation protocol/native component checks; production handout remains gated\n";
     // Keep destruction order explicit: protocol has no live delegations here.
     native = native_file(); protocol.reset(); store.reset();

@@ -802,10 +802,14 @@ struct server::impl {
 server::server(const config &c, domain_call f, callback_call cb, backchannel_send bc, backchannel_close close)
     : impl_(std::make_unique<impl>(c, std::move(f), std::move(cb), std::move(bc), std::move(close))) {}
 server::~server() = default;
-std::string server::dispatch(std::string_view record, std::string connection) {
-  return impl_->dispatch(record, std::move(connection));
+std::string server::dispatch(std::string_view record, std::string connection, uint64_t *completion) {
+  return impl_->dispatch(record, std::move(connection), completion);
+}
+void server::complete_reply(uint64_t completion) {
+  impl_->complete_reply(completion);
 }
 void server::disconnect(const std::string &connection) {
+  impl_->complete_connection_replies(connection);
   std::lock_guard guard(impl_->mutex);
   for (auto &[id, session] : impl_->sessions) {
     session.connections.erase(connection);
