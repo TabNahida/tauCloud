@@ -1,0 +1,150 @@
+{
+  "recorded_at": "2026-11-04T09:30:14.356106+00:00",
+  "base_source": "dbf71eaaddfc85cf96070a0393326531a8824ee8",
+  "status": "partial",
+  "scope": "SMB CREATE dot paths and Linux removed-subtree watch lifetime; not Full SMB/NFS.",
+  "files_sha256": {
+    "src/smb.cpp": "f2bd5f8455f51223b83b37c69a4cbbdcb7c29cbc47933d9c97b0936741d8df15",
+    "src/native_notify.inc": "adf13548b2b4753ea8ff3af9462a2d35e7a1426a657bcc40e4fa30f08d45b3f4",
+    "tests/smb_paths.py": "2f392cf6b3e41ea1bd137be18b136efdce69752a848a305512a76211c9a11366",
+    "tests/smb_notify_reuse.py": "ad3ba9da7631e2e73c7a063a3a4c07504bf6b7e003a6368be793e7158ebc396a",
+    "tests/m5_integration.py": "3774c861d3e555b4397ed005a748bf99a64b3933311d4978718a5f861f5a1007",
+    ".github/workflows/smb-metadata.yml": "1bafbe7db386a200a527fc8210035be8ff2afe87b8269aed42ea7046c3bb52bd",
+    "tests/samba-profile.json": "eafc5e2168973f11b8146dd149ce399c04755cc969eb5bad1f590725b04f7474"
+  },
+  "sanitizers": "Clang ASan/UBSan including LeakSanitizer",
+  "before": {
+    "paths": {
+      "status": "failed",
+      "checks": [],
+      "error": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/tests/smb_paths.py\", line 41, in main\n    h = create(t, name, disposition=1)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/tests/m5_integration.py\", line 42, in create\n    h=Open(tree,name);h.create(ImpersonationLevel.Impersonation,access,FileAttributes.FILE_ATTRIBUTE_NORMAL,share,disposition,options);return h\n                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/.deps/nfs-venv/lib/python3.12/site-packages/smbprotocol/open.py\", line 1160, in create\n    return self._create_response(request)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/.deps/nfs-venv/lib/python3.12/site-packages/smbprotocol/open.py\", line 1168, in _create_response\n    response = self.connection.receive(request)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/.deps/nfs-venv/lib/python3.12/site-packages/smbprotocol/connection.py\", line 1103, in receive\n    raise SMBResponseException(response)\nsmbprotocol.exceptions.ObjectNameInvalid: Received unexpected status from the server: The object name is invalid. (3221225523) STATUS_OBJECT_NAME_INVALID: 0xc0000033\n"
+    },
+    "tree_after_paths_before_watch_fix": {
+      "status": "failed",
+      "tests": [
+        {
+          "selector": "smb2.notify.tree",
+          "status": "failed",
+          "counts": {
+            "success": 0,
+            "failure": 0,
+            "error": 1,
+            "skip": 0
+          },
+          "returncode": 1,
+          "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793783872\ntime: 2026-11-04 09:17:52.621488\ntest: tree\ntime: 2026-11-04 09:17:52.621590\nTESTING NOTIFY FOR DIFFERENT DEPTHS\ntook 20.1752 seconds to propagate all events\nERROR: i=0 expected 30 got 0 for 'test_notify_TREE\\abc'\nERROR: i=1 expected 8 got 0 for 'test_notify_TREE\\zqy'\nERROR: i=4 expected 13 got 0 for 'test_notify_TREE\\abc\\blah'\nERROR: i=6 expected 2 got 0 for 'test_notify_TREE\\abc\\blah\\a'\nERROR: i=7 expected 2 got 0 for 'test_notify_TREE\\abc\\blah\\b'\nERROR: i=8 expected 2 got 0 for 'test_notify_TREE\\abc\\blah\\c'\nERROR: i=9 expected 2 got 0 for 'test_notify_TREE\\abc\\fooblah'\nERROR: i=10 expected 2 got 0 for 'test_notify_TREE\\zqy\\xx'\nERROR: i=11 expected 2 got 0 for 'test_notify_TREE\\zqy\\yyy'\nERROR: i=12 expected 40 got 0 for 'test_notify_TREE\\zqy\\..'\nERROR: i=13 expected 40 got 0 for 'test_notify_TREE'\nERROR: i=16 expected 24 got 0 for 'test_notify_TREE\\abc'\nERROR: i=19 expected 24 got 0 for 'test_notify_TREE\\abc'\ntime: 2026-11-04 09:18:17.481516\nerror: tree [\nUnknown error/failure. Missing torture_fail() or torture_assert_*() call?\n]\n"
+        }
+      ]
+    },
+    "recursive_reuse": {
+      "status": "failed",
+      "checks": [
+        "SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup",
+        "four dialects complete pending creation before the next write and preserve that write for the next synchronous buffered notification",
+        "per-open first filter/watch-tree settings, FIFO completion and events buffered between requests",
+        "internal reconciliation, recursive watch installation and empty-directory checks preserve access time while real host directory reads remain observable",
+        "native host writes trigger recursive watches while nonrecursive watches ignore descendants",
+        "rapid service-created recursive subtrees retain every ordered directory/file event between requests without requiring a rescan"
+      ],
+      "error": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/tests/smb_notify_integration.py\", line 191, in run\n    assert events(c, req, asynchronous=False) == expected\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+    }
+  },
+  "local": {
+    "paths": {
+      "status": "passed",
+      "checks": [
+        "four signed/encrypted dialects normalize dot components before lookup, retain native identity and canonical handle paths, clamp root parents and deliver notifications through an alias",
+        "normalization stays within a subdirectory share and preserves final-object DACLs, global sharing conflicts and read-only publication",
+        "raw invalid/reserved/overlong components cannot be hidden by dot removal; native links remain confined and alias deletion affects only the canonical object"
+      ]
+    },
+    "recursive_reuse": {
+      "status": "passed",
+      "checks": [
+        "110 recursive directory delete/recreate cycles retain all 440 events and release removed subtree watches without exhausting the pinned-directory bound"
+      ]
+    },
+    "base_smb": {
+      "status": "passed",
+      "checks": [
+        "verified repeated logins do not exhaust the failed-authentication budget",
+        "signed NTLMv2 MIC authentication, UTF-16 create/read/write/flush/query/directory/close",
+        "QFid CREATE context agrees with internal file IDs across opens and distinguishes objects on one volume",
+        "authenticated srvsvc NDR32 share enumeration filters inaccessible and non-SMB shares",
+        "SMB share lookup ignores case, preserves canonical grants and rejects ambiguous publication without non-SMB shadowing",
+        "share access conflicts, exclusive/shared byte locks, rename with live handles, truncate and last-close deletion",
+        "signed related compound CREATE/WRITE/READ/CLOSE and credit accounting",
+        "directory deletion is nonrecursive; parent names stay inside the share; ADS/non-NFC and unsupported empty security-information selection rejected",
+        "1 MiB streamed binary roundtrip with SHA-256",
+        "unknown-session LOGOFF preserves the valid session; client-clock NTLMv2 accepted; excessive skew, bad MIC/proof, unsigned/tampered signing and malformed packets rejected",
+        "SMB credential revocation invalidates live access; re-enrollment and SPNEGO reconnect succeed",
+        "SMB worker kill/restart reclaims handles and durable delete intent without restarting API, identity or files"
+      ],
+      "sanitizers": true
+    },
+    "notifications": {
+      "status": "passed",
+      "checks": [
+        "SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup",
+        "four dialects complete pending creation before the next write and preserve that write for the next synchronous buffered notification",
+        "per-open first filter/watch-tree settings, FIFO completion and events buffered between requests",
+        "internal reconciliation, recursive watch installation and empty-directory checks preserve access time while real host directory reads remain observable",
+        "native host writes trigger recursive watches while nonrecursive watches ignore descendants",
+        "rapid service-created recursive subtrees retain every ordered directory/file event between requests without requiring a rescan",
+        "recursive file/directory cross-parent moves report REMOVED/ADDED, same-parent renames report OLD/NEW and moved subtrees retain native coverage",
+        "events buffered across service operations remain byte-bounded, overflow without a partial batch and resume from fresh changes",
+        "recursive watches stop observing moved-out subtrees and do not disclose queued outside names",
+        "SIZE filter ignores equal-length writes and reports actual growth",
+        "LAST_WRITE observes new-file writes even when native CREATE and WRITE are drained together",
+        "first per-open zero/short capacity persists, reopening restores capacity; NOTIFY_ENUM_DIR has no partial records; invalid-only filters stay pending and cancel cleanly",
+        "directory/list-access validation and persistent shared security descriptor changes generate SECURITY notifications",
+        "portable DOS attributes, creation-time and EA changes participate in native notification streams",
+        "initial CREATE metadata produces only ADDED; subsequent changes still produce MODIFIED",
+        "recursive descriptor exhaustion stays visibly overflowed across requests and releases all watches on close",
+        "delete-pending directories complete outstanding watches without waiting for last-handle deletion",
+        "TREE_DISCONNECT and LOGOFF finish pending notifications with NOTIFY_CLEANUP before releasing keys",
+        "policy revocation denies the pending poll, invalidates its old handle and permits a fresh exclusive read open without retained watch/sharing authority"
+      ]
+    },
+    "full_original_notifications": {
+      "status": "passed",
+      "tests": [
+        {
+          "selector": "smb2.notify",
+          "status": "passed",
+          "counts": {
+            "success": 23,
+            "failure": 0,
+            "error": 0,
+            "skip": 0
+          },
+          "returncode": 0,
+          "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793784379\ntime: 2026-11-04 09:26:19.347493\nprogress: 23\ntest: valid-req\ntime: 2026-11-04 09:26:19.347588\nTESTING VALIDITY OF CHANGE NOTIFY REQUEST\ntime: 2026-11-04 09:26:19.967572\nsuccess: valid-req\ntest: tcon\ntime: 2026-11-04 09:26:19.967584\nTESTING SIMPLE CHANGE NOTIFY\nTesting notify mkdir\nTesting notify rmdir\nSIMPLE CHANGE NOTIFY OK\nTESTING WITH SECONDARY TCON\ntid1=1 tid2=2\nTesting notify mkdir\nTesting notify rmdir\nCHANGE NOTIFY WITH TCON OK\nDisconnecting secondary tree\nTesting notify mkdir\nTesting notify rmdir\nCHANGE NOTIFY WITH TDIS OK\ntime: 2026-11-04 09:26:20.595177\nsuccess: tcon\ntest: dir\ntime: 2026-11-04 09:26:20.595189\nTESTING CHANGE NOTIFY ON DIRECTORIES\nTesting notify cancel\nTesting notify mkdir\nTesting notify rmdir\nTesting notify mkdir - rmdir - mkdir - rmdir\nTesting buffered notify on create of 10 files\nTesting notify on unlink for the first file\nand now from the 1st notify\n(3rd notify) this notify will only see the 1st unlink\nTesting if a close() on the dir handle triggers the notify reply\ntime: 2026-11-04 09:26:25.141100\nsuccess: dir\ntest: mask\ntime: 2026-11-04 09:26:25.141122\nTESTING CHANGE NOTIFY COMPLETION FILTERS\nTesting mkdir\nTesting create file\nTesting unlink\nTesting rmdir\nTesting rename file\nTesting rename dir\nTesting set path attribute\nTesting set path write time\nTesting set file create time\nTesting set file access time\nTesting set file change time\nTesting write\ntime: 2026-11-04 09:28:42.359931\nsuccess: mask\ntest: tdis\ntime: 2026-11-04 09:28:42.359945\nTESTING CHANGE NOTIFY+CANCEL FOLLOWED BY TREE-DISCONNECT\ntime: 2026-11-04 09:28:42.464768\nsuccess: tdis\ntest: tdis1\ntime: 2026-11-04 09:28:42.464780\nTESTING CHANGE NOTIFY ASYNC FOLLOWED BY TREE-DISCONNECT\ntime: 2026-11-04 09:28:42.560331\nsuccess: tdis1\ntest: mask-change\ntime: 2026-11-04 09:28:42.560345\nTESTING CHANGE NOTIFY WITH MASK CHANGE\ntime: 2026-11-04 09:28:43.303462\nsuccess: mask-change\ntest: close\ntime: 2026-11-04 09:28:43.303475\nTESTING CHANGE NOTIFY FOLLOWED BY ULOGOFF\ntime: 2026-11-04 09:28:43.491678\nsuccess: close\ntest: logoff\ntime: 2026-11-04 09:28:43.491692\nTESTING CHANGE NOTIFY FOLLOWED BY ULOGOFF\ntime: 2026-11-04 09:28:43.606240\nsuccess: logoff\ntest: session-reconnect\ntime: 2026-11-04 09:28:43.606253\nTESTING CHANGE NOTIFY FOLLOWED BY SESSION RECONNECT\ntime: 2026-11-04 09:28:43.765854\nsuccess: session-reconnect\ntest: invalid-reauth\ntime: 2026-11-04 09:28:43.765866\nTESTING CHANGE NOTIFY FOLLOWED BY invalid REAUTH\ntime: 2026-11-04 09:28:44.006132\nsuccess: invalid-reauth\ntest: tree\ntime: 2026-11-04 09:28:44.006145\nTESTING NOTIFY FOR DIFFERENT DEPTHS\ntook 0.1729 seconds to propagate all events\ntime: 2026-11-04 09:28:47.366885\nsuccess: tree\ntest: basedir\ntime: 2026-11-04 09:28:47.366901\nTESTING CHANGE NOTIFY BASEDIR EVENTS\ntime: 2026-11-04 09:28:47.849495\nsuccess: basedir\ntest: double\ntime: 2026-11-04 09:28:47.849508\nTESTING CHANGE NOTIFY TWICE ON ONE DIRECTORY\ntime: 2026-11-04 09:28:48.047964\nsuccess: double\ntest: file\ntime: 2026-11-04 09:28:48.047986\nTESTING CHANGE NOTIFY ON FILES\nTesting if notifies on file handles are invalid (should be)\ntime: 2026-11-04 09:28:48.200554\nsuccess: file\ntest: tcp\ntime: 2026-11-04 09:28:48.200566\nTESTING CHANGE NOTIFY FOLLOWED BY TCP DISCONNECT\ntime: 2026-11-04 09:28:48.520525\nsuccess: tcp\ntest: rec\ntime: 2026-11-04 09:28:48.520541\nTESTING CHANGE NOTIFY WITH RECURSION\ntime: 2026-11-04 09:28:49.329396\nsuccess: rec\ntest: overflow\ntime: 2026-11-04 09:28:49.329409\nTESTING CHANGE NOTIFY EVENT OVERFLOW\nTesting overflowed buffer notify on create of 100 files\ntime: 2026-11-04 09:29:02.934035\nsuccess: overflow\ntest: rmdir1\ntime: 2026-11-04 09:29:02.934050\nTESTING NOTIFY CANCEL FOR DELETED DIR\ntime: 2026-11-04 09:29:03.108473\nsuccess: rmdir1\ntest: rmdir2\ntime: 2026-11-04 09:29:03.108486\nTESTING NOTIFY CANCEL FOR DELETED DIR\ntime: 2026-11-04 09:29:03.281181\nsuccess: rmdir2\ntest: rmdir3\ntime: 2026-11-04 09:29:03.281195\nTESTING NOTIFY CANCEL FOR DELETED DIR\ntime: 2026-11-04 09:29:03.443240\nsuccess: rmdir3\ntest: rmdir4\ntime: 2026-11-04 09:29:03.443252\nTESTING NOTIFY CANCEL FOR DELETED DIR\ntime: 2026-11-04 09:29:03.614721\nsuccess: rmdir4\ntest: handle-permissions\ntime: 2026-11-04 09:29:03.614733\nTESTING CHANGE NOTIFY ON A HANDLE WITHOUT PERMISSIONS\ntime: 2026-11-04 09:29:03.779282\nsuccess: handle-permissions\n"
+        }
+      ]
+    },
+    "native_core": {
+      "status": "passed",
+      "checks": 38
+    }
+  },
+  "fixture_diagnostic": {
+    "combined_run": {
+      "status": "failed",
+      "checks": [
+        "SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup",
+        "four dialects complete pending creation before the next write and preserve that write for the next synchronous buffered notification",
+        "per-open first filter/watch-tree settings, FIFO completion and events buffered between requests",
+        "internal reconciliation, recursive watch installation and empty-directory checks preserve access time while real host directory reads remain observable",
+        "native host writes trigger recursive watches while nonrecursive watches ignore descendants",
+        "rapid service-created recursive subtrees retain every ordered directory/file event between requests without requiring a rescan",
+        "110 recursive directory delete/recreate cycles retain all 440 events and release removed subtree watches without exhausting the pinned-directory bound",
+        "recursive file/directory cross-parent moves report REMOVED/ADDED, same-parent renames report OLD/NEW and moved subtrees retain native coverage"
+      ],
+      "error": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/tests/smb_notify_integration.py\", line 225, in run\n    setinfo(h, rename)\n  File \"/media/data1/Project/Network/tauCloud/tests/m5_integration.py\", line 51, in setinfo\n    request=h.connection.send(q,h.tree_connect.session.session_id,h.tree_connect.tree_connect_id);return h.connection.receive(request)\n                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/.deps/nfs-venv/lib/python3.12/site-packages/smbprotocol/connection.py\", line 1028, in receive\n    self._check_worker_running()  # The worker may have failed while waiting for the response, check again\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/.deps/nfs-venv/lib/python3.12/site-packages/smbprotocol/connection.py\", line 1187, in _check_worker_running\n    raise SMBConnectionClosed(\"SMB socket was closed, cannot send or receive any more data\")\nsmbprotocol.exceptions.SMBConnectionClosed: SMB socket was closed, cannot send or receive any more data\n"
+    },
+    "reason": "The new 110-cycle case passed, then the combined original suite hit the SMB worker resource limit during its later byte-buffer stress. The new stress scenario uses a separate process fixture with the same 512 MiB ASan budget; neither production limits nor sanitizers changed."
+  },
+  "remote_acceptance": "pending for this increment",
+  "remaining": "A historical GCC backend mask-change failure is retained separately in smb-notify-a508-backend-failure.json. Local full-suite success does not resolve that cross-transport ordering investigation. Leases/oplocks, durable opens and broader SMB/NFS gates remain open."
+}

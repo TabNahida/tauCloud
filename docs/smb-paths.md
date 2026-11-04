@@ -1,0 +1,16 @@
+# SMB CREATE path normalization
+
+Disk-share CREATE accepts `.` and `..` components for SMB 2.1, 3.0, 3.0.2 and 3.1.1. Normalization occurs before identity authorization adds a share's published subdirectory. A parent at the share root stays at that root; `../file` on a share publishing `published` addresses `published/file`, never a sibling in the space or storage root. Opens store the canonical relative path, so subsequent authorization, sharing, rename, deletion and directory notification use the same object.
+
+This follows the optional Windows normalization behavior in [MS-SMB2 CREATE](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/8c61e928-9242-44ed-96a0-98d1032d0d39) and [product note 304](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/a64e55aa-1152-48e4-8206-edd96444e7f7), with share-root semantics from [MS-FSCC dot directory names](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/fccd0313-0364-45bd-b75c-924fd6a5662f). The leading `subfolder/../` form returns INVALID_PARAMETER as documented for Windows. Deeper normalization happens before object lookup: `parent/missing/../file` addresses `parent/file` without opening the removed component. It is pathname normalization, not native traversal through a missing directory.
+
+Every non-dot component is validated even if a later `..` removes it. The existing 1024-byte path, 120-byte component, NFC, reserved-name and stream restrictions remain enforced. The identity and file domains still reject raw dot components. Final-object ACLs, share write policy, sharing conflicts and native no-follow checks remain authoritative. IPC pipe names and SET_INFO rename names retain their existing strict parser; this increment does not implement general Windows naming, alternate streams or symbolic links.
+
+The independent test covers four signed/encrypted dialects, native object identity, alias notifications and handle rename, root clamping on subdirectory shares, final-object DACL denial, read-only exposure, cross-share sharing conflicts and rejection of invalid components hidden before `..`. A host replacement of an already-indexed directory with a symlink (Linux) or junction (Windows) must fail before file access. Native link support remains a separate feature gate.
+
+```sh
+python tests/smb_paths.py --bin build/linux/x86_64/release --output build/acceptance/smb-paths.json
+python tests/smb_notify_reuse.py --bin build/linux/x86_64/release --output build/acceptance/smb-notify-reuse.json
+```
+
+The original Samba `notify.tree` then exposed a separate native-watch lifetime error. On Linux, pinning a deleted directory can defer its own inotify deletion/ignored events until the final descriptor closes. Parent DELETE now releases watches for that subtree immediately; a later directory with the same name receives a new watch. The 96-directory bound remains unchanged. An isolated 110-cycle test requires all 440 create/delete events, while the existing exhaustion test still requires visible overflow when genuine live coverage exceeds the bound. See [local evidence](evidence/pre-m8/smb-paths-local.json) for successes and retained diagnostic failures. New-source cross-platform acceptance is required.

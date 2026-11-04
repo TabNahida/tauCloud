@@ -1,0 +1,11 @@
+{
+  "source": "a5087f939e36cea15d2faab36fc11f38dbff8685",
+  "recorded_at": "2026-11-04T09:24:39.856603+00:00",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41800407255",
+  "status": "failed",
+  "scope": "Full backend matrix: GCC original notification mask-change fails despite passing targeted metadata matrix; Windows, Clang and macOS jobs pass.",
+  "artifact_id": 13309286947,
+  "artifact_sha256": "167dcd8d442ebf6237548d94afa1d7c78363060eb90bafdb413623f597dd7153",
+  "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793782686\ntime: 2026-11-04 08:58:06.412485\ntest: mask-change\ntime: 2026-11-04 08:58:06.412689\nTESTING CHANGE NOTIFY WITH MASK CHANGE\ntime: 2026-11-04 08:58:06.732348\nfailure: mask-change [\n(source4/torture/smb2/notify.c:836) wrong value for notify.smb2.out.num_changes  0x2 should be 0x1\n]\n",
+  "interpretation": "The first of two queued notifications contains both changes instead of one. Cross-transport delivery ordering is under investigation; no full notification conformance claim."
+}

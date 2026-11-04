@@ -112,7 +112,8 @@
     "smb2.notify.double",
     "smb2.notify.tcp",
     "smb2.notify.overflow",
-    "smb2.notify.session-reconnect"
+    "smb2.notify.session-reconnect",
+    "smb2.notify.tree"
   ],
   "standard_differences": [
     {

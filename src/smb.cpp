@@ -133,11 +133,46 @@ std::string slice(std::string_view b, size_t off, size_t len, size_t minimum) {
   check(off <= b.size() && len <= b.size() - off && (!len || off >= minimum));
   return bytes(b.substr(off, len));
 }
-std::string path(std::string_view encoded) {
+std::string path(std::string_view encoded, bool create_dots = false) {
   auto value = utf8(encoded);
   std::replace(value.begin(), value.end(), '\\', '/');
+  if (create_dots) {
+    check(value.size() <= 1024, 0xc0000033);
+    // MS-SMB2 3.3.5.9 product note 304: Windows normalizes CREATE
+    // dot components, except a leading "subfolder/../" prefix.
+    auto first = value.find('/');
+    if (first != std::string::npos && value.substr(0, first) != "." &&
+        value.substr(0, first) != ".." && value.compare(first + 1, 3, "../") == 0)
+      throw status_error(0xc000000d);
+  }
   if (!value.empty() && value.back() == '/')
     value.pop_back();
+  if (create_dots && !value.empty()) {
+    std::vector<std::string> parts;
+    size_t start = 0;
+    while (start < value.size()) {
+      auto end = value.find('/', start);
+      if (end == std::string::npos) end = value.size();
+      auto part = value.substr(start, end - start);
+      if (part == "..") {
+        // MS-FSCC 2.1.5.1 clamps parents at the SHARE root. Normalize before
+        // identity adds the share prefix; never expose dots to native lookup.
+        if (!parts.empty()) parts.pop_back();
+      } else if (part != ".") {
+        // Validate even components removed by a later parent reference.
+        // Normalization cannot hide reserved names, streams or invalid UTF-8.
+        portable_path(part);
+        parts.push_back(std::move(part));
+      }
+      check(end != value.size() - 1 || value.back() != '/', 0xc0000033);
+      start = end + 1;
+    }
+    value.clear();
+    for (const auto &part : parts) {
+      if (!value.empty()) value += '/';
+      value += part;
+    }
+  }
   if (!value.empty())
     portable_path(value);
   return value;
@@ -846,7 +881,7 @@ struct client : session_state, std::enable_shared_from_this<client> {
       check(get(p, 68, 4) <= 3, 0xc00000a5); // BAD_IMPERSONATION_LEVEL
       auto encoded_name = slice(p, get(p, 108, 2), get(p, 110, 2), 120);
       check(encoded_name.empty() || (get(encoded_name, 0, 2) != '\\' && get(encoded_name, 0, 2) != '/'));
-      auto name = path(encoded_name);
+      auto name = path(encoded_name, trees.at(tid).share != "IPC$");
       if (trees.at(tid).share == "IPC$") {
         check(path_fold(name) == "srvsvc" && get(p, 100, 4) == 1, 0xc0000034);
         auto fid = decode_bytes(random_hex(16));

@@ -227,6 +227,15 @@ json native_watch::poll() {
       auto relative = found->second.path.empty() ? name : found->second.path + "/" + name;
       bool directory = entry->mask & IN_ISDIR;
       uint32_t mask = directory ? 2 : 1;
+      if (directory && (entry->mask & IN_DELETE)) {
+        // A pinned child fd can delay IN_DELETE_SELF/IN_IGNORED until its
+        // last close. The parent's DELETE already invalidates that subtree:
+        // release it now so a recreated name receives a new native watch.
+        std::vector<int> remove;
+        for (const auto &[wd, item] : w.directories)
+          if (item.path == relative || item.path.starts_with(relative + "/")) remove.push_back(wd);
+        for (auto wd : remove) w.erase(wd);
+      }
       if (entry->mask & IN_MOVED_FROM) {
         removed[entry->cookie] = {relative, mask, directory};
       } else if (entry->mask & IN_MOVED_TO) {
