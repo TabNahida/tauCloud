@@ -41,6 +41,7 @@ def main():
             pc, ps, pt, pq = connect(dialect)
             bc, bs, bt, bq = connect(dialect, 'bob')
             for level in (1, 8, 9):
+                report['active_case'] = dict(dialect=hex(dialect), oplock=level)
                 name = f'security-cache-{dialect:x}-{level}'
                 initial = create(t, name, access=0x1f01ff)
                 initial.write(b'contents'); owner = parse(get_sd(initial))['owner']; initial.close()
@@ -107,16 +108,32 @@ def main():
                 denied(lambda: create(bt, name, access=1, disposition=1), 0xc0000022)
                 passed(f'{dialect:x}/{level}: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK')
             for connection in (c, pc, bc): connection.disconnect()
+        report.pop('active_case', None)
         report['status'] = 'passed'
     except Exception:
-        report['error'] = traceback.format_exc(); raise
+        report['error'] = traceback.format_exc()
+        if f:
+            try:
+                f.log.flush()
+                report['server_log'] = (f.base/'supervisor.log').read_text(errors='replace')[-24000:]
+                report['worker_logs'] = {}
+                for role in ('smb', 'file', 'file_1', 'file_2', 'file_3', 'identity'):
+                    log = f.state/'logs'/(role+'.jsonl')
+                    if log.exists(): report['worker_logs'][role] = log.read_text(errors='replace')[-8000:]
+            except Exception: report['diagnostic_error'] = traceback.format_exc()
+        raise
     finally:
         for c in connections:
             try: c.disconnect(close=False)
             except Exception: pass
-        if f: f.close()
-        a.output.parent.mkdir(parents=True, exist_ok=True)
-        a.output.write_text(json.dumps(report, indent=2)+'\n')
+        try:
+            if f: f.close()
+        except Exception:
+            report['status'] = 'failed'; report['cleanup_error'] = traceback.format_exc()
+            raise
+        finally:
+            a.output.parent.mkdir(parents=True, exist_ok=True)
+            a.output.write_text(json.dumps(report, indent=2)+'\n')
 
 
 if __name__ == '__main__': main()

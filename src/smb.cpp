@@ -464,6 +464,7 @@ struct opened {
   bool cache_read_break_completed = false;
   std::shared_ptr<lease_binding> lease = nullptr;
   unsigned lease_state = 0;
+  bool cache_fence_is_break = false;
 };
 struct session_state {
   bool authenticated = false, raw_ntlm = false;

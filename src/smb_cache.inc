@@ -5,12 +5,21 @@ void clear_cache(opened &h, bool read_break_completed = false) {
   h.cache_level = h.cache_break_level = 0;
   h.cache_break_sent = false;
   h.cache_read_break_completed = read_break_completed;
+  h.cache_fence_is_break = false;
 }
 void cache_deadline(opened &h, const json &snapshot) {
   auto remaining = h.grant.at("expires").get<int64_t>() - now();
-  if (snapshot.at("breaking").get<bool>())
-    remaining = std::min(remaining, snapshot.at("remaining_ms").get<int64_t>());
-  if (remaining <= 200) { close(); throw status_error(0xc0000128); }
+  h.cache_fence_is_break = false;
+  if (snapshot.at("breaking").get<bool>()) {
+    auto break_remaining = snapshot.at("remaining_ms").get<int64_t>();
+    h.cache_fence_is_break = break_remaining <= remaining;
+    remaining = std::min(remaining, break_remaining);
+  }
+  if (remaining <= 200) {
+    close();
+    log("smb", "cache_deadline_rejected", h.cache_fence_is_break ? "break" : "authority");
+    throw status_error(0xc0000128);
+  }
   h.cache_fence_at = async_clock() + remaining - 100;
   h.cache_poll_at = async_clock() + 250;
 }
@@ -28,7 +37,10 @@ pace::task<void> cache_watchdog() {
       auto time = async_clock();
       for (auto sid : session_ids())
         for (const auto &[fid, h] : find_session(sid)->files)
-          if (!h.cache_cookie.empty() && h.cache_fence_at <= time) close();
+          if (socket.is_open() && !h.cache_cookie.empty() && h.cache_fence_at <= time) {
+            close();
+            log("smb", "cache_watchdog_expired", h.cache_fence_is_break ? "break" : "authority");
+          }
     }
   } catch (...) { close(); }
   watchdog_done = true;
@@ -168,10 +180,14 @@ pace::task<void> poll_caches_locked() {
           co_await operation(h, "cache_ack", false, request);
           clear_cache(files.at(fid), true);
         }
-      } catch (...) {
-        // Expiry, policy revocation or worker recovery has fenced this open.
-        // A transport still advertising cached authority cannot survive it.
+      } catch (const std::exception &e) {
+        // Fence before logging: diagnostics must not delay loss of authority.
         close();
+        log("smb", "cache_poll_failed", e.what());
+        co_return;
+      } catch (...) {
+        close();
+        log("smb", "cache_poll_failed", "unknown_exception");
         co_return;
       }
     }
