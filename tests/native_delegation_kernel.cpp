@@ -330,6 +330,102 @@ static void owner_suite(const fs::path &base, bool mandatory) {
   check(pin_id != 0 && retained.read(0, 6) == "pinned", "owner_unlinked_incarnation_handoff");
   owner.release(pin_id);
   std::cout << "PASS " << base << " OWNER/private-pin-and-unlinked-incarnation\n";
+
+  // A request acknowledged before expiry keeps exclusion while execution or
+  // reply delivery is delayed. Completing it starts a full post-reply lease.
+  auto reserved_file = root.open("owned");
+  auto reserved_id = owner.acquire(reserved_file, 5000, 300);
+  check(reserved_id != 0, "reservation_acquire");
+  auto first = owner.reserve(reserved_id).at("reservation").get<uint64_t>();
+  auto second = owner.reserve(reserved_id).at("reservation").get<uint64_t>();
+  check(first && second && first != second, "reservation_tokens_not_unique");
+  std::this_thread::sleep_for(450ms);
+  auto held = owner.inspect(reserved_id);
+  check(held.at("held") && held.at("reservations") == 2 && held.at("lease_remaining_ms") == 0,
+        "pending_request_expired");
+  try { owner.reserve(reserved_id); throw error("late_arrival_reserved"); }
+  catch (const error &e) { check(std::string_view(e.what()) == "stale_handle", "late_arrival_wrong_error"); }
+  check(owner.complete(reserved_id, first, false).at("held"), "first_cancel_dropped_other_request");
+  auto completion_time = monotonic_ms();
+  auto completed = owner.complete(reserved_id, second, true);
+  check(completed.at("reservations") == 0 && completed.at("lease_expires_ms").get<int64_t>() >= completion_time + 5000,
+        "completion_missing_full_lease");
+  auto final_expiry = completed.at("lease_expires_ms");
+  try { owner.complete(reserved_id, second, true); throw error("duplicate_completion_accepted"); }
+  catch (const error &e) { check(std::string_view(e.what()) == "stale_handle", "duplicate_completion_wrong_error"); }
+  check(owner.inspect(reserved_id).at("lease_expires_ms") == final_expiry, "duplicate_completion_renewed");
+  writer = open((base / "owned").c_str(), O_WRONLY | O_NONBLOCK);
+  check(writer < 0 && errno == EWOULDBLOCK, "postreply_lease_not_native");
+  owner.release(reserved_id);
+  std::cout << "PASS " << base << " OWNER/request-reservation-postreply-lease\n";
+
+  reserved_id = owner.acquire(reserved_file, 5000, 5000);
+  check(reserved_id != 0, "reservation_capacity_acquire");
+  std::vector<uint64_t> tokens;
+  for (int i = 0; i < 32; ++i) tokens.push_back(owner.reserve(reserved_id).at("reservation"));
+  try { owner.reserve(reserved_id); throw error("reservation_capacity_unbounded"); }
+  catch (const error &e) { check(std::string_view(e.what()) == "operation_limit", "reservation_capacity_wrong_error"); }
+  try { owner.complete(reserved_id, second, true); throw error("foreign_reservation_accepted"); }
+  catch (const error &e) { check(std::string_view(e.what()) == "stale_handle", "foreign_reservation_wrong_error"); }
+  for (auto token : tokens) owner.complete(reserved_id, token, false);
+  check(owner.inspect(reserved_id).at("reservations") == 0, "cancel_capacity_not_released");
+  auto recycled = owner.reserve(reserved_id).at("reservation").get<uint64_t>();
+  check(recycled > tokens.back(), "reservation_token_reused");
+  owner.complete(reserved_id, recycled, false); owner.release(reserved_id);
+
+  reserved_id = owner.acquire(reserved_file, 5000, 200);
+  check(reserved_id != 0, "reservation_cancel_acquire");
+  auto cancelled = owner.reserve(reserved_id).at("reservation").get<uint64_t>();
+  std::this_thread::sleep_for(300ms);
+  check(owner.complete(reserved_id, cancelled, false).at("state") == "expired", "cancel_renewed_lease");
+  writer = open((base / "owned").c_str(), O_WRONLY | O_NONBLOCK);
+  check(writer >= 0, "cancel_did_not_release_native_guard"); close(writer);
+  owner.release(reserved_id);
+  std::cout << "PASS " << base << " OWNER/reservation-capacity-cancellation-and-token-binding\n";
+
+  reserved_id = owner.acquire(reserved_file, 5000, 300);
+  check(reserved_id != 0, "reservation_recall_acquire");
+  auto recalling = owner.reserve(reserved_id).at("reservation").get<uint64_t>();
+  std::this_thread::sleep_for(450ms);
+  writer = open((base / "owned").c_str(), O_WRONLY | O_NONBLOCK);
+  check(writer < 0 && errno == EWOULDBLOCK, "reserved_native_guard_lost");
+  until = std::chrono::steady_clock::now() + 6s;
+  while (owner.inspect(reserved_id).at("state") != "revoked" && std::chrono::steady_clock::now() < until)
+    std::this_thread::sleep_for(20ms);
+  check(owner.inspect(reserved_id).at("state") == "revoked", "reservation_extended_recall");
+  check(owner.complete(reserved_id, recalling, true).at("state") == "revoked", "late_completion_revived_guard");
+  writer = open((base / "owned").c_str(), O_WRONLY | O_NONBLOCK);
+  check(writer >= 0, "reserved_recall_did_not_release_native_guard"); close(writer);
+  owner.release(reserved_id); reserved_file = native_file();
+  std::cout << "PASS " << base << " OWNER/reservation-cannot-postpone-native-recall\n";
+
+  check(pipe2(ready, O_CLOEXEC) == 0, "reserved_crash_pipe");
+  worker = fork(); check(worker >= 0, "reserved_crash_fork");
+  if (!worker) {
+    close(ready[0]);
+    try {
+      auto f = root.open("owned"); native_delegation_owner keeper;
+      auto owned = keeper.acquire(f, 5000, 300);
+      if (!owned || !keeper.reserve(owned).at("reservation").get<uint64_t>()) _exit(2);
+      std::this_thread::sleep_for(450ms);
+      char marker = 'R'; if (write(ready[1], &marker, 1) != 1) _exit(3);
+      for (;;) pause();
+    } catch (...) { _exit(4); }
+  }
+  close(ready[1]); notification = {ready[0], POLLIN, 0}; marker = 0;
+  acknowledged = poll(&notification, 1, 3000) > 0 && read(ready[0], &marker, 1) == 1 && marker == 'R';
+  close(ready[0]); kill(worker, SIGKILL); waitpid(worker, &status, 0);
+  check(acknowledged && WIFSIGNALED(status), "reserved_worker_not_killed_after_ack");
+  auto detached_at = std::chrono::steady_clock::now();
+  writer = open((base / "owned").c_str(), O_WRONLY | O_NONBLOCK);
+  check(writer < 0 && errno == EWOULDBLOCK, "reserved_worker_death_released_early");
+  do {
+    std::this_thread::sleep_for(20ms);
+    writer = open((base / "owned").c_str(), O_WRONLY | O_NONBLOCK);
+  } while (writer < 0 && errno == EWOULDBLOCK && std::chrono::steady_clock::now() - detached_at < 7s);
+  check(writer >= 0 && std::chrono::steady_clock::now() - detached_at >= 4500ms,
+        "reserved_worker_death_missing_full_lease"); close(writer);
+  std::cout << "PASS " << base << " OWNER/reservation-worker-death-bounded-full-lease\n";
 }
 static void file_domain_suite(const fs::path &base) {
   initialize(base / "state", 38443);

@@ -140,6 +140,12 @@ Selected-profile acceptance: [M7 guide](docs/m7.md), [中文](docs/m7.zh-CN.md),
 
 ## Full SMB/NFS compatibility prerequisite (user decision, 2026-10-31)
 
+The independent NFS native owner now acknowledges bounded request reservations:
+completion preserves a full lease, cancellation does not renew, duplicates
+cannot renew, and recall remains fixed. Native tmpfs/ext4 tests include worker
+SIGKILL after ACK. File-domain and network lifetime integration plus recovery
+remain open ([details](docs/nfs-delegations.md#native-request-reservations)).
+
 SMB DELETE_OBJECT_ID and SET_OBJECT_ID_EXTENDED now preserve the underlying
 object and first 16-byte identity, enforce open/share write permissions and
 resume after cache recall. Four-dialect local checks pass; Windows mutations

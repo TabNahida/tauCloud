@@ -461,3 +461,43 @@ The [fixed-source Actions acceptance](evidence/pre-m8/nfs-native-deadline-d66-re
 for `d66ff7c` passes 257 host checks and 584 guest checks with the required
 Linux 6.19 tmpfs/ext4 PASS marker. This confirms the same native deadline
 implementation remotely; the network lifetime and recovery gates remain open.
+
+## Native request reservations
+
+The independent owner provides an acknowledged reservation token for in-flight
+work received before its current lease expiry. A reservation preserves native
+exclusion across that expiry while execution or reply completion is pending.
+Completion consumes the token and preserves a full lease from the owner's
+completion time; cancellation consumes it without renewal. Another outstanding
+token keeps the object protected. Tokens are unique within the owner lifetime,
+bound to their delegation record, and cannot be replayed to renew a lease.
+Late unrelated reservations cannot borrow an existing reservation's protection;
+a validated renewal must first advance the lease.
+
+There are at most 32 tokens per delegation and 512 per owner. Cancellation
+returns capacity. The private TCD3 IPC packet includes the token and confirmed
+reservation count. `protected_until_ms` is INT64_MAX only while an acknowledged
+reservation has no recall deadline; the count makes this conditional retention
+explicit. Native conflict detection still establishes a fixed recall deadline,
+which neither reservation nor completion can extend. After revocation, a late
+completion can remove its token but cannot restore the guard.
+
+Controller EOF cannot establish whether a reply reached the client. The owner
+therefore completes outstanding reservations conservatively with a full lease
+from EOF detection, clears the tokens and expires autonomously. A fixed recall
+deadline still takes precedence. Explicit release remains a caller-owned proof
+that caching has ended; it is not a substitute for cancelling outstanding work.
+
+[Local evidence](evidence/pre-m8/nfs-owner-reservations-local.json) records 534
+lifecycle checks and 630 real Linux 6.19 checks on tmpfs/ext4. The guest verifies
+actual native write exclusion beyond the original lease, full post-completion
+retention, duplicate/foreign token rejection, capacity recovery, cancellation,
+recall despite an incomplete request and SIGKILL of a worker after a reservation
+ACK. Its independent owner retains protection for the bounded post-death lease.
+
+This is the owner primitive needed for request receipt and reply lifetime. It
+is not yet wired through file-domain capabilities and the network admission/
+transport path. Those connections must avoid waiting behind the same blocked
+file worker, cover all client delegations and acknowledge protection before
+network state is extended. Production handout, replacement recovery and reclaim
+remain incomplete.

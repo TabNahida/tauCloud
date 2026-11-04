@@ -4,13 +4,14 @@ struct native_delegation_owner::impl {
   static inline std::atomic_bool entry_registered = false;
 #ifdef __linux__
   struct packet {
-    uint32_t magic = 0x54434432, op = 0;
+    uint32_t magic = 0x54434433, op = 0;
     uint32_t native_flags = 0, reserved = 0;
     uint64_t id = 0;
     int64_t period = 0, remaining = 0;
+    uint64_t reservation = 0;
   };
-  static_assert(sizeof(packet) == 40);
-  enum { acquire_read = 1, acquire_write, query, renew, recall, release };
+  static_assert(sizeof(packet) == 48);
+  enum { acquire_read = 1, acquire_write, query, renew, recall, release, reserve, complete, cancel };
   resource control;
   pid_t child = -1;
   std::mutex mutex;
@@ -21,11 +22,13 @@ struct native_delegation_owner::impl {
   }
   static json snapshot(const packet &r) {
     auto state = (r.op >> 8) & 255;
-    require(state <= 4 && r.period > 0 && r.remaining >= 0, "delegation_owner_io");
+    require(state <= 4 && r.period > 0 && r.remaining >= 0 && r.reserved <= 32, "delegation_owner_io");
     const char *names[] = {"active", "recalling", "returned", "revoked", "expired"};
     auto time = clock();
-    auto until = state < 2 ? (r.remaining ? std::min(r.period, r.remaining) : r.period) : 0;
+    auto expiry = r.reserved ? INT64_MAX : r.period;
+    auto until = state < 2 ? (r.remaining ? std::min(expiry, r.remaining) : expiry) : 0;
     return {{"state", names[state]}, {"held", state < 2},
+        {"reservations", r.reserved}, {"reservation", r.reservation},
         {"lease_expires_ms", r.period}, {"recall_deadline_ms", r.remaining}, {"protected_until_ms", until},
         {"lease_remaining_ms", std::max<int64_t>(0, r.period - time)},
         {"recall_remaining_ms", r.remaining ? std::max<int64_t>(0, r.remaining - time) : 0}};
@@ -62,7 +65,7 @@ struct native_delegation_owner::impl {
         if (++count == 1) descriptor.handle = fd; else ::close(fd);
       }
     }
-    return valid && result == sizeof(p) && !(message.msg_flags & (MSG_TRUNC | MSG_CTRUNC)) && count <= 1 && p.magic == 0x54434432;
+    return valid && result == sizeof(p) && !(message.msg_flags & (MSG_TRUNC | MSG_CTRUNC)) && count <= 1 && p.magic == 0x54434433;
   }
   void start() {
     int sockets[2];
@@ -108,7 +111,8 @@ struct native_delegation_owner::impl {
       int rc = poll(&p, 1, static_cast<int>(remaining));
       if (rc < 0 && errno == EINTR) continue;
       ok = rc > 0 && receive(control.handle, response, unexpected) && unexpected.handle < 0 &&
-          (response.op & 255) == request.op && (request.id == 0 || response.id == request.id);
+          (response.op & 255) == request.op && (request.id == 0 || response.id == request.id) &&
+          (!request.reservation || response.reservation == request.reservation);
       break;
     }
     if (!ok) { disconnect(); throw error("delegation_owner_lost"); }
@@ -139,10 +143,23 @@ struct native_delegation_owner::impl {
       native_file file;
       std::unique_ptr<native_cache_guard> guard;
       nfs_detail::delegation_lifetime lifetime;
+      std::set<uint64_t> reservations;
     };
     std::map<uint64_t, record> records;
-    uint64_t next = 0;
+    uint64_t next = 0, next_reservation = 0;
+    size_t pending = 0;
     bool connected = true;
+    auto detach = [&] {
+      if (!connected) return;
+      connected = false; ::close(socket);
+      // EOF cannot prove whether a reply reached its client. Preserve a full
+      // lease from detection, then permit autonomous expiry. Recall stays fixed.
+      for (auto &[id, r] : records) {
+        for (auto token : r.reservations) { (void)token; r.lifetime.complete(clock(), true); }
+        r.reservations.clear();
+      }
+      pending = 0;
+    };
     for (;;) {
       bool held = false;
       for (auto &[id, r] : records) {
@@ -152,7 +169,7 @@ struct native_delegation_owner::impl {
             r.lifetime.recall(clock());
             // Keep the descriptor, but do not acknowledge further renewals
             // after losing the ability to observe the kernel's protection.
-            if (connected) { connected = false; ::close(socket); }
+            detach();
           }
           r.lifetime.expire(clock());
           if (!r.lifetime.held()) { r.guard.reset(); r.file = native_file(); }
@@ -164,16 +181,17 @@ struct native_delegation_owner::impl {
       int ready = poll(&p, 1, 20);
       if (ready <= 0) continue;
       packet request; resource descriptor;
-      if (!receive(socket, request, descriptor)) { connected = false; ::close(socket); continue; }
+      if (!receive(socket, request, descriptor)) { detach(); continue; }
       packet response = request;
       unsigned failure = 0;
       try {
         auto op = request.op;
-        require(op >= acquire_read && op <= release, "invalid_request");
+        require(op >= acquire_read && op <= cancel, "invalid_request");
         bool acquiring = op == acquire_read || op == acquire_write;
         require(acquiring == (descriptor.handle >= 0), "invalid_request");
         require(!request.reserved && !(request.native_flags & ~3u) &&
             (acquiring || !request.native_flags), "invalid_request");
+        require((op == complete || op == cancel) == (request.reservation != 0), "invalid_request");
         if (acquiring) {
           require(!request.id && request.period >= 5000 && request.period <= 3600000 &&
               request.remaining > clock() && request.remaining <= clock() + request.period, "invalid_request");
@@ -204,11 +222,27 @@ struct native_delegation_owner::impl {
                 r.lifetime.renew(accepted, request.remaining - accepted), "stale_handle");
           }
           else if (op == recall) r.lifetime.recall(clock());
-          else if (op == release) { records.erase(found); }
+          else if (op == reserve) {
+            require(pending < 512 && r.reservations.size() < 32 && next_reservation != UINT64_MAX,
+                    "operation_limit");
+            require(r.lifetime.held(), "stale_handle");
+            auto token = ++next_reservation;
+            r.reservations.insert(token);
+            if (!r.lifetime.reserve(clock())) { r.reservations.erase(token); throw error("stale_handle"); }
+            ++pending; response.reservation = token;
+          }
+          else if (op == complete || op == cancel) {
+            require(r.reservations.contains(request.reservation), "stale_handle");
+            r.lifetime.complete(clock(), op == complete);
+            r.reservations.erase(request.reservation); --pending;
+            if (!r.lifetime.held()) { r.guard.reset(); r.file = native_file(); }
+          }
+          else if (op == release) { pending -= r.reservations.size(); records.erase(found); }
           if (op != release) {
             response.op |= static_cast<unsigned>(r.lifetime.status()) << 8;
             response.period = r.lifetime.expires();
             response.remaining = r.lifetime.recall_until();
+            response.reserved = static_cast<uint32_t>(r.reservations.size());
           }
         }
       } catch (const error &e) {
@@ -216,7 +250,7 @@ struct native_delegation_owner::impl {
         failure = code == "invalid_request" ? 2 : code == "stale_handle" ? 3 : code == "operation_limit" ? 5 : 4;
       } catch (...) { failure = 4; }
       response.op |= failure << 16;
-      if (!send(socket, response)) { connected = false; ::close(socket); }
+      if (!send(socket, response)) detach();
     }
   }
 #endif
@@ -287,6 +321,26 @@ json native_delegation_owner::renew(uint64_t id, int64_t remaining) {
   return impl::snapshot(impl_->exchange(request));
 #else
   (void)id; (void)remaining; throw error("not_supported");
+#endif
+}
+json native_delegation_owner::reserve(uint64_t id) {
+#ifdef __linux__
+  std::lock_guard lock(impl_->mutex);
+  impl::packet request; request.op = impl::reserve; request.id = id;
+  return impl::snapshot(impl_->exchange(request));
+#else
+  (void)id; throw error("not_supported");
+#endif
+}
+json native_delegation_owner::complete(uint64_t id, uint64_t reservation, bool renew_lease) {
+#ifdef __linux__
+  std::lock_guard lock(impl_->mutex);
+  require(reservation != 0, "invalid_request");
+  impl::packet request; request.op = renew_lease ? impl::complete : impl::cancel;
+  request.id = id; request.reservation = reservation;
+  return impl::snapshot(impl_->exchange(request));
+#else
+  (void)id; (void)reservation; (void)renew_lease; throw error("not_supported");
 #endif
 }
 void native_delegation_owner::recall(uint64_t id) {

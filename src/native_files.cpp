@@ -5,6 +5,7 @@
 #include <cstring>
 #include <limits>
 #include <map>
+#include <set>
 #include <utf8proc.h>
 #ifdef _WIN32
 #include <windows.h>

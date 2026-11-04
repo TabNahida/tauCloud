@@ -1,6 +1,7 @@
 #pragma once
 #include <algorithm>
 #include <cstdint>
+#include <limits>
 
 namespace tc::nfs_detail {
 // Monotonic-time lifecycle for file-domain coherence retention. This is not a
@@ -11,6 +12,7 @@ public:
 private:
   int64_t period_, expires_, recall_until_ = 0;
   state state_ = state::active;
+  uint32_t reservations_ = 0;
 public:
   delegation_lifetime(int64_t time, int64_t period, int64_t remaining)
       : period_(period), expires_(time + std::clamp<int64_t>(remaining, 0, period)) {}
@@ -18,8 +20,28 @@ public:
   bool held() const { return state_ == state::active || state_ == state::recalling; }
   int64_t expires() const { return expires_; }
   int64_t recall_until() const { return recall_until_; }
+  uint32_t reservations() const { return reservations_; }
+  // Acknowledged in-flight work prevents lease expiry, but never recall expiry.
+  // The owner binds each use to a unique token and releases it on completion.
+  bool reserve(int64_t time) {
+    expire(time);
+    // Existing in-flight work is not authority for unrelated late arrivals.
+    // A validated renewal may advance expires_ before reserving more work.
+    if (!held() || time >= expires_ || reservations_ == 32) return false;
+    ++reservations_;
+    return true;
+  }
+  bool complete(int64_t time, bool renew_lease) {
+    if (!reservations_) return false;
+    expire(time);
+    if (held() && renew_lease) expires_ = std::max(expires_, time + period_);
+    --reservations_;
+    expire(time);
+    return held();
+  }
   int64_t protected_until() const {
-    return held() ? (recall_until_ ? std::min(expires_, recall_until_) : expires_) : 0;
+    auto expiry = reservations_ ? std::numeric_limits<int64_t>::max() : expires_;
+    return held() ? (recall_until_ ? std::min(expiry, recall_until_) : expiry) : 0;
   }
   // Import a native authority's absolute monotonic deadlines. Observation may
   // shorten protection, never extend it or restart a recall after IPC delay.
@@ -41,9 +63,9 @@ public:
     if (!held()) return;
     // A client lease expiring before the recall interval revokes all of that
     // client's state. Later renewals cannot resurrect this delegation.
-    if (time >= expires_ && (!recall_until_ || expires_ < recall_until_)) state_ = state::expired;
+    if (!reservations_ && time >= expires_ && (!recall_until_ || expires_ < recall_until_)) state_ = state::expired;
     else if (recall_until_ && time >= recall_until_) state_ = state::revoked;
-    else if (time >= expires_) state_ = state::expired;
+    else if (!reservations_ && time >= expires_) state_ = state::expired;
   }
   void recall(int64_t time) {
     expire(time);

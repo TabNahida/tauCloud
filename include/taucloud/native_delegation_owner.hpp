@@ -19,6 +19,10 @@ public:
   json inspect(uint64_t id);
   // Returns acknowledged absolute monotonic lease/recall/protection deadlines.
   json renew(uint64_t id, int64_t remaining_ms);
+  // Unique, bounded in-flight reservations. Completion grants a full lease;
+  // cancellation grants none. Neither can postpone a fixed recall deadline.
+  json reserve(uint64_t id);
+  json complete(uint64_t id, uint64_t reservation, bool renew_lease);
   void recall(uint64_t id);
   void release(uint64_t id);
   // Diagnostics only; use a pidfd/verified process identity for signaling.

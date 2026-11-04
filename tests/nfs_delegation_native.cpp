@@ -65,6 +65,27 @@ int main(int argc, char **argv) {
       delegation_lifetime bounded(1000, period, period);
       bounded.constrain(1500, 0); bounded.expire(1500);
       check(bounded.status() == state::expired && bounded.protected_until() == 0);
+      delegation_lifetime reserved(1000, period, 10);
+      check(reserved.reserve(1001) && reserved.reserve(1002));
+      reserved.expire(1011); check(reserved.held() && reserved.reservations() == 2);
+      check(!reserved.reserve(1011) && reserved.reservations() == 2);
+      check(reserved.complete(1012, false) && reserved.expires() == 1010);
+      check(reserved.complete(1013, true) && reserved.expires() == 1013 + period);
+      check(!reserved.complete(1014, true) && reserved.expires() == 1013 + period);
+      reserved.expire(1013 + period); check(!reserved.held() && !reserved.reserve(1014 + period));
+      delegation_lifetime cancelled(1000, period, 10);
+      check(cancelled.reserve(1001));
+      check(!cancelled.complete(1011, false) && cancelled.status() == state::expired);
+      delegation_lifetime held_recall(1000, period, 10);
+      check(held_recall.reserve(1001)); held_recall.recall(1011);
+      check(held_recall.recall_until() == 1011 + period);
+      held_recall.expire(1011 + period);
+      check(held_recall.status() == state::revoked && !held_recall.complete(1012 + period, true));
+      delegation_lifetime capacity(1000, period, period);
+      for (int i = 0; i < 32; ++i) check(capacity.reserve(1001));
+      check(!capacity.reserve(1002) && capacity.reservations() == 32);
+      for (int i = 0; i < 32; ++i) check(capacity.complete(1003, false));
+      check(capacity.reserve(1004) && capacity.expires() == 1000 + period);
     }
     std::cout << "PASS monotonic recall, expiry, return and non-resurrection boundaries\n";
 
