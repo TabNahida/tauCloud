@@ -346,8 +346,6 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
                   "sharing_violation");
         }
     }
-    cache_conflict(space, path);
-    smb_reap(s);
     require(handles.size() < 128, "handle_limit");
     if (!path.empty())
       portable_path(path);
@@ -363,7 +361,28 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     require(!(access & 0x01000000u), "privilege_not_held");
     require((access & ~0x001f01ffu) == 0, "forbidden");
     require(!(access & (0xd0000u | 0x156u)) || grant.at("write").get<bool>(), "forbidden");
-    auto existing = dav_exists(s, path);
+    // Attribute-only OPEN/OPEN_IF does not consume cached data. Retain the
+    // already pinned native object instead of opening its pathname for read,
+    // which would itself break the kernel lease. The new SMB handle still has
+    // its own granted rights; a later metadata mutation recalls before acting.
+    std::optional<json> cached_info;
+    native_file cached_file;
+    std::string cache_owner;
+    if (!body.value("maximum", false) && !(access & ~0x00100180u) &&
+        (disposition == 1 || disposition == 3) && !(options & 0x1000)) {
+      for (const auto &[id, held] : handles)
+        if (held.cache && held.space == space && held.path == path && !held.directory) {
+          cached_info = held.file.info(true);
+          require(cached_info->at("object") == object(space, path).at("native"),
+                  "object_replaced");
+          cached_file = held.file.retain();
+          cache_owner = id;
+          break;
+        }
+    }
+    cache_conflict(space, path, cache_owner);
+    smb_reap(s);
+    auto existing = cached_info ? cached_info : dav_exists(s, path);
     require(!existing || disposition != 2, "already_exists");
     bool directory = existing ? existing->at("directory").get<bool>() : bool(options & 1);
     require(!(options & 1) || directory, "not_directory");
@@ -375,8 +394,10 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     uint32_t requested_attributes = body.value("attributes", uint32_t(0));
     auto normalized_attributes = smb_attribute_value(requested_attributes, directory);
     if (existing) {
-      auto existing_file = path.empty() ? native_file() : s.directory.open(path, directory);
-      auto info = path.empty() ? s.directory.info() : existing_file.info();
+      auto existing_file = path.empty() || cached_info ? native_file()
+                                                       : s.directory.open(path, directory);
+      auto info = cached_info ? *cached_info
+                              : path.empty() ? s.directory.info() : existing_file.info();
       auto attributes = smb_attributes(info);
       if (options & 0x200) {
         auto values = smb_eas(info);
@@ -392,7 +413,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
         require(!(options & 0x1000), "cannot_delete");
       }
     }
-    auto descriptor = existing ? security_get(s, security_info(s, path))
+    auto descriptor = existing ? security_get(s, cached_info ? *cached_info : security_info(s, path))
                                : security_new(s, grant, path, directory);
     if (!existing) {
       security_add(s, grant, path, directory);
@@ -487,7 +508,8 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
       s.directory.flush();
       index(space, path, file.info());
     } else if (!directory)
-      file = s.directory.open(path, false, false, bool(access & 6));
+      file = cached_info ? std::move(cached_file)
+                         : s.directory.open(path, false, false, bool(access & 6));
     if (truncate) {
       auto before = file.info();
       security_data_changed(s, before);

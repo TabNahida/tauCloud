@@ -133,7 +133,13 @@ int main(int argc, char **argv) {
           .get<std::string>();
     };
     {
-      auto h = open("cache-domain");
+      auto h = open("cache-domain", 0x1f01ff);
+      auto cache_acl = security::defaults(security::principal("alice"), "");
+      cache_acl["dacl"].insert(cache_acl["dacl"].begin(),
+          json{{"type", 1}, {"flags", 0}, {"mask", 0x100},
+               {"sid", security::principal("bob")}});
+      call("set_security", "cache-domain", {{"handle", h}, {"information", 4},
+          {"data", encode_bytes(security::encode(cache_acl, 4))}});
       auto write = [&](const std::string &text) {
         return call("write", "cache-domain", {{"handle", h}, {"offset", 0},
             {"data", encode_bytes(text)}, {"request_id", random_hex(16)}});
@@ -161,6 +167,25 @@ int main(int argc, char **argv) {
       auto cookie = acquired.at("cookie").get<std::string>();
       ok(call("cache_acquire", "cache-domain", {{"handle", h}}).at("cookie") == cookie);
       auto control = [&] { return json{{"handle", h}, {"cookie", cookie}}; };
+      auto attribute_open = json{{"access", 0x100180}, {"sharing", 0},
+                                 {"disposition", 1}, {"options", 0x40}};
+      auto attributes = call("open", "cache-domain", attribute_open).at("handle");
+      ok(call("stat", "cache-domain", {{"handle", attributes}}).at("access") == 0x100180);
+      rejected([&] { call("read", "cache-domain", {{"handle", attributes},
+          {"offset", 0}, {"count", 1}}); }, "forbidden");
+      call("close", "cache-domain", {{"handle", attributes}});
+      auto limited_grant = grant("cache-domain", false, false);
+      attribute_open["grant"] = limited_grant;
+      rejected([&] { store->dispatch("smb_open", attribute_open, ctx("smb")); }, "forbidden");
+      attribute_open["access"] = 0x100080;
+      attributes = store->dispatch("smb_open", attribute_open, ctx("smb")).at("handle");
+      call("close", "cache-domain", {{"handle", attributes}});
+      limited_grant.erase("signature"); limited_grant["actor"] = "bob";
+      limited_grant["write"] = true;
+      limited_grant["signature"] = mac(grantkey, limited_grant.dump());
+      attribute_open["grant"] = limited_grant; attribute_open["access"] = 0x100180;
+      rejected([&] { store->dispatch("smb_open", attribute_open, ctx("smb")); }, "forbidden");
+      ok(!call("cache_poll", "cache-domain", control()).at("breaking"));
       rejected([&] { call("cache_ack", "cache-domain", control()); }, "invalid_device_state");
       rejected([&] { call("cache_poll", "cache-domain", {{"handle", h}, {"cookie", "wrong"}}); },
                "invalid_request");

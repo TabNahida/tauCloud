@@ -22,9 +22,9 @@ from smbprotocol.connection import Connection, SMB2HeaderResponse, SMB2Transform
 from smbprotocol.session import Session
 from smbprotocol.tree import TreeConnect
 from smbprotocol.open import Open, SMB2SetInfoRequest
-from smbprotocol.file_info import FileEndOfFileInformation
+from smbprotocol.file_info import FileEndOfFileInformation, FileBasicInformation
 from smbprotocol.structure import Structure, IntField, BytesField
-from m5_integration import Fixture, create, denied
+from m5_integration import Fixture, create, denied, query
 from smb_blocking_locks import pending
 
 
@@ -203,6 +203,32 @@ def main():
             assert other.read(0, 18) == b'flush after cancel'
             holder.close(); other.close(); c.disconnect()
             passed(f'{dialect:x}: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open')
+
+        for dialect in (0x210, 0x300, 0x302, 0x311):
+            c, s, t, q = connect(dialect)
+            peer_c, peer_s, peer_t, peer_q = connect(dialect)
+            holder = cached(t, f'attributes-only-{dialect:x}', share=0)
+            holder.write(b'cached data')
+            attributes = cached(peer_t, holder.file_name, access=0x100180, share=0, expected=0)
+            assert len(query(attributes, 4)) == 40
+            denied(lambda: attributes.read(0, 1), 0xc0000022)
+            denied(lambda: attributes.write(b'x'), 0xc0000022)
+            attributes.close()
+            time.sleep(.4); assert q.empty() and peer_q.empty()
+            holder.write(b'still cached')
+            attributes = cached(peer_t, holder.file_name, access=0x100180, share=0, expected=0)
+            basic = FileBasicInformation(); basic['file_attributes'] = 0x22
+            change = SMB2SetInfoRequest(); change['info_type'] = 1
+            change['file_info_class'] = basic.INFO_CLASS; change['file_id'] = attributes.file_id
+            change['buffer'] = basic
+            request = peer_c.send(change, peer_s.session_id, peer_t.tree_connect_id)
+            pending(request); recalled(q, s, holder)
+            holder.write(b'latest bytes'); holder.flush(); ack(c, s, t, holder)
+            peer_c.receive(request, timeout=10)
+            assert struct.unpack_from('<I', query(attributes, 4), 32)[0] == 0x22
+            assert holder.read(0, 12) == b'latest bytes'
+            holder.close(); attributes.close(); peer_c.disconnect(); c.disconnect()
+            passed(f'{dialect:x}: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing')
 
         c, s, t, q = connect()
         holder = cached(t, 'sharing-cache', share=0)

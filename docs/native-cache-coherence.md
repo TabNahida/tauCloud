@@ -124,6 +124,13 @@ and WRITE_DATA may now receive an EXCLUSIVE grant if the file domain obtains
 native exclusion. Read-only opens, directories, delete-on-close and conflicting
 native access receive NONE. BATCH/Level II/lease requests are not granted yet.
 An incompatible sharing request fails without recalling the existing cache.
+An attribute-only OPEN/OPEN_IF (READ_ATTRIBUTES, WRITE_ATTRIBUTES, SYNCHRONIZE)
+against a cached file retains its pinned native description and receives NONE
+without recalling data. The new handle still checks the DACL, space write policy,
+create options and its own granted rights. It cannot read/write file data.
+Actual attribute changes recall before mutation; metadata CLOSE does not release
+the holder's cache. This exception does not apply to MAXIMUM_ALLOWED, truncation
+or delete-on-close.
 
 The front end renews authority every 250 ms using fresh identity grants. A
 separate coroutine, which never waits for RPC or the dispatch gate, closes a
@@ -155,13 +162,20 @@ SET_INFO ordering, NFSv3 JUKEBOX retries, DAV retries, revoked credentials and
 an identity process paused while a polling RPC holds the dispatch gate. Windows
 native probes use CreateFileW with DELETE sharing, avoiding a CRT sharing
 violation unrelated to oplocks. The targeted Actions matrix now includes these
-checks plus original Samba exclusive1/exclusive3 sharing scenarios; remote
+checks plus original Samba exclusive1/exclusive3 sharing scenarios and the
+exclusive4 attribute-only scenario; remote
 acceptance of this new wire increment is pending.
+
+The attribute-open increment adds four independent dialect groups (28 total on
+Linux; 27 scheduled on Windows), including a second transport, share-none, query/close,
+data-access rejection and deferred attribute mutation. File-domain tests also
+check an explicit deny ACE and read-only policy on the retained path. See
+[local acceptance](evidence/pre-m8/smb-oplock-attributes-local.json). Remote
+acceptance remains pending.
 
 ## Remaining integration
 
-Level II/BATCH caching, metadata-only opens without unnecessary breaks, SMB
-leases, namespace/handle caching, complete oplock transitions and the complete
+Level II/BATCH caching, SMB leases, namespace/handle caching, complete oplock transitions and the complete
 original Samba suite still need implementation and evidence. NFS still needs
 delegation state, recalls and revocation. Linux's finite kernel break deadline
 and namespace changes need explicit treatment for handle/delegation caching.

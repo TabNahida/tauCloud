@@ -1,0 +1,85 @@
+{
+  "recorded_at": "2026-11-04T12:22:08.885469+00:00",
+  "base_source": "5a78b2958983b2f4527fd42adb3acb50d6eab128",
+  "status": "local-passed-remote-pending",
+  "scope": "Attribute-only SMB OPEN/OPEN_IF under an existing EXCLUSIVE cache; Full SMB/NFS remains unfinished",
+  "sanitizers": "Linux Clang ASan/UBSan/LSan",
+  "source_sha256": {
+    "src/file_smb.inc": "cc3f849bc0ca7708417fa2221e2a9bb8f846e84d18a4d012fb9404966ded1977",
+    "tests/m5_core.cpp": "5be7df7b3262c54ab7bdbaca137883c1ada6ae5b698f7bc14aecdf28ab8ffd0e",
+    "tests/smb_oplock_integration.py": "4228b97369c1de1675540eae4eed951ba3da4e3737eb57a5e717cad6772995bd",
+    ".github/workflows/smb-metadata.yml": "a73a5adebf824d6ee7eb9f463161030d90daa0df90c0c27cfdd4a2234e94657b"
+  },
+  "wire": {
+    "sha256": "d6af141fc8a26f80cdcb6c3b4fb4ec9fd78caee8dcb4be4e9d54da8918bc9048",
+    "report": {
+      "status": "passed",
+      "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+      "checks": [
+        "210: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+        "210: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+        "210: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+        "300: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+        "300: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+        "300: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+        "302: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+        "302: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+        "302: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+        "311: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+        "311: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+        "311: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+        "210: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+        "300: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+        "302: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+        "311: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+        "sharing violations do not recall dirty caches; readonly, directory, delete-on-close and conflicting native opens receive no unsupported cache grant",
+        "a lease-form ACK for a classic oplock is rejected and finishes the recall without leaving native exclusion stuck",
+        "two encrypted sessions on one transport renew independent cache authority and route breaks/ACKs with their own keys; a foreign-session ACK cannot release another open",
+        "native host reads/writes wait for SMB recall; dirty client data flushes before host access and the original handle observes subsequent native writes",
+        "SET_INFO recalls before mutation, permits cached flush while pending and applies EOF after ACK without replaying side effects",
+        "a new cached CREATE is announced before its own compound SET_INFO recall; asynchronous retries preserve the inherited FileId through the dependent READ",
+        "NFSv3 READ on an existing handle returns JUKEBOX during native recall; repeated retries leave SMB flush/ACK live and the next read returns current data",
+        "DAV GET returns a retryable response while a cache recall is pending and reads freshly flushed bytes after ACK",
+        "another transport cannot ACK the holder FileId; CLOSE flushes/releases authority and wakes the peer CREATE",
+        "unacknowledged recall fences the holder transport and open while the conflicting client completes after native exclusion releases",
+        "credential revocation closes the cache-bearing transport and releases native exclusion without requiring a client request",
+        "stalled identity RPC cannot hold the cache transport past its authority: independent watchdog closes it before IPC timeout and autonomous worker expiry releases native exclusion"
+      ],
+      "recorded_at": "2026-11-04T12:17:57.733842+00:00"
+    }
+  },
+  "core": {
+    "m5": {
+      "sha256": "33897bbaa15cef69a11bcae6f538563cf6c136b19b669f253442c49f74f4c0b9",
+      "output": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793794889680}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file\",\"time\":1793794891768}\n{\"checks\":12475,\"status\":\"passed\"}\n"
+    },
+    "m7": {
+      "sha256": "1ab6994c15b868b8106508b840801fe2e75bcd93ea4a7a95d900bff59fb22fe7",
+      "output": "{\"checks\":98,\"status\":\"passed\"}\n"
+    }
+  },
+  "initial_test_failure": {
+    "sha256": "779724ca800f5db03a257a09fa23c5825112cdcd0de3a2b6a37cac17a1b813c9",
+    "output": "forbidden != expected_rejection\ntest_failed\n",
+    "cause": "The new negative ACL test assumed default descriptors deny another actor; defaults grant everyone. The fixture now installs an explicit deny ACE for Bob WRITE_ATTRIBUTES before acquiring the cache. No production authorization check was relaxed."
+  },
+  "remote": {
+    "status": "pending",
+    "selectors": [
+      "smb2.oplock.exclusive1",
+      "smb2.oplock.exclusive3",
+      "smb2.oplock.exclusive4"
+    ],
+    "platforms": [
+      "Linux GCC",
+      "Linux Clang ASan/UBSan",
+      "Windows MSVC"
+    ]
+  },
+  "remaining": [
+    "Level II and BATCH oplocks, complete transition conformance",
+    "SMB leases, handle caching, durable/replay and multichannel",
+    "NFS delegations and CB_RECALL, remaining mandatory security/operations",
+    "Full upstream SMB/NFS suites and platform coverage"
+  ]
+}
