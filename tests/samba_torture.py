@@ -3,6 +3,7 @@
 import argparse
 import datetime
 import json
+import os
 import re
 from pathlib import Path
 import platform
@@ -14,6 +15,7 @@ def main():
     p.add_argument('--bin', type=Path, required=True)
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--client', default='smbtorture')
+    p.add_argument('--sanitizers', action='store_true', help='Allow 1 GiB for ASan shadow/quarantine overhead; release keeps 512 MiB')
     p.add_argument('--owner-restore', action='store_true', help='Explicitly authorize arbitrary owner restoration for the test account and space')
     p.add_argument('--timeout', type=int, default=300,
                    help='Per-selector runtime; credit stress performs 8191 durable writes')
@@ -23,7 +25,17 @@ def main():
         args.selectors = json.loads(Path(__file__).with_name('samba-profile.json').read_text())['selectors']
     args.output.parent.mkdir(parents=True, exist_ok=True)
     report = dict(host=platform.platform(), recorded_at=datetime.datetime.now(datetime.timezone.utc).isoformat(), tests=[])
-    f = Fixture(args.bin)
+    f = Fixture(args.bin, 1024 if args.sanitizers else 512)
+    report["memory_limit_mib"] = 1024 if args.sanitizers else 512
+    def services():
+        result = f.ctl('status')
+        if os.name != 'nt':
+            for entry in result.values():
+                identity = entry.get('identity') or {}
+                try:
+                    entry['open_descriptors'] = len(list(Path('/proc', str(identity['pid']), 'fd').iterdir()))
+                except (OSError, KeyError): pass
+        return result
     try:
         if args.owner_restore:
             f.api('smb-owner-authority', f.admin, dict(id='samba-owner', username='alice', space='smbdata', mode='restore'))
@@ -39,6 +51,7 @@ def main():
             log = args.output.parent / (args.output.stem + '-' + selector + '.log')
             cmd = [args.client, '//127.0.0.1/smb', '-p', str(f.smbport), '-A', str(credentials),
                    '-s', str(config), '--use-kerberos=off', '--maximum-runtime='+str(args.timeout), selector]
+            before = services()
             try:
                 with log.open('w') as out:
                     result = subprocess.run(cmd, stdout=out, stderr=subprocess.STDOUT, timeout=args.timeout+10)
@@ -52,6 +65,9 @@ def main():
                             status=state, counts=counts, log=log.name)
             except subprocess.TimeoutExpired:
                 item = dict(selector=selector, status='failed', error='client timeout', log=log.name)
+            item['services_before'] = before
+            try: item['services_after'] = services()
+            except Exception as error: item['status_error'] = type(error).__name__
             report['tests'].append(item)
             print(selector + ': ' + item['status'], flush=True)
     finally:

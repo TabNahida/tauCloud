@@ -75,11 +75,16 @@ bytes hmac(std::string_view key, std::string_view data, bool sha256) {
           "crypto_error");
   return bytes(reinterpret_cast<char *>(result), n);
 }
-bytes signature(std::string_view key, bytes packet, bool smb3) {
+bytes signature(std::string_view key, bytes packet, unsigned algorithm) {
   require(packet.size() >= 64, "invalid_packet");
   packet.replace(48, 16, 16, '\0');
-  if (smb3)
-    return cmac(key, packet);
+  if (algorithm == 2) {
+    bytes nonce = packet.substr(24, 8) + bytes(4, '\0');
+    put(nonce, 8, (get(packet, 16, 4) & 1) | (get(packet, 12, 2) == 12 ? 2 : 0), 4);
+    return gmac(key, nonce, packet);
+  }
+  if (algorithm == 1) return cmac(key, packet);
+  require(algorithm == 0, "not_supported");
   return hmac(key, packet, true).substr(0, 16);
 }
 bytes nt_hash(std::string_view password) {

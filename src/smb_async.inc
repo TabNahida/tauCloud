@@ -66,7 +66,7 @@ pace::task<void> finish_lock(uint64_t async_id, uint32_t code) {
   put(response, 40, session, 8);
   response += code ? sized(9, 9) : sized(4, 4);
   if (!pending.encrypted)
-    response.replace(48, 16, signature(key, response, selected.dialect >= 0x300));
+    response.replace(48, 16, signature(key, response, selected.signing));
   co_await send_packet(std::move(response), pending.encrypted);
 }
 pace::task<void> finish_notify(uint64_t async_id, uint32_t code, bytes data = {}) {
@@ -91,7 +91,7 @@ pace::task<void> finish_notify(uint64_t async_id, uint32_t code, bytes data = {}
     response += body + data;
   } else response += sized(9, 9);
   if (!pending.encrypted)
-    response.replace(48, 16, signature(key, response, selected.dialect >= 0x300));
+    response.replace(48, 16, signature(key, response, selected.signing));
   co_await send_packet(std::move(response), pending.encrypted);
 }
 pace::task<void> pump_notifications() {

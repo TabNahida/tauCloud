@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """SMB3 independent-client interop and adversarial wire tests, disposable loopback only."""
-import argparse, hashlib, json, os, platform, signal, socket, struct, subprocess, sys, uuid
+import argparse, hashlib, hmac, json, os, platform, signal, socket, struct, subprocess, sys, uuid
 from pathlib import Path
 from m5_integration import Fixture, create, denied, lock, setinfo, query
 from m5_wire import header, exchange, rejected_connection, shares, status
@@ -41,9 +41,16 @@ def negotiate_packet(dialect=0x311, signing=1, cipher=2, hash_id=1):
     return bytes(p)
 
 
-def sign(packet, key):
-    c=CMAC(AES(key)); c.update(packet[:48]+bytes(16)+packet[64:])
-    return packet[:48]+c.finalize()+packet[64:]
+def sign(packet, key, algorithm=1):
+    plain=packet[:48]+bytes(16)+packet[64:]
+    if algorithm==2:
+        info=(struct.unpack_from('<I',plain,16)[0]&1)|(2 if struct.unpack_from('<H',plain,12)[0]==12 else 0)
+        nonce=plain[24:32]+struct.pack('<I',info)
+        tag=AESGCM(key).encrypt(nonce,b'',plain)
+    elif algorithm==0:tag=hmac.new(key,plain,hashlib.sha256).digest()[:16]
+    else:
+        c=CMAC(AES(key));c.update(plain);tag=c.finalize()
+    return packet[:48]+tag+packet[64:]
 
 
 def multiprotocol_packet(dialects=('NT LM 0.12','SMB 2.002','SMB 2.???')):
@@ -51,13 +58,13 @@ def multiprotocol_packet(dialects=('NT LM 0.12','SMB 2.002','SMB 2.???')):
     return b'\xffSMB\x72'+bytes(27)+b'\0'+struct.pack('<H',len(body))+body
 
 
-def wire_auth(port,password,user,dialect=0x311,alter_transcript=False,bootstrap=False,previous_session=0,cipher=2):
+def wire_auth(port,password,user,dialect=0x311,alter_transcript=False,bootstrap=False,previous_session=0,cipher=2,signing_algorithm=1):
     sock=socket.create_connection(('127.0.0.1',port),timeout=10)
     try:
         if bootstrap:
             resp=exchange(sock,multiprotocol_packet());assert status(resp)==0
             assert struct.unpack_from('<H',resp,68)[0]==0x2ff
-        req=bytearray(negotiate_packet(dialect,cipher=cipher));struct.pack_into('<Q',req,24,int(bootstrap))
+        req=bytearray(negotiate_packet(dialect,cipher=cipher,signing=signing_algorithm));struct.pack_into('<Q',req,24,int(bootstrap))
         # Later probes deliberately leave sequence holes: explicitly request
         # enough credits instead of relying on an unsolicited server grant.
         struct.pack_into('<H',req,14,32);req=bytes(req)
@@ -76,7 +83,7 @@ def wire_auth(port,password,user,dialect=0x311,alter_transcript=False,bootstrap=
             signing=derive(b'SMBSigningKey',transcript);sending=derive(b'SMBC2SCipherKey',transcript,32 if cipher>=3 else 16);receiving=derive(b'SMBS2CCipherKey',transcript,32 if cipher>=3 else 16)
         else:
             signing=derive(b'SMB2AESCMAC',b'SmbSign\0');sending=derive(b'SMB2AESCCM',b'ServerIn \0');receiving=derive(b'SMB2AESCCM',b'ServerOut\0')
-        assert (sign(resp,signing)[48:64]==resp[48:64]) != alter_transcript
+        assert (sign(resp,signing,signing_algorithm)[48:64]==resp[48:64]) != alter_transcript
         return sock,sid,signing,sending,receiving,req
     except Exception:sock.close();raise
 
@@ -192,7 +199,7 @@ def run(args):
             assert struct.unpack_from('<QQ',query(h,5))==(0,0);h.close()
             h=create(t,'allocation-'+hex(dialect),access=0x120089,disposition=1)
             allocation['allocation_size']=1;denied(lambda:setinfo(h,allocation),0xc0000022);h.close()
-            passed(f'{hex(dialect)} AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2')
+            passed(f'{hex(dialect)} negotiated signed login and operations; validate-negotiate for 3.0/3.0.2')
             s.encrypt_data=True
             contexts=[]
             for tag,data in [(b'AlSi',struct.pack('<Q',4096)),(b'ExtA',struct.pack('<IBBH',0,0,1,3)+b'A\0one'),(b'MxAc',b''),(b'QFid',b'')]:
@@ -275,12 +282,12 @@ def run(args):
         legacy.disconnect(close=False);mixed.disconnect(close=False)
         passed('SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks')
         # Hostile negotiation contexts, before credential access.
-        for packet,expected in [(negotiate_packet(signing=2),0xc00000bb),(negotiate_packet(cipher=5),0xc00000bb),(negotiate_packet(hash_id=2),0xc05d0000)]:
+        for packet,expected in [(negotiate_packet(signing=3),0),(negotiate_packet(cipher=5),0xc00000bb),(negotiate_packet(hash_id=2),0xc05d0000)]:
             with socket.create_connection(('127.0.0.1',f.smbport),timeout=10) as sock:assert status(exchange(sock,packet))==expected
         for field,value in [(92,100),(96,17)]:
             bad=bytearray(negotiate_packet());struct.pack_into('<I' if field==92 else '<H',bad,field,value)
             with socket.create_connection(('127.0.0.1',f.smbport),timeout=10) as sock:assert status(exchange(sock,bad))==0xc000000d
-        passed('unsupported signing/cipher/hash and malformed contexts fail without dialect fallback')
+        passed('unknown signing IDs select the required CMAC default; unsupported cipher/hash and malformed contexts fail without dialect fallback')
         for dialect,cipher in [(0x300,1),(0x302,1),(0x311,2),(0x311,3),(0x311,4)]:
             sock,sid,sk,ek,dk,_=wire_auth(f.smbport,f.password,user(),dialect,cipher=cipher)
             echo=header(13,3,sid)+struct.pack('<HH',4,0);packet=encrypted(echo,ek,sid,cipher)

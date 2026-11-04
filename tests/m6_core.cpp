@@ -29,6 +29,27 @@ int main() {
       key += char(i);
     for (unsigned i = 4; i < 80; ++i)
       packet += char(i);
+    // Independent AESGCM(empty plaintext, packet as AAD) vectors. The nonce
+    // separates request/response and CANCEL, even when MessageId is reused.
+    ok(encode_bytes(gmac(bytes(16, '\0'), bytes(12, '\0'), "")) ==
+       "58e2fccefa7e3061367f1d57a4e7455a");
+    const char *signatures[] = {"e43e2d63521af9bd84757c459e9c42d2", "2d5f2c8fb2ef9fda2b6b2b771c61f837",
+                               "428edb1b6b66ac1542af9b73757eb129", "e3e7ce19208a8c8dad207ea5c8524a5a"};
+    for (unsigned mode = 0; mode < 4; ++mode) {
+      auto input = packet;
+      put(input, 12, mode & 1 ? 12 : 13, 2);
+      put(input, 16, mode & 2 ? 9 : 8, 4);
+      put(input, 24, 0x0102030405060708ull, 8);
+      auto expected = signature(key, input, 2);
+      ok(encode_bytes(expected) == signatures[mode]);
+      for (size_t i = 0; i < input.size(); ++i) {
+        auto changed = input; changed[i] ^= 1;
+        ok((signature(key, changed, 2) == expected) == (i >= 48 && i < 64));
+      }
+    }
+    rejected([&] { gmac(bytes(15, 'x'), bytes(12, 'n'), packet); });
+    rejected([&] { gmac(key, bytes(11, 'n'), packet); });
+    rejected([&] { signature(key, packet, 3); });
     // Frozen vectors independently generated with cryptography KBKDFHMAC/AESCCM/AESGCM.
     ok(encode_bytes(kdf(key, "SMB2AESCMAC", bytes("SmbSign\0", 8))) ==
        "6234814cbb8ea9227440ebfeb5eacbe1");
@@ -121,6 +142,22 @@ int main() {
     add(8, decode_bytes("01000100"));
     auto response = n.accept(p, guid);
     ok(n.dialect == 0x311 && n.cipher == 2 && get(response, 6, 2) == 3);
+    {
+      auto unknown = p;
+      put(unknown, 154, 0xffff, 2);
+      auto accepted = n.accept(unknown, guid);
+      ok(n.signing == 1 && get(accepted, accepted.size() - 2, 2) == 1);
+      auto absent = p.substr(0, 144);
+      put(absent, 96, 2, 2);
+      accepted = n.accept(absent, guid);
+      ok(n.signing == 1 && get(accepted, 6, 2) == 2);
+    }
+    for (unsigned signing : {0, 1, 2}) {
+      auto offer = p;
+      put(offer, 154, signing, 2);
+      auto accepted = n.accept(offer, guid);
+      ok(n.signing == signing && get(accepted, accepted.size() - 2, 2) == signing);
+    }
     for (unsigned cipher : {3, 4}) {
       auto offer = p;
       put(offer, 138, cipher, 2);
@@ -131,7 +168,7 @@ int main() {
     rejected([&] { n.validate(n.client_info, guid); });
     for (size_t i = 0; i < p.size(); ++i)
       rejected([&] { n.accept(std::string_view(p).substr(0, i), guid); });
-    for (auto offset : {92, 96, 112, 114, 116, 120, 124, 128, 130, 154}) {
+    for (auto offset : {92, 96, 112, 114, 116, 120, 124, 128, 130}) {
       auto bad = p;
       bad[offset] ^= 0x80;
       rejected([&] { n.accept(bad, guid); });

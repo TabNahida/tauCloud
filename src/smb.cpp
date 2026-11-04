@@ -1479,7 +1479,7 @@ struct client {
             // Known-session signatures still all validate before any side effects.
             if (request_session == session && !encrypted)
               check((flags & 8) &&
-                        equal(p.substr(48, 16), signature(key, p, selected.dialect >= 0x300)),
+                        equal(p.substr(48, 16), signature(key, p, selected.signing)),
                     0xc0000022);
           }
           auto id = get(p, 24, 8);
@@ -1613,7 +1613,7 @@ struct client {
             put(response, 20, response.size(), 4);
           }
           if (sign)
-            response.replace(48, 16, signature(key, response, selected.dialect >= 0x300));
+            response.replace(48, 16, signature(key, response, selected.signing));
           if ((cmd == 0 || (cmd == 1 && code == 0xc0000016)) && selected.dialect == 0x311)
             transcript = preauth(transcript, response);
           if (cmd == 0 && !code)
@@ -1665,6 +1665,8 @@ struct client {
       log("smb", "connection_rejected", std::to_string(e.status));
     } catch (const error &e) {
       log("smb", "connection_rejected", e.what());
+    } catch (const std::bad_alloc &) {
+      log("smb", "connection_rejected", "allocation_failed");
     } catch (...) {
     }
     close();

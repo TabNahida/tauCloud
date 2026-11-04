@@ -13,3 +13,7 @@
 ### 2026-11-04
 
 Full SMB/NFS 扩展现已实现 SMB 3.1.1 的 AES-256-CCM/GCM 和完整 Kerberos 密钥派生，见 [M6](../m6.zh-CN.md)。上文 AES-256 排除项描述原始受限配置，不代表当前实现；GMAC 和传输扩展仍待完成。
+
+## Full-compatibility extension — 2026-11-04 signing
+
+扩展实现现已支持 SMB 3.1.1 的 GMAC、CMAC、HMAC-SHA256 协商；缺少签名上下文或无共同签名算法时按规范回退 CMAC。独立密码学、签名客户端、nonce 隔离、取消和 Kerberos 测试在本地 Clang ASan/UBSan 下通过。远程验收待完成，无共同加密算法时的协商和其他完整兼容性门槛仍未关闭。

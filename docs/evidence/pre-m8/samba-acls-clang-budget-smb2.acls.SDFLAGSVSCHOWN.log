@@ -1,0 +1,346 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793770754
+time: 2026-11-04 05:39:14.096733
+test: SDFLAGSVSCHOWN
+time: 2026-11-04 05:39:14.096819
+i=0:
+i=1:AUTO_INHERITED, 
+i=2:AUTO_INHERIT_REQ, 
+i=3:AUTO_INHERITED, AUTO_INHERIT_REQ,   ... parent is AUTO INHERITED
+i=4:PROTECTED, 
+i=5:AUTO_INHERITED, PROTECTED, 
+i=6:AUTO_INHERIT_REQ, PROTECTED, 
+i=7:AUTO_INHERITED, AUTO_INHERIT_REQ, PROTECTED,   ... parent is AUTO INHERITED
+i=8:INHERITED,   ... parent ACE is INHERITED
+i=9:AUTO_INHERITED, INHERITED,   ... parent ACE is INHERITED
+i=10:AUTO_INHERIT_REQ, INHERITED,   ... parent ACE is INHERITED
+i=11:AUTO_INHERITED, AUTO_INHERIT_REQ, INHERITED,   ... parent is AUTO INHERITED  ... parent ACE is INHERITED
+i=12:PROTECTED, INHERITED,   ... parent ACE is INHERITED
+i=13:AUTO_INHERITED, PROTECTED, INHERITED,   ... parent ACE is INHERITED
+i=14:AUTO_INHERIT_REQ, PROTECTED, INHERITED,   ... parent ACE is INHERITED
+TESTING ACL INHERITANCE FLAGS
+creating initial directory smb2-testsd\inheritance
+getting original sd
+owner_sid is S-1-5-21-3546699638-1187991555-3198882931-1159170412
+setting a new sd on directory, pass #0
+  checking new sd
+  creating file smb2-testsd\inheritance\testfile
+  checking sd on file smb2-testsd\inheritance\testfile
+  setting new file sd, pass #0
+  setting new file sd, pass #1
+  setting new file sd, pass #2
+  setting new file sd, pass #3
+  setting new file sd, pass #4
+  setting new file sd, pass #5
+  setting new file sd, pass #6
+  setting new file sd, pass #7
+  setting new file sd, pass #8
+  setting new file sd, pass #9
+  setting new file sd, pass #10
+  setting new file sd, pass #11
+  setting new file sd, pass #12
+  setting new file sd, pass #13
+  setting new file sd, pass #14
+  setting new file sd, pass #15
+setting a new sd on directory, pass #1
+  checking new sd
+  creating file smb2-testsd\inheritance\testfile
+  checking sd on file smb2-testsd\inheritance\testfile
+  setting new file sd, pass #0
+  setting new file sd, pass #1
+  setting new file sd, pass #2
+  setting new file sd, pass #3
+  setting new file sd, pass #4
+  setting new file sd, pass #5
+  setting new file sd, pass #6
+  setting new file sd, pass #7
+  setting new file sd, pass #8
+  setting new file sd, pass #9
+  setting new file sd, pass #10
+  setting new file sd, pass #11
+  setting new file sd, pass #12
+  setting new file sd, pass #13
+  setting new file sd, pass #14
+  setting new file sd, pass #15
+setting a new sd on directory, pass #2
+  checking new sd
+  creating file smb2-testsd\inheritance\testfile
+  checking sd on file smb2-testsd\inheritance\testfile
+  setting new file sd, pass #0
+  setting new file sd, pass #1
+  setting new file sd, pass #2
+  setting new file sd, pass #3
+  setting new file sd, pass #4
+  setting new file sd, pass #5
+  setting new file sd, pass #6
+  setting new file sd, pass #7
+  setting new file sd, pass #8
+  setting new file sd, pass #9
+  setting new file sd, pass #10
+  setting new file sd, pass #11
+  setting new file sd, pass #12
+  setting new file sd, pass #13
+  setting new file sd, pass #14
+  setting new file sd, pass #15
+setting a new sd on directory, pass #3
+  checking new sd
+  creating file smb2-testsd\inheritance\testfile
+  checking sd on file smb2-testsd\inheritance\testfile
+  setting new file sd, pass #0
+  setting new file sd, pass #1
+  setting new file sd, pass #2
+  setting new file sd, pass #3
+  setting new file sd, pass #4
+  setting new file sd, pass #5
+  setting new file sd, pass #6
+  setting new file sd, pass #7
+  setting new file sd, pass #8
+  setting new file sd, pass #9
+  setting new file sd, pass #10
+  setting new file sd, pass #11
+  setting new file sd, pass #12
+  setting new file sd, pass #13
+  setting new file sd, pass #14
+  setting new file sd, pass #15
+setting a new sd on directory, pass #4
+  checking new sd
+  creating file smb2-testsd\inheritance\testfile
+  checking sd on file smb2-testsd\inheritance\testfile
+  setting new file sd, pass #0
+  setting new file sd, pass #1
+  setting new file sd, pass #2
+  setting new file sd, pass #3
+  setting new file sd, pass #4
+  setting new file sd, pass #5
+  setting new file sd, pass #6
+  setting new file sd, pass #7
+  setting new file sd, pass #8
+  setting new file sd, pass #9
+  setting new file sd, pass #10
+  setting new file sd, pass #11
+  setting new file sd, pass #12
+  setting new file sd, pass #13
+  setting new file sd, pass #14
+  setting new file sd, pass #15
+setting a new sd on directory, pass #5
+  checking new sd
+  creating file smb2-testsd\inheritance\testfile
+  checking sd on file smb2-testsd\inheritance\testfile
+  setting new file sd, pass #0
+  setting new file sd, pass #1
+  setting new file sd, pass #2
+  setting new file sd, pass #3
+  setting new file sd, pass #4
+  setting new file sd, pass #5
+  setting new file sd, pass #6
+  setting new file sd, pass #7
+  setting new file sd, pass #8
+  setting new file sd, pass #9
+  setting new file sd, pass #10
+  setting new file sd, pass #11
+  setting new file sd, pass #12
+  setting new file sd, pass #13
+  setting new file sd, pass #14
+  setting new file sd, pass #15
+setting a new sd on directory, pass #6
+  checking new sd
+  creating file smb2-testsd\inheritance\testfile
+  checking sd on file smb2-testsd\inheritance\testfile
+  setting new file sd, pass #0
+  setting new file sd, pass #1
+  setting new file sd, pass #2
+  setting new file sd, pass #3
+  setting new file sd, pass #4
+  setting new file sd, pass #5
+  setting new file sd, pass #6
+  setting new file sd, pass #7
+  setting new file sd, pass #8
+  setting new file sd, pass #9
+  setting new file sd, pass #10
+  setting new file sd, pass #11
+  setting new file sd, pass #12
+  setting new file sd, pass #13
+  setting new file sd, pass #14
+  setting new file sd, pass #15
+setting a new sd on directory, pass #7
+  checking new sd
+  creating file smb2-testsd\inheritance\testfile
+  checking sd on file smb2-testsd\inheritance\testfile
+  setting new file sd, pass #0
+  setting new file sd, pass #1
+  setting new file sd, pass #2
+  setting new file sd, pass #3
+  setting new file sd, pass #4
+  setting new file sd, pass #5
+  setting new file sd, pass #6
+  setting new file sd, pass #7
+  setting new file sd, pass #8
+  setting new file sd, pass #9
+  setting new file sd, pass #10
+  setting new file sd, pass #11
+  setting new file sd, pass #12
+  setting new file sd, pass #13
+  setting new file sd, pass #14
+  setting new file sd, pass #15
+setting a new sd on directory, pass #8
+  checking new sd
+  creating file smb2-testsd\inheritance\testfile
+  checking sd on file smb2-testsd\inheritance\testfile
+  setting new file sd, pass #0
+  setting new file sd, pass #1
+  setting new file sd, pass #2
+  setting new file sd, pass #3
+  setting new file sd, pass #4
+  setting new file sd, pass #5
+  setting new file sd, pass #6
+  setting new file sd, pass #7
+  setting new file sd, pass #8
+  setting new file sd, pass #9
+  setting new file sd, pass #10
+  setting new file sd, pass #11
+  setting new file sd, pass #12
+  setting new file sd, pass #13
+  setting new file sd, pass #14
+  setting new file sd, pass #15
+setting a new sd on directory, pass #9
+  checking new sd
+  creating file smb2-testsd\inheritance\testfile
+  checking sd on file smb2-testsd\inheritance\testfile
+  setting new file sd, pass #0
+  setting new file sd, pass #1
+  setting new file sd, pass #2
+  setting new file sd, pass #3
+  setting new file sd, pass #4
+  setting new file sd, pass #5
+  setting new file sd, pass #6
+  setting new file sd, pass #7
+  setting new file sd, pass #8
+  setting new file sd, pass #9
+  setting new file sd, pass #10
+  setting new file sd, pass #11
+  setting new file sd, pass #12
+  setting new file sd, pass #13
+  setting new file sd, pass #14
+  setting new file sd, pass #15
+setting a new sd on directory, pass #10
+  checking new sd
+  creating file smb2-testsd\inheritance\testfile
+  checking sd on file smb2-testsd\inheritance\testfile
+  setting new file sd, pass #0
+  setting new file sd, pass #1
+  setting new file sd, pass #2
+  setting new file sd, pass #3
+  setting new file sd, pass #4
+  setting new file sd, pass #5
+  setting new file sd, pass #6
+  setting new file sd, pass #7
+  setting new file sd, pass #8
+  setting new file sd, pass #9
+  setting new file sd, pass #10
+  setting new file sd, pass #11
+  setting new file sd, pass #12
+  setting new file sd, pass #13
+  setting new file sd, pass #14
+  setting new file sd, pass #15
+setting a new sd on directory, pass #11
+  checking new sd
+  creating file smb2-testsd\inheritance\testfile
+  checking sd on file smb2-testsd\inheritance\testfile
+  setting new file sd, pass #0
+  setting new file sd, pass #1
+  setting new file sd, pass #2
+  setting new file sd, pass #3
+  setting new file sd, pass #4
+  setting new file sd, pass #5
+  setting new file sd, pass #6
+  setting new file sd, pass #7
+  setting new file sd, pass #8
+  setting new file sd, pass #9
+  setting new file sd, pass #10
+  setting new file sd, pass #11
+  setting new file sd, pass #12
+  setting new file sd, pass #13
+  setting new file sd, pass #14
+  setting new file sd, pass #15
+setting a new sd on directory, pass #12
+  checking new sd
+  creating file smb2-testsd\inheritance\testfile
+  checking sd on file smb2-testsd\inheritance\testfile
+  setting new file sd, pass #0
+  setting new file sd, pass #1
+  setting new file sd, pass #2
+  setting new file sd, pass #3
+  setting new file sd, pass #4
+  setting new file sd, pass #5
+  setting new file sd, pass #6
+  setting new file sd, pass #7
+  setting new file sd, pass #8
+  setting new file sd, pass #9
+  setting new file sd, pass #10
+  setting new file sd, pass #11
+  setting new file sd, pass #12
+  setting new file sd, pass #13
+  setting new file sd, pass #14
+  setting new file sd, pass #15
+setting a new sd on directory, pass #13
+  checking new sd
+  creating file smb2-testsd\inheritance\testfile
+  checking sd on file smb2-testsd\inheritance\testfile
+  setting new file sd, pass #0
+  setting new file sd, pass #1
+  setting new file sd, pass #2
+  setting new file sd, pass #3
+  setting new file sd, pass #4
+  setting new file sd, pass #5
+  setting new file sd, pass #6
+  setting new file sd, pass #7
+  setting new file sd, pass #8
+  setting new file sd, pass #9
+  setting new file sd, pass #10
+  setting new file sd, pass #11
+  setting new file sd, pass #12
+  setting new file sd, pass #13
+  setting new file sd, pass #14
+  setting new file sd, pass #15
+setting a new sd on directory, pass #14
+  checking new sd
+  creating file smb2-testsd\inheritance\testfile
+  checking sd on file smb2-testsd\inheritance\testfile
+  setting new file sd, pass #0
+  setting new file sd, pass #1
+  setting new file sd, pass #2
+  setting new file sd, pass #3
+  setting new file sd, pass #4
+  setting new file sd, pass #5
+  setting new file sd, pass #6
+  setting new file sd, pass #7
+  setting new file sd, pass #8
+  setting new file sd, pass #9
+  setting new file sd, pass #10
+  setting new file sd, pass #11
+  setting new file sd, pass #12
+  setting new file sd, pass #13
+  setting new file sd, pass #14
+  setting new file sd, pass #15
+setting a new sd on directory, pass #15
+  checking new sd
+  creating file smb2-testsd\inheritance\testfile
+  checking sd on file smb2-testsd\inheritance\testfile
+  setting new file sd, pass #0
+  setting new file sd, pass #1
+  setting new file sd, pass #2
+  setting new file sd, pass #3
+  setting new file sd, pass #4
+  setting new file sd, pass #5
+  setting new file sd, pass #6
+  setting new file sd, pass #7
+  setting new file sd, pass #8
+  setting new file sd, pass #9
+  setting new file sd, pass #10
+  setting new file sd, pass #11
+  setting new file sd, pass #12
+  setting new file sd, pass #13
+  setting new file sd, pass #14
+  setting new file sd, pass #15
+time: 2026-11-04 05:39:32.910699
+success: SDFLAGSVSCHOWN

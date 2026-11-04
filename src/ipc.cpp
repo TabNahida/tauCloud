@@ -93,6 +93,8 @@ struct rpc_server::impl {
       }
       try {
         serve(conn, stop);
+      } catch (const error &e) {
+        log(role, "ipc_rejected", e.what());
       } catch (...) {
         log(role, "ipc_rejected", "invalid_request");
       }

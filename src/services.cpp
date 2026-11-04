@@ -167,7 +167,13 @@ int supervisor(const config &c, const fs::path &binaries, std::atomic_bool &stop
                 if (op.at("role") == role && op.at("generation") == s.at("generation"))
                   op["status"] = "done";
               continue;
+            } catch (const error &e) {
+              log(role, "worker_unhealthy", e.what());
+              terminate_verified(id);
+              s["status"] = "unhealthy";
+              continue;
             } catch (...) {
+              log(role, "worker_unhealthy", "unexpected_exception");
               terminate_verified(id);
               s["status"] = "unhealthy";
               continue;

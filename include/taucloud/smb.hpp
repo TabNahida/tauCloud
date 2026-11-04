@@ -8,7 +8,8 @@ void put(bytes &b, size_t off, uint64_t value, size_t n);
 bytes utf16(std::string_view text);
 std::string utf8(std::string_view text);
 bytes hmac(std::string_view key, std::string_view data, bool sha256 = false);
-bytes signature(std::string_view key, bytes packet, bool smb3 = false);
+bytes signature(std::string_view key, bytes packet, unsigned algorithm = 0);
+bytes gmac(std::string_view key, std::string_view nonce, std::string_view data);
 bytes cmac(std::string_view key, std::string_view data);
 bytes preauth(std::string_view previous, std::string_view packet);
 bytes kdf(std::string_view key, std::string_view label, std::string_view context, size_t length = 16);
@@ -16,7 +17,7 @@ bytes encrypt(std::string_view key, unsigned cipher, uint64_t session, std::stri
               std::string_view plain);
 bytes decrypt(std::string_view key, unsigned cipher, uint64_t session, std::string_view packet);
 struct negotiation {
-  unsigned dialect = 0, cipher = 0;
+  unsigned dialect = 0, cipher = 0, signing = 0;
   uint32_t capabilities = 0;
   bytes client_info;
   bytes accept(std::string_view packet, std::string_view guid, bool kerberos = false);

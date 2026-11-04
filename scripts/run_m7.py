@@ -60,6 +60,9 @@ def main():
                  [sys.executable, 'tests/m6_integration.py', '--bin', str(binary),
                   '--large-mib', str(args.large_mib), '--output', str(output.with_suffix('.smb3.json'))]
                  + (['--sanitizers'] if args.sanitizers else [])]
+    commands += [[sys.executable, 'tests/smb_signing_integration.py', '--bin', str(binary),
+                  '--output', str(output.with_suffix('.smb-signing.json'))]
+                 + (['--sanitizers'] if args.sanitizers else [])]
     commands += [[sys.executable, 'tests/smb_notify_integration.py', '--bin', str(binary),
                   '--output', str(output.with_suffix('.smb-notify.json'))]
                  + (['--sanitizers'] if args.sanitizers else [])]

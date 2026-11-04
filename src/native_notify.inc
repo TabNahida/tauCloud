@@ -73,9 +73,39 @@ std::unique_ptr<native_watch> native_file::watch(bool recursive, uint32_t filter
   auto &w = *result->impl_;
   w.root = retain(); w.recursive = recursive; w.filter = filter & 0xfff;
 #ifdef _WIN32
-  w.directory = ReOpenFile(impl_->file->handle, FILE_LIST_DIRECTORY,
-      FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-      FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED);
+  // ReOpenFile rejects the directory handles opened by NtCreateFile above.
+  // The retained parent pins this component against rename/replacement. Reopen
+  // it asynchronously relative to that parent and verify the native identity.
+  if (!impl_->parents.empty() && !impl_->leaf.empty()) {
+    using nt_open = NTSTATUS(NTAPI *)(PHANDLE, ACCESS_MASK, POBJECT_ATTRIBUTES, PIO_STATUS_BLOCK,
+                                     PLARGE_INTEGER, ULONG, ULONG, ULONG, ULONG, PVOID, ULONG);
+    auto open = reinterpret_cast<nt_open>(GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtCreateFile"));
+    require(open, "notify_unavailable");
+    UNICODE_STRING name{static_cast<USHORT>(impl_->leaf.size() * 2),
+                        static_cast<USHORT>(impl_->leaf.size() * 2), impl_->leaf.data()};
+    OBJECT_ATTRIBUTES object{};
+    InitializeObjectAttributes(&object, &name, OBJ_CASE_INSENSITIVE, impl_->parents.back()->handle, nullptr);
+    IO_STATUS_BLOCK io{};
+    auto status = open(&w.directory, FILE_LIST_DIRECTORY | FILE_READ_ATTRIBUTES,
+                       &object, &io, nullptr, 0, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                       1, 0x00200000 | 1, nullptr, 0); // OPEN_REPARSE_POINT, DIRECTORY_FILE; async.
+    if (status < 0) {
+      log("native", "notify_open_failed", std::to_string(static_cast<uint32_t>(status)));
+      throw error("notify_unavailable");
+    }
+    BY_HANDLE_FILE_INFORMATION before{}, after{};
+    require(GetFileInformationByHandle(impl_->file->handle, &before) &&
+                GetFileInformationByHandle(w.directory, &after), "notify_unavailable");
+    require((after.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) &&
+                !(after.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) &&
+                before.dwVolumeSerialNumber == after.dwVolumeSerialNumber &&
+                before.nFileIndexHigh == after.nFileIndexHigh && before.nFileIndexLow == after.nFileIndexLow,
+            "object_replaced");
+  } else {
+    w.directory = ReOpenFile(impl_->file->handle, FILE_LIST_DIRECTORY,
+        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+        FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED);
+  }
   require(w.directory != INVALID_HANDLE_VALUE, "notify_unavailable");
   w.operation.hEvent = CreateEventW(nullptr, TRUE, FALSE, nullptr);
   require(w.operation.hEvent != nullptr, "notify_unavailable");

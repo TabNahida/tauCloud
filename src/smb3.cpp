@@ -29,6 +29,24 @@ bytes cmac(std::string_view key, std::string_view data) {
           "crypto_error");
   return result;
 }
+bytes gmac(std::string_view key, std::string_view nonce, std::string_view data) {
+  require(key.size() == 16 && nonce.size() == 12 && data.size() <= 1024 * 1024,
+          "crypto_error");
+  std::unique_ptr<EVP_CIPHER_CTX, decltype(&EVP_CIPHER_CTX_free)> ctx(EVP_CIPHER_CTX_new(),
+                                                                   EVP_CIPHER_CTX_free);
+  auto ptr = [](std::string_view v) { return reinterpret_cast<const unsigned char *>(v.data()); };
+  unsigned char final[16];
+  int length = 0;
+  bytes tag(16, '\0');
+  require(ctx && EVP_EncryptInit_ex(ctx.get(), EVP_aes_128_gcm(), nullptr, nullptr, nullptr) == 1 &&
+              EVP_CIPHER_CTX_ctrl(ctx.get(), EVP_CTRL_AEAD_SET_IVLEN, 12, nullptr) == 1 &&
+              EVP_EncryptInit_ex(ctx.get(), nullptr, nullptr, ptr(key), ptr(nonce)) == 1 &&
+              EVP_EncryptUpdate(ctx.get(), nullptr, &length, ptr(data), static_cast<int>(data.size())) == 1 &&
+              EVP_EncryptFinal_ex(ctx.get(), final, &length) == 1 && length == 0 &&
+              EVP_CIPHER_CTX_ctrl(ctx.get(), EVP_CTRL_AEAD_GET_TAG, 16, tag.data()) == 1,
+          "crypto_error");
+  return tag;
+}
 bytes preauth(std::string_view previous, std::string_view packet) {
   require(previous.size() == 64 && packet.size() <= 1024 * 1024, "invalid_packet");
   bytes input = bytes(previous) + bytes(packet), result(64, '\0');
@@ -121,13 +139,14 @@ bytes negotiation::accept(std::string_view p, std::string_view guid, bool kerber
   require(count > 0 && count <= 64 && p.size() >= 100 + 2 * count && (security & 3) &&
               !(security & ~3u),
           "invalid_packet");
-  dialect = cipher = capabilities = 0;
+  dialect = cipher = signing = capabilities = 0;
   for (size_t i = 0; i < count; ++i) {
     auto d = get(p, 100 + i * 2, 2);
     if (d == 0x210 || d == 0x300 || d == 0x302 || d == 0x311)
       dialect = std::max(dialect, static_cast<unsigned>(d));
   }
   require(dialect != 0, "not_supported");
+  signing = dialect >= 0x300 ? 1 : 0;
   client_info = bytes(p.substr(72, 20)) + bytes(p.substr(68, 2)) + bytes(p.substr(66, 2)) +
                 bytes(p.substr(100, 2 * count));
   bytes contexts;
@@ -178,8 +197,14 @@ bytes negotiation::accept(std::string_view p, std::string_view guid, bool kerber
         break;
       }
     require(cipher != 0, "not_supported");
-    if (found.contains(8))
-      require(supports(found.at(8), 1), "not_supported");
+    if (found.contains(8)) {
+      // MS-SMB2 3.3.5.4 specifies CMAC when the offer has no supported ID.
+      for (auto candidate : {2u, 1u, 0u}) {
+        if (supports(found.at(8), candidate)) {
+          signing = candidate; break;
+        }
+      }
+    }
     bytes hashes_response(6, '\0');
     put(hashes_response, 0, 1, 2);
     put(hashes_response, 2, 32, 2);
@@ -190,7 +215,7 @@ bytes negotiation::accept(std::string_view p, std::string_view guid, bool kerber
     put(alg, 2, cipher, 2);
     add(2, alg);
     if (found.contains(8)) {
-      put(alg, 2, 1, 2);
+      put(alg, 2, signing, 2);
       add(8, alg);
     }
   } else if (dialect >= 0x300) {

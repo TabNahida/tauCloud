@@ -19,3 +19,7 @@ The Full SMB/NFS expansion now implements AES-256-CCM/GCM for SMB 3.1.1, includi
 ## Full-compatibility extension — 2026-11-04 notifications
 
 The expanded user goal supersedes the earlier notification rejection: CHANGE_NOTIFY now has native directory streams, shared metadata events and signed/encrypted asynchronous completion. Caching, durable handles and multichannel remain separate unfinished work. [Notification implementation and evidence](../smb-notifications.md) records bounds, passing independent/upstream lifecycle cases and the still-failing full Samba diagnostic. This extension does not close the full SMB release gate.
+
+## Full-compatibility extension — 2026-11-04 signing
+
+The expanded implementation now negotiates GMAC, CMAC and HMAC-SHA256 for SMB 3.1.1. Missing or non-overlapping signing offers select the mandatory CMAC fallback. Independent primitive, signed client, nonce separation, cancellation and Kerberos checks pass locally under Clang ASan/UBSan. Remote acceptance is pending; encryption negotiation without a common cipher and other full-compatibility gates remain open.
