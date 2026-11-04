@@ -1,0 +1,35 @@
+{
+  "recorded_at": "2026-11-04T14:49:43.950343+00:00",
+  "base_source": "0276cbbc803f766df6ed13191f599c086be79ee1",
+  "status": "local-passed-remote-pending",
+  "scope": "Restore the legacy M5 acceptance assertion to MS-FSA 2.1.5.14 empty-selector behavior: exact 20-byte self-relative header, no READ_CONTROL requirement, and BUFFER_TOO_SMALL below 20 bytes. No production behavior change.",
+  "source_sha256": {
+    "tests/m5_integration.py": "8cbf963dc12888975c11dc8c1a771c6db1bed12e76b90330fe0f5120f1337406"
+  },
+  "report_sha256": "0f0ce6d79dd02796c2f8f3e5d4fb3c303cb4492fe10d1f79ec4d13cf631cc63d",
+  "report": {
+    "status": "passed",
+    "checks": [
+      "verified repeated logins do not exhaust the failed-authentication budget",
+      "signed NTLMv2 MIC authentication, UTF-16 create/read/write/flush/query/directory/close",
+      "QFid CREATE context agrees with internal file IDs across opens and distinguishes objects on one volume",
+      "authenticated srvsvc NDR32 share enumeration filters inaccessible and non-SMB shares",
+      "SMB share lookup ignores case, preserves canonical grants and rejects ambiguous publication without non-SMB shadowing",
+      "share access conflicts, exclusive/shared byte locks, rename with live handles, truncate and last-close deletion",
+      "signed related compound CREATE/WRITE/READ/CLOSE and credit accounting",
+      "directory deletion is nonrecursive; parent names stay inside the share; ADS/non-NFC rejected; empty security query returns only the 20-byte header without READ_CONTROL",
+      "1 MiB streamed binary roundtrip with SHA-256",
+      "unknown-session LOGOFF preserves the valid session; client-clock NTLMv2 accepted; excessive skew, bad MIC/proof, unsigned/tampered signing and malformed packets rejected",
+      "SMB credential revocation invalidates live access; re-enrollment and SPNEGO reconnect succeed",
+      "SMB worker kill/restart reclaims handles and durable delete intent without restarting API, identity or files"
+    ],
+    "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+    "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "authentication_provider": "pyspnego NTLM",
+    "large_mib": 1,
+    "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+    "port": 53501,
+    "sanitizers": true
+  },
+  "remaining": "Full SMB/NFS and remote Windows lease_expired failure remain open."
+}

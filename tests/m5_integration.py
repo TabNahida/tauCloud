@@ -133,8 +133,13 @@ def run(args):
         assert (f.root/'smbdata/escape').is_file() and not (f.root/'escape').exists()
         for name in ['bad:stream','e\u0301']:
             denied(lambda name=name:create(t,name),0xc0000033)
-        h=create(t,'中文.txt',access=0x120089,disposition=1);denied(lambda:query(h,0,info_type=3),0xc00000bb);h.close()
-        passed('directory deletion is nonrecursive; parent names stay inside the share; ADS/non-NFC and unsupported empty security-information selection rejected')
+        # MS-FSA 2.1.5.14: an empty selector returns only the self-relative
+        # header and needs no READ_CONTROL. The old restricted profile rejected
+        # this operation before security QUERY_INFO was implemented.
+        h=create(t,'中文.txt',access=0x80,disposition=1)
+        assert query(h,0,info_type=3)==struct.pack('<BBHIIII',1,0,0x8000,0,0,0,0)
+        denied(lambda:query(h,0,info_type=3,limit=19),0xc0000023);h.close()
+        passed('directory deletion is nonrecursive; parent names stay inside the share; ADS/non-NFC rejected; empty security query returns only the 20-byte header without READ_CONTROL')
         h=create(t,'large');chunk=bytes(range(256))*256;expected=hashlib.sha256();actual=hashlib.sha256();total=args.large_mib*1024*1024
         for off in range(0,total,len(chunk)):h.write(chunk,off);expected.update(chunk)
         h.flush()

@@ -1,0 +1,35 @@
+{
+  "source": "0e69a2f1fda0888248a92d991a2ffd55ed4ffa5c",
+  "run_id": 41846847561,
+  "jobs": [
+    {
+      "job_id": 126632473587,
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41846847561/job/126632473587",
+      "failures": [
+        "2026-11-04T14:31:38.6729592Z FAIL /usr/bin/python3 tests/m5_integration.py --bin /home/runner/work/tauCloud/tauCloud/build/linux/x86_64/debug --large-mib 1 --output /home/runner/work/tauCloud/tauCloud/build/m7/linux-clang.smb.json --sanitizers",
+        "2026-11-04T14:31:38.6777412Z AssertionError: expected rejection"
+      ]
+    },
+    {
+      "job_id": 126632474024,
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41846847561/job/126632474024",
+      "failures": [
+        "2026-11-04T14:30:44.8695126Z FAIL /usr/bin/python3 tests/m5_integration.py --bin /home/runner/work/tauCloud/tauCloud/build/linux/x86_64/release --large-mib 1 --output /home/runner/work/tauCloud/tauCloud/build/m7/linux-gcc.smb.json",
+        "2026-11-04T14:30:44.8746577Z AssertionError: expected rejection"
+      ]
+    },
+    {
+      "job_id": 126632474027,
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41846847561/job/126632474027",
+      "failures": [
+        "2026-11-04T14:32:14.4301367Z FAIL C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\python.exe tests/m3_integration.py --bin D:\\a\\tauCloud\\tauCloud\\build\\windows\\x64\\release --large-mib 1 --output D:\\a\\tauCloud\\tauCloud\\build\\m7\\windows-msvc.dav.json\r",
+        "2026-11-04T14:32:14.4333029Z AssertionError: ('PUT', 'first.txt', 503, b'<D:error xmlns:D=\"DAV:\"><D:responsedescription>lease_expired</D:responsedescription></D:error>')\r"
+      ]
+    }
+  ],
+  "diagnosis": {
+    "linux": "M5 integration still expected NOT_SUPPORTED for empty security selection. e9c7f8b implemented the MS-FSA-required 20-byte self-relative header. Update the legacy assertion to verify exact bytes and short-buffer error; independent query coverage remains unchanged.",
+    "windows": "Initial DAV PUT returns 503 lease_expired; separate from the legacy SMB assertion. Cause unresolved. Native Windows SMB also failed in this pre-61b1bbd run."
+  },
+  "limits": "This record is not evidence of passing Full SMB/NFS or of resolving Windows lease expiry."
+}

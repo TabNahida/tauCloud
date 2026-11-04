@@ -224,6 +224,13 @@ and cross-protocol ACL regressions pass. Remote acceptance is pending
 ([evidence](docs/evidence/pre-m8/smb-security-metadata-local.json)). This does not
 close the full metadata or security gates below.
 
+Backend M7 at `0e69a2f` exposed a stale M5 integration assertion that still
+expected empty security selection to be unsupported. It now verifies the exact
+20-byte self-relative header without READ_CONTROL and the short-buffer error;
+all 12 M5 integration groups pass locally. Windows DAV `lease_expired` remains a
+separate unresolved failure ([diagnosis](docs/evidence/pre-m8/m7-0e69-failure-diagnosis.json),
+[local acceptance](docs/evidence/pre-m8/smb-security-query-m5-local.json)).
+
 - [x] Implement AlSi CREATE/overwrite allocation with durable quota, initial EA prevalidation and failed-new-CREATE cleanup; targeted GCC/Clang ASan+UBSan/MSVC checks pass at `fc28c4c`, including the smaller sparse-overwrite correction.
 - [x] Implement selected-name EA queries with bounded output and independent enumeration cursors; all three targeted jobs pass at `fc28c4c`.
 - [x] Implement MxAc current-policy maximal-access responses, optional timestamps and chained QFid replies, including encrypted SMB3 contexts; all three targeted jobs pass at `fc28c4c`.
