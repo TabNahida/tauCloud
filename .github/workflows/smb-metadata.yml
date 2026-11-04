@@ -83,7 +83,9 @@ jobs:
   metadata:
     name: ${{ matrix.compiler }} metadata
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 25
+    # Clang already takes 24.4 minutes before the final SMB3/Kerberos stages;
+    # retain individual test deadlines while allowing the expanded suite.
+    timeout-minutes: 35
     strategy:
       fail-fast: false
       matrix:
