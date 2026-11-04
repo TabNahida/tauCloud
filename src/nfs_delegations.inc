@@ -68,16 +68,39 @@ void expire_delegations() {
   for (auto client : expired) retire_delegations(client);
 }
 void renew_delegations(uint64_t client) {
+  // Coherence maintenance belongs to the client, not to the principal issuing
+  // this COMPOUND. Do not add another user's grant to its replay authority.
+  struct restore_authority {
+    replay_authority *&current;
+    replay_authority *saved;
+    ~restore_authority() { current = saved; }
+  } restore{recording_authority, recording_authority};
+  recording_authority = nullptr;
   for (auto &[id, d] : delegations) {
     if (d.client != client || d.revoked) continue;
+    bool authorized = false;
     try {
       auto fresh = authorize({{"peer", "127.0.0.1"}, {"credential", d.credential},
           {"uuid", encode_bytes(decode_bytes(d.fh).substr(2, 16))}, {"write", false}});
       check(grant_scope(fresh) == grant_scope(d.grant), 13);
       d.grant = std::move(fresh);
-      auto remaining = client_ids.at(client).expires - now();
-      if (remaining <= 0) continue;
-      delegation_snapshot(d, delegation_control(d, "renew", remaining));
+      authorized = true;
+    } catch (const error &) {} catch (const failure &) {}
+    auto remaining = client_ids.at(client).expires - now();
+    if (remaining <= 0) continue;
+    if (authorized) {
+      try {
+        delegation_snapshot(d, delegation_control(d, "renew", remaining));
+        continue;
+      } catch (const error &) {} catch (const failure &) {}
+    }
+    try {
+      // A revoked/expired data capability cannot stop client lease renewal.
+      // Its signed cleanup capability can preserve native coherence through
+      // the first recall interval, without restoring any file access rights.
+      remaining = client_ids.at(client).expires - now();
+      if (remaining <= 0) { recall_delegation(d); continue; }
+      delegation_snapshot(d, delegation_control(d, "retain", remaining));
     } catch (const error &) { recall_delegation(d); }
       catch (const failure &) { recall_delegation(d); }
   }

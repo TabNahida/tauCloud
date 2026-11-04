@@ -66,8 +66,29 @@ def main():
         time.sleep(3)
         call(c, [op.putfh(handle), op.read(state, 0, 1)])
         passed('default lease is 60 seconds; configured five-second lease is advertised and SEQUENCE renews OPEN beyond its initial expiry')
+
+        # Two actual sessions of one client ID share a lease, including exact
+        # SEQUENCE replay. Keep the sibling idle beyond its original deadline.
+        sibling = Client(port); clients.append(sibling); sibling.cid = c.cid
+        channel = t4.channel_attrs4(0, 262144, 262144, 262144, 16, 4, [])
+        r = sibling.compound([op.create_session(c.cid, 2, 0, channel, channel, 0, [])], session=False)
+        assert r.status == 0, r
+        sibling.sid = r.resarray[0].opcreate_session.csr_resok4.csr_sessionid
+        for _ in range(2):
+            time.sleep(3)
+            call(c, [])
+        call(sibling, [op.putfh(handle), op.read(state, 0, 1)])
+        packet = sibling.compound([], packet_only=True)
+        first = sibling.exchange(packet)
+        assert sibling.decode4(first).status == 0
+        for _ in range(2):
+            time.sleep(3)
+            assert sibling.exchange(packet) == first
+        call(c, [op.putfh(handle), op.read(state, 0, 1)])
+        passed('SEQUENCE and exact replay on either session renew the shared client lease and keep an idle sibling session and its OPEN usable')
         time.sleep(5.3)
         call(c, [op.putfh(handle), op.read(state, 0, 1)], 10052)
+        call(sibling, [], 10052)
         fresh = client()
         call(fresh, [op.putfh(handle), op.read(state, 0, 1)], 10025)
         r = call(fresh, opening(fresh, root, b'lease-expiry'))

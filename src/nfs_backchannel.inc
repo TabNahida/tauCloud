@@ -326,9 +326,7 @@ void callback_reply(uint32_t xid, reader &r) {
       s.callback_extra.clear();
       s.callback_references.clear();
       if (current_config) s.callback_up.insert(connection);
-      s.expires = now() + int64_t(cfg.nfs_lease_seconds) * 1000;
-      client_ids.at(s.client).expires = s.expires;
-      renew_delegations(s.client);
+      renew_client_lease(s.client);
     }
   }
   sequence_callback(probe.session);

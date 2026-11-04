@@ -85,6 +85,13 @@ std::map<std::string, lock_state> byte_locks;
 std::map<std::string, lock_waiter> lock_waiters;
 std::map<std::string, json> reclaim;
 int64_t grace_end = 0;
+void renew_client_lease(uint64_t id) {
+  auto &client = client_ids.at(id);
+  client.expires = std::max(client.expires, now() + int64_t(cfg.nfs_lease_seconds) * 1000);
+  // RFC 8881 8.3: all sessions belonging to one client share one lease.
+  for (auto &[sid, s] : sessions) if (s.client == id) s.expires = client.expires;
+  renew_delegations(id);
+}
 #include "nfs_backchannel.inc"
 std::map<std::string, std::string> retained_sets;
 void reap_retained() {
@@ -990,6 +997,7 @@ std::string v4(const identity &who, reader &r) {
   auto hash = digest(who.key + std::string(r.data.substr(start)));
   expire();
   std::string sid, current, saved, current_state, saved_state, sequence_args, sequence_result;
+  uint64_t compound_client = 0;
   slot *active = nullptr;
   uint32_t final_status = 0, done = 0;
   writer results;
@@ -1227,12 +1235,11 @@ std::string v4(const identity &who, reader &r) {
           replay_authorized(who, sl.authority);
           s.callback_session_seen = true;
           sequence_callback(sid);
-          s.expires = now() + int64_t(cfg.nfs_lease_seconds) * 1000;
-          client_ids.at(s.client).expires = s.expires;
-          renew_delegations(s.client);
+          renew_client_lease(s.client);
           return sl.reply;
         }
         check(seq == sl.seq + 1 && !sl.pending, 10063);
+        compound_client = s.client;
         s.callback_session_seen = true;
         sequence_callback(sid);
         sl.seq = seq;
@@ -1242,9 +1249,7 @@ std::string v4(const identity &who, reader &r) {
         sl.pending = true;
         active = &sl;
         recording_authority = &sl.authority;
-        s.expires = now() + int64_t(cfg.nfs_lease_seconds) * 1000;
-        client_ids.at(s.client).expires = s.expires;
-        renew_delegations(s.client);
+        renew_client_lease(s.client);
         body.fixed(decode_bytes(sid))
             .u32(seq)
             .u32(n)
@@ -1835,6 +1840,10 @@ std::string v4(const identity &who, reader &r) {
   }
   out.u32(final_status).opaque(tag).u32(done).fixed(results.data);
   reap_retained();
+  // Preserve the client lease across slow operations, including a failing
+  // operation after a successful SEQUENCE. Transport delivery still needs its
+  // own completion accounting; dispatch completion must not use receipt time.
+  if (compound_client && client_ids.contains(compound_client)) renew_client_lease(compound_client);
   if (active) {
     active->reply = out.data;
     active->pending = false;

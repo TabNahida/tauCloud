@@ -95,9 +95,14 @@ expired state. Repeated conflicts and client renewal never extend the first
 recall deadline. Explicit return, client lease expiry, or the end of a complete
 recall interval releases exclusion. Terminal records remain visible until
 forgotten and cannot be renewed. Polling does not renew the client lease.
-Expired signed grants can only inspect or clean up their own cookie; they
-cannot read data, create state or renew it. Policy revocation denies IO
-immediately and initiates recall while preserving the coherence guard.
+Expired signed grants can inspect or clean up their own cookie; they cannot
+read data, create state or perform ordinary authorized renewal. The private
+`retain` operation preserves an already-held guard while initiating recall. It
+checks the same caller, client, export, root, handle, actor and cookie binding,
+never restores IO rights, and cannot extend the first recall deadline or revive
+terminal state. This coherence-only path lets an active client return its state
+after policy loss without exposing the file before its recall interval ends.
+Policy revocation still denies IO immediately.
 
 SMB, DAV and FTP file-domain conflicts initiate recall before opening the file;
 NFS mutation through a retained filehandle does the same. Native conflicting
@@ -258,6 +263,8 @@ renewal, return, store destruction, stale cookies after replacement, and SIGKILL
 of a real file-domain worker with protection retained until expiry. The isolated
 kernel explicitly enables FHANDLE for real stable file identities. See
 [file-domain owner evidence](evidence/pre-m8/nfs-owner-domain-local.json).
+The corresponding remote kernel run succeeds with file-domain SIGKILL checks on
+both filesystems ([remote evidence](evidence/pre-m8/nfs-owner-domain-3fe-remote.json)).
 
 Ensuring successful network SEQUENCE/callback renewals never outlive owner ACKs,
 recovering state across worker replacement, and durable delegation reclaim remain
@@ -265,3 +272,39 @@ open. The private disconnected owner deliberately cannot be reattached by a new
 worker yet. Simultaneous owner/worker loss and full server restart still require
 recovery/fencing; this test does not prove those cases. Windows owner and native
 namespace protection also remain open. Wire handout stays gated.
+
+
+## Client lease and coherence retention
+
+Following [RFC 8881 section 8.3](https://www.rfc-editor.org/rfc/rfc8881.html#section-8.3),
+all sessions of one client share a lease. Successful SEQUENCE, exact replay and
+validated CB_SEQUENCE replies renew every session of that client. A completed
+COMPOUND also refreshes the lease after execution, including failed operations
+following a successful SEQUENCE; slow execution no longer consumes the subsequent
+lease interval. Expiry still removes an inactive client's sessions and OPENs.
+
+Automatic delegation renewal first checks current file authority. If identity or
+file-domain authorization fails, it uses the original bound cleanup capability
+through `retain`: extend coherence retention, enter recall, and preserve the fixed
+recall deadline. This does not authorize READ/WRITE or keep a revoked state alive
+indefinitely. Renewing Alice's delegation on a session used by Bob must not add
+Alice's export scope to Bob's reply-cache authorization; only operations belonging
+to the actual COMPOUND contribute those scopes.
+
+Native lifecycle tests exercise an expired signed capability, foreign-client and
+caller rejection, retention beyond the previous expiry, non-extension of recall,
+IO denial, return and non-resurrection. Protocol tests cover shared-session user
+replay, a delayed READ response, and mapping revocation near lease expiry followed
+by SEQUENCE, callback acknowledgment and DELEGRETURN. The independent pynfs-codec
+socket fixture tests two sessions of one client, renewal through exact replay,
+joint idle expiry, and recovery when the configured lease is reduced. The pinned
+kernel guest exercises `retain` through the actual independent owner on tmpfs and
+ext4. The local run passes 186 lifecycle checks, 703 protocol checks, 441 guest checks,
+four independent lease groups and 15 M7 regression groups. Results are recorded in [coherence lease evidence](evidence/pre-m8/nfs-coherence-lease-local.json).
+
+**Still required before production handout:** owner failure must not allow a
+successful network renewal to outlive confirmed protection. Outstanding COMPOUNDs
+and replies waiting in the transport queue need explicit lifetime accounting;
+dispatch completion alone is not the RFC's full response-delivery boundary.
+Callbacks also need a reservation covering the response window. Reattachment,
+reclaim, complete restart fencing and Windows native ownership remain open.

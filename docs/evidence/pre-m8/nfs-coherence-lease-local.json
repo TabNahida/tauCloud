@@ -1,0 +1,98 @@
+{
+  "recorded_at": "2026-11-04T21:08:48.758229+00:00",
+  "base_source": "3fe6375842ba774a2ff334490f678ad852261b20",
+  "status": "client-lease-and-coherence-components-passed-full-delegation-open",
+  "source_sha256": {
+    "src/file_nfs_delegation.inc": "68fa81a6ade92907c63bd9488753b90b29f7cc9023c00f8b025c96afcb5118b4",
+    "src/nfs_backchannel.inc": "961e5b9e1a4fcac7b1cb691744b3dfdf6b5d19ed9cb0568c535ef3e8db1b800e",
+    "src/nfs_delegations.inc": "1142c56e2d0d18371cd738f12aeff0776124281efcbc4d1401e266a69312b17b",
+    "src/nfs_v4.inc": "add97c97f22a8f005f2aa77faf9e73c7f55324c19b1a0b2cdd9cf4641d7f4e9c",
+    "tests/native_delegation_kernel.cpp": "025ddf32c7800e4f0dc03a1e9224367abd2577a14d59b55465442623368f1774",
+    "tests/nfs_delegation_native.cpp": "dbb87a98af6e11b99eef4b514de6bc3b6a0013959f5023bebec4ffa348e74616",
+    "tests/nfs_delegation_protocol.cpp": "9091f9bdf84f6e795d6139e1af22b9be877f023c2b5eb3297e088338302567a1",
+    "tests/nfs_lease_lifetime.py": "86e09cb45d5fc9070fbcecc604d4bc520c152b255061527a0a0eb6937e1dd13a"
+  },
+  "references": [
+    "https://www.rfc-editor.org/rfc/rfc8881.html#section-8.3",
+    "https://www.rfc-editor.org/rfc/rfc8881.html#section-20.9"
+  ],
+  "sanitizer_regression": {
+    "lease": {
+      "status": "passed",
+      "checks": [
+        "default lease is 60 seconds; configured five-second lease is advertised and SEQUENCE renews OPEN beyond its initial expiry",
+        "SEQUENCE and exact replay on either session renew the shared client lease and keep an idle sibling session and its OPEN usable",
+        "idle session and OPEN expire at the advertised lease; another client opens the file while the expired stateid remains invalid",
+        "reducing the lease preserves the old reclaim window across repeated restarts, then converges to the configured duration after grace"
+      ],
+      "recorded_at": "2026-11-04T21:07:15.903747+00:00"
+    },
+    "m7": {
+      "status": "passed",
+      "checks": [
+        "TCP record fragmentation and MOUNT v3 with independent XDR codecs",
+        "unknown UID/GID/groups rejected; root squashed to explicitly unprivileged subject",
+        "root squash uses anonymous read rights, strips privileged groups and rejects writes/revoked rights",
+        "read-only TCP portmapper advertises NFS and does not advertise unsupported NLM version 3",
+        "trailing XDR rejected before WRITE; previously persisted bytes remain intact",
+        "v3 guarded CREATE, 64 KiB UNSTABLE upgraded to FILE_SYNC, READ, COMMIT, exact duplicate WRITE",
+        "MAC tamper rejected; file handle survives external rename and all-service restart; durable v3 replay and new write verifier",
+        "deleted/recreated path cannot revive an old file handle",
+        "v3 MKDIR, cross-directory RENAME, READDIRPLUS, REMOVE/RMDIR type separation",
+        "pynfs v4.1 EXCHANGE_ID/CREATE_SESSION/SEQUENCE, guarded OPEN, WRITE/READ, exact slot replay",
+        "false slot replay and foreign stateid rejected; GETATTR subset independently decoded",
+        "old sessions/stateids invalidated on reboot; persisted owner can reclaim OPEN during grace; CLOSE releases recovery record",
+        "unrelated client cannot reclaim another owner after restart",
+        "export disable revokes existing handles through fresh identity grants",
+        "offline metadata backup strips NFS enrollment and excludes persistent capability/recovery databases"
+      ],
+      "client": "linux-nfs/pynfs cd4701827a8261fedbfb4c6e39029fb9671321a6 generated NFSv3/v4.1 codecs",
+      "full_conformance": false,
+      "test_sha256": "776728f813a438821f2192343c36c2091afe975e5d2101b785516c08734b77a3",
+      "data_sha256": "7daca2095d0438260fa849183dfc67faa459fdf4936e1bc91eec6b281b27e4c2"
+    },
+    "nfs_delegation_native": {
+      "sha256": "ead727fdc3b9eb145d75614f9df76c2975909939728916d0812238f27a7ff5ab",
+      "output": "PASS monotonic recall, expiry, return and non-resurrection boundaries\nPASS native write exclusion, own filehandle reads, capability binding and explicit return\nPASS expired access grants deny IO and renewal while retaining native protection\nPASS expired cleanup capability retains coherence through fixed recall without authorizing IO or resurrecting state\nPASS SMB conflict recalls before open and existing SMB opens prevent handout\nPASS DAV and FTP writes recall before opening; their live handles prevent handout\nPASS native exclusive protection adds no write authority and handout still checks the file ACL\nPASS fixed recall deadline revokes despite continuous client renewal\nPASS autonomous client expiry releases exclusion without protocol traffic\nPASS policy revocation denies data immediately and preserves protection until return\nPASS 186 NFS delegation native/lifecycle checks\n"
+    },
+    "nfs_delegation_protocol": {
+      "sha256": "be3dd60ce9f93dd31dc1f6bc2745a0bc90c896e56138d3fe86ab1931d68bbdad",
+      "output": "PASS production file authority declines wire handout without creating a hidden native guard\nPASS slow COMPOUND completion preserves a full client lease after execution\n{\"code\":\"10037\",\"event\":\"operation_45\",\"role\":\"nfs\",\"time\":1793826358174}\n{\"code\":\"10038\",\"event\":\"operation_38\",\"role\":\"nfs\",\"time\":1793826358179}\n{\"code\":\"10025\",\"event\":\"operation_8\",\"role\":\"nfs\",\"time\":1793826358184}\n{\"code\":\"10025\",\"event\":\"operation_8\",\"role\":\"nfs\",\"time\":1793826358189}\n{\"code\":\"10025\",\"event\":\"operation_8\",\"role\":\"nfs\",\"time\":1793826358194}\n{\"code\":\"10025\",\"event\":\"operation_8\",\"role\":\"nfs\",\"time\":1793826358243}\nPASS distinct delegation state, CLAIM_DELEG_CUR_FH, CLOSE/disconnect independence and client/principal/file/access checks\n{\"code\":\"10008\",\"event\":\"operation_18\",\"role\":\"nfs\",\"time\":1793826358264}\n{\"code\":\"10008\",\"event\":\"operation_18\",\"role\":\"nfs\",\"time\":1793826358574}\nPASS WANT replay, typed CB_RECALL, definitive DELAY retry and acknowledgment without premature release\n{\"code\":\"10008\",\"event\":\"operation_18\",\"role\":\"nfs\",\"time\":1793826358616}\nPASS wrong callback operation preserves the exact slot until confirmed disconnect and replays on a replacement backchannel\n{\"code\":\"10008\",\"event\":\"operation_18\",\"role\":\"nfs\",\"time\":1793826358647}\n{\"code\":\"10087\",\"event\":\"operation_25\",\"role\":\"nfs\",\"time\":1793826364205}\nPASS recall deadline survives continued renewals; TEST_STATEID/FREE_STATEID acknowledge revocation while OPEN remains valid\nPASS authority loss renews coherence past the old lease under fixed recall and still permits authenticated return\nPASS validated CB_SEQUENCE renewal keeps an idle sibling session alive beyond its original lease\n{\"code\":\"10074\",\"event\":\"operation_57\",\"role\":\"nfs\",\"time\":1793826374866}\n{\"code\":\"10017\",\"event\":\"operation_42\",\"role\":\"nfs\",\"time\":1793826374866}\nPASS session destruction retains client-owned delegation; foreign owner replacement and premature client destruction are refused\nPASS 703 delegation protocol/native component checks; production handout remains gated\n"
+    }
+  },
+  "guest": {
+    "kernel": "6.19",
+    "filesystems": [
+      "tmpfs",
+      "ext4"
+    ],
+    "checks": 441,
+    "binary_sha256": "24e1c179210d247536d2583a21a587e4af8c77692b353c12b2eb8de3f56b7a59",
+    "kernel_sha256": "81c6a7de0fd79185f2043538a12b9ef0b5e601d2c7ff307c9783dc1e5f8db563",
+    "serial_sha256": "f5ed7e6589538ddea57d5202e08bab5b65f46555176d83868f9b0cc3cf6f9392",
+    "results": [
+      "PASS \"/tmp/domain\" FILE-DOMAIN/expired-authority-coherence-retention",
+      "PASS \"/tmp/domain\" FILE-DOMAIN/owner-renew-recall-return-replacement-SIGKILL",
+      "PASS \"/disk/domain\" FILE-DOMAIN/expired-authority-coherence-retention",
+      "PASS \"/disk/domain\" FILE-DOMAIN/owner-renew-recall-return-replacement-SIGKILL",
+      "PASS native delegation 441 checks",
+      "TAUCLOUD_DELEGATION_VM_PASS"
+    ]
+  },
+  "verified_behaviors": [
+    "Expired signed cleanup capability preserves already-held native coherence beyond its prior expiry under a fixed recall deadline",
+    "Foreign client/caller rejected; retain grants no IO rights and cannot revive returned state",
+    "Automatic delegation authority does not contaminate another AUTH_SYS user reply cache",
+    "Slow COMPOUND execution refreshes the lease on completion",
+    "SEQUENCE and exact replay on either of two sessions renew their shared client lease",
+    "Validated CB_SEQUENCE renews an idle sibling session",
+    "Joint idle expiry and lease reduction across repeated server restart remain correct"
+  ],
+  "scope_limits": [
+    "Network success is not yet fully gated on native owner acknowledgment under provider failure",
+    "Outstanding COMPOUND/transport output queue delivery accounting remains open; dispatch completion is not final wire delivery",
+    "Backchannel response window needs native retention reservation",
+    "Production wire delegation remains declined; no reclaim/owner reattachment/full-server crash completion claimed",
+    "Full SMB and Full NFS checklists remain open"
+  ]
+}

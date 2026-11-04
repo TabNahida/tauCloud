@@ -353,6 +353,23 @@ static void file_domain_suite(const fs::path &base) {
   while (std::chrono::steady_clock::now() < limit);
   check(d.at("state") == "recalling", "domain_native_recall_not_imported");
   check(call("return", cookie).at("state") == "returned", "domain_return_failed"); call("forget", cookie);
+  d = call("acquire", "", 1000); check(d.at("granted"), "domain_cleanup_acquire"); cookie = d.at("cookie");
+  auto cleanup = control("retain", cookie, 5000);
+  cleanup["grant"]["expires"] = now() - 1; cleanup["grant"].erase("signature");
+  cleanup["grant"]["signature"] = mac(signing, cleanup.at("grant").dump());
+  d = store->dispatch("nfs_delegation", cleanup, ctx());
+  check(d.at("granted") && d.at("state") == "recalling", "domain_cleanup_retention_failed");
+  auto recall_remaining = d.at("recall_remaining_ms").get<int64_t>();
+  std::this_thread::sleep_for(1200ms);
+  d = store->dispatch("nfs_delegation", cleanup, ctx());
+  check(d.at("granted") && d.at("recall_remaining_ms").get<int64_t>() < recall_remaining,
+      "domain_cleanup_extended_recall");
+  writer = open((base / "root/space/cached").c_str(), O_WRONLY | O_NONBLOCK);
+  check(writer < 0 && errno == EWOULDBLOCK, "domain_cleanup_lost_native_protection");
+  cleanup["op"] = "return";
+  check(store->dispatch("nfs_delegation", cleanup, ctx()).at("state") == "returned", "domain_cleanup_return_failed");
+  call("forget", cookie);
+  std::cout << "PASS " << base << " FILE-DOMAIN/expired-authority-coherence-retention\n";
   d = call("acquire", "", 1500); check(d.at("granted"), "domain_reacquire_failed"); cookie = d.at("cookie");
   store.reset();
   writer = open((base / "root/space/cached").c_str(), O_WRONLY | O_NONBLOCK);

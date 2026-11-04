@@ -82,11 +82,12 @@ json nfs_delegation_snapshot(const std::string &cookie, const nfs_delegation_gua
 json nfs_delegation_dispatch(const json &body, const call_context &ctx) {
   require(ctx.caller == "nfs", "forbidden");
   auto op = body.at("op").get<std::string>();
-  require(op == "acquire" || op == "renew" || op == "poll" || op == "recall" ||
+  require(op == "acquire" || op == "renew" || op == "retain" || op == "poll" || op == "recall" ||
               op == "return" || op == "forget", "not_supported");
   // Poll/return/forget carry a signed original grant and an unguessable cookie.
-  // They cannot read file data, create state or renew the client lease. Cleanup
-  // remains possible after policy revocation and short-lived grant expiry.
+  // They cannot read file data or create state. Retain only extends coherence
+  // protection while starting a fixed recall interval; it grants no IO rights.
+  // Cleanup remains possible after policy revocation and short-lived grant expiry.
   auto g = verify(body.at("grant"), false, op != "acquire" && op != "renew");
   require(g.at("protocol") == "nfs" && g.contains("export"), "forbidden");
   auto space = g.at("space").at("id").get<std::string>();
@@ -168,18 +169,24 @@ json nfs_delegation_dispatch(const json &body, const call_context &ctx) {
               d.handle == body.at("handle").get<std::string>() &&
               beneath(d.path, g.at("path").get<std::string>()), "forbidden");
   auto time = cache_clock();
-  if (op == "renew") {
+  if (op == "renew" || op == "retain") {
     auto interval = remaining();
     require(d.lifetime.held(), "stale_handle");
-    auto &s = attach(g, ctx);
-    security_check(s, g, d.file.info(), 1);
-    lease(g, ctx);
+    if (op == "renew") {
+      auto &s = attach(g, ctx);
+      security_check(s, g, d.file.info(), 1);
+      lease(g, ctx);
+    }
     auto accepted = cache_clock();
+    if (op == "retain") d.lifetime.recall(accepted);
     if (d.owner_id) {
       require(!d.owner_failed, "delegation_owner_lost");
       try {
+        if (op == "retain" && !d.owner_recalled) {
+          nfs_owner->recall(d.owner_id); d.owner_recalled = true;
+        }
         nfs_owner->renew(d.owner_id, interval);
-        lease(g, ctx);
+        if (op == "renew") lease(g, ctx);
       } catch (const error &e) {
         d.owner_failed |= std::string_view(e.what()) == "delegation_owner_lost";
         d.lifetime.recall(accepted);

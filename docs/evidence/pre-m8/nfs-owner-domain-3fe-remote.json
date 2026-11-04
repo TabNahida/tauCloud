@@ -1,0 +1,15 @@
+{
+  "recorded_at": "2026-11-04T21:06:28.433445+00:00",
+  "source": "3fe6375842ba774a2ff334490f678ad852261b20",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41911279778",
+  "conclusion": "success",
+  "proof_lines": [
+    "kernel\tHost capability refusal or native acceptance\t2026-11-04T21:04:08.1326813Z PASS native delegation 195 checks",
+    "kernel\tRequired tmpfs and ext4 native exclusion in QEMU\t2026-11-04T21:04:49.1642205Z PASS \"/tmp/domain\" FILE-DOMAIN/owner-renew-recall-return-replacement-SIGKILL",
+    "kernel\tRequired tmpfs and ext4 native exclusion in QEMU\t2026-11-04T21:04:49.1649412Z PASS \"/disk/domain\" FILE-DOMAIN/owner-renew-recall-return-replacement-SIGKILL",
+    "kernel\tRequired tmpfs and ext4 native exclusion in QEMU\t2026-11-04T21:04:49.1649815Z PASS native delegation 440 checks",
+    "kernel\tRequired tmpfs and ext4 native exclusion in QEMU\t2026-11-04T21:04:49.1650076Z TAUCLOUD_DELEGATION_VM_PASS"
+  ],
+  "log_sha256": "0a52ab9ad82a6d0dcfe76a527faf84d3fa582dfa8f3fc5933308e5ae8aa76cfe",
+  "scope": "Independent owner file-domain integration and native worker-crash retention. Production wire delegation and Full SMB/NFS are not complete."
+}

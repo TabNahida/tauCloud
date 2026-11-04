@@ -150,6 +150,32 @@ int main(int argc, char **argv) {
     call("forget", cookie);
     std::cout << "PASS expired access grants deny IO and renewal while retaining native protection\n";
 
+    // An authenticated client may keep its lease live after losing data
+    // authority. The old signed cookie can retain coherence only under recall.
+    d = call("acquire", "", 1000); check(d.at("granted")); cookie = d.at("cookie");
+    auto retained = control("retain", cookie);
+    retained["grant"]["expires"] = now() - 1; retained["grant"] = sign(retained.at("grant"));
+    auto foreign = retained; foreign["client"] = random_hex(16);
+    rejects([&] { store->dispatch("nfs_delegation", foreign, ctx()); }, "forbidden");
+    rejects([&] { store->dispatch("nfs_delegation", retained, ctx("smb")); }, "forbidden");
+    d = store->dispatch("nfs_delegation", retained, ctx());
+    check(d.at("granted") && d.at("state") == "recalling");
+    auto recall_remaining = d.at("recall_remaining_ms").get<int64_t>();
+    std::this_thread::sleep_for(std::chrono::milliseconds(1200));
+    d = store->dispatch("nfs_delegation", retained, ctx());
+    check(d.at("granted") && d.at("recall_remaining_ms").get<int64_t>() < recall_remaining);
+    rejects([&] { native.open("space/cached", false, false, true); }, "locked");
+    retained["op"] = "renew";
+    rejects([&] { store->dispatch("nfs_delegation", retained, ctx()); }, "lease_expired");
+    auto denied_io = json{{"grant", retained.at("grant")}, {"op", "read"}, {"handle", fh}, {"offset", 0}, {"count", 8}};
+    rejects([&] { store->dispatch("nfs_file", denied_io, ctx()); }, "lease_expired");
+    retained["op"] = "return";
+    check(store->dispatch("nfs_delegation", retained, ctx()).at("state") == "returned");
+    retained["op"] = "retain";
+    rejects([&] { store->dispatch("nfs_delegation", retained, ctx()); }, "stale_handle");
+    call("forget", cookie);
+    std::cout << "PASS expired cleanup capability retains coherence through fixed recall without authorizing IO or resurrecting state\n";
+
     d = call("acquire"); check(d.at("granted")); cookie = d.at("cookie");
     auto smb = [&](std::string op, json body) {
       auto g = grant(); g["protocol"] = "smb"; g["share"] = "smb"; g["path"] = "cached";

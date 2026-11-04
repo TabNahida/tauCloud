@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
     auto handle = nfs("create", directory, {{"name", "file"}}).at("handle").get<std::string>();
     nfs("write", handle, {{"offset", 0}, {"data", encode_bytes("original")}});
     auto native = native_file::root(base / "root");
-    bool component_provider = false, authorized = true;
+    bool component_provider = false, authorized = true, slow_read = false;
     std::deque<std::pair<std::string, std::string>> callbacks;
     std::vector<std::string> closes;
     auto protocol = std::make_unique<server>(cfg, [&](std::string target, std::string op, json body) -> json {
@@ -57,7 +57,12 @@ int main(int argc, char **argv) {
       // is first tested below, then this component fixture supplies its native
       // primitive. This does NOT prove host metadata or crash-safe handout.
       if (component_provider && op == "nfs_delegation") body.erase("wire");
-      return store->dispatch(op, body, ctx());
+      auto result = store->dispatch(op, body, ctx());
+      if (slow_read && op == "nfs_file" && body.value("op", "") == "read") {
+        slow_read = false;
+        std::this_thread::sleep_for(std::chrono::milliseconds(3500));
+      }
+      return result;
     }, callback_call{}, [&](auto connection, auto packet) { callbacks.emplace_back(connection, packet); },
        [&](auto connection) { closes.push_back(connection); });
     struct peer { std::string connection, session; uint64_t client = 0; uint32_t sequence = 0, uid = 1000; };
@@ -171,9 +176,15 @@ int main(int argc, char **argv) {
     };
     auto a = connect("one"); establish_callback();
     auto refused = open_result(send(a, {put(), opening(a, 0x101)}), 3);
+    slow_read = true;
+    send(a, {put(), writer().u32(25).fixed(refused.first).u64(0).u32(8)});
+    ok(!slow_read);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1800));
+    send(a, {put(), writer().u32(25).fixed(refused.first).u64(0).u32(8)});
     send(a, {put(), writer().u32(4).u32(0).fixed(refused.first)});
     ok(native.open("space/file").read(0, 8) == "original");
     std::cout << "PASS production file authority declines wire handout without creating a hidden native guard\n";
+    std::cout << "PASS slow COMPOUND completion preserves a full client lease after execution\n";
     component_provider = true;
     auto opened = open_result(send(a, {put(), opening(a, 0x101)}), 1);
     auto state = opened.first, delegated = opened.second;
@@ -181,6 +192,11 @@ int main(int argc, char **argv) {
     auto request = last_request;
     auto replay = protocol->dispatch(request, a.connection);
     ok(replay == last_response);
+    // Lease maintenance for Alice must not add her file scope to Bob's empty
+    // compound cache entry on a shared AUTH_SYS session.
+    a.uid = 1001; send(a, {});
+    ok(protocol->dispatch(last_request, a.connection) == last_response);
+    a.uid = 1000;
     auto upgrade = send(a, {put(), writer().u32(56).u32(0x200).u32(4)});
     reader not_upgraded(upgrade); ok(not_upgraded.u32() == 3 && not_upgraded.u32() == 5); not_upgraded.end();
     send(a, {writer().u32(45).fixed(delegated)}, 10037);
@@ -269,16 +285,38 @@ int main(int argc, char **argv) {
 
     want = send(a, {put(), writer().u32(56).u32(0x100).u32(4)});
     reader final_grant(want); ok(final_grant.u32() == 1); delegated = final_grant.fixed(16);
+    std::this_thread::sleep_for(std::chrono::milliseconds(3500));
     authorized = false;
     // SEQUENCE attempts a fresh renewal, notices policy loss and recalls using
     // the original signed cleanup capability. DELEGRETURN remains possible.
     send(a, {writer().u32(55).u32(1).fixed(delegated)});
     protocol->maintenance(); recall = receive_callback(); reply_callback(recall);
     held();
+    std::this_thread::sleep_for(std::chrono::milliseconds(1800));
+    send(a, {writer().u32(55).u32(1).fixed(delegated)});
+    protocol->maintenance(); held();
+    ok(protocol->dispatch(last_request, a.connection) == last_response);
     send(a, {put(), writer().u32(8).fixed(delegated)});
     authorized = true;
     ok(native.open("space/file").read(0, 8) == "original");
-    std::cout << "PASS authority loss recalls without dropping native protection and still permits authenticated return\n";
+    std::cout << "PASS authority loss renews coherence past the old lease under fixed recall and still permits authenticated return\n";
+    // Renew via the backchannel alone, then use a sibling session that has
+    // stayed idle longer than its initial lease interval.
+    auto sibling = a; sibling.connection = "lease-sibling"; sibling.sequence = 0;
+    writer sibling_session;
+    sibling_session.u32(43).u64(a.client).u32(2).u32(0);
+    for (int i = 0; i < 2; ++i) sibling_session.u32(0).u32(8192).u32(8192).u32(8192).u32(16).u32(4).u32(0);
+    sibling_session.u32(0).u32(0);
+    auto sibling_created = send(sibling, {sibling_session}, 0, false);
+    reader sibling_result(sibling_created); sibling.session = sibling_result.fixed(16);
+    auto lease_back = a; lease_back.connection = "lease-callback";
+    send(lease_back, {writer().u32(41).fixed(a.session).u32(2).boolean(false)}, 0, false);
+    auto lease_null = receive_callback(); ok(!lease_null.compound); reply_callback(lease_null);
+    auto lease_sequence = receive_callback(); ok(lease_sequence.compound && !lease_sequence.operation);
+    std::this_thread::sleep_for(std::chrono::milliseconds(3500)); reply_callback(lease_sequence);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1800)); send(sibling, {});
+    send(a, {});
+    std::cout << "PASS validated CB_SEQUENCE renewal keeps an idle sibling session alive beyond its original lease\n";
     auto orphan = connect("orphan"); establish_callback();
     want = send(orphan, {put(), writer().u32(56).u32(0x100).u32(4)});
     reader detached(want); ok(detached.u32() == 1); delegated = detached.fixed(16);
