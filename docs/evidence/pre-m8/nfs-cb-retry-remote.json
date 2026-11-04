@@ -1,0 +1,99 @@
+{
+  "recorded_at": "2026-11-04T07:28:22.507790+00:00",
+  "source": "c425fc660242c5b3ea3cf1ba96996f4a20acbc02",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41790455657",
+  "status": "passed",
+  "scope": "Targeted metadata workflow: 19 independent callback lifecycle/sequence/retry groups on GCC, Clang ASan/UBSan and MSVC. Does not cover the subsequent CB_NOTIFY_LOCK implementation.",
+  "platforms": {
+    "msvc": {
+      "artifact_id": 13304235162,
+      "artifact_sha256": "1d35467b1e69513b2588bf0520ac4a5faf9cc01b3ab9d7199a662f45c0bfafb6",
+      "report_sha256": "718103c6361b2068fdee3ed7db403f57d34a64903edaeeec7f011419539ff77a",
+      "result": {
+        "status": "passed",
+        "checks": [
+          "CREATE_SESSION binds a bidirectional transport; CB_NULL uses the requested program/version and AUTH_NONE while forechannel RPC stays usable",
+          "probe replies are bound to their exact TCP connection and XID; cross-connection, duplicate and unknown replies cannot change path state",
+          "BACKCHANNEL_CTL changes program and invalidates old probes; malformed matched replies keep path down and idempotent rebinding reprobes it",
+          "cleared callback credentials and destroyed/recreated sessions cannot be validated by a stale probe response",
+          "BIND_CONN_TO_SESSION supports BACK and BACK_OR_BOTH on new transports, rejects invalid directions and changes to existing channel roles",
+          "AUTH_SYS CB_NULL carries the offered timestamp, machine name, UID/GID and supplementary groups exactly",
+          "five-second probe timeout ignores late success; rebind recovers the path without recreating the session",
+          "losing the only callback transport sets CB_PATH_DOWN on a surviving forechannel connection",
+          "CB_NULL success alone does not validate the sequenced backchannel; CB_SEQUENCE success on the wrong transport is ignored",
+          "truncated/trailing XDR, bad status/tag/count/op/session/sequence/slot and CB_SEQUENCE errors close the transport before exact retry; only a valid reply advances the slot",
+          "successful CB_SEQUENCE advances exactly once; BACKCHANNEL_CTL retains the session sequence and ignores old duplicate replies",
+          "BIND and callback program replacement never retry an outstanding CB_COMPOUND on a live transport; its original reply releases the slot without validating the new program",
+          "completion of a callback issued before credential removal advances its slot but cannot resurrect the disabled backchannel",
+          "CB_COMPOUND timeout closes the original transport before retry; stale RPC replies on the replacement cannot complete the unresolved slot",
+          "one callback slot serializes multiple bound paths; transport loss retries the unresolved request on another bound connection",
+          "loss of the only backchannel with an unanswered CB_COMPOUND reports CB_PATH_DOWN_SESSION; binding a replacement clears that flag and preserves the pending sequence",
+          "client-advertised slot growth beyond CREATE_SESSION and shrink back to zero are accepted without allocation or increasing callback concurrency",
+          "destroying and recreating a session starts a distinct callback slot at sequence one; old CB_COMPOUND success cannot validate it",
+          "UINT32_MAX offered callback slots require only slot zero; AUTH_SYS credentials must fit the negotiated complete CB_COMPOUND request size"
+        ],
+        "sanitizers": false
+      }
+    },
+    "gcc": {
+      "artifact_id": 13304020634,
+      "artifact_sha256": "e874dc8a3360a161ec8406b7a3e1493a09d7e334782698d8e433f2e445fde96d",
+      "report_sha256": "3aa61083dd4c5e0b09c6e2e59bceea7a73a0537be1edf2c57703a774e2b91ffc",
+      "result": {
+        "status": "passed",
+        "checks": [
+          "CREATE_SESSION binds a bidirectional transport; CB_NULL uses the requested program/version and AUTH_NONE while forechannel RPC stays usable",
+          "probe replies are bound to their exact TCP connection and XID; cross-connection, duplicate and unknown replies cannot change path state",
+          "BACKCHANNEL_CTL changes program and invalidates old probes; malformed matched replies keep path down and idempotent rebinding reprobes it",
+          "cleared callback credentials and destroyed/recreated sessions cannot be validated by a stale probe response",
+          "BIND_CONN_TO_SESSION supports BACK and BACK_OR_BOTH on new transports, rejects invalid directions and changes to existing channel roles",
+          "AUTH_SYS CB_NULL carries the offered timestamp, machine name, UID/GID and supplementary groups exactly",
+          "five-second probe timeout ignores late success; rebind recovers the path without recreating the session",
+          "losing the only callback transport sets CB_PATH_DOWN on a surviving forechannel connection",
+          "CB_NULL success alone does not validate the sequenced backchannel; CB_SEQUENCE success on the wrong transport is ignored",
+          "truncated/trailing XDR, bad status/tag/count/op/session/sequence/slot and CB_SEQUENCE errors close the transport before exact retry; only a valid reply advances the slot",
+          "successful CB_SEQUENCE advances exactly once; BACKCHANNEL_CTL retains the session sequence and ignores old duplicate replies",
+          "BIND and callback program replacement never retry an outstanding CB_COMPOUND on a live transport; its original reply releases the slot without validating the new program",
+          "completion of a callback issued before credential removal advances its slot but cannot resurrect the disabled backchannel",
+          "CB_COMPOUND timeout closes the original transport before retry; stale RPC replies on the replacement cannot complete the unresolved slot",
+          "one callback slot serializes multiple bound paths; transport loss retries the unresolved request on another bound connection",
+          "loss of the only backchannel with an unanswered CB_COMPOUND reports CB_PATH_DOWN_SESSION; binding a replacement clears that flag and preserves the pending sequence",
+          "client-advertised slot growth beyond CREATE_SESSION and shrink back to zero are accepted without allocation or increasing callback concurrency",
+          "destroying and recreating a session starts a distinct callback slot at sequence one; old CB_COMPOUND success cannot validate it",
+          "UINT32_MAX offered callback slots require only slot zero; AUTH_SYS credentials must fit the negotiated complete CB_COMPOUND request size"
+        ],
+        "sanitizers": false
+      }
+    },
+    "clang": {
+      "artifact_id": 13303094675,
+      "artifact_sha256": "ce6407f4048d2a001664a9d91b5fd05dcda17865f6ec5b5b70c1f9a624debfe5",
+      "report_sha256": "60ed29d1b7be74fc699ef27b7502267ce9b2abe90d1d64fa089b0dabc5aff681",
+      "result": {
+        "status": "passed",
+        "checks": [
+          "CREATE_SESSION binds a bidirectional transport; CB_NULL uses the requested program/version and AUTH_NONE while forechannel RPC stays usable",
+          "probe replies are bound to their exact TCP connection and XID; cross-connection, duplicate and unknown replies cannot change path state",
+          "BACKCHANNEL_CTL changes program and invalidates old probes; malformed matched replies keep path down and idempotent rebinding reprobes it",
+          "cleared callback credentials and destroyed/recreated sessions cannot be validated by a stale probe response",
+          "BIND_CONN_TO_SESSION supports BACK and BACK_OR_BOTH on new transports, rejects invalid directions and changes to existing channel roles",
+          "AUTH_SYS CB_NULL carries the offered timestamp, machine name, UID/GID and supplementary groups exactly",
+          "five-second probe timeout ignores late success; rebind recovers the path without recreating the session",
+          "losing the only callback transport sets CB_PATH_DOWN on a surviving forechannel connection",
+          "CB_NULL success alone does not validate the sequenced backchannel; CB_SEQUENCE success on the wrong transport is ignored",
+          "truncated/trailing XDR, bad status/tag/count/op/session/sequence/slot and CB_SEQUENCE errors close the transport before exact retry; only a valid reply advances the slot",
+          "successful CB_SEQUENCE advances exactly once; BACKCHANNEL_CTL retains the session sequence and ignores old duplicate replies",
+          "BIND and callback program replacement never retry an outstanding CB_COMPOUND on a live transport; its original reply releases the slot without validating the new program",
+          "completion of a callback issued before credential removal advances its slot but cannot resurrect the disabled backchannel",
+          "CB_COMPOUND timeout closes the original transport before retry; stale RPC replies on the replacement cannot complete the unresolved slot",
+          "one callback slot serializes multiple bound paths; transport loss retries the unresolved request on another bound connection",
+          "loss of the only backchannel with an unanswered CB_COMPOUND reports CB_PATH_DOWN_SESSION; binding a replacement clears that flag and preserves the pending sequence",
+          "client-advertised slot growth beyond CREATE_SESSION and shrink back to zero are accepted without allocation or increasing callback concurrency",
+          "destroying and recreating a session starts a distinct callback slot at sequence one; old CB_COMPOUND success cannot validate it",
+          "UINT32_MAX offered callback slots require only slot zero; AUTH_SYS credentials must fit the negotiated complete CB_COMPOUND request size"
+        ],
+        "sanitizers": true
+      }
+    }
+  }
+}

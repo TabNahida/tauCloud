@@ -40,8 +40,11 @@ void send_callback_probe(const std::string &id, const std::string &bound, bool c
     // One bounded slot suffices even when the client offers UINT32_MAX slots.
     // A solo SEQUENCE reply is cached independently of cachethis. Keep these
     // bytes/sequence unchanged after uncertain completion, including rebinds.
-    call.opaque("").u32(1).u32(0).u32(1).u32(11).fixed(decode_bytes(id))
-        .u32(s.callback_sequence).u32(0).u32(0).boolean(false).u32(0);
+    call.opaque("").u32(1).u32(0).u32(s.callback_extra.empty() ? 1 : 2)
+        .u32(11).fixed(decode_bytes(id)).u32(s.callback_sequence).u32(0).u32(0).boolean(false);
+    if (s.callback_references.empty()) call.u32(0);
+    else call.fixed(s.callback_references);
+    call.fixed(s.callback_extra);
   }
   callback_probes.emplace(callback_xid, callback_probe{id, bound, now() + 5000, compound,
                                                      s.callback_sequence, s.callback_generation});
@@ -49,13 +52,18 @@ void send_callback_probe(const std::string &id, const std::string &bound, bool c
 }
 void sequence_callback(const std::string &id) {
   auto &s = sessions.at(id);
+  auto client = client_ids.find(s.client);
+  if (s.expires <= now() || client == client_ids.end() || client->second.expires <= now()) return;
   if (!callback_available(s) || callback_probes.size() >= 128) return;
   // Only one CB_COMPOUND may own slot zero. Other validated NULL paths wait
   // for its result; a retry on another path uses the same unresolved sequence.
   for (const auto &[xid, p] : callback_probes)
     if (p.session == id && p.compound) return;
   for (const auto &bound : s.callback_ready) {
-    if (!s.callback_up.contains(bound) && !callback_closing.contains(bound)) {
+    if ((!s.callback_up.contains(bound) || !s.callback_extra.empty()) && !callback_closing.contains(bound)) {
+      if (96 + s.callback_credential.size() + s.callback_extra.size() +
+              (s.callback_references.empty() ? 0 : s.callback_references.size() - 4) > s.callback_request_limit)
+        return;
       send_callback_probe(id, bound, true);
       return;
     }
@@ -73,6 +81,8 @@ void expire_callback_probes() {
     const auto &probe = item.second;
     auto found = sessions.find(probe.session);
     if (found == sessions.end()) return true;
+    auto client = client_ids.find(found->second.client);
+    if (found->second.expires <= now() || client == client_ids.end() || client->second.expires <= now()) return true;
     if (probe.deadline > now()) return false;
     if (probe.compound) {
       // RFC 8881 2.10.6.2 prohibits retry on a live original transport.
@@ -110,6 +120,11 @@ void callback_reply(uint32_t xid, reader &r) {
   }
   if (callback_closing.contains(connection)) return;
   auto &s = current->second;
+  auto client = client_ids.find(s.client);
+  if (s.expires <= now() || client == client_ids.end() || client->second.expires <= now()) {
+    callback_probes.erase(found);
+    return; // A callback must not revive expired client/session authority.
+  }
   bool current_config = probe.generation == s.callback_generation;
   if (current_config) {
     s.callback_up.erase(connection);
@@ -121,7 +136,9 @@ void callback_reply(uint32_t xid, reader &r) {
         r.u32() == 0 && r.u32() == 0 && r.opaque(400).empty() && r.u32() == 0) {
       if (probe.compound) {
         // Validate the complete result before committing sequence/lease state.
-        if (r.u32() != 0 || !r.opaque().empty() || r.u32() != 1 || r.u32() != 11 ||
+        auto status = r.u32();
+        bool notification = !s.callback_extra.empty();
+        if (!r.opaque().empty() || r.u32() != (notification ? 2u : 1u) || r.u32() != 11 ||
             r.u32() != 0 || r.fixed(16) != decode_bytes(probe.session) ||
             r.u32() != probe.sequence || r.u32() != 0)
           throw xdr_error();
@@ -130,6 +147,11 @@ void callback_reply(uint32_t xid, reader &r) {
         // allocation or concurrency increase is needed to honor either value.
         r.u32(); // csr_highest_slotid
         r.u32(); // csr_target_highest_slotid
+        // CB_NOTIFY_LOCK is an optional hint. Even NOTSUPP or an uncached
+        // replay result consumes the sequence; no lock authority is granted.
+        if (notification) {
+          if (r.u32() != 13 || r.u32() != status) throw xdr_error();
+        } else if (status != 0) throw xdr_error();
       }
       r.end();
       valid = true;
@@ -147,6 +169,8 @@ void callback_reply(uint32_t xid, reader &r) {
     if (probe.compound) {
       ++s.callback_sequence; // Unsigned wraparound is part of the protocol.
       s.callback_unresolved = false;
+      s.callback_extra.clear();
+      s.callback_references.clear();
       if (current_config) s.callback_up.insert(connection);
       s.expires = now() + 60000;
       client_ids.at(s.client).expires = s.expires;

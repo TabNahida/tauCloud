@@ -814,6 +814,7 @@ void server::maintenance() {
   std::lock_guard guard(impl_->mutex);
   impl_->expire();
   impl_->nlm_maintenance();
+  impl_->notify_lock_waiters();
   impl_->gss_expire();
 }
 } // namespace tc::nfs_detail

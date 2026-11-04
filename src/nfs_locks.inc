@@ -83,8 +83,67 @@ void lock_conflict(const lock_state &candidate, lock_range range, writer &body) 
       }
   }
 }
+std::string lock_wait_key(const lock_state &state) {
+  return digest(json::array({state.client, state.principal, state.object, state.owner}).dump());
+}
+void notify_lock_waiters() {
+  // Maintenance runs outside a foreground COMPOUND's replay-authority recorder.
+  // Bound both memory and fresh-authority work; notification is only a hint.
+  unsigned budget = 8;
+  for (auto it = lock_waiters.begin(); it != lock_waiters.end();) {
+    auto &waiter = it->second;
+    auto &candidate = waiter.state;
+    auto client = client_ids.find(candidate.client);
+    auto opened = std::find_if(opens.begin(), opens.end(), [&](const auto &o) {
+      return o.first.substr(8) == candidate.open_other && o.second.client == candidate.client &&
+             o.second.principal == candidate.principal;
+    });
+    if (client == client_ids.end() || client->second.expires <= now() || opened == opens.end()) {
+      it = lock_waiters.erase(it); continue;
+    }
+    try {
+      writer ignored;
+      lock_conflict(candidate, waiter.range, ignored);
+    } catch (const failure &e) {
+      if (e.status == 10010) { ++it; continue; }
+      it = lock_waiters.erase(it); continue;
+    }
+    writer operation;
+    operation.u32(13).opaque(decode_bytes(candidate.fh)).u64(candidate.client).opaque(decode_bytes(candidate.owner));
+    auto target = std::find_if(sessions.begin(), sessions.end(), [&](const auto &entry) {
+      const auto &s = entry.second;
+      return s.client == candidate.client && s.expires > now() && callback_available(s) &&
+             !s.callback_up.empty() && !s.callback_unresolved && s.callback_extra.empty() &&
+             s.callback_operations >= 2 && s.callback_response_limit >= 84 &&
+             96 + s.callback_credential.size() + operation.data.size() + waiter.references.size() - 4 <= s.callback_request_limit;
+    });
+    if (target == sessions.end() || callback_probes.size() >= 128) { ++it; continue; }
+    if (!budget) return;
+    --budget;
+    try {
+      const auto &o = opened->second;
+      check((o.access & waiter.range.type) != 0, 13);
+      auto metadata = meta4(identity{o.credential, o.principal}, candidate.fh);
+      check(metadata.at("object") == candidate.object &&
+            (metadata.at("security_access").get<uint32_t>() & waiter.range.type) != 0, 13);
+      if (waiter.range.type == 2) {
+        auto handle = decode_bytes(candidate.fh);
+        authorize({{"peer", "127.0.0.1"}, {"credential", o.credential},
+                   {"uuid", encode_bytes(handle.substr(2, 16))}, {"write", true}});
+      }
+    } catch (const error &) { it = lock_waiters.erase(it); continue; }
+      catch (const failure &) { it = lock_waiters.erase(it); continue; }
+    auto &s = target->second;
+    s.callback_extra = std::move(operation.data);
+    s.callback_references = waiter.references;
+    sequence_callback(target->first);
+    // Once sent, the session owns the immutable callback until completion.
+    it = lock_waiters.erase(it);
+  }
+}
 void lock_operation(const identity &who, const json &a, const std::string &sid,
-                    const std::string &current, std::string &current_state, writer &body) {
+                    const std::string &current, std::string &current_state, writer &body,
+                    const json &sequence) {
   auto op = a.at("op").get<uint32_t>();
   auto client = sessions.at(sid).client;
   if (op == 45) {
@@ -135,7 +194,23 @@ void lock_operation(const identity &who, const json &a, const std::string &sid,
     auto durable = durable_lock(state, range);
     auto rid = digest(durable.dump());
     if (recovering) check(reclaim.contains(rid) && reclaim.at(rid) == durable, 10034);
-    lock_conflict(state, range, body);
+    auto wait_key = lock_wait_key(state);
+    lock_waiters.erase(wait_key);
+    try { lock_conflict(state, range, body); }
+    catch (const failure &e) {
+      if (e.status == 10010 && a.at("type").get<uint32_t>() >= 3 && !recovering &&
+          send_backchannel && lock_waiters.size() < 128 &&
+          std::count_if(lock_waiters.begin(), lock_waiters.end(), [&](const auto &entry) {
+            return entry.second.state.client == client;
+          }) < 16) {
+        writer referring;
+        referring.u32(1).fixed(decode_bytes(sid)).u32(1).u32(sequence.at("seq")).u32(sequence.at("slot"));
+        auto waiting = state;
+        waiting.ranges.clear();
+        lock_waiters.emplace(wait_key, lock_waiter{std::move(waiting), range, std::move(referring.data)});
+      }
+      throw;
+    }
     auto ranges = without_range(state.ranges, range);
     check(ranges.size() < 1024 && byte_locks.size() < 1024, 10018);
     ranges.push_back(range);

@@ -1,0 +1,106 @@
+{
+  "recorded_at": "2026-11-04T07:29:37.286484+00:00",
+  "base_source": "c425fc660242c5b3ea3cf1ba96996f4a20acbc02",
+  "status": "partial",
+  "scope": "NFSv4.1 CB_NOTIFY_LOCK after denied blocking requests, optional OPEN hint, current authority, cancellation, referring calls, complete two-operation replies, exact retry and expired-client cleanup.",
+  "standards": [
+    "https://www.rfc-editor.org/rfc/rfc8881.html#section-20.11",
+    "https://www.rfc-editor.org/rfc/rfc8881.html#section-9.6",
+    "https://www.rfc-editor.org/rfc/rfc8881.html#section-2.10.6.1.3"
+  ],
+  "files_sha256": {
+    "src/nfs_backchannel.inc": "b4394100583fe9c993ad944b910f51f8489bab034d8e599edbf824ea373a0ba9",
+    "src/nfs_v4.inc": "91dc8cad4f61eaa0378d4dd307de244a5288af2cd3223e9f0f87b4d67d381a6a",
+    "src/nfs_protocol.cpp": "38fb1fb3ce9c6f965faa6e1fe1ae4456e000aabeba3ba2aecae2461b9fe68164",
+    "src/nfs_locks.inc": "acfa056249caea27e274677850dfbd14263d2a9a383a6d7687aedf8bc88aaf7d",
+    "tests/nfs_notify_lock_integration.py": "aab423d6788e53aadb7f4a56c1c0720332d51c28f140b8e95475cb39809ca3bd",
+    "tests/pynfs_notify_lock.py": "71da0c42275f66dba62c6345aa4a8cea30eaafb3710156f1b996d1e53aeab009",
+    ".github/workflows/smb-metadata.yml": "2fe46505d44f5f24e6accd2d67aca29dcbb63c961768d86902ab422c3a01938c",
+    "scripts/run_m7.py": "3908f9cc8ba83c8f6efe0efb159d2b04a0109181e51dbe98bd78fa61123fd5e9"
+  },
+  "local": {
+    "sanitizers": "Clang ASan/UBSan including LeakSanitizer",
+    "core": {
+      "checks": 98,
+      "status": "passed"
+    },
+    "notification": {
+      "status": "passed",
+      "checks": [
+        "OPEN advertises MAY_NOTIFY_LOCK; READW conflict release delivers exact handle/owner/referring request; the hint neither grants nor reserves the lock",
+        "nonblocking LOCK denial does not enroll a waiter and cancels a previous blocking request for the same owner/file",
+        "closing the waiting OPEN removes its unsent notification without granting lock state",
+        "fresh write-policy authority is required before dispatch; revocation drops the waiter and restoring rights does not resurrect it",
+        "inconsistent operation status and lost notification reply cause disconnect then exact two-operation replay; RETRY_UNCACHED_REP consumes the slot without granting a lock",
+        "multiple waiting owners share one bounded callback slot and no second notification is sent before the first completes",
+        "client NOTSUPP completes the optional callback; foreground polling and explicit lock acquisition remain usable",
+        "two-operation callbacks respect negotiated operation and full RPC size limits; constrained clients can still poll for locks",
+        "expired client and OPEN state remove the queued hint; releasing the competing lock never notifies or revives the expired session"
+      ],
+      "sanitizers": true
+    },
+    "backchannel": {
+      "status": "passed",
+      "checks": [
+        "CREATE_SESSION binds a bidirectional transport; CB_NULL uses the requested program/version and AUTH_NONE while forechannel RPC stays usable",
+        "probe replies are bound to their exact TCP connection and XID; cross-connection, duplicate and unknown replies cannot change path state",
+        "BACKCHANNEL_CTL changes program and invalidates old probes; malformed matched replies keep path down and idempotent rebinding reprobes it",
+        "cleared callback credentials and destroyed/recreated sessions cannot be validated by a stale probe response",
+        "BIND_CONN_TO_SESSION supports BACK and BACK_OR_BOTH on new transports, rejects invalid directions and changes to existing channel roles",
+        "AUTH_SYS CB_NULL carries the offered timestamp, machine name, UID/GID and supplementary groups exactly",
+        "five-second probe timeout ignores late success; rebind recovers the path without recreating the session",
+        "losing the only callback transport sets CB_PATH_DOWN on a surviving forechannel connection",
+        "CB_NULL success alone does not validate the sequenced backchannel; CB_SEQUENCE success on the wrong transport is ignored",
+        "truncated/trailing XDR, bad status/tag/count/op/session/sequence/slot and CB_SEQUENCE errors close the transport before exact retry; only a valid reply advances the slot",
+        "successful CB_SEQUENCE advances exactly once; BACKCHANNEL_CTL retains the session sequence and ignores old duplicate replies",
+        "BIND and callback program replacement never retry an outstanding CB_COMPOUND on a live transport; its original reply releases the slot without validating the new program",
+        "completion of a callback issued before credential removal advances its slot but cannot resurrect the disabled backchannel",
+        "CB_COMPOUND timeout closes the original transport before retry; stale RPC replies on the replacement cannot complete the unresolved slot",
+        "one callback slot serializes multiple bound paths; transport loss retries the unresolved request on another bound connection",
+        "loss of the only backchannel with an unanswered CB_COMPOUND reports CB_PATH_DOWN_SESSION; binding a replacement clears that flag and preserves the pending sequence",
+        "client-advertised slot growth beyond CREATE_SESSION and shrink back to zero are accepted without allocation or increasing callback concurrency",
+        "destroying and recreating a session starts a distinct callback slot at sequence one; old CB_COMPOUND success cannot validate it",
+        "UINT32_MAX offered callback slots require only slot zero; AUTH_SYS credentials must fit the negotiated complete CB_COMPOUND request size"
+      ],
+      "sanitizers": true
+    },
+    "state": {
+      "status": "passed",
+      "checks": [
+        "BIND_CONN_TO_SESSION on a fresh connection, PUTPUBFH, TEST_STATEID old/current states, FREE_STATEID held/unlocked states and read-only OPEN_DOWNGRADE",
+        "one kernel-style session accepts multiple mapped users without sharing their open authority",
+        "exclusive lock conflicts, denied owner details, disjoint writes and CLOSE with held locks",
+        "partial unlock splits ranges and preserves neighboring conflicts",
+        "process restart persists split lock ranges; matching client reclaims OPEN and locks before RECLAIM_COMPLETE"
+      ]
+    },
+    "pynfs_client": {
+      "status": "passed",
+      "client": "pinned linux-nfs/pynfs unmodified RPC and NFS4Client implementation",
+      "scope": "custom scenario; not the full upstream callback test suite",
+      "checks": [
+        "CB_NOTIFY_LOCK decoded and acknowledged by pynfs; matching handle/client/owner; explicit retry acquires the lock"
+      ],
+      "sanitizers": true
+    }
+  },
+  "remote": {
+    "status": "pending",
+    "workflow": "smb-metadata.yml",
+    "notification_platforms": [
+      "GCC",
+      "Clang ASan/UBSan",
+      "MSVC"
+    ],
+    "pynfs_client_platforms": [
+      "GCC",
+      "Clang ASan/UBSan"
+    ]
+  },
+  "limits": [
+    "The notification is optional and never grants or reserves a lock; clients must continue polling.",
+    "Waiters are nonpersistent, limited to 128 globally and 16 per client; maintenance performs at most eight fresh-authority attempts per pass.",
+    "The pynfs result uses a custom scenario with the unmodified upstream RPC/NFS client, not the entire upstream callback suite.",
+    "CB_RECALL/delegation, other callback operations, RPCSEC_GSS callbacks and full SMB/NFS conformance remain unfinished."
+  ]
+}

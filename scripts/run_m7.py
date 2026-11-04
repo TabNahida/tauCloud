@@ -79,6 +79,9 @@ def main():
     commands += [[sys.executable, 'tests/nfs_backchannel_integration.py', '--bin', str(binary),
                   '--output', str(output.with_suffix('.nfs-backchannel.json'))]
                  + (['--sanitizers'] if args.sanitizers else [])]
+    commands += [[sys.executable, 'tests/nfs_notify_lock_integration.py', '--bin', str(binary),
+                  '--output', str(output.with_suffix('.nfs-notify-lock.json'))]
+                 + (['--sanitizers'] if args.sanitizers else [])]
     commands += [[sys.executable, 'tests/nfs_session_negotiation.py', '--bin', str(binary),
                   '--output', str(output.with_suffix('.nfs-session-negotiation.json'))]
                  + (['--sanitizers'] if args.sanitizers else [])]

@@ -50,6 +50,8 @@ on:
       - 'src/nfs_backchannel.inc'
       - 'include/taucloud/nfs.hpp'
       - 'tests/nfs_backchannel_integration.py'
+      - 'tests/nfs_notify_lock_integration.py'
+      - 'src/nfs_locks.inc'
       - 'src/nfs_gss.inc'
       - 'src/gss.cpp'
       - 'include/taucloud/gss.hpp'
@@ -64,6 +66,7 @@ on:
       - 'tests/nfs_attributes_integration.py'
       - 'tests/nfs_session_negotiation.py'
       - 'tests/pynfs_acceptance.py'
+      - 'tests/pynfs_notify_lock.py'
       - 'tests/native_allocation.py'
   workflow_dispatch:
 permissions:
@@ -106,6 +109,8 @@ jobs:
         run: python tests/nfs_backchannel_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/nfs-backchannel.json
       - name: NFSv4.1 channel limits and CREATE_SESSION replay
         run: python tests/nfs_session_negotiation.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/nfs-session-negotiation.json
+      - name: NFSv4.1 blocking lock notification and callback replay
+        run: python tests/nfs_notify_lock_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/nfs-notify-lock.json
       - name: SMB session renewal and failure cleanup
         run: python tests/smb_reauthentication.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/smb-reauth.json
       - name: Persistent ACLs and cross-protocol permission checks
@@ -157,6 +162,9 @@ jobs:
       - name: Unmodified pynfs callback program and RPC version
         if: runner.os == 'Linux'
         run: python tests/pynfs_acceptance.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/pynfs-backchannel.json CSESS20 CSESS21
+      - name: Unmodified pynfs client blocking lock notification
+        if: runner.os == 'Linux'
+        run: python tests/pynfs_notify_lock.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/pynfs-notify-lock.json
       - name: SMB3 dialects and encrypted allocation
         run: |
           ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_m6_tests${{ matrix.suffix }}
@@ -172,4 +180,5 @@ jobs:
             build/acceptance/*.json
             build/acceptance/samba-*.log
             build/acceptance/nfs-gss.*.log
+            build/acceptance/pynfs-*.log
             build/acceptance/smb-gss.*.log

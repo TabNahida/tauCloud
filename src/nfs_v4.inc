@@ -29,6 +29,8 @@ struct session {
   uint32_t callback_slots = 0, callback_sequence = 1;
   bool callback_unresolved = false;
   uint64_t callback_generation = 0;
+  uint32_t callback_operations = 0;
+  std::string callback_extra, callback_references;
 
 };
 struct open_state {
@@ -49,10 +51,16 @@ struct lock_state {
   std::string principal;
   std::vector<lock_range> ranges;
 };
+struct lock_waiter {
+  lock_state state;
+  lock_range range;
+  std::string references;
+};
 std::map<uint64_t, client_id> client_ids;
 std::map<std::string, session> sessions;
 std::map<std::string, open_state> opens;
 std::map<std::string, lock_state> byte_locks;
+std::map<std::string, lock_waiter> lock_waiters;
 std::map<std::string, json> reclaim;
 int64_t grace_end = 0;
 #include "nfs_backchannel.inc"
@@ -963,6 +971,7 @@ std::string v4(const identity &who, reader &r) {
           created.callback_request_limit = back[1];
           created.callback_response_limit = back[2];
           created.callback_slots = back[5];
+          created.callback_operations = back[4];
           configure_callback(created, a);
           bool backchannel = (a.at("flags").get<uint32_t>() & 2) && callback_available(created);
           if (backchannel) created.back_connections.insert(connection);
@@ -1320,7 +1329,8 @@ std::string v4(const identity &who, reader &r) {
           current_state = stateid;
           body.fixed(state.data);
           change4(body, parent_before, parent_after);
-          body.u32(0); put_bitmap(body, attrset); body.u32(0);
+          body.u32(send_backchannel ? 0x20 : 0); // OPEN4_RESULT_MAY_NOTIFY_LOCK
+          put_bitmap(body, attrset); body.u32(0);
         } else if (op == 4) {
           auto id = open_key(a.at("state"), sid);
           auto &o = state4(id, sid, current, 0, who);
@@ -1348,7 +1358,7 @@ std::string v4(const identity &who, reader &r) {
           opens.insert(std::move(node));
           body.fixed(decode_bytes(current_state));
         } else if (op == 12 || op == 13 || op == 14 || op == 45) {
-          lock_operation(who, a, sid, current, current_state, body);
+          lock_operation(who, a, sid, current, current_state, body, ops.front());
         } else if (op == 25 || op == 38 || op == 34) {
           check(current != pseudo, 21);
           auto id = a.at("state").get<std::string>();
