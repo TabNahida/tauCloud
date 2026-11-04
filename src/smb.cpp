@@ -8,6 +8,7 @@
 #include <map>
 #include <set>
 #include <algorithm>
+#include <cstdlib>
 namespace tc {
 namespace {
 using namespace smb_detail;
@@ -540,10 +541,19 @@ struct client : session_state, std::enable_shared_from_this<client> {
   uint64_t next_async_id = 1, executing_command = 0;
   bool dispatching = false, pump_done = false, watchdog_done = false;
   int64_t last_activity = now();
+  std::string trace_id;
   client(smb_state &state, pace::tcp::stream tcp) : s(state), socket(std::move(tcp)) {
     socket.set_no_delay();
+    if (auto value = std::getenv("TAUCLOUD_SMB_TRACE"); value && std::string_view(value) == "1")
+      trace_id = random_hex(8);
   }
-  void close() { socket.close(); }
+  void close() {
+    if (!trace_id.empty() && socket.is_open()) {
+      try { log("smb", "protocol_close", trace_id); } catch (...) {}
+    }
+    socket.close();
+  }
+#include "smb_trace.inc"
   session_state *find_session(uint64_t id) {
     if (!id) return nullptr;
     if (session == id) return this;
@@ -1751,6 +1761,7 @@ struct client : session_state, std::enable_shared_from_this<client> {
           packet = std::move(plain);
         }
         check(packet.size() <= 1024 * 1024);
+        trace_packet(packet, false, encrypted);
         std::vector<bytes> requests;
         std::vector<uint64_t> request_sessions;
         size_t offset = 0;

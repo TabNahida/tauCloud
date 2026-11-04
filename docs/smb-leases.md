@@ -108,6 +108,13 @@ The diagnostic version `7f741bc` again fails Windows native Set-Acl restoration
 with error 59, while the classic cache/security regression passes. Captured
 SMB logs have no cache deadline/watchdog/poll-failure event; the native failure
 remains unresolved ([diagnostic evidence](evidence/pre-m8/smb-native-security-7f-remote.json)).
+`TAUCLOUD_SMB_TRACE=1` enables bounded protocol metadata in the existing rotating
+SMB log for diagnosis. It records command/status/async identifiers and hashed
+file/lease identifiers; it excludes names, payloads, credentials and keys.
+Outbound records describe pre-encryption/write packets, not delivery confirmation.
+The Windows native fixture enables it, and `smb-windows-native.yml` runs that
+fixture independently of the full matrix. Signed and encrypted local probes
+verify roundtrips and trace redaction ([evidence](evidence/pre-m8/smb-protocol-trace-local.json)).
 
 Metadata-only and write-only opens can hold native-backed RWH without gaining
 READ_DATA or WRITE_DATA. Renewal and ACK use the open's actual authority,

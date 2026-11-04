@@ -20,6 +20,7 @@ on:
       - 'tests/smb_anonymous_reauthentication.py'
       - 'tests/linux_native_smb_gss.py'
       - 'src/smb_async.inc'
+      - 'src/smb_trace.inc'
       - 'src/smb_cache.inc'
       - 'tests/smb_oplock_integration.py'
       - 'tests/smb_level2_integration.py'

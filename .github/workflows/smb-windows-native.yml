@@ -1,0 +1,38 @@
+name: Windows native SMB diagnostics
+on:
+  push:
+    paths:
+      - '.github/workflows/smb-windows-native.yml'
+      - 'src/smb*'
+      - 'src/file_smb.inc'
+      - 'src/file_cache.inc'
+      - 'src/file_security.inc'
+      - 'src/native_cache.inc'
+      - 'src/native_files.cpp'
+      - 'tests/windows_native_smb.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: windows-2025
+    timeout-minutes: 20
+    env:
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: '3.1.1'
+      - run: python scripts/fetch_pace.py
+      - run: python scripts/fetch_pace.py --dependency recipes
+      - run: python -m pip install -r tests/smb-requirements.txt
+      - run: xmake f -y -c -p windows -a x64 -m release --m0=n --m1=y --toolchain=msvc --sanitizers=n
+      - run: xmake -y -j 8
+      - name: Native redirector encrypted IO and security descriptors
+        run: python tests/windows_native_smb.py --bin build/windows/x64/release --output build/acceptance/windows-native-security.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-native-smb-diagnostics
+          path: build/acceptance/windows-native-security.json

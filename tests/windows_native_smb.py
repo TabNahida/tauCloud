@@ -71,6 +71,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--bin',type=Path,required=True);p.add_argument('--output',type=Path,required=True)
     args=p.parse_args();assert os.name=='nt'
+    os.environ['TAUCLOUD_SMB_TRACE']='1'
     f=Fixture(args.bin);report=dict(status='failed',host=platform.platform())
     script=f.base/'native-smb.ps1';script.write_text(SCRIPT)
     mapping=f.base/'mapping.txt'

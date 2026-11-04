@@ -131,6 +131,7 @@ struct dispatch_guard {
   ~dispatch_guard() { busy = false; }
 };
 pace::task<void> send_packet(bytes output, bool encrypted) {
+  trace_packet(output, true, encrypted);
   if (encrypted) {
     check(nonce_counter < 65536);
     bytes nonce = nonce_prefix.substr(0, selected.cipher == 1 || selected.cipher == 3 ? 3 : 4) + bytes(8, '\0');

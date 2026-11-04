@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "events": 46,
+  "checks": [
+    "lease request/grant/break/ACK metadata captured",
+    "signed SMB data and query roundtrip preserved",
+    "password, file name, payload and raw lease key absent",
+    "SMB 3.1.1 encrypted CREATE/data/query/break/ACK stays encrypted with redacted metadata diagnostics"
+  ],
+  "encrypted_events": 42,
+  "base_source": "653b2028923ffb2870dd375e0c614fe10817a5a5",
+  "scope": "Opt-in metadata-only SMB tracing, signed/encrypted probes; Windows native Set-Acl root cause is not established.",
+  "source_sha256": {
+    "src/smb.cpp": "b91358592c3bcc45038658f61c1a135fe1a8046e05a5da8a76c3919d24e3c2c1",
+    "src/smb_async.inc": "69758e6d4861e9344fefad54237c83550cb089732c21b754fd3611a79834536d",
+    "src/smb_trace.inc": "9b2ea5df35b2c908b0b3fc7a0cbbefa22c7df4c514c1cd055f5529965be40b8a",
+    "tests/windows_native_smb.py": "4118884b7d4a3cf49448aa67d2e91673e14f763fa4490099b6c2ac60e0b85541",
+    ".github/workflows/smb-windows-native.yml": "9dd856590a4e4ee4327ac1b84f7c78fd7c0ae8034688a1fff32a04074fe94ff0"
+  }
+}
