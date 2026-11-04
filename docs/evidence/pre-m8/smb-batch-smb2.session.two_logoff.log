@@ -1,0 +1,14 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793800346
+time: 2026-11-04 13:52:26.012750
+test: two_logoff
+time: 2026-11-04 13:52:26.012929
+connect tree2 with the same client_guid
+session2: logoff
+transport2: keepalive
+transport2: disconnect
+session1: logoff
+transport1: keepalive
+transport1: disconnect
+time: 2026-11-04 13:52:26.081868
+success: two_logoff

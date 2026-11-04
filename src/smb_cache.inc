@@ -47,7 +47,9 @@ pace::task<void> poll_caches_locked() {
         auto it = files.find(fid);
         if (it == files.end() || it->second.cache_cookie.empty()) continue;
         json request = {{"cookie", it->second.cache_cookie}};
-        auto state = co_await operation(it->second, "cache_poll", it->second.cache_level == 8,
+        auto state = co_await operation(it->second, "cache_poll",
+                                        it->second.cache_level == 8 ||
+                                            (it->second.cache_level == 9 && (it->second.access & 6)),
                                         request);
         auto &h = files.at(fid);
         cache_deadline(h, state);

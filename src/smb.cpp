@@ -1021,7 +1021,7 @@ struct client : session_state, std::enable_shared_from_this<client> {
                       {"attributes", get(p, 92, 4)},
                       {"maximum", maximum},
                       {"explicit_access", explicit_access}};
-      if (requested_oplock == 1 || requested_oplock == 8)
+      if (requested_oplock == 1 || requested_oplock == 8 || requested_oplock == 9)
         request["oplock"] = requested_oplock;
       if (initial_security)
         request["security"] = *initial_security;
@@ -1102,15 +1102,16 @@ struct client : session_state, std::enable_shared_from_this<client> {
         put(b, 84, response_contexts.size(), 4);
         b += response_contexts;
       }
-      if ((requested_oplock == 1 || requested_oplock == 8) &&
+      if ((requested_oplock == 1 || requested_oplock == 8 || requested_oplock == 9) &&
           !meta.at("directory").get<bool>() && access != 0 &&
-          (requested_oplock == 1 || (access & 3) == 3) &&
-          !(options & 0x1000)) {
+          (requested_oplock != 8 || (access & 3) == 3) &&
+          (!(options & 0x1000) || requested_oplock == 9)) {
         std::exception_ptr failure;
         try {
           auto &h = files.at(fid);
           json cache_request = {{"level", requested_oplock}};
-          auto acquired = co_await operation(h, "cache_acquire", requested_oplock == 8,
+          auto acquired = co_await operation(h, "cache_acquire",
+                                             requested_oplock == 8 || (requested_oplock == 9 && (access & 6)),
                                              cache_request);
           if (acquired.at("granted").get<bool>()) {
             h.cache_cookie = acquired.at("cookie");
@@ -1131,11 +1132,11 @@ struct client : session_state, std::enable_shared_from_this<client> {
       // notification requires no ACK; a reply is an invalid oplock protocol,
       // distinct from an unsolicited ACK before any break was issued.
       check(!h.cache_read_break_completed, 0xc00000e3);
-      check(!h.cache_cookie.empty() && h.cache_break_sent && h.cache_level == 8, 0xc0000184);
+      check(!h.cache_cookie.empty() && h.cache_break_sent && (h.cache_level == 8 || h.cache_level == 9), 0xc0000184);
       auto level = get(p, 66, 1);
       bool valid = level == 0 || (level == 1 && h.cache_break_level == 1);
       json request = {{"cookie", h.cache_cookie}, {"level", valid ? level : 0}};
-      auto state = co_await operation(h, "cache_ack", true, request);
+      auto state = co_await operation(h, "cache_ack", h.cache_level == 8 || (h.access & 6), request);
       h.cache_break_sent = false;
       h.cache_break_level = 0;
       h.cache_level = state.at("level");

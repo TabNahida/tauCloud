@@ -1,0 +1,418 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793799785
+time: 2026-11-04 13:43:05.383599
+progress: 66
+test: reconnect1
+time: 2026-11-04 13:43:05.383756
+time: 2026-11-04 13:43:05.569015
+success: reconnect1
+test: reconnect2
+time: 2026-11-04 13:43:05.569027
+time: 2026-11-04 13:43:05.629680
+failure: reconnect2 [
+source4/torture/smb2/session.c:210: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: reauth1
+time: 2026-11-04 13:43:05.629692
+time: 2026-11-04 13:43:05.821623
+success: reauth1
+test: reauth2
+time: 2026-11-04 13:43:05.821635
+time: 2026-11-04 13:43:05.912404
+failure: reauth2 [
+source4/torture/smb2/session.c:361: status was NT_STATUS_LOGON_FAILURE, expected NT_STATUS_OK: smb2_session_setup_spnego failed
+]
+test: reauth3
+time: 2026-11-04 13:43:05.912416
+time: 2026-11-04 13:43:06.045500
+failure: reauth3 [
+source4/torture/smb2/session.c:453: status was NT_STATUS_INVALID_PARAMETER, expected NT_STATUS_OK: smb2_getinfo_file failed
+]
+test: reauth4
+time: 2026-11-04 13:43:06.045513
+time: 2026-11-04 13:43:06.173631
+failure: reauth4 [
+source4/torture/smb2/session.c:566: status was NT_STATUS_INVALID_PARAMETER, expected NT_STATUS_OK: smb2_getinfo_file failed
+]
+test: reauth5
+time: 2026-11-04 13:43:06.173646
+time: 2026-11-04 13:43:06.467433
+failure: reauth5 [
+source4/torture/smb2/session.c:709: status was NT_STATUS_INVALID_PARAMETER, expected NT_STATUS_OK: smb2_getinfo_file failed
+]
+test: reauth6
+time: 2026-11-04 13:43:06.467446
+time: 2026-11-04 13:43:06.531588
+failure: reauth6 [
+source4/torture/smb2/session.c:1016: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: expire1n
+time: 2026-11-04 13:43:06.531601
+WARNING!: smb2.session.expire1 requires --use-kerberos=required!
+time: 2026-11-04 13:43:06.531608
+skip: expire1n [
+source4/torture/smb2/session.c:1106: smb2.session.expire1 requires --use-kerberos=required!
+]
+test: expire1s
+time: 2026-11-04 13:43:06.531609
+WARNING!: smb2.session.expire1 requires --use-kerberos=required!
+time: 2026-11-04 13:43:06.531610
+skip: expire1s [
+source4/torture/smb2/session.c:1106: smb2.session.expire1 requires --use-kerberos=required!
+]
+test: expire1e
+time: 2026-11-04 13:43:06.531612
+WARNING!: smb2.session.expire1 requires --use-kerberos=required!
+time: 2026-11-04 13:43:06.531613
+skip: expire1e [
+source4/torture/smb2/session.c:1106: smb2.session.expire1 requires --use-kerberos=required!
+]
+test: expire2s
+time: 2026-11-04 13:43:06.531614
+WARNING!: smb2.session.expire1 requires --use-kerberos=required!
+time: 2026-11-04 13:43:06.531616
+skip: expire2s [
+source4/torture/smb2/session.c:1346: smb2.session.expire1 requires --use-kerberos=required!
+]
+test: expire2e
+time: 2026-11-04 13:43:06.531617
+WARNING!: smb2.session.expire1 requires --use-kerberos=required!
+time: 2026-11-04 13:43:06.531618
+skip: expire2e [
+source4/torture/smb2/session.c:1346: smb2.session.expire1 requires --use-kerberos=required!
+]
+test: expire_disconnect
+time: 2026-11-04 13:43:06.531620
+WARNING!: smb2.session.expire1 requires --use-kerberos=required!
+time: 2026-11-04 13:43:06.531621
+skip: expire_disconnect [
+source4/torture/smb2/session.c:1722: smb2.session.expire1 requires --use-kerberos=required!
+]
+test: bind1
+time: 2026-11-04 13:43:06.531622
+time: 2026-11-04 13:43:06.562478
+skip: bind1 [
+source4/torture/smb2/session.c:1844: server doesn't support SMB2_CAP_MULTI_CHANNEL
+]
+test: bind2
+time: 2026-11-04 13:43:06.562491
+time: 2026-11-04 13:43:06.598732
+skip: bind2 [
+source4/torture/smb2/session.c:2005: server doesn't support SMB2_CAP_MULTI_CHANNEL
+]
+test: bind_invalid_auth
+time: 2026-11-04 13:43:06.598746
+time: 2026-11-04 13:43:06.628053
+skip: bind_invalid_auth [
+source4/torture/smb2/session.c:2307: server doesn't support SMB2_CAP_MULTI_CHANNEL
+]
+test: bind_different_user
+time: 2026-11-04 13:43:06.628068
+Fallback to anonymous for 'torture:user2name'=NULL 'torture:user2domain'='TAUCLOUD' 'torture:user2password'='REDACTED'time: 2026-11-04 13:43:06.658980
+skip: bind_different_user [
+source4/torture/smb2/session.c:2595: valid user2 credentials are required
+]
+test: bind_negative_smb202
+time: 2026-11-04 13:43:06.658986
+time: 2026-11-04 13:43:06.688927
+failure: bind_negative_smb202 [
+source4/torture/smb2/session.c:2646: status was NT_STATUS_INVALID_PARAMETER_MIX, expected NT_STATUS_OK: smb2_connect options1 failed
+]
+test: bind_negative_smb210s
+time: 2026-11-04 13:43:06.688942
+time: 2026-11-04 13:43:06.784685
+failure: bind_negative_smb210s [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb210d
+time: 2026-11-04 13:43:06.784701
+time: 2026-11-04 13:43:06.877641
+failure: bind_negative_smb210d [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb2to3s
+time: 2026-11-04 13:43:06.877663
+time: 2026-11-04 13:43:06.968704
+failure: bind_negative_smb2to3s [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb2to3d
+time: 2026-11-04 13:43:06.968721
+time: 2026-11-04 13:43:07.063569
+failure: bind_negative_smb2to3d [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3to2s
+time: 2026-11-04 13:43:07.063583
+time: 2026-11-04 13:43:07.151494
+failure: bind_negative_smb3to2s [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3to2d
+time: 2026-11-04 13:43:07.151507
+time: 2026-11-04 13:43:07.238707
+failure: bind_negative_smb3to2d [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3to3s
+time: 2026-11-04 13:43:07.238720
+time: 2026-11-04 13:43:07.330700
+failure: bind_negative_smb3to3s [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3to3d
+time: 2026-11-04 13:43:07.330721
+time: 2026-11-04 13:43:07.422691
+failure: bind_negative_smb3to3d [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3encGtoCs
+time: 2026-11-04 13:43:07.422705
+time: 2026-11-04 13:43:07.514502
+failure: bind_negative_smb3encGtoCs [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3encGtoCd
+time: 2026-11-04 13:43:07.514516
+time: 2026-11-04 13:43:07.601523
+failure: bind_negative_smb3encGtoCd [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3signCtoHs
+time: 2026-11-04 13:43:07.601536
+time: 2026-11-04 13:43:07.687758
+failure: bind_negative_smb3signCtoHs [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3signCtoHd
+time: 2026-11-04 13:43:07.687772
+time: 2026-11-04 13:43:07.776616
+failure: bind_negative_smb3signCtoHd [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3signCtoGs
+time: 2026-11-04 13:43:07.776631
+time: 2026-11-04 13:43:07.868572
+failure: bind_negative_smb3signCtoGs [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3signCtoGd
+time: 2026-11-04 13:43:07.868585
+time: 2026-11-04 13:43:07.968764
+failure: bind_negative_smb3signCtoGd [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3signHtoCs
+time: 2026-11-04 13:43:07.968778
+time: 2026-11-04 13:43:08.064738
+failure: bind_negative_smb3signHtoCs [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3signHtoCd
+time: 2026-11-04 13:43:08.064751
+time: 2026-11-04 13:43:08.154621
+failure: bind_negative_smb3signHtoCd [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3signHtoGs
+time: 2026-11-04 13:43:08.154638
+time: 2026-11-04 13:43:08.246964
+failure: bind_negative_smb3signHtoGs [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3signHtoGd
+time: 2026-11-04 13:43:08.246977
+time: 2026-11-04 13:43:08.338790
+failure: bind_negative_smb3signHtoGd [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3signGtoCs
+time: 2026-11-04 13:43:08.338807
+time: 2026-11-04 13:43:08.437621
+failure: bind_negative_smb3signGtoCs [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3signGtoCd
+time: 2026-11-04 13:43:08.437634
+time: 2026-11-04 13:43:08.526632
+failure: bind_negative_smb3signGtoCd [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3signGtoHs
+time: 2026-11-04 13:43:08.526646
+time: 2026-11-04 13:43:08.614654
+failure: bind_negative_smb3signGtoHs [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3signGtoHd
+time: 2026-11-04 13:43:08.614668
+time: 2026-11-04 13:43:08.712613
+failure: bind_negative_smb3signGtoHd [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3sneGtoCs
+time: 2026-11-04 13:43:08.712626
+time: 2026-11-04 13:43:08.810551
+failure: bind_negative_smb3sneGtoCs [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3sneGtoCd
+time: 2026-11-04 13:43:08.810566
+time: 2026-11-04 13:43:08.898772
+failure: bind_negative_smb3sneGtoCd [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3sneGtoHs
+time: 2026-11-04 13:43:08.898784
+time: 2026-11-04 13:43:08.989852
+failure: bind_negative_smb3sneGtoHs [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3sneGtoHd
+time: 2026-11-04 13:43:08.989870
+time: 2026-11-04 13:43:09.077734
+failure: bind_negative_smb3sneGtoHd [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3sneCtoGs
+time: 2026-11-04 13:43:09.077748
+time: 2026-11-04 13:43:09.166577
+failure: bind_negative_smb3sneCtoGs [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3sneCtoGd
+time: 2026-11-04 13:43:09.166591
+time: 2026-11-04 13:43:09.254547
+failure: bind_negative_smb3sneCtoGd [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3sneHtoGs
+time: 2026-11-04 13:43:09.254560
+time: 2026-11-04 13:43:09.344659
+failure: bind_negative_smb3sneHtoGs [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3sneHtoGd
+time: 2026-11-04 13:43:09.344673
+time: 2026-11-04 13:43:09.436807
+failure: bind_negative_smb3sneHtoGd [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3signC30toGs
+time: 2026-11-04 13:43:09.436822
+time: 2026-11-04 13:43:09.531673
+failure: bind_negative_smb3signC30toGs [
+source4/torture/smb2/session.c:2669: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect
+]
+test: bind_negative_smb3signC30toGd
+time: 2026-11-04 13:43:09.531688
+Failed to connect to SMB2 share \\127.0.0.1\smb - NT_STATUS_CONNECTION_RESET
+time: 2026-11-04 13:43:09.531945
+failure: bind_negative_smb3signC30toGd [
+source4/torture/smb2/smb2.c:37: Establishing SMB2 connection failed
+]
+test: bind_negative_smb3signH2XtoGs
+time: 2026-11-04 13:43:09.531952
+Failed to connect to SMB2 share \\127.0.0.1\smb - NT_STATUS_CONNECTION_RESET
+time: 2026-11-04 13:43:09.532082
+failure: bind_negative_smb3signH2XtoGs [
+source4/torture/smb2/smb2.c:37: Establishing SMB2 connection failed
+]
+test: bind_negative_smb3signH2XtoGd
+time: 2026-11-04 13:43:09.532084
+Failed to connect to SMB2 share \\127.0.0.1\smb - NT_STATUS_CONNECTION_RESET
+time: 2026-11-04 13:43:09.532202
+failure: bind_negative_smb3signH2XtoGd [
+source4/torture/smb2/smb2.c:37: Establishing SMB2 connection failed
+]
+test: bind_negative_smb3signGtoC30s
+time: 2026-11-04 13:43:09.532205
+Failed to connect to SMB2 share \\127.0.0.1\smb - NT_STATUS_CONNECTION_RESET
+time: 2026-11-04 13:43:09.532320
+failure: bind_negative_smb3signGtoC30s [
+source4/torture/smb2/smb2.c:37: Establishing SMB2 connection failed
+]
+test: bind_negative_smb3signGtoC30d
+time: 2026-11-04 13:43:09.532323
+Failed to connect to SMB2 share \\127.0.0.1\smb - NT_STATUS_CONNECTION_RESET
+time: 2026-11-04 13:43:09.532466
+failure: bind_negative_smb3signGtoC30d [
+source4/torture/smb2/smb2.c:37: Establishing SMB2 connection failed
+]
+test: bind_negative_smb3signGtoH2Xs
+time: 2026-11-04 13:43:09.532468
+Failed to connect to SMB2 share \\127.0.0.1\smb - NT_STATUS_CONNECTION_RESET
+time: 2026-11-04 13:43:09.532643
+failure: bind_negative_smb3signGtoH2Xs [
+source4/torture/smb2/smb2.c:37: Establishing SMB2 connection failed
+]
+test: bind_negative_smb3signGtoH2Xd
+time: 2026-11-04 13:43:09.532645
+Failed to connect to SMB2 share \\127.0.0.1\smb - NT_STATUS_CONNECTION_RESET
+time: 2026-11-04 13:43:09.532766
+failure: bind_negative_smb3signGtoH2Xd [
+source4/torture/smb2/smb2.c:37: Establishing SMB2 connection failed
+]
+test: two_logoff
+time: 2026-11-04 13:43:09.532768
+Failed to connect to SMB2 share \\127.0.0.1\smb - NT_STATUS_CONNECTION_RESET
+time: 2026-11-04 13:43:09.532876
+failure: two_logoff [
+source4/torture/smb2/smb2.c:37: Establishing SMB2 connection failed
+]
+test: signing-hmac-sha-256
+time: 2026-11-04 13:43:09.532879
+Failed to connect to SMB2 share \\127.0.0.1\smb - NT_STATUS_CONNECTION_RESET
+time: 2026-11-04 13:43:09.533008
+failure: signing-hmac-sha-256 [
+source4/torture/smb2/smb2.c:37: Establishing SMB2 connection failed
+]
+test: signing-aes-128-cmac
+time: 2026-11-04 13:43:09.533010
+Failed to connect to SMB2 share \\127.0.0.1\smb - NT_STATUS_CONNECTION_RESET
+time: 2026-11-04 13:43:09.533148
+failure: signing-aes-128-cmac [
+source4/torture/smb2/smb2.c:37: Establishing SMB2 connection failed
+]
+test: signing-aes-128-gmac
+time: 2026-11-04 13:43:09.533150
+Failed to connect to SMB2 share \\127.0.0.1\smb - NT_STATUS_CONNECTION_RESET
+time: 2026-11-04 13:43:09.533261
+failure: signing-aes-128-gmac [
+source4/torture/smb2/smb2.c:37: Establishing SMB2 connection failed
+]
+test: encryption-aes-128-ccm
+time: 2026-11-04 13:43:09.533263
+Failed to connect to SMB2 share \\127.0.0.1\smb - NT_STATUS_CONNECTION_RESET
+time: 2026-11-04 13:43:09.533442
+failure: encryption-aes-128-ccm [
+source4/torture/smb2/smb2.c:37: Establishing SMB2 connection failed
+]
+test: encryption-aes-128-gcm
+time: 2026-11-04 13:43:09.533445
+Failed to connect to SMB2 share \\127.0.0.1\smb - NT_STATUS_CONNECTION_RESET
+time: 2026-11-04 13:43:09.533593
+failure: encryption-aes-128-gcm [
+source4/torture/smb2/smb2.c:37: Establishing SMB2 connection failed
+]
+test: encryption-aes-256-ccm
+time: 2026-11-04 13:43:09.533595
+Failed to connect to SMB2 share \\127.0.0.1\smb - NT_STATUS_CONNECTION_RESET
+time: 2026-11-04 13:43:09.533772
+failure: encryption-aes-256-ccm [
+source4/torture/smb2/smb2.c:37: Establishing SMB2 connection failed
+]
+test: encryption-aes-256-gcm
+time: 2026-11-04 13:43:09.533776
+Failed to connect to SMB2 share \\127.0.0.1\smb - NT_STATUS_CONNECTION_DISCONNECTED
+time: 2026-11-04 13:43:09.533950
+failure: encryption-aes-256-gcm [
+source4/torture/smb2/smb2.c:37: Establishing SMB2 connection failed
+]
+test: ntlmssp_bug14932
+time: 2026-11-04 13:43:09.533953
+Failed to connect to SMB2 share \\127.0.0.1\smb - NT_STATUS_CONNECTION_RESET
+time: 2026-11-04 13:43:09.534076
+failure: ntlmssp_bug14932 [
+source4/torture/smb2/smb2.c:37: Establishing SMB2 connection failed
+]

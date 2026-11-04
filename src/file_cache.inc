@@ -41,7 +41,7 @@ void cache_conflict(const std::string &space, const std::string &path,
     if (h.cache && id != owner && h.space == space &&
         (beneath(h.path, path) || beneath(path, h.path))) {
       auto target = level;
-      if (target == 1 && h.cache_level == 8 && !locks.empty()) {
+      if (target == 1 && (h.cache_level == 8 || h.cache_level == 9) && !locks.empty()) {
         auto native = h.file.info().at("object").get<std::string>();
         if (std::any_of(locks.begin(), locks.end(),
             [&](const auto &held) { return held.object == native; })) target = 0;
@@ -94,9 +94,10 @@ json cache_dispatch(const std::string &op, const json &body, const json &grant, 
   require(!h.directory && h.access != 0, "forbidden");
   if (op == "smb_cache_acquire") {
     auto level = body.value("level", 8u);
-    require(level == 1 || level == 8, "invalid_request");
+    require(level == 1 || level == 8 || level == 9, "invalid_request");
     if (level == 8)
       require(h.writable && (h.access & 3) == 3 && grant.at("write").get<bool>(), "forbidden");
+    if (level == 9 && h.writable) require(grant.at("write").get<bool>(), "forbidden");
     if (!h.cache && cache_native_deadline_safe()) {
       auto cookie = random_hex(16);
       std::shared_ptr<native_cache_guard> guard;
@@ -135,6 +136,7 @@ json cache_dispatch(const std::string &op, const json &body, const json &grant, 
   require(h.cache != nullptr, "invalid_device_state");
   if (h.cache_level == 8)
     require(h.writable && (h.access & 3) == 3 && grant.at("write").get<bool>(), "forbidden");
+  if (h.cache_level == 9 && h.writable) require(grant.at("write").get<bool>(), "forbidden");
   require(body.at("cookie") == h.cache_cookie, "invalid_request");
   if (h.cache->breaking()) cache_break(h);
   if (op == "smb_cache_poll") {
@@ -144,12 +146,12 @@ json cache_dispatch(const std::string &op, const json &body, const json &grant, 
   require(op == "smb_cache_ack" || op == "smb_cache_release", "not_supported");
   require(op != "smb_cache_ack" || h.cache_break_until, "invalid_device_state");
   auto level = op == "smb_cache_ack" ? body.value("level", 0u) : 0u;
-  require(level == 0 || (level == 1 && h.cache_level == 8 && h.cache_downgrade_pending),
+  require(level == 0 || (level == 1 && (h.cache_level == 8 || h.cache_level == 9) && h.cache_downgrade_pending),
           "invalid_request");
-  // Only EXCLUSIVE can hold dirty client writes. A Level II participant may
-  // have a physically read-only handle (FlushFileBuffers requires write access
-  // on Windows), and cannot write until all read caches have been invalidated.
-  if (h.cache_level == 8) h.file.flush();
+  // Writable EXCLUSIVE/BATCH holders can have dirty client writes. Level II
+  // and read-only BATCH opens cannot; FlushFileBuffers would require write
+  // access on their physical Windows handles.
+  if ((h.cache_level == 8 || h.cache_level == 9) && h.writable) h.file.flush();
   if (level == 1) {
     h.cache_level = 1;
     h.cache_downgrade_pending = false;

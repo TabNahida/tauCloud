@@ -1,8 +1,8 @@
 # Native cache exclusion
 
-Native exclusion now backs SMB EXCLUSIVE and Level II data-oplock grants,
-downgrade and invalidation on eligible regular-file opens. BATCH oplocks, SMB leases, directory
-caching and NFS delegations remain unfinished. Full SMB/NFS compatibility
+Native exclusion now backs SMB EXCLUSIVE, BATCH and Level II oplock grants,
+downgrade and invalidation on eligible regular-file opens. Complete BATCH timeout
+and namespace behavior, SMB leases, directory caching and NFS delegations remain unfinished. Full SMB/NFS compatibility
 remains open.
 
 `native_file::cache_guard()` pins the same native object as the open file.
@@ -238,9 +238,10 @@ checks use the pinned native identity without triggering an incidental open.
 dialects, independent transports, actual native writers, read-only-share renewal,
 locks and downgrade races, cancellation, compound writes and both deletion modes.
 The full unmodified Samba oplock diagnostic is retained with every failure.
-The eight selectors exclusive1/2/3/4/5/9 and levelii500/501 are included in remote
-acceptance alongside the independent wire tests. Remote Level II acceptance is
-pending; those cache steps continue after unrelated test failures when the build
+The earlier eight selectors exclusive1/2/3/4/5/9 and levelii500/501 remain in remote
+acceptance alongside the independent wire tests. Level II passes the complete
+GCC/Clang/MSVC targeted matrix at `07a7fe5` ([evidence](evidence/pre-m8/smb-level2-07-remote.json));
+the newer overwrite/BATCH acceptance is separate. These cache steps continue after unrelated test failures when the build
 succeeded, while the job retains its original failure status.
 
 ## Overwrite and shared native descriptions
@@ -271,9 +272,43 @@ sharing violation follows the older Windows behavior described in
 the current rename algorithm permits that destination-directory open. Its raw
 failure remains visible, and later cache assertions in that case remain unproved.
 
+## BATCH handle caching
+
+BATCH grants now retain the server open until a cached CLOSE, acknowledged
+downgrade, teardown or fencing. Unlike EXCLUSIVE, a conflicting BATCH open
+recalls before access/sharing checks: the holder may close its cached handle and
+remove the conflict. If it ACKs Level II while keeping incompatible sharing,
+the waiting open fails sharing after the ACK. The same conflict does not recall
+the remaining Level II cache again. This follows the BATCH ordering in
+[MS-FSA open](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fsa/41f3734a-5bba-4c3b-9d04-7baafc9b7bfe)
+and [oplock breaks](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fsa/306239fb-cb60-49fe-b293-df4d1a5f757a).
+
+CREATE type/parameter validation precedes BATCH recall. Attribute-only preserving opens do not recall BATCH; attribute-only creation
+can itself receive BATCH without acquiring data rights. Read-only BATCH grants
+use read authority for renewal and skip write-only native flush operations.
+Compatible data opens downgrade to shared Level II; overwrite recalls to NONE.
+Native data conflicts, cached-lock flushes during downgrade, cancellation,
+ACK ownership, close and fixed deadlines use the shared coordinator.
+DELETE_ON_CLOSE can receive BATCH: a recalled cached CLOSE activates deletion,
+and a waiting OPEN observes the missing file. Original session replacement and
+failed-reauthentication cleanup cases now exercise these cached deletion handles.
+
+[Local BATCH evidence](evidence/pre-m8/smb-batch-local.json) includes 37 independent
+groups across four signed/encrypted dialects, 40 Level II and 28 EXCLUSIVE
+regression groups, 12,573 SMB core checks and 98 NFS core checks. The complete
+original oplock suite now passes 35/42 with no skips. The seven failures remain:
+exclusive6/batch19/batch20 (old parent-directory sharing expectation),
+batch22a (same-transport unacknowledged timeout recovery), batch22b (requires
+Samba's test-only transport-blocking FSCTL or an external firewall setup), and
+batch26/stream1 (alternate data streams). Neither those differences nor their
+later unexecuted assertions count as passes. Cross-platform BATCH acceptance
+is pending. The native primitive still guarantees data exclusion only; the
+new BATCH state does not add host-level namespace exclusion to Linux leases or
+Windows RW oplocks.
+
 ## Remaining integration
 
-BATCH caching, SMB leases, namespace/handle caching, remaining Level II/exclusive
+BATCH same-transport timeout recovery, SMB leases, complete namespace/handle caching, remaining Level II/exclusive
 transitions and the complete
 original Samba suite still need implementation and evidence. NFS still needs
 delegation state, recalls and revocation. Linux's finite kernel break deadline

@@ -361,9 +361,9 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     native_file cached_file;
     std::string cache_owner;
     auto requested_cache = body.value("oplock", 0u);
-    require(requested_cache == 0 || requested_cache == 1 || requested_cache == 8,
+    require(requested_cache == 0 || requested_cache == 1 || requested_cache == 8 || requested_cache == 9,
             "invalid_request");
-    bool data_open = (requested_cache == 1 || requested_cache == 8) && (access & 1);
+    bool data_open = (requested_cache == 1 || requested_cache == 8 || requested_cache == 9) && (access & 1);
     bool preserving_data = disposition == 1 || disposition == 3;
     bool preserving_open = preserving_data && !(options & 0x1000);
     bool attribute_open = !body.value("maximum", false) && !(access & ~0x00100180u);
@@ -397,6 +397,17 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     require(!existing || disposition != 2, "already_exists");
     uint32_t requested_attributes = body.value("attributes", uint32_t(0));
     auto normalized_attributes = smb_attribute_value(requested_attributes, directory);
+    // A BATCH holder may have already closed this file locally and retained
+    // only its server handle. Recall before checking sharing/access so CLOSE
+    // can remove that conflict. EXCLUSIVE has no handle caching and still
+    // fails sharing before recall. Attribute-only preserving opens are exempt.
+    if (existing && !(attribute_open && preserving_data)) {
+      bool batch = std::any_of(handles.begin(), handles.end(), [&](const auto &entry) {
+        const auto &held = entry.second;
+        return held.cache && held.cache_level == 9 && held.space == space && held.path == path;
+      });
+      if (batch) cache_conflict(space, path, "", preserving_data ? 1 : 0);
+    }
     bool truncate = existing && (disposition == 0 || disposition == 4 || disposition == 5);
     // MS-FSA 2.1.5.1.2 adds these rights for an existing unnamed stream.
     // Check them against both the DACL and sharing before recalling caches;
@@ -670,7 +681,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
   }
   if (cleanup) {
     if (h.cache) {
-      if (h.cache_level == 8) h.file.flush();
+      if ((h.cache_level == 8 || h.cache_level == 9) && h.writable) h.file.flush();
       h.cache.reset(); h.cache_cookie.clear();
       h.cache_authority_until = h.cache_break_until = 0;
     }
@@ -962,7 +973,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
       }
     }
     locks = std::move(candidate);
-    if (!unlocking && h.cache && h.cache_level == 8 && h.cache_break_until)
+    if (!unlocking && h.cache && (h.cache_level == 8 || h.cache_level == 9) && h.cache_break_until)
       cache_break(h);
     return {{"locked", true}};
   }

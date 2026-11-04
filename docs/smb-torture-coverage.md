@@ -2,13 +2,16 @@
 
 The client is unmodified Samba 4.19.5 from Ubuntu 24.04. Its SMB2 inventory contains 576 cases. The executable regression selection lives in `tests/samba-profile.json`; `tests/samba_torture.py` runs it when no selectors are supplied. A client exit code of zero without a success record is not accepted. Skipped cases and mixed pass/skip groups are not passes.
 
-The newer [complete oplock diagnostic](evidence/pre-m8/smb-overwrite-full-oplock.log)
-passes 8 of 42 cases without skips: exclusive1/2/3/4/5/9 and levelii500/501.
-The remaining 34 failures are retained. Exclusive6's parent-DELETE status
+The newer [complete oplock diagnostic](evidence/pre-m8/smb-batch-full-oplock.log)
+passes 35 of 42 cases without skips. The seven remaining failures are retained:
+exclusive6, batch19/20, batch22a/22b, batch26 and stream1. Exclusive6 and
+batch19/20's parent-DELETE status
 expectation matches older Windows behavior, whereas the current implementation
 uses modern destination-directory sharing (product note 185 below). That
 difference does not establish its later oplock assertions or close the overall
-gate. BATCH, SMB leases and NFS delegation integration remain unfinished.
+gate. BATCH grants/recall/cached closes now work, including attribute-only and
+read-only opens. Same-transport BATCH timeout recovery, alternate streams,
+SMB leases and NFS delegation integration remain unfinished.
 
 The selected contract is the existing [ADR 0008](decisions/0008-smb-profile.md) with [M6 security extensions](m6.md): ordinary confined files/directories, 64 KiB operations, 1024-entry directory snapshots, persistent DOS attributes/EAs and queued blocking locks, persistent simple Windows DACLs, but no ADS, caching, durable opens or multichannel. The selection does not establish general Windows-server or Samba equivalence.
 
@@ -51,7 +54,7 @@ Completing ready notifications at SMB frame boundaries now passes the original `
 
 The complete unmodified notification diagnostic now finishes with 21 successes and two failures: `session-reconnect` and `tree`. Every original assertion remains in [evidence](evidence/pre-m8/smb-notify-boundary-local.json). The 21 successful selectors are included in regression; this is explicitly not a full-suite pass.
 
-The session-table extension passes original `notify.session-reconnect` and preserves `session.two_logoff`. Eight original `session.reconnect1/2` and `session.reauth1`–`reauth6` diagnostics still fail at their initial BATCH-oplock assertion; they are retained as failures, not counted as renewed-session coverage. Independent signed/encrypted clients cover multiplexing and scoped replacement without requiring an unimplemented oplock ([evidence](evidence/pre-m8/smb-multisession-local.json)).
+The session-table extension passes original `notify.session-reconnect` and preserves `session.two_logoff`. Earlier original `session.reconnect1/2` and `session.reauth1`–`reauth6` diagnostics failed at their initial BATCH-oplock assertion ([earlier evidence](evidence/pre-m8/smb-multisession-local.json)). BATCH and cached delete-on-close now let original reconnect1/2 and reauth1/6 pass; two_logoff still passes. Reauth2–5 and the rest of the full session suite remain open. The [BATCH evidence](evidence/pre-m8/smb-batch-local.json) retains both the early full 66-case diagnostic and isolated selector results, including later connection-reset failures in the full process; these are not substituted with the five passing selectors.
 
 The dot-path and removed-subtree-watch increment passes the complete original `smb2.notify` suite locally: **23 successes, zero failures/errors/skips**. The independent path, 110-cycle/440-event watch-reuse and original notification regressions also pass under Clang ASan/UBSan. The targeted workflow now runs the entire original suite. This remains local increment evidence, not full SMB/NFS or stable cross-platform conformance: the earlier GCC backend `mask-change` failure (two events delivered to one pending request) remains under investigation. See [implementation](smb-paths.md), [local evidence](evidence/pre-m8/smb-paths-local.json) and [remote failure](evidence/pre-m8/smb-notify-a508-backend-failure.json).
 

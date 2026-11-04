@@ -157,18 +157,24 @@ sharing-before-recall correction passes original exclusive1/3/4 locally and on
 GCC/Clang at `4420774`; that run has an unresolved Windows NFS EXCHANGE_ID
 timeout ([evidence](docs/evidence/pre-m8/smb-shared-cache-442-remote.json)). Attribute-only OPEN/OPEN_IF now retains the pinned native
 object without recalling data caches; mutation still recalls first. Four-dialect
-local checks pass; the new original Samba exclusive4 selection and cross-platform
-acceptance are pending. The file domain now supports EXCLUSIVE-to-Level-II
+local checks and original Samba exclusive4 pass; the full targeted three-platform
+acceptance passes at `07a7fe5`. The file domain now supports EXCLUSIVE-to-Level-II
 downgrade and shared native exclusion with independent reader authority,
 write/lock invalidation, close and expiry tests. Level II wire grants, no-ACK
 invalidation, read-only-share renewal, compound writes, delete-pending and
-downgrade escalation now pass local checks; remote acceptance is pending
-([evidence](docs/evidence/pre-m8/smb-level2-local.json)). The full original oplock
+downgrade escalation now pass local checks and the entire GCC/Clang/MSVC
+targeted matrix at `07a7fe5` ([local](docs/evidence/pre-m8/smb-level2-local.json),
+[remote](docs/evidence/pre-m8/smb-level2-07-remote.json)). The full original oplock
 suite still fails. Existing-file overwrite/supersede now add and check implicit
 rights before recall, retain native descriptions for subsequent shared grants,
 and pass original exclusive5/9 locally. The full suite is now 8 passed / 34 failed,
 with every failure retained; cross-platform overwrite acceptance is pending
-([evidence](docs/evidence/pre-m8/smb-overwrite-local.json)). BATCH, leases, remaining cache transitions, namespace/handle
+([evidence](docs/evidence/pre-m8/smb-overwrite-local.json)). BATCH grants now recall
+before sharing checks and permit cached CLOSE, attribute-only creation, read-only
+renewal and downgrade. Local independent checks pass and the full original
+oplock suite is 35 passed / 7 failed without skips; all remaining failures are
+retained ([evidence](docs/evidence/pre-m8/smb-batch-local.json)). Cross-platform
+BATCH acceptance, same-transport timeout recovery, leases, remaining cache transitions, namespace/handle
 caching and NFS delegations remain open; see
 [native cache coherence](docs/native-cache-coherence.md).
 

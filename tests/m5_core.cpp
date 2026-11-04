@@ -386,9 +386,9 @@ int main(int argc, char **argv) {
       call("disposition", path, {{"handle", second}, {"delete", true}});
       call("close", path, {{"handle", second}});
     }
-    {
+    for (unsigned level : {8u, 9u}) {
       auto h = open("cache-escalation");
-      auto cached = call("cache_acquire", "cache-escalation", {{"handle", h}});
+      auto cached = call("cache_acquire", "cache-escalation", {{"handle", h}, {"level", level}});
       auto control = json{{"handle", h}, {"cookie", cached.at("cookie")}};
       rejected([&] { call("open", "cache-escalation", {{"access", 0x13019f},
           {"sharing", 7}, {"disposition", 1}, {"options", 0x40}, {"oplock", 8}}); },
@@ -419,16 +419,18 @@ int main(int argc, char **argv) {
         body["grant"] = grant("readonly-cache", false, false);
         return store->dispatch("smb_" + op, body, ctx("smb"));
       };
-      auto reader = ro("open", {{"access", 0x120089}, {"sharing", 7},
-          {"disposition", 1}, {"options", 0x40}}).at("handle");
-      auto cache = ro("cache_acquire", {{"handle", reader}, {"level", 1}});
-      ok(cache.at("granted") && cache.at("level") == 1);
-      auto native = native_file::root(base / "files");
-      rejected([&] { native.open("alice/readonly-cache", false, false, true); }, "locked");
-      ok(!ro("cache_ack", {{"handle", reader}, {"cookie", cache.at("cookie")}}).at("granted"));
-      ok(ro("cache_acquire", {{"handle", reader}, {"level", 1}}).at("granted"));
-      ro("close", {{"handle", reader}});
-      ok(native.open("alice/readonly-cache").read(0, 4) == "read");
+      for (unsigned level : {1u, 9u}) {
+        auto reader = ro("open", {{"access", 0x120089}, {"sharing", 7},
+            {"disposition", 1}, {"options", 0x40}}).at("handle");
+        auto cache = ro("cache_acquire", {{"handle", reader}, {"level", level}});
+        ok(cache.at("granted") && cache.at("level") == level);
+        auto native = native_file::root(base / "files");
+        rejected([&] { native.open("alice/readonly-cache", false, false, true); }, "locked");
+        ok(!ro("cache_ack", {{"handle", reader}, {"cookie", cache.at("cookie")}}).at("granted"));
+        ok(ro("cache_acquire", {{"handle", reader}, {"level", level}}).at("granted"));
+        ro("close", {{"handle", reader}});
+        ok(native.open("alice/readonly-cache").read(0, 4) == "read");
+      }
       writer = open("readonly-cache");
       call("disposition", "readonly-cache", {{"handle", writer}, {"delete", true}});
       call("close", "readonly-cache", {{"handle", writer}});
