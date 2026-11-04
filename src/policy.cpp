@@ -93,6 +93,11 @@ int64_t epoch(sqlite3 *db) {
 }
 std::string nfs_user(sqlite3 *db, const json &e, const json &cred, bool discovery = false) {
   require(e.at("enabled").get<bool>(), "forbidden");
+  if (cred.value("auth", "") == "none") {
+    require(discovery, "wrong_security");
+    require(exists_user(db, e.at("anonymous")), "forbidden");
+    return e.at("anonymous");
+  }
   if (cred.value("auth", "") == "rpcsec-gss") {
     if (e.at("trust") != "rpcsec-gss") {
       require(discovery, "wrong_security");
@@ -285,9 +290,10 @@ json policy_dispatch(sqlite3 *db, const config &c, const std::string &operation,
     if (!nfs_export.is_null()) {
       grant["export"] = nfs_export;
       const auto &credential = body.at("credential");
-      if (credential.value("auth", "") == "rpcsec-gss" && nfs_export.at("trust") != "rpcsec-gss") {
-        // An authenticated principal without a mapping on an AUTH_SYS export
-        // gets only the configured anonymous identity for security discovery.
+      if (credential.value("auth", "") == "none" ||
+          (credential.value("auth", "") == "rpcsec-gss" && nfs_export.at("trust") != "rpcsec-gss")) {
+        // Anonymous RPC and a GSS principal on an AUTH_SYS export get only the
+        // configured anonymous identity for security discovery, without groups.
         require(discovery, "forbidden");
         grant["nfs_uid"] = 65534;
         grant["nfs_gid"] = 65534;

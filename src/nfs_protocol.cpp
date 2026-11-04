@@ -555,6 +555,7 @@ struct server::impl {
       auto vb = r.opaque(400);
       if (!authenticated && (vf != 0 || !vb.empty() ||
           (flavor != 1 && !(flavor == 0 && (proc == 0 || prog == 100000 || prog == 100024 ||
+              (prog == 100003 && vers == 4) ||
               (prog == 100005 && (proc == 2 || proc == 5)))))))
         return reply.u32(1).u32(1).u32(5).data;
       identity who;
@@ -576,6 +577,12 @@ struct server::impl {
         if (!credential.empty())
           throw xdr_error();
         who.credential = json::object();
+        if (prog == 100003 && vers == 4) {
+          // AUTH_NONE can establish a separate session for SECINFO discovery.
+          // It is never the AUTH_SYS root-squash identity or a file-access flavor.
+          who.credential = {{"auth", "none"}};
+          who.key = digest(who.credential.dump());
+        }
         if (prog == 100005 && (proc == 2 || proc == 5)) {
           // Standard showmount discovery may use AUTH_NONE. Give it only the
           // root-squashed namespace, never an unfiltered list of exports.

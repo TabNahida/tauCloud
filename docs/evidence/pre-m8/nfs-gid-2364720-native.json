@@ -1,0 +1,114 @@
+{
+  "source": "23647207e2df1360d6c1bb543ef0c0ed45738f86",
+  "recorded_at": "2026-11-04T04:03:58.588410+00:00",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41769000411",
+  "job": 126374029081,
+  "artifact": 13293979570,
+  "artifact_sha256": "969fb752ad75a640dc682a02cd99379e1a2b0d1431e8e7aac570ebbffc21443f",
+  "status": "passed",
+  "scope": "Native Linux AUTH_SYS NFSv3/v4.1 including chmod, NFSv4 ACLs, clearing setuid and exact inherited setgid GID; Samba SMB2/3 and NLM reboot recovery regressions. This is not GSS native acceptance or full job success.",
+  "profiles": [
+    {
+      "name": "smbclient-2.1",
+      "status": "passed"
+    },
+    {
+      "name": "smbclient-3.1.1",
+      "status": "passed"
+    },
+    {
+      "name": "kernel-nfs-3",
+      "status": "passed"
+    },
+    {
+      "name": "kernel-nfs-4.1",
+      "status": "passed"
+    },
+    {
+      "name": "kernel-nfs-4.1-root",
+      "status": "passed"
+    }
+  ],
+  "nfs41": [
+    {
+      "name": "kernel-nfs-4.1",
+      "status": "passed",
+      "commands": [
+        {
+          "command": [
+            "sudo",
+            "-n",
+            "mount",
+            "-t",
+            "nfs",
+            "-o",
+            "vers=4.1,proto=tcp,port=50881,sec=sys,soft,timeo=10,retrans=1",
+            "127.0.0.1:/nfs",
+            "/tmp/tc3-mloo8nsf/mount"
+          ],
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "python3",
+            "-c",
+            "import os,sys,hashlib\nfrom pathlib import Path\np=Path(sys.argv[1]); data=Path(sys.argv[2]).read_bytes()\nd=p/'probe-dir'; d.mkdir()\nf=d/'file'\nwith f.open('wb') as out: out.write(data); out.flush(); os.fsync(out.fileno())\nassert f.read_bytes()==data\nf.rename(d/'renamed'); f=d/'renamed'\nwith f.open('r+b') as out: out.seek(123);out.write(b'changed');out.truncate(65537);out.flush();os.fsync(out.fileno())\nassert f.read_bytes()==(data[:123]+b'changed'+data[130:])[:65537]\nassert [x.name for x in d.iterdir()]==['renamed']\nf.unlink();d.rmdir()\n",
+            "/tmp/tc3-mloo8nsf/mount",
+            "/tmp/tc3-mloo8nsf/source"
+          ],
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "python3",
+            "-c",
+            "import os,sys\nfrom pathlib import Path\np=Path(sys.argv[1])/'cache-probe';native=Path(sys.argv[2])/'cache-probe'\nwith p.open('wb') as out: out.write(b'first');out.flush();os.fsync(out.fileno())\nassert p.read_bytes()==b'first'\nbefore=native.stat()\nwith native.open('r+b') as out: out.write(b'other');out.flush();os.fsync(out.fileno())\nos.utime(native,ns=(before.st_atime_ns,before.st_mtime_ns))\nassert p.read_bytes()==b'other', 'close-to-open returned stale data after equal-size/restored-mtime mutation'\np.unlink()\n",
+            "/tmp/tc3-mloo8nsf/mount",
+            "/tmp/tc3-mloo8nsf/files/nfsdata"
+          ],
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "python3",
+            "-c",
+            "import os,sys,stat,subprocess\nfrom pathlib import Path\np=Path(sys.argv[1])/'acl-probe'\np.write_bytes(b'private')\np.chmod(0o600)\nassert stat.S_IMODE(p.stat().st_mode)==0o600\nbefore=subprocess.check_output(['nfs4_getfacl',str(p)],text=True)\nassert 'OWNER@' in before\nsubprocess.run(['nfs4_setfacl','-s','A::OWNER@:RWXdo,A:g:GROUP@:R,A::EVERYONE@:R',str(p)],check=True)\nafter=subprocess.check_output(['nfs4_getfacl',str(p)],text=True)\nassert 'OWNER@' in after and 'GROUP@' in after and 'EVERYONE@' in after\nassert stat.S_IMODE(p.stat().st_mode)==0o744\nassert p.read_bytes()==b'private'\np.chmod(0o640)\nassert stat.S_IMODE(p.stat().st_mode)==0o640\nprint(before,after,subprocess.check_output(['nfs4_getfacl',str(p)],text=True),sep=chr(10))\np.chmod(0o4755)\nassert stat.S_IMODE(p.stat().st_mode)==0o4755\nwith p.open('ab') as out: out.write(b'changed');out.flush();os.fsync(out.fileno())\nassert stat.S_IMODE(p.stat().st_mode)==0o755\nd=p.parent/'mode-parent'\nd.mkdir();d.chmod(0o3777)\nsub=d/'sub';sub.mkdir()\nassert stat.S_IMODE(sub.stat().st_mode)&0o2000\nassert sub.stat().st_gid==d.stat().st_gid, ('setgid GID inheritance',sub.stat().st_gid,d.stat().st_gid)\nsub.rmdir();d.rmdir()\np.unlink()\n",
+            "/tmp/tc3-mloo8nsf/mount"
+          ],
+          "returncode": 0,
+          "stdout": "# file: /tmp/tc3-mloo8nsf/mount/acl-probe\nA::OWNER@:rwatTncCo\nD::OWNER@:x\nD::GROUP@:rwax\nA::EVERYONE@:dtTnNcy\nA::EVERYONE@:tncy\nD::EVERYONE@:rwax\n\n\n# file: /tmp/tc3-mloo8nsf/mount/acl-probe\nA::OWNER@:rwadxtTnNcCoy\nA::GROUP@:rtncy\nA::EVERYONE@:rtncy\n\n\n# file: /tmp/tc3-mloo8nsf/mount/acl-probe\nA::OWNER@:rwatTncCo\nD::OWNER@:x\nA::GROUP@:r\nD::GROUP@:wax\nA::OWNER@:dtTnNcCoy\nA::GROUP@:tncy\nA::EVERYONE@:tncy\nA::EVERYONE@:tncy\nD::EVERYONE@:rwax\n\n\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "sudo",
+            "-n",
+            "umount",
+            "/tmp/tc3-mloo8nsf/mount"
+          ],
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        }
+      ],
+      "checks": [
+        "native v4.1 close-to-open cache invalidation after independent equal-size write with restored mtime",
+        "native chmod plus unmodified nfs4_getfacl/nfs4_setfacl ACL roundtrip and mode synchronization",
+        "native setuid clearing on write and setgid directory inheritance, with sticky mode accepted"
+      ],
+      "payload_sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+      "server_log": "",
+      "kernel_log": "[Wed Nov  4 03:58:08 2026] RPC: Registered tcp NFSv4.1 backchannel transport module.\n[Wed Nov  4 03:58:22 2026] NFS: Registering the id_resolver key type"
+    }
+  ],
+  "nlm_checks": [
+    "native F_SETLKW blocks on an independent wire owner, receives GRANTED and retains a server-visible byte lock",
+    "NSM server-reboot notification makes the Linux kernel reclaim its lock; independent post-grace TEST observes it and native unlock releases it"
+  ]
+}

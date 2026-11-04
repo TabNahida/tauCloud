@@ -37,6 +37,7 @@ on:
       - 'src/core.cpp'
       - 'xmake.lua'
       - 'tests/nfs_gss_integration.py'
+      - 'tests/nfs_discovery_integration.py'
       - 'tests/linux_native_gss.py'
       - 'tests/kerberos-requirements.txt'
       - 'src/nfs_v4.inc'
@@ -100,6 +101,8 @@ jobs:
         run: python tests/nfs_attributes_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/nfs-attributes.json
       - name: NFS file authority and security discovery isolation
         run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_m7_tests${{ matrix.suffix }}
+      - name: NFS anonymous security discovery and revocation
+        run: python tests/nfs_discovery_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/nfs-discovery.json
       - name: NFSv4 ACLs, mode and cross-protocol access
         run: python tests/nfs_acl_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/nfs-acl.json
       - name: NFS special modes and shared namespace permissions

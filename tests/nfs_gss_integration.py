@@ -409,6 +409,19 @@ def main():
         privacy = [(6, 3)]
         flavors(weak, [op.putrootfh(), op.secinfo(b'nfs')], privacy)
         flavors(plain, [op.putrootfh(), op.secinfo(b'nfs')], privacy)
+        from nfs_discovery_integration import NoneClient
+        anonymous = NoneClient(port)
+        clients.append(anonymous)
+        anonymous.session()
+        assert anonymous.compound([op.putrootfh(), op.secinfo(b'nfs')]).status == 13
+        export['anonymous'] = 'alice'
+        f.api('nfs-exports', f.admin, export)
+        flavors(anonymous, [op.putrootfh(), op.secinfo(b'nfs')], privacy)
+        flavors(anonymous, [op.putfh(h), op.secinfo_no_name(0)], privacy)
+        r = anonymous.compound([op.putfh(h), op.getattr([2])])
+        assert r.status == 10016 and r.resarray[-1].resop == 22, r
+        export['anonymous'] = 'bob'
+        f.api('nfs-exports', f.admin, export)
         flavors(weak, [op.putfh(h), op.secinfo_no_name(0)], privacy)
         sequence = weak.seq
         replay = weak.compound([op.putfh(h), op.secinfo_no_name(0)], seq=sequence)
@@ -446,7 +459,7 @@ def main():
         r = strong.compound([op.putfh(h), op.secinfo_no_name(0)], seq=security_sequence)
         assert r.status == 10008, r  # A cached old service list cannot survive a policy change.
         flavors(strong, [op.putfh(h), op.secinfo_no_name(0)], privacy)
-        passed('SECINFO negotiates across disallowed weaker/stronger tuples and AUTH_SYS; bare/repeated/saved PUTFH and LOOKUPP obey WRONGSEC placement; discovery consumes FH, replays safely and enforces traversal ACLs')
+        passed('SECINFO negotiates across disallowed weaker/stronger tuples, AUTH_SYS and authorized anonymous discovery; bare/repeated/saved PUTFH and LOOKUPP obey WRONGSEC placement; discovery consumes FH, replays safely and enforces traversal ACLs')
         export['principals'] = {'unmapped@'+REALM: dict(uid=1000, gid=1000)}
         f.api('nfs-exports', f.admin, export)
         assert strong.v3('GETATTR', t3.GETATTR3args(t3.nfs_fh3(h)), 1).status == 13

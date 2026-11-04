@@ -1,0 +1,90 @@
+{
+  "recorded_at": "2026-11-04T04:05:42.150933+00:00",
+  "base_source": "b5442ad3eb1d62e2553f64a44d97843048c90833",
+  "status": "passed",
+  "scope": "AUTH_NONE NFSv4 security discovery with an explicitly authorized anonymous subject; ordinary file access and cached AUTH_SYS responses remain unavailable. Anonymous space-policy revocation applies to fresh and replayed security queries.",
+  "files_sha256": {
+    "src/nfs_protocol.cpp": "73161817e31acab426c9a11282a16b3d327cfb40bfabfe498826b03aa93e5446",
+    "src/policy.cpp": "375ac7a67291b7d91ede838396159dd76e69078b2f6b920f0d93d3aef076fc4b",
+    "tests/nfs_discovery_integration.py": "aa12f6ef8a4e390918b1f6365b538183dff87e837ca7f9a46c9ec6da74e38388",
+    "tests/nfs_gss_integration.py": "8e12669a0b4cb517eefca3f4e310385db3de3ec1021edce032f464f106407848"
+  },
+  "before": {
+    "source": "b5442ad3eb1d62e2553f64a44d97843048c90833",
+    "status": "failed",
+    "log": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/tests/nfs_discovery_integration.py\", line 225, in <module>\n    main()\n  File \"/media/data1/Project/Network/tauCloud/tests/nfs_discovery_integration.py\", line 171, in main\n    anonymous.session()\n  File \"/media/data1/Project/Network/tauCloud/tests/m7_integration.py\", line 72, in session\n    r=self.compound([op.exchange_id(t4.client_owner4(b'12345678',self.owner),0,t4.state_protect4_a(0),[])],False)\n      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/tests/m7_integration.py\", line 67, in compound\n    return self.decode4(self.exchange(packet))\n                        ^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/tests/m7_integration.py\", line 44, in exchange\n    assert u.unpack_uint()==1;assert u.unpack_uint()==0\n                                     ^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+  },
+  "after": {
+    "discovery": {
+      "status": "passed",
+      "checks": [
+        "EXPORT and DUMP filter root-squashed/unmapped principals; duplicate MNT is idempotent",
+        "mount records survive reconnect; UMNT/UMNTALL affect only caller and preserve NFS filehandles",
+        "rpcbind DUMP/GETVERSADDR advertise implemented TCP services plus UDP NSM; older NLM versions remain absent",
+        "recognized unsupported file types return per-operation errors after successful SEQUENCE/PUTFH",
+        "BACKCHANNEL_CTL updates bounded callback configuration; unknown GSS, SP4_NONE SET_SSV and obsolete v4.0 operations return defined per-operation errors",
+        "optional pNFS/delegation/attribute operations are decoded and return NOTSUPP with their own operation number, not OP_ILLEGAL",
+        "AUTH_NONE negotiates through a separately scoped anonymous identity; no file access or AUTH_SYS reply reuse; anonymous policy revocation invalidates security replies",
+        "export revocation immediately hides discovery and denies subsequent MNT"
+      ]
+    },
+    "gss": {
+      "status": "passed",
+      "checks": [
+        "real MIT tickets: mutual authentication and NFSv3/v4.1 read/write in krb5, krb5i and krb5p; AUTH_SYS downgrade denied; MOUNT and SECINFO advertise Kerberos",
+        "header/body MIC and encrypted-body tampering rejected; 64-entry replay window drops duplicates/old requests and accepts out-of-order requests; MAXSEQ and body sequence enforced",
+        "v3 duplicate mutation with fresh GSS sequence replays its result and rechecks revoked authority; context survives TCP reconnect; authenticated DESTROY invalidates the handle",
+        "SECINFO negotiates across disallowed weaker/stronger tuples, AUTH_SYS and authorized anonymous discovery; bare/repeated/saved PUTFH and LOOKUPP obey WRONGSEC placement; discovery consumes FH, replays safely and enforces traversal ACLs",
+        "unmapped principals and wrong acceptor tickets denied; per-export privacy requirement prevents downgrade; existing contexts lose access after principal mapping revocation",
+        "unmodified pinned pynfs COMP1, CSESS1, OPEN1, OPEN30 and VF1r pass using krb5, krb5i and krb5p",
+        "atomic service-key rotation accepts newly issued tickets while established contexts continue; live group-membership revocation denies existing contexts",
+        "expired tickets and pre-restart context handles are rejected; fresh mutual authentication preserves access to stable file handles"
+      ],
+      "pynfs": {
+        "krb5": {
+          "errors": 0,
+          "failures": 0,
+          "name": "all",
+          "skipped": 261,
+          "tests": 266,
+          "time": 0.3467257022857666,
+          "timestamp": "2026-11-04 04:04:28.343163"
+        },
+        "krb5i": {
+          "errors": 0,
+          "failures": 0,
+          "name": "all",
+          "skipped": 261,
+          "tests": 266,
+          "time": 0.3015317916870117,
+          "timestamp": "2026-11-04 04:04:28.736877"
+        },
+        "krb5p": {
+          "errors": 0,
+          "failures": 0,
+          "name": "all",
+          "skipped": 261,
+          "tests": 266,
+          "time": 0.29939866065979004,
+          "timestamp": "2026-11-04 04:04:29.147875"
+        }
+      }
+    },
+    "namespace": {
+      "status": "passed",
+      "checks": [
+        "paged pseudo-root READDIR exposes only enabled, mapped and authorized exports; returned handles match LOOKUP and LOOKUPP",
+        "root-squashed, unmapped and invalid-group identities cannot enumerate protected names; invalid attributes reject even in empty directories",
+        "READDIR validates reserved cookies, changed verifiers, exact maxcount and forward progress; pseudo-root change and SECINFO work",
+        "one session holds simultaneous OPENs in distinct exports and executes cross-export compounds without accepting mismatched stateids",
+        "cached compound replies reauthorize every touched export, including READ without OPEN; revocation prevents data replay while other exports remain usable",
+        "cached pseudo-root listings are fenced when export visibility changes and the next slot sequence still progresses",
+        "retargeting a share with the same export UUID cannot authorize a cached response from the old space"
+      ]
+    },
+    "core": {
+      "checks": 77,
+      "status": "passed"
+    }
+  }
+}

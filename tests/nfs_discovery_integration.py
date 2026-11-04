@@ -9,6 +9,13 @@ from m7_integration import Client, t3, t4, op
 from pynfs_acceptance import fixture
 
 
+class NoneClient(Client):
+    def packet(self, program, version, proc, body, xid=None):
+        packet = super().packet(program, version, proc, body, xid)
+        credential_size = int.from_bytes(packet[28:32], 'big')
+        return packet[:24] + bytes(8) + packet[32 + ((credential_size + 3) & ~3):]
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--bin', type=Path, required=True)
@@ -158,6 +165,44 @@ def main():
             assert result.status == 10004 and len(result.resarray) == 3, result
             assert result.resarray[-1].resop == operation.argop, result
         checks.append('optional pNFS/delegation/attribute operations are decoded and return NOTSUPP with their own operation number, not OP_ILLEGAL')
+
+        anonymous = NoneClient(port)
+        clients.append(anonymous)
+        anonymous.session()
+        r = anonymous.compound([op.putrootfh(), op.secinfo(b'nfs')])
+        assert r.status == 13, r  # The configured anonymous subject lacks space access.
+        f.api('grants', f.admin, dict(space='nfsdata', subject_type='user', subject='bob', rights='r'))
+        for operations in ([op.putrootfh(), op.secinfo(b'nfs')],
+                           [op.putfh(root_handle), op.secinfo_no_name(0)]):
+            r = anonymous.compound(operations)
+            assert r.status == 0, r
+            last = r.resarray[-1]
+            flavors = last.opsecinfo.resok4 if last.resop == 33 else last.opsecinfo_no_name.resok4
+            assert [x.flavor for x in flavors] == [1], flavors
+        for operation in (op.getattr([2]), op.read(zero, 0, 16), op.remove(b'tree')):
+            r = anonymous.compound([op.putfh(root_handle), operation])
+            assert r.status == 10016 and r.resarray[-1].resop == 22, r
+        r = anonymous.compound([op.putrootfh(), op.lookup(b'nfs')])
+        assert r.status == 10016 and r.resarray[-1].resop == 15, r
+        r = anonymous.compound([op.putfh(root_handle), op.secinfo_no_name(0), op.getfh()])
+        assert r.status == 10020, r
+        # AUTH_SYS uid 0 is a distinct principal, even when it maps to the same
+        # anonymous service account. A cached reply must not cross that boundary.
+        root.session()
+        r = root.compound([op.putfh(root_handle), op.getattr([2])])
+        assert r.status == 0, r
+        old_session, old_sequence = anonymous.sid, anonymous.seq
+        anonymous.sid = root.sid
+        r = anonymous.compound([op.putfh(root_handle), op.getattr([2])], seq=root.seq)
+        assert r.status == 10076, r
+        anonymous.sid, anonymous.seq = old_session, old_sequence
+        operations = [op.putfh(root_handle), op.secinfo_no_name(0)]
+        assert anonymous.compound(operations).status == 0
+        security_sequence = anonymous.seq
+        f.api('grants', f.admin, dict(space='nfsdata', subject_type='user', subject='bob', rights=''))
+        assert anonymous.compound(operations, seq=security_sequence).status == 10008
+        assert anonymous.compound(operations).status == 13
+        checks.append('AUTH_NONE negotiates through a separately scoped anonymous identity; no file access or AUTH_SYS reply reuse; anonymous policy revocation invalidates security replies')
 
         assert alice.mount()[0] == 0
         f.api('nfs-exports', f.admin, dict(id='nfs', trust='loopback-auth-sys',
