@@ -300,15 +300,15 @@ static pace::task<pace::http::server_response> handle(api_state &s, pace::http::
                            {"signing", "required"},
                            {"encryption", true},
                            {"encryption_policy", "client-required-or-optional; SMB3 only"},
-                           {"ciphers", json::array({"AES-128-GCM", "AES-128-CCM"})},
+                           {"ciphers", json::array({"AES-128-GCM", "AES-128-CCM", "AES-256-GCM", "AES-256-CCM"})},
                            {"smb3_signing", "AES-CMAC"},
                            {"preauthentication", "SHA-512; SMB3.1.1"},
                            {"multichannel", false},
-                           {"change_notify", false},
+                           {"change_notify", true},
                            {"ntlm", "v2-mic"},
                            {"leases", false},
                            {"durable_handles", false},
-                           {"persistent_acl", false}});
+                           {"persistent_acl", true}});
       protocols.push_back({{"id", "nfs"}, {"implemented", true},
                            {"enabled", s.cfg.nfs_port != 0}, {"port", s.cfg.nfs_port},
                            {"listen", s.cfg.nfs_address}, {"compatibility", "experimental"},

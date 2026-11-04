@@ -15,3 +15,7 @@ Caching, notification, durable/persistent handles and multichannel are independe
 ### 2026-11-04
 
 The Full SMB/NFS expansion now implements AES-256-CCM/GCM for SMB 3.1.1, including full Kerberos authentication-key derivation; see [M6](../m6.md). The earlier AES-256 exclusion describes the original bounded profile, not the current implementation. GMAC and transport extensions remain open.
+
+## Full-compatibility extension — 2026-11-04 notifications
+
+The expanded user goal supersedes the earlier notification rejection: CHANGE_NOTIFY now has native directory streams, shared metadata events and signed/encrypted asynchronous completion. Caching, durable handles and multichannel remain separate unfinished work. [Notification implementation and evidence](../smb-notifications.md) records bounds, passing independent/upstream lifecycle cases and the still-failing full Samba diagnostic. This extension does not close the full SMB release gate.

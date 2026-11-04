@@ -98,6 +98,7 @@ void smb_update_eas(const json &info, const json &input) {
   q.bind(1, info.at("object"));
   q.bind(2, values.dump());
   q.row();
+  notify_metadata(info.at("object"), 0x80);
 }
 uint32_t smb_ea_size(const json &info) {
   uint32_t size = 0;
@@ -123,11 +124,13 @@ uint32_t smb_attribute_value(uint32_t value, bool directory) {
   return value ? value : 0x80u;
 }
 void smb_save_attributes(const json &info, uint32_t attributes) {
+  if (smb_attributes(info) == attributes) return;
   statement q(db, "INSERT INTO smb_attributes VALUES(?,?) ON CONFLICT(native) DO UPDATE SET "
                   "attributes=excluded.attributes");
   q.bind(1, info.at("object"));
   q.bind(2, int64_t(attributes));
   q.row();
+  notify_metadata(info.at("object"), 4);
 }
 static uint64_t smb_ticks(const json &info, const char *field) {
   return uint64_t(info.at(field).get<int64_t>() / 100 + int64_t(116444736000000000));
@@ -498,6 +501,28 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     return meta;
   }
   auto meta = smb_meta(s, h);
+  if (op == "smb_notify") {
+    require(!meta.at("delete_pending").get<bool>(), "delete_pending");
+    require(h.directory, "invalid_request");
+    require(h.access & 1, "forbidden");
+    if (!h.notification) {
+      h.notify_filter = body.at("filter").get<uint32_t>() & 0xfff;
+      h.notify_recursive = body.at("recursive");
+      auto directory = path.empty() ? s.directory.retain() : s.directory.open(path, true);
+      h.notification = directory.watch(h.notify_recursive, h.notify_filter);
+    }
+    if (body.value("register", false)) return {{"pending", true}};
+    auto result = h.notification->poll();
+    require(!result.at("deleted").get<bool>(), "notify_cleanup");
+    bool overflow = h.notify_overflow || result.at("overflow").get<bool>();
+    for (auto event : result.at("events")) {
+      if (h.notify_events.size() >= 1024) { overflow = true; break; }
+      h.notify_events.push_back(std::move(event));
+    }
+    auto events = std::move(h.notify_events);
+    h.notify_events = json::array(); h.notify_overflow = false;
+    return {{"pending", !overflow && events.empty()}, {"overflow", overflow}, {"events", events}};
+  }
   if (op == "smb_security" || op == "smb_set_security") {
     uint32_t information = body.at("information");
     require(!(information & 8), "forbidden");
@@ -666,6 +691,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     smb_save_times(info, times);
     audit(actor, "smb_basic_information", path);
     tx.commit();
+    if (times[0] != meta.at("times")[0]) notify_metadata(info.at("object"), 64);
     h.user_access_time = user_access;
     h.user_write_time = user_write;
     h.user_change_time = user_change;

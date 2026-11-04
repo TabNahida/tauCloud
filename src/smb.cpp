@@ -61,6 +61,8 @@ void check(bool value, uint32_t status = 0xc000000d) {
     throw status_error(status);
 }
 uint32_t status(std::string_view code) {
+  if (code == "notify_cleanup") return 0x10b;
+  if (code == "notify_unavailable") return 0xc00000bb;
   if (code == "session_expired")
     return 0xc000035c; // STATUS_NETWORK_SESSION_EXPIRED: retain opens for renewal.
   if (code == "invalid_security_descriptor")
@@ -394,6 +396,7 @@ struct opened {
   std::set<uint16_t> contexts;
   uint64_t position = 0;
   uint32_t mode = 0;
+  std::optional<uint32_t> notify_capacity = std::nullopt;
   size_t ea_cursor = 0;
 };
 struct client {
@@ -429,6 +432,16 @@ struct client {
     std::optional<uint32_t> completion;
   };
   std::map<uint64_t, pending_lock> pending_locks;
+  struct pending_notify {
+    bytes fid;
+    uint64_t message_id;
+    uint32_t limit;
+    bool encrypted;
+    bool announced = false;
+    std::optional<uint32_t> completion;
+    bytes data;
+  };
+  std::map<uint64_t, pending_notify> pending_notifications;
   uint64_t next_async_id = 1;
   bool dispatching = false, pump_done = false;
   int64_t last_activity = now();
@@ -479,6 +492,9 @@ struct client {
       waiting.push_back(id);
     for (auto id : waiting)
       co_await finish_lock(id, 0xc000006d);
+    waiting.clear();
+    for (const auto &[id, pending] : pending_notifications) waiting.push_back(id);
+    for (auto id : waiting) co_await finish_notify(id, 0xc000006d);
   }
   pace::task<json> operation(opened &h, std::string op, bool writing, json body = json::object()) {
     check(!h.pipe, 0xc00000bb);
@@ -498,6 +514,10 @@ struct client {
     // Closing the local open abandons its ungranted ranges (distinct from CANCEL).
     for (auto id : waiting)
       co_await finish_lock(id, 0xc000007e);
+    waiting.clear();
+    for (const auto &[id, pending] : pending_notifications)
+      if (pending.fid == fid) waiting.push_back(id);
+    for (auto id : waiting) co_await finish_notify(id, 0x10b);
     auto h = std::move(it->second);
     files.erase(it);
     if (h.pipe)
@@ -1075,6 +1095,20 @@ struct client {
       }
       co_return sized(4, 4);
     }
+    if (cmd == 15) {
+      check(structure == 32 && p.size() >= 96 && !(get(p, 66, 2) & ~1ull));
+      auto &h = handle(p, 72, tid);
+      auto limit = get(p, 68, 4);
+      check(limit <= 65536);
+      check(pending_notifications.size() < 16 && next_async_id != UINT64_MAX, 0xc000009a);
+      json request = {{"filter", get(p, 88, 4)}, {"recursive", bool(get(p, 66, 2) & 1)}, {"register", true}};
+      co_await operation(h, "notify", false, request);
+      if (!h.notify_capacity) h.notify_capacity = static_cast<uint32_t>(limit);
+      pending_notifications.emplace(next_async_id++, pending_notify{fid_for(h), get(p, 24, 8),
+          static_cast<uint32_t>(limit), encrypted, false, {}, {}});
+      code = 0x103;
+      co_return sized(9, 9);
+    }
     if (cmd == 14) {
       check(structure == 33 && p.size() >= 96);
       auto &h = handle(p, 72, tid);
@@ -1345,7 +1379,7 @@ struct client {
         bytes prefix;
         {
           auto timer = s.io->call_after(authenticated ? 60s : 10s, [this] {
-            if (!authenticated || (pending_locks.empty() && now() - last_activity >= 60000))
+            if (!authenticated || (pending_locks.empty() && pending_notifications.empty() && now() - last_activity >= 60000))
               close();
           });
           prefix = co_await socket.read_exact(4, 4);
@@ -1469,6 +1503,13 @@ struct client {
               }
             if (target)
               co_await finish_lock(target, 0xc0000120);
+            target = 0;
+            for (const auto &[id, pending] : pending_notifications)
+              if ((get(p, 16, 4) & 2) ? id == get(p, 32, 8) : pending.message_id == get(p, 24, 8)) {
+                target = id;
+                break;
+              }
+            if (target) co_await finish_notify(target, 0xc0000120);
           }
           continue; // CANCEL consumes no credit and never receives its own reply.
         }
@@ -1596,6 +1637,13 @@ struct client {
         }
         for (auto [id, code] : completed)
           co_await finish_lock(id, code);
+        completed.clear();
+        for (auto &[id, pending] : pending_notifications) {
+          pending.announced = true;
+          if (pending.completion) completed.emplace_back(id, *pending.completion);
+        }
+        for (auto [id, code] : completed)
+          co_await finish_notify(id, code, pending_notifications.at(id).data);
         if (logged_off) {
           // LOGOFF ends the session, not the transport. Keeping the connection
           // alive also prevents EOF racing the client's receipt of this reply.

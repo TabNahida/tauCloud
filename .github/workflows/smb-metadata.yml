@@ -32,6 +32,8 @@ on:
       - 'tests/samba_torture.py'
       - 'tests/windows_native_smb.py'
       - 'src/native_files.cpp'
+      - 'src/native_notify.inc'
+      - 'tests/smb_notify_integration.py'
       - 'include/taucloud/files.hpp'
       - 'tests/smb_attributes_integration.py'
       - 'tests/smb_allocation_integration.py'
@@ -96,6 +98,11 @@ jobs:
         run: python tests/smb_reauthentication.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/smb-reauth.json
       - name: Persistent ACLs and cross-protocol permission checks
         run: python tests/smb_security_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/security.json
+      - name: Native SMB directory notifications and asynchronous lifecycle
+        run: python tests/smb_notify_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/smb-notify.json
+      - name: Unmodified Samba notification lifecycle
+        if: runner.os == 'Linux'
+        run: python tests/samba_torture.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/samba-notify.json smb2.notify.tdis1 smb2.notify.close smb2.notify.logoff smb2.notify.file smb2.notify.handle-permissions smb2.notify.rmdir1 smb2.notify.rmdir2 smb2.notify.rmdir3 smb2.notify.rmdir4
       - name: Scoped SMB ownership authority and revocation
         run: python tests/smb_owner_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/smb-owner.json
       - name: Native Windows security descriptor operations

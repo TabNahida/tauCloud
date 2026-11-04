@@ -1,0 +1,90 @@
+samba-notify-fixed-smb2.notify.tdis1.log
+smbtorture 4.19.5-Ubuntu
+Using seed 1793770163
+time: 2026-11-04 05:29:23.149936
+test: tdis1
+time: 2026-11-04 05:29:23.150025
+TESTING CHANGE NOTIFY ASYNC FOLLOWED BY TREE-DISCONNECT
+time: 2026-11-04 05:29:23.223353
+success: tdis1
+
+samba-notify-fixed-smb2.notify.close.log
+smbtorture 4.19.5-Ubuntu
+Using seed 1793770163
+time: 2026-11-04 05:29:23.263819
+test: close
+time: 2026-11-04 05:29:23.263927
+TESTING CHANGE NOTIFY FOLLOWED BY ULOGOFF
+time: 2026-11-04 05:29:23.357356
+success: close
+
+samba-notify-fixed-smb2.notify.logoff.log
+smbtorture 4.19.5-Ubuntu
+Using seed 1793770163
+time: 2026-11-04 05:29:23.429928
+test: logoff
+time: 2026-11-04 05:29:23.430026
+TESTING CHANGE NOTIFY FOLLOWED BY ULOGOFF
+time: 2026-11-04 05:29:23.508532
+success: logoff
+
+samba-notify-fixed-smb2.notify.file.log
+smbtorture 4.19.5-Ubuntu
+Using seed 1793770163
+time: 2026-11-04 05:29:23.542640
+test: file
+time: 2026-11-04 05:29:23.542743
+TESTING CHANGE NOTIFY ON FILES
+Testing if notifies on file handles are invalid (should be)
+time: 2026-11-04 05:29:23.635838
+success: file
+
+samba-notify-fixed-smb2.notify.handle-permissions.log
+smbtorture 4.19.5-Ubuntu
+Using seed 1793770163
+time: 2026-11-04 05:29:23.706924
+test: handle-permissions
+time: 2026-11-04 05:29:23.707029
+TESTING CHANGE NOTIFY ON A HANDLE WITHOUT PERMISSIONS
+time: 2026-11-04 05:29:23.793435
+success: handle-permissions
+
+samba-notify-fixed-smb2.notify.rmdir1.log
+smbtorture 4.19.5-Ubuntu
+Using seed 1793770163
+time: 2026-11-04 05:29:23.820246
+test: rmdir1
+time: 2026-11-04 05:29:23.820343
+TESTING NOTIFY CANCEL FOR DELETED DIR
+time: 2026-11-04 05:29:23.918749
+success: rmdir1
+
+samba-notify-fixed-smb2.notify.rmdir2.log
+smbtorture 4.19.5-Ubuntu
+Using seed 1793770163
+time: 2026-11-04 05:29:23.985342
+test: rmdir2
+time: 2026-11-04 05:29:23.985443
+TESTING NOTIFY CANCEL FOR DELETED DIR
+time: 2026-11-04 05:29:24.078344
+success: rmdir2
+
+samba-notify-fixed-smb2.notify.rmdir3.log
+smbtorture 4.19.5-Ubuntu
+Using seed 1793770164
+time: 2026-11-04 05:29:24.099680
+test: rmdir3
+time: 2026-11-04 05:29:24.099783
+TESTING NOTIFY CANCEL FOR DELETED DIR
+time: 2026-11-04 05:29:24.209570
+success: rmdir3
+
+samba-notify-fixed-smb2.notify.rmdir4.log
+smbtorture 4.19.5-Ubuntu
+Using seed 1793770164
+time: 2026-11-04 05:29:24.263170
+test: rmdir4
+time: 2026-11-04 05:29:24.263270
+TESTING NOTIFY CANCEL FOR DELETED DIR
+time: 2026-11-04 05:29:24.378421
+success: rmdir4

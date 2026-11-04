@@ -1,0 +1,16 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793769573
+time: 2026-11-04 05:19:33.612864
+progress: 23
+test: valid-req
+time: 2026-11-04 05:19:33.612963
+TESTING VALIDITY OF CHANGE NOTIFY REQUEST
+time: 2026-11-04 05:19:33.681572
+failure: valid-req [
+(source4/torture/smb2/notify.c:122) wrong value for n.out.num_changes  0x4 should be 0x1
+]
+test: tcon
+time: 2026-11-04 05:19:33.681582
+TESTING SIMPLE CHANGE NOTIFY
+Testing notify mkdir
+maximum runtime exceeded for smbtorture - terminating

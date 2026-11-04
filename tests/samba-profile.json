@@ -80,6 +80,15 @@
     "smb2.acls.OWNER-RIGHTS-DENY1",
     "smb2.acls.DENY1",
     "smb2.acls.MXAC-NOT-GRANTED",
-    "smb2.acls.OVERWRITE_READ_ONLY_FILE"
+    "smb2.acls.OVERWRITE_READ_ONLY_FILE",
+    "smb2.notify.tdis1",
+    "smb2.notify.close",
+    "smb2.notify.logoff",
+    "smb2.notify.file",
+    "smb2.notify.handle-permissions",
+    "smb2.notify.rmdir1",
+    "smb2.notify.rmdir2",
+    "smb2.notify.rmdir3",
+    "smb2.notify.rmdir4"
   ]
 }

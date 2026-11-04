@@ -1,0 +1,10 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793770164
+time: 2026-11-04 05:29:24.427512
+test: valid-req
+time: 2026-11-04 05:29:24.427623
+TESTING VALIDITY OF CHANGE NOTIFY REQUEST
+time: 2026-11-04 05:29:24.493666
+failure: valid-req [
+(source4/torture/smb2/notify.c:122) wrong value for n.out.num_changes  0x3 should be 0x1
+]

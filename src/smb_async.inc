@@ -69,18 +69,98 @@ pace::task<void> finish_lock(uint64_t async_id, uint32_t code) {
     response.replace(48, 16, signature(key, response, selected.dialect >= 0x300));
   co_await send_packet(std::move(response), pending.encrypted);
 }
+pace::task<void> finish_notify(uint64_t async_id, uint32_t code, bytes data = {}) {
+  auto found = pending_notifications.find(async_id);
+  if (found == pending_notifications.end()) co_return;
+  if (!socket.is_open()) { pending_notifications.erase(found); co_return; }
+  if (!found->second.announced) {
+    found->second.completion = code; found->second.data = std::move(data);
+    co_return;
+  }
+  auto pending = std::move(found->second);
+  pending_notifications.erase(found);
+  auto response = sized(64, 64);
+  response.replace(0, 4, "\xfeSMB", 4);
+  put(response, 4, 64, 2); put(response, 6, 1, 2); put(response, 8, code, 4);
+  put(response, 12, 15, 2); put(response, 16, 3 | (pending.encrypted ? 0 : 8), 4);
+  put(response, 24, pending.message_id, 8); put(response, 32, async_id, 8);
+  put(response, 40, session, 8);
+  if (!code || code == 0x10b || code == 0x10c) {
+    auto body = sized(8, 9);
+    put(body, 2, data.empty() ? 0 : 72, 2); put(body, 4, data.size(), 4);
+    response += body + data;
+  } else response += sized(9, 9);
+  if (!pending.encrypted)
+    response.replace(48, 16, signature(key, response, selected.dialect >= 0x300));
+  co_await send_packet(std::move(response), pending.encrypted);
+}
+pace::task<void> pump_notifications() {
+  std::vector<uint64_t> ids;
+  for (const auto &[id, pending] : pending_notifications) ids.push_back(id);
+  for (auto id : ids) {
+    while (dispatching && socket.is_open()) co_await s.io->sleep_for(1ms);
+    if (!socket.is_open()) break;
+    dispatch_guard guard(dispatching);
+    auto found = pending_notifications.find(id);
+    if (found == pending_notifications.end()) continue;
+    // Only the oldest request on a handle can consume its buffered events.
+    bool first = true;
+    for (const auto &[other, pending] : pending_notifications)
+      if (other < id && pending.fid == found->second.fid) first = false;
+    if (!first) continue;
+    uint32_t code = 0;
+    bool waiting = false;
+    bytes data;
+    auto limit = found->second.limit;
+    auto fid = found->second.fid;
+    try {
+      auto file = files.find(fid);
+      check(file != files.end(), 0xc0000128);
+      limit = std::min(limit, file->second.notify_capacity.value_or(limit));
+      auto result = co_await operation(file->second, "notify", false);
+      waiting = result.at("pending");
+      if (!waiting) {
+        if (result.at("overflow").get<bool>()) code = 0x10c;
+        else {
+          for (const auto &entry : result.at("events")) {
+            auto name = entry.at("name").get<std::string>();
+            std::replace(name.begin(), name.end(), '/', '\\');
+            auto wire = utf16(name);
+            auto length = 12 + wire.size();
+            auto offset = data.size();
+            auto aligned = (length + 3) / 4 * 4;
+            if (offset + length > limit) { code = 0x10c; data.clear(); break; }
+            auto item = sized(aligned, 0);
+            put(item, 0, aligned, 4); put(item, 4, entry.at("action").get<uint32_t>(), 4);
+            put(item, 8, wire.size(), 4); item.replace(12, wire.size(), wire);
+            data += item;
+          }
+          // Last record has no padding requirement and no following offset.
+          if (!data.empty()) {
+            size_t offset = 0;
+            while (offset + get(data, offset, 4) < data.size()) offset += get(data, offset, 4);
+            data.resize(offset + 12 + get(data, offset + 8, 4));
+            put(data, offset, 0, 4);
+          }
+        }
+      }
+    } catch (const status_error &e) { waiting = false; code = e.status; }
+      catch (const error &e) { waiting = false; code = status(e.what()); }
+    if (!waiting) co_await finish_notify(id, code, std::move(data));
+  }
+}
 pace::task<void> pump_locks() {
   try {
     while (socket.is_open() && !ending) {
       co_await s.io->sleep_for(20ms);
       // A pending operation may outlive the read timer. Restart normal idle
       // expiry after its final reply instead of leaving an immortal connection.
-      if (!dispatching && authenticated && pending_locks.empty() &&
+      if (!dispatching && authenticated && pending_locks.empty() && pending_notifications.empty() &&
           now() - last_activity >= 60000) {
         close();
         break;
       }
-      if (dispatching || pending_locks.empty())
+      if (dispatching || (pending_locks.empty() && pending_notifications.empty()))
         continue;
       std::vector<uint64_t> ids;
       for (const auto &[id, pending] : pending_locks)
@@ -111,6 +191,7 @@ pace::task<void> pump_locks() {
         if (!waiting)
           co_await finish_lock(id, code);
       }
+      co_await pump_notifications();
     }
   } catch (...) {
     close();

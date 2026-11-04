@@ -9,8 +9,10 @@ std::string path_fold(const std::string &);
 void portable_path(const std::string &path, bool internal = false);
 bool file_role(std::string_view role);
 const std::vector<std::string> &file_roles();
+class native_watch;
 // Every traversal is relative to a pinned directory handle. No path-based fallback.
 class native_file {
+  friend class native_watch;
   struct impl;
   std::unique_ptr<impl> impl_;
   native_file open_impl(const std::string &, bool, bool, bool, bool) const;
@@ -22,6 +24,7 @@ public:
   native_file &operator=(native_file &&) noexcept;
   // Share an already-confined descriptor, retaining access after unlink.
   native_file retain() const;
+  std::unique_ptr<native_watch> watch(bool recursive, uint32_t filter) const;
   // Private namespace links preserve an open incarnation across process death.
   // Ordinary opens continue to reject all hard links.
   native_file pin(const native_file &directory, const std::string &name) const;
@@ -44,6 +47,17 @@ public:
               bool directory = false) const;
   void remove(const std::string &path, bool directory = false,
               const std::string &pinned_object = "") const;
+};
+// A bounded, nonblocking native directory notification stream. Paths are
+// relative to a pinned directory; overflow requires client enumeration.
+class native_watch {
+  struct impl;
+  std::unique_ptr<impl> impl_;
+  friend class native_file;
+  native_watch();
+public:
+  ~native_watch();
+  json poll();
 };
 json inspect_root(const fs::path &path);
 #ifdef TAUCLOUD_TEST_IO

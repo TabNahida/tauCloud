@@ -256,8 +256,10 @@ def run(args):
         denied(lambda:Open(mt,'ordinary-open').create(ImpersonationLevel.Impersonation,0x13019f,FileAttributes.FILE_ATTRIBUTE_NORMAL,7,1,0x40,create_contexts=[reconnect]),0xc00000bb)
         directory=create(mt,'',access=0x120089,disposition=1,options=1)
         notify=SMB2ChangeNotifyRequest();notify['file_id']=directory.file_id;notify['output_buffer_length']=1024;notify['completion_filter']=1
-        denied(lambda:modern.receive(modern.send(notify,ms.session_id,mt.tree_connect_id)),0xc00000bb);directory.close()
-        passed('leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent')
+        from smb_blocking_locks import pending
+        request=modern.send(notify,ms.session_id,mt.tree_connect_id);pending(request)
+        request.cancel();denied(lambda:modern.receive(request),0xc0000120);directory.close()
+        passed('leases and durable handles are not granted; durable reconnect explicitly unsupported; encrypted change notification cancels asynchronously; multichannel absent')
         # A separate disposable owner keeps login throttling active during the matrix.
         legacy=Connection(uuid.uuid4(),'127.0.0.1',f.smbport,require_signing=True);clients.append(legacy);legacy.connect(dialect=0x210)
         mixed_user=user()

@@ -1,0 +1,22 @@
+# SMB directory notifications
+
+The Full SMB/NFS expansion implements SMB2 CHANGE_NOTIFY for the existing 2.1, 3.0, 3.0.2 and 3.1.1 dialects. This is an implementation increment, not a complete Samba notification conformance claim. Linux uses inotify and Windows uses overlapped ReadDirectoryChangesW on pinned directory handles. Host-side changes and writes by other protocols reach the same native stream. Portable DOS attributes, creation times, EAs and shared security descriptors add metadata events after the file-domain request commits.
+
+A notification requires a directory handle with FILE_LIST_DIRECTORY. The first request fixes the filter, recursive flag and buffer capacity for that open. Requests on one open complete in FIFO order; events remain buffered between requests. Invalid filter bits are ignored. An entirely invalid/zero filter stays pending until cancellation or handle teardown. Requests larger than the negotiated 64 KiB limit fail; a notification that cannot fit returns STATUS_NOTIFY_ENUM_DIR without partial records. Reopening establishes a new capacity.
+
+The response uses the original MessageId and its assigned AsyncId. The interim response grants credits once; final responses grant none. Finals are signed or encrypted according to their requests. CANCEL matches the supplied MessageId/AsyncId within its authenticated session. CLOSE, TREE_DISCONNECT and LOGOFF complete notifications with STATUS_NOTIFY_CLEANUP. A directory marked for deletion returns STATUS_DELETE_PENDING. Policy revocation closes the authority handle and its native watches. Pending requests preserve connection liveness while still rechecking authority.
+
+The current bounds are 16 outstanding notifications per connection, a 64 KiB native buffer, 1024 events per drain and 256 queued portable metadata events per open. Linux reserves at most 96 pinned notification directories per file worker and 4096 metadata baselines per directory. Failure to cover a recursive subtree remains visibly overflowed until reopen; it never silently reports complete coverage. A new subtree populated before watches can be installed causes a rescan. Events under a subtree moved outside the watched directory are discarded and its watches removed. Private `.tc-` names are excluded.
+
+Remaining conformance work includes exact Windows/Samba event batching, races across native rename batches, broader stream events (named streams themselves remain unimplemented), and the complete upstream notification suite. Linux uses observed metadata to distinguish SIZE from equal-length writes; it cannot reconstruct every intermediate size/access-time transition after several host operations coalesce. The original `smb2.notify.valid-req` diagnostic retains its exact event-count failure. Samba 4.19.5's immediate CANCEL under CMAC sends MessageId zero before obtaining an AsyncId in the observed `tcon` fixture; the server correctly does not use that unmatched ID to cancel an arbitrary request. This interoperability gap remains open; it is not counted as a passing test or grounds for excluding the full suite.
+
+Run independent tests with:
+
+```sh
+python tests/smb_notify_integration.py --bin build/linux/x86_64/release --output build/acceptance/smb-notify.json
+python tests/samba_torture.py --bin build/linux/x86_64/release --output build/acceptance/samba-notify.json smb2.notify
+```
+
+The targeted GCC, Clang ASan/UBSan and Windows/MSVC workflow includes the independent test and unmodified lifecycle cases. Local successes and all diagnostic failures are retained in [notification evidence](evidence/pre-m8/smb-notify-local.json). Remote notification acceptance is pending.
+
+The implementation follows [MS-SMB2 receiving CHANGE_NOTIFY](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/05869c32-39f0-4726-afc9-671b76ae5ca7), [processing notifications](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/1e03994f-ccce-4fc8-a370-4efa610b3e05) and [closing opens](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/f6aca12a-02ca-4816-8ceb-84f78b36a65f). Independent upstream assertions come from [Samba notify.c](https://github.com/samba-team/samba/blob/samba-4.19.5/source4/torture/smb2/notify.c); the observed CANCEL construction is in [smbXcli_base.c](https://github.com/samba-team/samba/blob/samba-4.19.5/libcli/smb/smbXcli_base.c).

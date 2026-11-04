@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cstring>
 #include <limits>
+#include <map>
 #include <utf8proc.h>
 #ifdef _WIN32
 #include <windows.h>
@@ -15,6 +16,7 @@
 #include <sys/stat.h>
 #include <sys/statvfs.h>
 #include <sys/syscall.h>
+#include <sys/inotify.h>
 #include <unistd.h>
 #endif
 namespace tc {
@@ -180,6 +182,7 @@ native_file native_file::retain() const {
   result.impl_->allow_unlinked = true;
   return result;
 }
+#include "native_notify.inc"
 std::string native_file::stable_identity() const {
 #ifdef _WIN32
   // NTFS file IDs contain the MFT sequence, and are verified on the pinned handle.

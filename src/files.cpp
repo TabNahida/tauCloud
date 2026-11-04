@@ -65,6 +65,10 @@ struct file_store::impl {
     unsigned sharing = 7;
     bool directory = false;
     bool user_access_time = false, user_write_time = false, user_change_time = false;
+    std::unique_ptr<native_watch> notification = nullptr;
+    uint32_t notify_filter = 0;
+    bool notify_recursive = false, notify_overflow = false;
+    json notify_events = json::array();
   };
   struct byte_lock {
     std::string handle, object;
@@ -80,6 +84,25 @@ struct file_store::impl {
     byte_lock range;
   };
   std::vector<waiting_lock> smb_waiters;
+  std::map<std::string, uint32_t> pending_metadata;
+  void notify_metadata(const std::string &native, uint32_t mask) {
+    pending_metadata[native] |= mask;
+  }
+  void deliver_metadata(const std::string &native, uint32_t mask) {
+    statement q(db, "SELECT space,path FROM objects WHERE native=?");
+    q.bind(1, native);
+    while (q.row()) {
+      auto space = q.text(0), path = q.text(1);
+      for (auto &[id, h] : handles) {
+        if (!h.notification || h.space != space || !(h.notify_filter & mask) ||
+            path == h.path || !beneath(path, h.path)) continue;
+        auto relative = h.path.empty() ? path : path.substr(h.path.size() + 1);
+        if (!h.notify_recursive && relative.find('/') != std::string::npos) continue;
+        if (h.notify_events.size() >= 256) { h.notify_overflow = true; h.notify_events.clear(); }
+        if (!h.notify_overflow) h.notify_events.push_back({{"name", relative}, {"action", 3}});
+      }
+    }
+  }
   struct retained_nfs_file {
     std::string space, path, root, pin, object;
     native_file file;
@@ -493,6 +516,24 @@ struct file_store::impl {
 #include "file_nfs.inc"
   json dispatch(const std::string &op, const json &body, const call_context &ctx) {
     std::lock_guard guard(mutex);
+    pending_metadata.clear();
+    try {
+      auto result = dispatch_request(op, body, ctx);
+      for (const auto &[native, mask] : pending_metadata) deliver_metadata(native, mask);
+      pending_metadata.clear();
+      return result;
+    } catch (...) {
+      // A failed transaction must not publish metadata events. Native changes
+      // may already have committed, so tell affected watchers to rescan.
+      uint32_t mask = 0;
+      for (const auto &[native, changed] : pending_metadata) mask |= changed;
+      for (auto &[id, h] : handles)
+        if (h.notification && (h.notify_filter & mask)) h.notify_overflow = true;
+      pending_metadata.clear();
+      throw;
+    }
+  }
+  json dispatch_request(const std::string &op, const json &body, const call_context &ctx) {
     ctx.check();
     if (op == "nfs_file") return nfs_dispatch(body, ctx);
     if (op == "nfs_reap") return nfs_reap(body, ctx);

@@ -15,6 +15,7 @@ void security_save(const json &info, const json &descriptor) {
   q.bind(1, info.at("object"));
   q.bind(2, descriptor.dump());
   q.row();
+  notify_metadata(info.at("object"), 0x100);
 }
 void security_data_changed(space_state &s, const json &info) {
   if (info.at("directory").get<bool>())
