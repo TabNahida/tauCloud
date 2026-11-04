@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "checks": [
+    "210: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+    "300: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+    "302: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+    "311: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+    "copying Linux data and xattrs cannot clone the source object identifier",
+    "identifiers survive all-service restart and out-of-band native rename",
+    "delete completes, same-name recreation has a new native incarnation and identifiers follow native filesystem behavior",
+    "read-only share can retrieve existing IDs but cannot create metadata"
+  ],
+  "recorded_at": "2026-11-04T22:26:33.093985+00:00",
+  "source_base": "d66ff7cc3d948f8ecab85cef57ab5bb8eea9cfd8",
+  "windows_prior_failure": {
+    "url": "https://github.com/TabNahida/tauCloud/actions/runs/41922698943",
+    "sha": "b651aa130c7f84afbc757e437119ad77c2d9d33c",
+    "failed_assertion": "Expected missing GET after immediate same-name recreation; GET succeeded",
+    "new_native_oracle_status": "pending"
+  }
+}

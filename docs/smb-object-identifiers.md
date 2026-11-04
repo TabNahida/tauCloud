@@ -48,3 +48,13 @@ The copy test first creates its destination through SMB; an initial attempt
 with an online, host-created destination exposed the separate missing
 incremental namespace-index reconciliation. Native rename is tested while
 services are stopped, followed by the existing startup reconciliation.
+
+Windows acceptance at `b651aa1` passes all four dialects, metadata-only opens,
+directories, restart and native rename, but its original same-name recreation
+assertion fails because GET returns an identifier. The strengthened test now
+requires completed native deletion and FILE_CREATE (not OPEN_IF), verifies a
+new NTFS file incarnation, and compares SMB's identifier with direct local
+DeviceIoControl. An independent delete/recreate on the same filesystem measures
+whether native NTFS itself assigns an identifier during recreation. Linux's
+no-inherited-xattr check remains strict. The Windows native-oracle result is
+pending; the earlier failure is not counted as a pass.

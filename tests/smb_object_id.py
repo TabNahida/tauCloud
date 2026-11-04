@@ -19,6 +19,36 @@ from m5_integration import Fixture, create, denied, setinfo
 CREATE, GET = 0x900c0, 0x9009c
 
 
+def ntfs_identifier(path, create=False):
+    """Independent local NTFS oracle; no server metadata or private RPC."""
+    import ctypes
+    from ctypes import wintypes as w
+    kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+    kernel.CreateFileW.argtypes = [w.LPCWSTR, w.DWORD, w.DWORD, w.LPVOID, w.DWORD, w.DWORD, w.HANDLE]
+    kernel.CreateFileW.restype = w.HANDLE
+    kernel.DeviceIoControl.argtypes = [w.HANDLE, w.DWORD, w.LPVOID, w.DWORD, w.LPVOID,
+                                      w.DWORD, ctypes.POINTER(w.DWORD), w.LPVOID]
+    kernel.DeviceIoControl.restype = w.BOOL
+    kernel.CloseHandle.argtypes = [w.HANDLE]
+    kernel.CloseHandle.restype = w.BOOL
+    handle = kernel.CreateFileW(str(path), 0x80, 7, None, 3, 0x02000000, None)
+    if handle == w.HANDLE(-1).value:
+        raise ctypes.WinError(ctypes.get_last_error())
+    try:
+        value = ctypes.create_string_buffer(64)
+        size = w.DWORD()
+        if not kernel.DeviceIoControl(handle, CREATE if create else GET, None, 0,
+                                      value, 64, ctypes.byref(size), None):
+            error = ctypes.get_last_error()
+            if not create and error == 2:
+                return None
+            raise ctypes.WinError(error)
+        assert size.value == 64
+        return value.raw
+    finally:
+        kernel.CloseHandle(handle)
+
+
 def request(handle, control=CREATE, limit=64, data=b'', flags=1, fid=None):
     q = SMB2IOCTLRequest()
     # This library predates GET_OBJECT_ID; permit the published FSCC code.
@@ -72,6 +102,24 @@ def main():
 
     try:
         f = Fixture(args.bin, memory=1024)
+        native_recreated_has_id = False
+        if os.name == 'nt':
+            # NTFS can tunnel metadata on rapid same-name recreation. Measure
+            # the actual filesystem behavior independently instead of imposing
+            # Linux xattr semantics on a native Windows FSCTL passthrough.
+            probe = f.root / 'object-id-native-oracle'
+            probe.touch(exist_ok=False)
+            before = ntfs_identifier(probe, True)
+            old_inode = probe.stat().st_ino
+            probe.unlink()
+            assert not probe.exists()
+            probe.touch(exist_ok=False)
+            assert probe.stat().st_ino != old_inode
+            after = ntfs_identifier(probe)
+            native_recreated_has_id = after is not None
+            report['native_recreation'] = dict(has_identifier=native_recreated_has_id,
+                                              retained_identifier=after == before)
+            probe.unlink()
         saved = {}
         for dialect in (0x210, 0x300, 0x302, 0x311):
             c, t = connect(dialect)
@@ -138,15 +186,28 @@ def main():
         passed('identifiers survive all-service restart and out-of-band native rename')
 
         h = create(t, 'host-renamed', disposition=1)
+        recreated = f.root / 'smbdata/host-renamed'
+        old_inode = recreated.stat().st_ino
         deletion = FileDispositionInformation()
         deletion['delete_pending'] = True
         setinfo(h, deletion)
         h.close()
-        h = create(t, 'host-renamed')
-        denied(lambda: identifier(h, control=GET), 0xc00002f0)
-        assert identifier(h) != saved['host-renamed']
+        assert not recreated.exists(), 'SMB CLOSE did not complete native deletion'
+        h = create(t, 'host-renamed', disposition=2)  # FILE_CREATE, never reopen an old name.
+        if os.name == 'nt':
+            assert recreated.stat().st_ino != old_inode, 'recreation retained the old NTFS incarnation'
+            native_value = ntfs_identifier(recreated)
+            assert (native_value is not None) == native_recreated_has_id
+            if native_value is None:
+                denied(lambda: identifier(h, control=GET), 0xc00002f0)
+            else:
+                assert identifier(h, control=GET) == native_value
+            assert identifier(h) == ntfs_identifier(recreated)
+        else:
+            denied(lambda: identifier(h, control=GET), 0xc00002f0)
+            assert identifier(h) != saved['host-renamed']
         h.close()
-        passed('delete and same-name recreation do not inherit the old identifier')
+        passed('delete completes, same-name recreation has a new native incarnation and identifiers follow native filesystem behavior')
 
         create(t, 'not-yet-assigned').close()
         f.api('shares', f.admin, dict(id='readonly-object-id', space='smbdata', exposures={'smb':'r'}))
