@@ -2,7 +2,7 @@ struct client_id {
   std::string owner, principal, verifier;
   uint32_t sequence = 1;
   std::string create_hash, create_reply;
-  int64_t expires = now() + 60000;
+  int64_t expires = 0;
   bool reclaim_complete = false;
   std::set<std::string> reclaimed_filesystems;
   uint64_t replaces = 0;
@@ -103,12 +103,29 @@ void reap_retained() {
   }
 }
 const std::string pseudo = encode_bytes("tauCloud:nfs:root");
+void recovery_lease(uint32_t seconds) {
+  statement q(db, "INSERT INTO lease_history VALUES(1,?) ON CONFLICT(id) DO UPDATE SET seconds=excluded.seconds");
+  q.bind(1, int64_t(seconds)); q.row();
+}
 void start_recovery() {
-  statement q(db, "SELECT id,body FROM recovery");
-  while (q.row())
-    reclaim[q.text(0)] = json::parse(q.text(1));
+  uint32_t previous = 60; // Existing installations advertised sixty seconds.
+  {
+    statement q(db, "SELECT seconds FROM lease_history WHERE id=1");
+    if (q.row()) {
+      require(q.integer(0) >= 5 && q.integer(0) <= 3600, "database_corrupt");
+      previous = uint32_t(q.integer(0));
+    }
+  }
+  {
+    statement q(db, "SELECT id,body FROM recovery");
+    while (q.row()) reclaim[q.text(0)] = json::parse(q.text(1));
+  }
+  // Reducing the configured lease must not shorten existing clients' reclaim
+  // window. Retain the larger bound through repeated restarts during grace.
+  auto seconds = reclaim.empty() ? cfg.nfs_lease_seconds : std::max(previous, cfg.nfs_lease_seconds);
   if (!reclaim.empty())
-    grace_end = now() + 60000;
+    grace_end = now() + int64_t(seconds) * 1000;
+  recovery_lease(seconds);
 }
 void remove_recovery(const std::string &id) {
   statement q(db, "DELETE FROM recovery WHERE id=?");
@@ -135,6 +152,7 @@ void expire() {
       remove_recovery(id);
     reclaim.clear();
     grace_end = 0;
+    recovery_lease(cfg.nfs_lease_seconds);
   }
   for (auto it = byte_locks.begin(); it != byte_locks.end();) {
     auto c = client_ids.find(it->second.client);
@@ -325,7 +343,7 @@ void attributes4(writer &out, const std::vector<uint32_t> &requested, const json
         values.boolean(true);
         break;
       case 10:
-        values.u32(60);
+        values.u32(cfg.nfs_lease_seconds);
         break;
       case 11:
         values.u32(0);
@@ -1051,6 +1069,7 @@ std::string v4(const identity &who, reader &r) {
           check(client_ids.size() < 128, 10018);
           id = hex64(random_hex(8)) & INT64_MAX;
           client_ids[id] = {a.at("owner"), who.key, a.at("verifier"), 1, "", ""};
+          client_ids.at(id).expires = now() + int64_t(cfg.nfs_lease_seconds) * 1000;
           client_ids.at(id).replaces = replaces;
         }
         auto &client = client_ids.at(id);
@@ -1134,7 +1153,7 @@ std::string v4(const identity &who, reader &r) {
           // These bounds alone do not grant a backchannel; binding is negotiated below.
           std::vector<uint32_t> back = {0, std::min(back_offer[1], 4096u),
               std::min(back_offer[2], 4096u), 0, back_offer[4], back_offer[5]};
-          session prepared{id, who.key, now() + 60000, std::vector<slot>(fore[5]), fore, {connection}};
+          session prepared{id, who.key, now() + int64_t(cfg.nfs_lease_seconds) * 1000, std::vector<slot>(fore[5]), fore, {connection}};
           configure_callback(prepared, a); // Validate every handle before replacing client state.
           auto idstr = random_hex(16);
           if (c.replaces) {
@@ -1190,7 +1209,7 @@ std::string v4(const identity &who, reader &r) {
           replay_authorized(who, sl.authority);
           s.callback_session_seen = true;
           sequence_callback(sid);
-          s.expires = now() + 60000;
+          s.expires = now() + int64_t(cfg.nfs_lease_seconds) * 1000;
           client_ids.at(s.client).expires = s.expires;
           return sl.reply;
         }
@@ -1204,7 +1223,7 @@ std::string v4(const identity &who, reader &r) {
         sl.pending = true;
         active = &sl;
         recording_authority = &sl.authority;
-        s.expires = now() + 60000;
+        s.expires = now() + int64_t(cfg.nfs_lease_seconds) * 1000;
         client_ids.at(s.client).expires = s.expires;
         body.fixed(decode_bytes(sid))
             .u32(seq)

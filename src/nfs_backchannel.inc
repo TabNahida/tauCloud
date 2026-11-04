@@ -52,7 +52,7 @@ uint32_t callback_gss_flags(const session &s) const {
   bool live = false;
   for (const auto &c : s.callback_contexts) if (auto g = callback_context(c)) {
     live = true;
-    if (g->expires > std::chrono::steady_clock::now() + 60s) return 0;
+    if (g->expires > std::chrono::steady_clock::now() + std::chrono::seconds(cfg.nfs_lease_seconds)) return 0;
   }
   return live ? 2 : 4;
 }
@@ -322,7 +322,7 @@ void callback_reply(uint32_t xid, reader &r) {
       s.callback_extra.clear();
       s.callback_references.clear();
       if (current_config) s.callback_up.insert(connection);
-      s.expires = now() + 60000;
+      s.expires = now() + int64_t(cfg.nfs_lease_seconds) * 1000;
       client_ids.at(s.client).expires = s.expires;
     }
   }

@@ -199,7 +199,7 @@ config config::load(const fs::path &path) {
     require(key == "schema" || key == "listen" || key == "port" || key == "connections" ||
                 key == "ipc_queue" || key == "restart_limit" || key == "memory_mb" ||
                 key == "nfs_port" || key == "nfs_address" || key == "nfs_peer_rpcbind_port" ||
-                key == "nfs_gss_service" || key == "nfs_gss_keytab" ||
+                key == "nfs_gss_service" || key == "nfs_gss_keytab" || key == "nfs_lease_seconds" ||
                 key == "smb_gss_service" || key == "smb_gss_keytab" ||
                 key == "smb_port" || key == "dav_port" || key == "ftp_port" ||
                 key == "ftp_plaintext" || key == "ftp_passive_first" || key == "ftp_passive_last",
@@ -239,6 +239,10 @@ config config::load(const fs::path &path) {
                       nfs != ftp && nfs != smb && (!ftp || nfs < first || nfs > last)),
           "invalid_config");
   c.nfs_port = static_cast<uint16_t>(nfs);
+  require(!j.contains("nfs_lease_seconds") || j.at("nfs_lease_seconds").is_number_integer(), "invalid_config");
+  auto nfs_lease = j.value("nfs_lease_seconds", int64_t(60));
+  require(nfs_lease >= 5 && nfs_lease <= 3600, "invalid_config");
+  c.nfs_lease_seconds = uint32_t(nfs_lease);
   c.nfs_address = j.value("nfs_address", std::string("127.0.0.1"));
   require(c.nfs_address == "127.0.0.1" || c.nfs_address == "127.0.0.2", "invalid_config");
   require(!j.contains("nfs_peer_rpcbind_port") || j.at("nfs_peer_rpcbind_port").is_number_integer(), "invalid_config");

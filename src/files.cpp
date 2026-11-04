@@ -3,6 +3,7 @@
 #include <taucloud/smb_lease.hpp>
 #include <taucloud/http_stream.hpp>
 #include <taucloud/database.hpp>
+#include <taucloud/nfs_delegation.hpp>
 #include <algorithm>
 #include <map>
 #include <set>
@@ -104,6 +105,13 @@ struct file_store::impl {
     byte_lock range;
   };
   std::vector<waiting_lock> smb_waiters;
+  struct nfs_delegation_guard {
+    std::string actor, space, path, root, token, handle, export_id, client;
+    native_file file;
+    std::unique_ptr<native_cache_guard> guard;
+    nfs_detail::delegation_lifetime lifetime;
+  };
+  std::map<std::string, nfs_delegation_guard> nfs_delegations;
   std::map<std::string, uint32_t> pending_metadata;
   std::set<std::string> smb_deferred_times;
 #include "file_cache.inc"
@@ -533,6 +541,7 @@ struct file_store::impl {
     return s;
   }
   void unlocked(const std::string &space, const std::string &path) {
+    nfs_delegation_conflict(space, path);
     for (auto &[id, h] : handles)
       require(h.space != space || h.path != path, "locked");
   }
@@ -573,6 +582,7 @@ struct file_store::impl {
 #include "file_dav.inc"
 #include "file_smb.inc"
 #include "file_nfs.inc"
+#include "file_nfs_delegation.inc"
   json dispatch(const std::string &op, const json &body, const call_context &ctx) {
     std::lock_guard guard(mutex);
     maintain_caches();
@@ -607,6 +617,7 @@ struct file_store::impl {
   json dispatch_request(const std::string &op, const json &body, const call_context &ctx) {
     ctx.check();
     if (op == "nfs_file") return nfs_dispatch(body, ctx);
+    if (op == "nfs_delegation") return nfs_delegation_dispatch(body, ctx);
     if (op == "nfs_reap") return nfs_reap(body, ctx);
     if (op.starts_with("smb_"))
       return smb_dispatch(op, body, ctx);
@@ -633,6 +644,9 @@ struct file_store::impl {
     if (op == "revoke") {
       require(ctx.caller == "identity", "forbidden");
       minimum_epoch = std::max(minimum_epoch, body.at("epoch").get<int64_t>());
+      // Policy revocation stops IO immediately, but a delegation still needs
+      // its recall/lease interval before native exclusion can be released.
+      for (auto &[cookie, d] : nfs_delegations) d.lifetime.recall(cache_clock());
       handles.clear();
       locks.clear();
       smb_waiters.clear();

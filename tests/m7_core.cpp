@@ -146,6 +146,19 @@ int main() {
     initialize(root / "state", 38443);
     auto cfg = config::load(root / "state");
     auto original = read_json(cfg.state / "config.json");
+    ok(cfg.nfs_lease_seconds == 60);
+    for (auto bad : {json(0), json(4), json(3601), json(-1), json("30"), json(5.5), json(true)}) {
+      auto c = original;
+      c["nfs_lease_seconds"] = bad;
+      write_json(cfg.state / "config.json", c);
+      rejected([&] { config::load(cfg.state); }, "invalid_config");
+    }
+    for (auto seconds : {5, 30, 60, 3600}) {
+      auto c = original;
+      c["nfs_lease_seconds"] = seconds;
+      write_json(cfg.state / "config.json", c);
+      ok(config::load(cfg.state).nfs_lease_seconds == uint32_t(seconds));
+    }
     for (auto bad : {json(1023), json(38443), json(65536), json("2049")}) {
       auto c = original;
       c["nfs_port"] = bad;

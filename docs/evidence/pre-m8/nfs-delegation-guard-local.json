@@ -1,0 +1,117 @@
+{
+  "recorded_at": "2026-11-04T19:25:04.810055+00:00",
+  "base_source": "0c0f3617e67fe4e189d81e6d84b7c43731390652",
+  "status": "file-domain-coordinator-and-lease-lifetime-passed-wire-delegation-incomplete",
+  "scope": "Private native delegation coherence primitive plus configurable NFS lease and retained old-lease recovery grace. No positive wire delegation handout.",
+  "sanitizers": "Clang ASan/UBSan/LSan",
+  "source_sha256": {
+    "include/taucloud/core.hpp": "300eab57b50a01030f6d2e25e0daf114a2b482bea2c199a48fc8c0c5793dfcc3",
+    "include/taucloud/nfs_delegation.hpp": "d8977d73dcd495431312250c98382904edeaa6225e5b9fc285ac84516b5ae756",
+    "src/core.cpp": "cb68adfd80069567584a1fb6f97ea6681ae3644b900742a265c82906cadf3ec0",
+    "src/files.cpp": "40cb9a6185c52a4bdd3a5567d87b6a8b6f3b7414e1d852ce91c0f9ac66f81005",
+    "src/file_cache.inc": "e1d59158ae5e4248f820af6b0375f06b4da94b72fa0a9ea8de157329cd5509a0",
+    "src/file_nfs.inc": "2834e0e4565c1542767f0b365e62de6c3207a5028a5af03f2b0f62b0651cfdac",
+    "src/file_nfs_delegation.inc": "5f6f759972ebc30cb7133383e3e8a15d57c4eebf4b2a6000f9619b884970b98c",
+    "src/ipc.cpp": "ad7b5a4026b7f3054e3cc077d461447a2f5049e62222fa2811327a37acdb170c",
+    "src/nfs_v4.inc": "c297bab38e8c25571baa383145d462b794cb627ad584d3abd42c11a9fda25f52",
+    "src/nfs_protocol.cpp": "80af303c87dd88f12776ccb700b3acaa38a6960f1fd30a97aa4da59a19b650e1",
+    "src/nfs_backchannel.inc": "23c4b5dead4a34ab1bea6ba476fe8682709caea271b0cd44d87db4579cfd4b22",
+    "tests/nfs_delegation_native.cpp": "0518fcd61f884fef19cf2014679365374e0696a4cd35290c9403412fe7ceced8",
+    "tests/nfs_lease_lifetime.py": "34c658283786b28ae4d98da5a680669f7b6d43082bb18173a967e4e1b37a0f34",
+    "tests/m7_core.cpp": "7537adbe4c35deee471e3376d4578bccd29107245542281c7a5f37e5234308c3",
+    ".github/workflows/smb-metadata.yml": "e5a674c4a66c53dc96bbbd3c7c88c4437ba041e4b7f159af209d9c57f1e86567",
+    "xmake.lua": "49429fb5d8bc995a4366a1d06f2d46617d89d0f8ae013db38cd8f8b18cdac1ac"
+  },
+  "independent": {
+    "lease_lifetime": {
+      "sha256": "a6ecfddaf927ec24f5a0f21087b238ceb7c80d670966de358a7087c509b3a3d6",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "default lease is 60 seconds; configured five-second lease is advertised and SEQUENCE renews OPEN beyond its initial expiry",
+          "idle session and OPEN expire at the advertised lease; another client opens the file while the expired stateid remains invalid",
+          "reducing the lease preserves the old reclaim window across repeated restarts, then converges to the configured duration after grace"
+        ],
+        "recorded_at": "2026-11-04T19:17:06.508301+00:00"
+      }
+    },
+    "negotiation": {
+      "sha256": "2a96b534fe9a70d8acdbcc547a23b35986618fe31cf1838d95b692a9d51d9462",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "all 72 OPEN access/preference/hint combinations encode exact NONE/NONE_EXT reasons without gaining data rights or promising callbacks",
+          "invalid OPEN preferences/access bits stop before CREATE and do not mutate the namespace",
+          "CLAIM_FH honors cancellation while upgrading ordinary OPEN rights; exact slot replay does not advance the state twice",
+          "standalone WANT_DELEGATION ignores data-access bits, returns extended reasons, supports idempotent cancellation and preserves the current filehandle",
+          "standalone validation distinguishes invalid preference, missing handle, directory refusal, unsupported previous-client recovery and grace/reclaim errors",
+          "WANT refuses unmapped callers, reauthorizes cached replies after export revocation and creates no hidden OPEN/client-busy state",
+          "real service restart preserves ordinary OPEN reclaim while rejecting invented delegation recovery during grace and after RECLAIM_COMPLETE"
+        ],
+        "recorded_at": "2026-11-04T19:18:12.799636+00:00"
+      }
+    },
+    "state": {
+      "sha256": "02406db8dafaad61cdf97e2eae64cb8ac74cc8b2496b3ccb303622b1e14bd96e",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "BIND_CONN_TO_SESSION on a fresh connection, PUTPUBFH, TEST_STATEID old/current states, FREE_STATEID held/unlocked states and read-only OPEN_DOWNGRADE",
+          "one kernel-style session accepts multiple mapped users without sharing their open authority",
+          "exclusive lock conflicts, denied owner details, disjoint writes and CLOSE with held locks",
+          "partial unlock splits ranges and preserves neighboring conflicts",
+          "process restart persists split lock ranges; matching client reclaims OPEN and locks before RECLAIM_COMPLETE"
+        ]
+      }
+    },
+    "backchannel": {
+      "sha256": "51edb28636374d7de2b1160cfabcd1ff1064c48d818a6da7b9c2eafa389d8171",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "CREATE_SESSION binds a bidirectional transport; CB_NULL uses the requested program/version and AUTH_NONE while forechannel RPC stays usable",
+          "probe replies are bound to their exact TCP connection and XID; cross-connection, duplicate and unknown replies cannot change path state",
+          "BACKCHANNEL_CTL changes program and invalidates old probes; malformed matched replies keep path down and idempotent rebinding reprobes it",
+          "cleared callback credentials and destroyed/recreated sessions cannot be validated by a stale probe response",
+          "BIND_CONN_TO_SESSION supports BACK and BACK_OR_BOTH on new transports, rejects invalid directions and changes to existing channel roles",
+          "AUTH_SYS CB_NULL carries the offered timestamp, machine name, UID/GID and supplementary groups exactly",
+          "five-second probe timeout ignores late success; rebind recovers the path without recreating the session",
+          "losing the only callback transport sets CB_PATH_DOWN on a surviving forechannel connection",
+          "CB_NULL success alone does not validate the sequenced backchannel; CB_SEQUENCE success on the wrong transport is ignored",
+          "truncated/trailing XDR and mismatched status/tag/count/op/session/sequence/slot close the transport before exact retry; only a valid success advances the slot",
+          "successful CB_SEQUENCE advances exactly once; BACKCHANNEL_CTL retains the session sequence and ignores old duplicate replies",
+          "BIND and callback program replacement never retry an outstanding CB_COMPOUND on a live transport; its original reply releases the slot without validating the new program",
+          "completion of a callback issued before credential removal advances its slot but cannot resurrect the disabled backchannel",
+          "CB_COMPOUND timeout closes the original transport before retry; stale RPC replies on the replacement cannot complete the unresolved slot",
+          "one callback slot serializes multiple bound paths; transport loss retries the unresolved request on another bound connection",
+          "loss of the only backchannel with an unanswered CB_COMPOUND reports CB_PATH_DOWN_SESSION; binding a replacement clears that flag and preserves the pending sequence",
+          "client-advertised slot growth beyond CREATE_SESSION and shrink back to zero are accepted without allocation or increasing callback concurrency",
+          "destroying and recreating a session starts a distinct callback slot at sequence one; old CB_COMPOUND success cannot validate it",
+          "UINT32_MAX offered callback slots require only slot zero; AUTH_SYS credentials must fit the negotiated complete CB_COMPOUND request size"
+        ],
+        "sanitizers": true
+      }
+    }
+  },
+  "core": {
+    "nfs_checks": 1549,
+    "smb_checks": 12583,
+    "smb_native_checks": 125,
+    "status": "passed"
+  },
+  "limits": [
+    "No positive OPEN/WANT read/write delegation grants or CB_RECALL yet.",
+    "No protocol DELEGRETURN, revoked delegation stateids, TEST_STATEID/FREE_STATEID integration or durable delegation reclaim yet.",
+    "Native guards are owned by the file worker and do not survive its death.",
+    "Acquisition excludes pre-existing file-domain opens; NFS protocol OPEN/lock ownership must be integrated before handout.",
+    "Linux native guard acquisition requires lease-break-time >= nfs_lease_seconds + 5; this assumes the host setting remains stable during the guard.",
+    "The last original pynfs delegation selection remains 2 passed / 11 failed at 0c0f361. It was not rerun because wire handout is unchanged.",
+    "Cross-platform acceptance of this batch is pending."
+  ],
+  "fixture_correction": "The added other-user denial test initially assumed the permissive default DACL was owner-only. It now explicitly installs mode 0600 before testing denied acquisition; production ACL semantics were not loosened.",
+  "native": {
+    "status": "passed",
+    "checks": 176,
+    "log": "PASS monotonic recall, expiry, return and non-resurrection boundaries\nPASS native write exclusion, own filehandle reads, capability binding and explicit return\nPASS expired access grants deny IO and renewal while retaining native protection\nPASS SMB conflict recalls before open and existing SMB opens prevent handout\nPASS DAV and FTP writes recall before opening; their live handles prevent handout\nPASS native exclusive protection adds no write authority and handout still checks the file ACL\nPASS fixed recall deadline revokes despite continuous client renewal\nPASS autonomous client expiry releases exclusion without protocol traffic\nPASS policy revocation denies data immediately and preserves protection until return\nPASS 176 NFS delegation native/lifecycle checks\n"
+  }
+}

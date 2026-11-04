@@ -209,7 +209,8 @@ struct server::impl {
     if (!c.nfs_gss_service.empty()) gss_context credentials(c.nfs_gss_service, c.nfs_gss_keytab);
     sql(db, "CREATE TABLE IF NOT EXISTS replay(id TEXT PRIMARY KEY,hash TEXT NOT NULL,result TEXT "
             "NOT NULL);"
-            "CREATE TABLE IF NOT EXISTS recovery(id TEXT PRIMARY KEY,body TEXT NOT NULL);");
+            "CREATE TABLE IF NOT EXISTS recovery(id TEXT PRIMARY KEY,body TEXT NOT NULL);"
+            "CREATE TABLE IF NOT EXISTS lease_history(id INTEGER PRIMARY KEY CHECK(id=1),seconds INTEGER NOT NULL);");
     start_recovery();
     start_nlm();
   }

@@ -420,6 +420,18 @@ nfs_object nfs_resolve(space_state &s, const json &g, const std::string &encoded
     require(!q.integer(3) || nfs_retained.contains(token), "stale_handle");
   }
   auto prefix = g.at("path").get<std::string>();
+  for (auto &[cookie, d] : nfs_delegations) {
+    if (!d.lifetime.held() || d.token != token) continue;
+    require(d.space == g.at("space").at("id").get<std::string>() &&
+                d.root == g.at("root").dump() && beneath(d.path, prefix), "stale_handle");
+    if (write) {
+      d.lifetime.recall(cache_clock());
+      throw error("cache_break_pending");
+    }
+    // Filehandle IO uses the retained incarnation; pathname lookup still
+    // resolves the namespace independently and may itself request a recall.
+    return {d.path, d.file.retain()};
+  }
   if (auto retained = nfs_retained.find(token); retained != nfs_retained.end()) {
     require(retained->second.space == g.at("space").at("id").get<std::string>() &&
                 retained->second.root == g.at("root").dump() &&

@@ -67,6 +67,12 @@ void cache_break(opened &h, unsigned level = 0, unsigned lease_target = 0, bool 
 }
 bool native_cache_breaks() {
   bool pending = false;
+  for (auto &[cookie, d] : nfs_delegations) {
+    if (d.guard && d.guard->breaking()) {
+      d.lifetime.recall(cache_clock());
+      pending = true;
+    }
+  }
   for (auto &[id, h] : handles) {
     if (!h.cache) continue;
     if (h.cache->breaking()) { cache_break(h, 0, 0, true); pending = true; }
@@ -77,6 +83,7 @@ void cache_conflict(const std::string &space, const std::string &path,
                     const std::string &owner = "", unsigned level = 0,
                     const std::shared_ptr<lease_cache> &lease_owner = {}, unsigned lease_target = 0,
                     bool lease_data_only = false) {
+  nfs_delegation_conflict(space, path);
   bool pending = false;
   for (auto &[id, h] : handles) {
     if ((h.cache || (h.lease_cache_state && h.lease_cache_state->state.unsettled())) &&
@@ -100,6 +107,7 @@ void cache_conflict(const std::string &space, const std::string &path,
   require(!pending, "cache_break_pending");
 }
 void maintain_caches() {
+  maintain_nfs_delegations();
   bool any = std::any_of(handles.begin(), handles.end(),
       [](const auto &entry) { return bool(entry.second.cache) ||
           (entry.second.lease_cache_state && entry.second.lease_cache_state->state.unsettled()); });

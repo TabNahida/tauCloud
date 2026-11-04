@@ -40,6 +40,7 @@ struct config {
   std::string nfs_gss_service, nfs_gss_keytab;
   std::string smb_gss_service, smb_gss_keytab;
   uint16_t nfs_peer_rpcbind_port = 111;
+  uint32_t nfs_lease_seconds = 60;
   int connections = 32, ipc_queue = 16, restart_limit = 5;
   int memory_mb = 512;
   std::string origin() const;

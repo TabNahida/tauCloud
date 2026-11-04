@@ -1,0 +1,182 @@
+{
+  "recorded_at": "2026-11-04T19:24:44.168Z",
+  "status": "prior-commits-only-current-coordinator-not-yet-pushed",
+  "runs": [
+    {
+      "run_id": 41893306919,
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41893306919",
+      "jobs": [
+        {
+          "id": 126796085183,
+          "name": "gcc metadata",
+          "status": "in_progress",
+          "conclusion": null,
+          "active": [
+            "Native SMB directory notifications and asynchronous lifecycle"
+          ],
+          "failed": [],
+          "delegation_negotiation": [
+            {
+              "name": "NFSv4.1 OPEN and WANT_DELEGATION negotiation, authority and replay",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Unmodified pynfs explicit no-delegation request",
+              "status": "pending",
+              "conclusion": null
+            },
+            {
+              "name": "Full pynfs delegation diagnostic (grants and recall incomplete)",
+              "status": "pending",
+              "conclusion": null
+            }
+          ]
+        },
+        {
+          "id": 126796085519,
+          "name": "clang metadata",
+          "status": "in_progress",
+          "conclusion": null,
+          "active": [
+            "NFSv4.1 blocking lock notification and callback replay"
+          ],
+          "failed": [],
+          "delegation_negotiation": [
+            {
+              "name": "NFSv4.1 OPEN and WANT_DELEGATION negotiation, authority and replay",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Unmodified pynfs explicit no-delegation request",
+              "status": "pending",
+              "conclusion": null
+            },
+            {
+              "name": "Full pynfs delegation diagnostic (grants and recall incomplete)",
+              "status": "pending",
+              "conclusion": null
+            }
+          ]
+        },
+        {
+          "id": 126796085662,
+          "name": "msvc metadata",
+          "status": "in_progress",
+          "conclusion": null,
+          "active": [
+            "Scoped SMB ownership authority and revocation"
+          ],
+          "failed": [],
+          "delegation_negotiation": [
+            {
+              "name": "NFSv4.1 OPEN and WANT_DELEGATION negotiation, authority and replay",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Unmodified pynfs explicit no-delegation request",
+              "status": "pending",
+              "conclusion": null
+            },
+            {
+              "name": "Full pynfs delegation diagnostic (grants and recall incomplete)",
+              "status": "pending",
+              "conclusion": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "run_id": 41893306972,
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41893306972",
+      "jobs": [
+        {
+          "id": 126796085296,
+          "name": "windows",
+          "status": "in_progress",
+          "conclusion": null,
+          "active": [
+            "Run python scripts/run_m7.py --compiler msvc"
+          ],
+          "failed": [],
+          "delegation_negotiation": []
+        },
+        {
+          "id": 126796085867,
+          "name": "linux (clang)",
+          "status": "in_progress",
+          "conclusion": null,
+          "active": [
+            "Run python3 scripts/run_m7.py --compiler clang --mode debug --sanitizers --litmus build/litmus/installed/bin/litmus"
+          ],
+          "failed": [],
+          "delegation_negotiation": []
+        },
+        {
+          "id": 126796086271,
+          "name": "linux (gcc)",
+          "status": "in_progress",
+          "conclusion": null,
+          "active": [
+            "Run python3 scripts/run_m7.py --compiler gcc  --litmus build/litmus/installed/bin/litmus"
+          ],
+          "failed": [],
+          "delegation_negotiation": []
+        }
+      ]
+    },
+    {
+      "run_id": 41891051396,
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41891051396",
+      "jobs": [
+        {
+          "id": 126788224398,
+          "name": "msvc metadata",
+          "status": "completed",
+          "conclusion": "failure",
+          "active": [],
+          "failed": [
+            "Native cache exclusion, cancellation and allocation safety",
+            "SMB shared lease native exclusion and file-domain authority"
+          ],
+          "delegation_negotiation": []
+        },
+        {
+          "id": 126788224854,
+          "name": "gcc metadata",
+          "status": "in_progress",
+          "conclusion": null,
+          "active": [
+            "NFS attributes and native allocation"
+          ],
+          "failed": [],
+          "delegation_negotiation": []
+        },
+        {
+          "id": 126788224943,
+          "name": "clang metadata",
+          "status": "in_progress",
+          "conclusion": null,
+          "active": [
+            "Original Samba EXCLUSIVE, BATCH and Level II transitions"
+          ],
+          "failed": [],
+          "delegation_negotiation": []
+        }
+      ]
+    }
+  ],
+  "windows_failure": {
+    "commit": "ff33f83e3181b4b0f530410b8d65c44ac9040b05",
+    "run_id": 41891051396,
+    "job_id": 126788224398,
+    "errors": [
+      "M2: lease_expired after_checks=49",
+      "SMB shared lease: lease_expired after_checks=120"
+    ],
+    "interpretation": "Confirmed failing operations timed out on signed authority. Exact native/IO cause remains unresolved. Subsequent 0c0f361 job has passed both steps but was still running at this snapshot; no claim of root-cause fix."
+  }
+}
