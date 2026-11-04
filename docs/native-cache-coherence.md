@@ -43,8 +43,9 @@ read leases and a writer-triggered break. Windows uses blocking `CreateFileW`
 with DELETE sharing rather than MSVC fstream's incompatible share mode.
 
 Local Clang ASan/UBSan/LSan: 75 M2 checks, 12,422 SMB core checks and 98 NFS core
-checks passed. Windows implementation acceptance is pending the remote MSVC
-job. The [local evidence](evidence/pre-m8/native-cache-local.json) identifies
+checks passed. The [native core step at `4fe2b79`](evidence/pre-m8/native-cache-4fe-remote.json)
+passes GCC, Clang ASan/UBSan and Windows MSVC. Subsequent protocol regression
+was still in progress when this result was recorded. The [local evidence](evidence/pre-m8/native-cache-local.json) identifies
 the exact source hashes. The existing SMB metadata matrix executes this core
 test before its protocol tests on GCC, Clang and MSVC.
 

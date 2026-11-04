@@ -1,0 +1,39 @@
+{
+  "recorded_at": "2026-11-04T10:54:20.150512+00:00",
+  "source": "4fe2b7979d4bbc8cc5785213fd175817031c81ce",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41816198560",
+  "status": "native-core-passed-protocol-regression-in-progress",
+  "scope": "Linux GCC, Clang ASan/UBSan and Windows MSVC actual native exclusion/flush/release/cancellation tests passed. The remainder of this workflow was still in progress when recorded. No network cache authority is enabled.",
+  "hosts": {
+    "clang metadata": {
+      "job_id": 126527448840,
+      "job_status_at_observation": "in_progress",
+      "native_core_step": {
+        "conclusion": "success",
+        "name": "Native cache exclusion, cancellation and allocation safety",
+        "number": 12,
+        "status": "completed"
+      }
+    },
+    "gcc metadata": {
+      "job_id": 126527448987,
+      "job_status_at_observation": "in_progress",
+      "native_core_step": {
+        "conclusion": "success",
+        "name": "Native cache exclusion, cancellation and allocation safety",
+        "number": 12,
+        "status": "completed"
+      }
+    },
+    "msvc metadata": {
+      "job_id": 126527453154,
+      "job_status_at_observation": "in_progress",
+      "native_core_step": {
+        "conclusion": "success",
+        "name": "Native cache exclusion, cancellation and allocation safety",
+        "number": 12,
+        "status": "completed"
+      }
+    }
+  }
+}
