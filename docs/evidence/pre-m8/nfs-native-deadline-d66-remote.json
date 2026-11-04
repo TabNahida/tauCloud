@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "recorded_at": "2026-11-04T22:39:22.779105+00:00",
+  "source_commit": "d66ff7cc3d948f8ecab85cef57ab5bb8eea9cfd8",
+  "run_url": "https://github.com/TabNahida/tauCloud/actions/runs/41924905694",
+  "log_sha256": "cf43a5bf96e15727b064ac8f08381adbf31da60a460107c92f583d79ee74a541",
+  "checks": {
+    "host": 257,
+    "linux_619_vm_tmpfs_ext4": 584
+  },
+  "markers": [
+    "kernel\tHost capability refusal or native acceptance\t2026-11-04T22:31:42.6828969Z PASS native delegation 257 checks",
+    "kernel\tRequired tmpfs and ext4 native exclusion in QEMU\t2026-11-04T22:32:27.6075990Z PASS native delegation 584 checks",
+    "kernel\tRequired tmpfs and ext4 native exclusion in QEMU\t2026-11-04T22:32:27.6076236Z TAUCLOUD_DELEGATION_VM_PASS",
+    "kernel\tRequired tmpfs and ext4 native exclusion in QEMU\t2026-11-04T22:32:27.6077027Z PASS isolated kernel acceptance (tmpfs + ext4)"
+  ],
+  "limits": [
+    "Component native protection only; production NFS wire handout remains gated."
+  ]
+}

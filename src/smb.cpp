@@ -1344,6 +1344,20 @@ struct client : session_state, std::enable_shared_from_this<client> {
       }
       auto &h = handle(p, 72, tid);
       auto control = get(p, 68, 4);
+      if (control == 0x900a0 || control == 0x900bc) {
+        check(get(p, 112, 4) == 1, 0xc00000bb);
+        check(!h.pipe && get(p, 104, 4) == 0 && get(p, 108, 4) <= 65536);
+        auto length = get(p, 92, 4);
+        check(length == (control == 0x900bc ? 48 : 0));
+        auto input = slice(p, get(p, 88, 4), length, 120);
+        check(h.access & 0x102, 0xc0000022);
+        co_await operation(h, control == 0x900a0 ? "delete_object_id" : "set_object_id_extended", true,
+                           {{"extended", encode_bytes(input)}});
+        auto b = sized(48, 49);
+        put(b, 4, control, 4);
+        b.replace(8, 16, fid_for(h));
+        co_return b;
+      }
       if (control == 0x900c0 || control == 0x9009c) {
         check(get(p, 112, 4) == 1, 0xc00000bb);
         check(!h.pipe && get(p, 92, 4) == 0 && get(p, 104, 4) == 0 &&
@@ -1902,7 +1916,7 @@ struct client : session_state, std::enable_shared_from_this<client> {
             code = e.status;
             log("smb", "command_" + std::to_string(cmd), std::to_string(code));
           } catch (const error &e) {
-            if ((cmd == 5 || cmd == 9 || cmd == 10 || cmd == 14 || cmd == 17) && std::string_view(e.what()) == "cache_break_pending") {
+            if ((cmd == 5 || cmd == 9 || cmd == 10 || cmd == 11 || cmd == 14 || cmd == 17) && std::string_view(e.what()) == "cache_break_pending") {
               wake_cache_polls();
               cache_recall = true;
               try { defer_command(p, tid, encrypted, 0, related_file); code = 0x103; }

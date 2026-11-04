@@ -39,7 +39,7 @@ original Samba compound and DOS/EA regression. Actions runs the same tests
 with GCC, Clang/sanitizers and Windows/MSVC; pending remote results are not
 counted as passes.
 
-Full object-ID compatibility remains open: SET/DELETE/EXTENDED operations,
+Full object-ID compatibility remains open: SET operations and volume-wide uniqueness,
 volume object-ID assignment, link-tracking services and USN journal semantics
 are not implemented. A Linux remount/device identity change has the same
 identity limitations as the native file core and is not covered by process
@@ -56,5 +56,37 @@ requires completed native deletion and FILE_CREATE (not OPEN_IF), verifies a
 new NTFS file incarnation, and compares SMB's identifier with direct local
 DeviceIoControl. An independent delete/recreate on the same filesystem measures
 whether native NTFS itself assigns an identifier during recreation. Linux's
-no-inherited-xattr check remains strict. The Windows native-oracle result is
-pending; the earlier failure is not counted as a pass.
+no-inherited-xattr check remains strict. The [fixed-source Windows native oracle](evidence/pre-m8/smb-object-id-oracle-0c-remote.json)
+passes all seven groups at `0c1ac76`: direct NTFS deletion/recreation produces
+a new file incarnation while retaining its object ID. SMB matches that native
+behavior. The earlier failed assertion is retained as superseded evidence.
+
+## Deletion and extended information
+
+FSCTL_DELETE_OBJECT_ID (0x900a0) removes the identifier, leaving the file or
+directory intact; repeating it on an unassigned object succeeds.
+FSCTL_SET_OBJECT_ID_EXTENDED (0x900bc) accepts exactly 48 opaque bytes and
+preserves the first 16-byte ObjectId. Missing assignment reports
+STATUS_OBJECT_NAME_NOT_FOUND, distinct from GET's STATUS_OBJECTID_NOT_FOUND.
+Both operations return an empty IOCTL result and require FILE_WRITE_DATA or
+FILE_WRITE_ATTRIBUTES on the actual open plus current share write authority.
+Malformed requests fail before mutation. The definitions follow
+[MS-FSCC](https://winprotocoldoc.z19.web.core.windows.net/MS-FSCC/%5BMS-FSCC%5D-250210.pdf)
+sections 2.3.3–4 and 2.3.79–80.
+
+Windows uses native FSCTLs through a confined attribute-write descriptor,
+sharing the existing directory identity checks used for SET_INFO timestamps.
+Linux replaces/removes its incarnation-bound xattr and flushes changes. The
+file authority coordinates cache recall before changing metadata; deferred
+IOCTLs retain their AsyncId and resume only after ACK. NFS native conflicts
+remain protected by the file-domain recall gate.
+
+Independent clients cover four dialects, file/directory mutation, opaque data,
+invalid sizes, write-attributes-only access without data rights, idempotent
+deletion, retained file contents, restart, live write-authority revocation and
+actual cache recalls. Native Windows mutation acceptance remains pending.
+SET_OBJECT_ID still needs restoration authority and volume-wide uniqueness;
+volume IDs, USN journal and link-tracking service remain incomplete.
+
+[Local mutation evidence](evidence/pre-m8/smb-object-id-mutations-local.json) records
+13 object-ID groups, 40 oplock groups and 83 native-file checks.

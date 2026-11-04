@@ -220,6 +220,26 @@ def main():
             holder.close(); directory.close()
             passed(f'{dialect:x}: first directory query survives a native cache recall without losing initialization or returning premature EOF')
 
+            from smb_object_id import identifier, request as object_request, GET, EXTENDED, DELETE, mutate
+            seed = create(t, f'object-info-cache-{dialect:x}')
+            identity = identifier(seed); seed.close()
+            holder = cached(t, seed.file_name)
+            metadata = create(t, seed.file_name, access=0x100, disposition=1)
+            payload = bytes(range(48))
+            message = object_request(metadata, control=EXTENDED, data=payload, limit=0)
+            request = c.send(message, s.session_id, t.tree_connect_id)
+            pending(request); recalled(q, s, holder)
+            assert identifier(holder, control=GET) == identity
+            c.echo(sid=s.session_id, timeout=5)
+            holder.flush(); ack(c, s, t, holder)
+            response = c.receive(request, timeout=10)
+            assert response['status'].get_value() == 0 and response['flags'].get_value() & 2
+            assert identifier(metadata, control=GET) == identity[:16] + payload
+            mutate(metadata, DELETE)
+            denied(lambda: identifier(holder, control=GET), 0xc00002f0)
+            metadata.close(); holder.close()
+            passed(f'{dialect:x}: object-ID mutation waits for cache recall before changing metadata, keeps ECHO live and resumes its IOCTL after ACK')
+
             holder = cached(t, f'cancel-cache-{dialect:x}')
             other, request, receive = begin(t, holder.file_name)
             recalled(q, s, holder); request.cancel()

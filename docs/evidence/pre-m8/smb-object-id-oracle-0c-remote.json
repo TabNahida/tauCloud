@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "checks": [
+    "210: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+    "300: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+    "302: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+    "311: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+    "identifiers survive all-service restart and out-of-band native rename",
+    "delete completes, same-name recreation has a new native incarnation and identifiers follow native filesystem behavior",
+    "read-only share can retrieve existing IDs but cannot create metadata"
+  ],
+  "recorded_at": "2026-11-04T22:36:41.123424+00:00",
+  "native_recreation": {
+    "has_identifier": true,
+    "retained_identifier": true
+  },
+  "source_commit": "0c1ac76deba02848e57c58c946914d0e18a2cd72",
+  "run_url": "https://github.com/TabNahida/tauCloud/actions/runs/41925397819",
+  "job_id": 126908341465,
+  "artifact_sha256": "0f6b6e5474990bad6202e061b98eda9b7c7cf203d70bf90f511a07b24ae1f39a"
+}

@@ -311,6 +311,54 @@ std::optional<std::string> native_file::object_identifier(bool create) const {
   throw error("conflict");
 #endif
 }
+void native_file::delete_object_identifier() const {
+  info();
+#ifdef _WIN32
+  auto attributes = attributes_writer();
+  DWORD size = 0;
+  if (!DeviceIoControl(attributes.impl_->file->handle, FSCTL_DELETE_OBJECT_ID,
+                       nullptr, 0, nullptr, 0, &size, nullptr)) {
+    auto code = GetLastError();
+    if (code == ERROR_INVALID_FUNCTION || code == ERROR_NOT_SUPPORTED)
+      throw error("invalid_device_request");
+    native_error();
+  }
+#else
+  if (fremovexattr(impl_->file->handle, "user.taucloud.object-id.v1") != 0) {
+    if (errno == ENODATA) return;
+    if (errno == EOPNOTSUPP) throw error("invalid_device_request");
+    native_error();
+  }
+  flush();
+#endif
+}
+void native_file::set_object_identifier_extended(std::string_view value) const {
+  require(value.size() == 48, "invalid_request");
+  auto previous = object_identifier();
+  require(previous.has_value(), "not_found");
+#ifdef _WIN32
+  auto attributes = attributes_writer();
+  DWORD size = 0;
+  if (!DeviceIoControl(attributes.impl_->file->handle, FSCTL_SET_OBJECT_ID_EXTENDED,
+                       const_cast<char *>(value.data()), static_cast<DWORD>(value.size()),
+                       nullptr, 0, &size, nullptr)) {
+    auto code = GetLastError();
+    if (code == ERROR_INVALID_FUNCTION || code == ERROR_NOT_SUPPORTED)
+      throw error("invalid_device_request");
+    native_error();
+  }
+#else
+  // File authority serializes metadata changes; copied/stale xattrs never
+  // become an identifier for a different native incarnation.
+  auto record = info().at("object").get<std::string>() + '\0' + previous->substr(0, 16) + std::string(value);
+  if (fsetxattr(impl_->file->handle, "user.taucloud.object-id.v1", record.data(), record.size(), XATTR_REPLACE)) {
+    if (errno == ENODATA) throw error("not_found");
+    if (errno == EOPNOTSUPP) throw error("invalid_device_request");
+    native_error();
+  }
+  flush();
+#endif
+}
 json native_file::info(bool change_stamp) const {
 #ifdef _WIN32
   FILE_ID_INFO id{};
@@ -841,11 +889,11 @@ void native_file::flush() const {
     native_error();
 #endif
 }
-void native_file::set_times(std::optional<uint64_t> accessed, std::optional<uint64_t> modified) {
-  for (auto value : {accessed, modified})
-    require(!value || *value <= uint64_t(INT64_MAX), "invalid_timestamp");
+native_file native_file::attributes_writer() const {
 #ifdef _WIN32
-  resource attributes;
+  auto result = retain();
+  result.impl_->file = std::make_shared<resource>();
+  auto &attributes = *result.impl_->file;
   if (info().at("directory").get<bool>()) {
     // ReOpenFile rejects directory metadata handles on supported Windows hosts.
     // Our original directory and all its parents deny DELETE, pinning the name.
@@ -889,6 +937,18 @@ void native_file::set_times(std::optional<uint64_t> accessed, std::optional<uint
     SetLastError(saved);
     native_error();
   }
+  result.impl_->file->access = FILE_WRITE_ATTRIBUTES;
+  return result;
+#else
+  return retain();
+#endif
+}
+void native_file::set_times(std::optional<uint64_t> accessed, std::optional<uint64_t> modified) {
+  for (auto value : {accessed, modified})
+    require(!value || *value <= uint64_t(INT64_MAX), "invalid_timestamp");
+#ifdef _WIN32
+  auto attributes = attributes_writer();
+  auto handle = attributes.impl_->file->handle;
   auto convert = [](uint64_t ns) {
     auto ticks = ns / 100 + uint64_t(116444736000000000);
     return FILETIME{DWORD(ticks), DWORD(ticks >> 32)};

@@ -360,7 +360,8 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
   bool cleanup = op == "smb_close" || op == "smb_lock_cancel";
   bool writing = op == "smb_write" || op == "smb_resize" || op == "smb_allocation" ||
                  op == "smb_rename" || op == "smb_disposition" || op == "smb_attributes" ||
-                 op == "smb_set_eas" || op == "smb_set_security" || op == "smb_create_object_id";
+                 op == "smb_set_eas" || op == "smb_set_security" || op == "smb_create_object_id" ||
+                 op == "smb_delete_object_id" || op == "smb_set_object_id_extended";
   if (op == "smb_open")
     writing = body.value("write", false);
   auto grant = verify(body.at("grant"), writing, cleanup);
@@ -759,11 +760,14 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
   }
   if (op == "smb_resize" || op == "smb_allocation")
     require(h.access & 2, "forbidden");
+  if (op == "smb_delete_object_id" || op == "smb_set_object_id_extended")
+    require(h.access & 0x102, "forbidden");
   // Recall before cache-conflicting namespace/metadata mutation. Repeating a deferred SMB
   // request is safe only when no mutation has happened before this boundary.
   if (op == "smb_rename" || op == "smb_disposition" || op == "smb_attributes" ||
       op == "smb_set_eas" || op == "smb_resize" ||
-      op == "smb_allocation" || op == "smb_list") {
+      op == "smb_allocation" || op == "smb_list" ||
+      op == "smb_delete_object_id" || op == "smb_set_object_id_extended") {
     // Namespace changes remove HANDLE caching from foreign leases, not READ
     // caching. The originating lease key is exempt (MS-FSA 2.1.4.12).
     bool namespace_change = op == "smb_rename" || op == "smb_disposition";
@@ -804,12 +808,21 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     return meta;
   }
   auto meta = smb_meta(s, h);
-  if (op == "smb_object_id" || op == "smb_create_object_id") {
+  if (op == "smb_object_id" || op == "smb_create_object_id" ||
+      op == "smb_delete_object_id" || op == "smb_set_object_id_extended") {
     auto directory = h.directory ? (path.empty() ? s.directory.retain() : s.directory.open(path, true))
                                  : native_file();
     auto &file = h.directory ? directory : h.file;
     require(file.info().at("object") == meta.at("object"), "object_replaced");
-    if (op == "smb_create_object_id") nfs_delegation_conflict(space, path);
+    if (op != "smb_object_id") nfs_delegation_conflict(space, path);
+    if (op == "smb_delete_object_id") {
+      file.delete_object_identifier();
+      return {{"updated", true}};
+    }
+    if (op == "smb_set_object_id_extended") {
+      file.set_object_identifier_extended(decode_bytes(body.at("extended").get<std::string>()));
+      return {{"updated", true}};
+    }
     auto result = file.object_identifier(op == "smb_create_object_id");
     return {{"identifier", result ? json(encode_bytes(*result)) : json(nullptr)}};
   }

@@ -20,6 +20,7 @@ class native_file {
   struct impl;
   std::unique_ptr<impl> impl_;
   native_file open_impl(const std::string &, bool, bool, bool, bool, bool = false) const;
+  native_file attributes_writer() const;
   std::unique_ptr<native_cache_guard> cache_guard_impl(bool, bool, bool = true) const;
 
 public:
@@ -56,6 +57,8 @@ public:
   // Persistent SMB FILE_OBJECTID_BUFFER; absent unless explicitly created.
   // Metadata remains bound to this native incarnation across host renames.
   std::optional<std::string> object_identifier(bool create = false) const;
+  void delete_object_identifier() const;
+  void set_object_identifier_extended(std::string_view value) const;
   // Internal enumeration avoids Linux atime updates where ownership permits.
   // Client-requested directory reads retain their native access behavior.
   std::vector<json> list(bool preserve_access = false) const;

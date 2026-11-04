@@ -96,7 +96,7 @@ pace::task<void> pump_commands(uint64_t sid) {
     } catch (const status_error &e) { code = e.status; }
       catch (const error &e) {
         auto cmd = get(item.request, 12, 2);
-        if ((cmd == 5 || cmd == 9 || cmd == 10 || cmd == 14 || cmd == 17) && std::string_view(e.what()) == "cache_break_pending") {
+        if ((cmd == 5 || cmd == 9 || cmd == 10 || cmd == 11 || cmd == 14 || cmd == 17) && std::string_view(e.what()) == "cache_break_pending") {
           wake_cache_polls();
           auto current = pending_commands.find(id);
           // A conflicting operation can wait for the lease ACK timer. Bound

@@ -456,3 +456,8 @@ The VM delays file-domain observation after a real native write conflict and
 verifies that the imported recall deadline remains anchored to the owner.
 Acknowledged reservations across network admission, execution and full reply
 delivery remain separate requirements; production handout stays disabled.
+
+The [fixed-source Actions acceptance](evidence/pre-m8/nfs-native-deadline-d66-remote.json)
+for `d66ff7c` passes 257 host checks and 584 guest checks with the required
+Linux 6.19 tmpfs/ext4 PASS marker. This confirms the same native deadline
+implementation remotely; the network lifetime and recovery gates remain open.

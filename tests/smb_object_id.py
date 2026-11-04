@@ -17,6 +17,7 @@ from smbprotocol.file_info import FileRenameInformation, FileDispositionInformat
 from m5_integration import Fixture, create, denied, setinfo
 
 CREATE, GET = 0x900c0, 0x9009c
+DELETE, EXTENDED = 0x900a0, 0x900bc
 
 
 def ntfs_identifier(path, create=False):
@@ -75,6 +76,19 @@ def identifier(handle, **kwargs):
     value = response['buffer'].get_value()
     assert len(value) == 64 and value[:16] != bytes(16)
     return value
+
+
+def mutate(handle, control, data=b'', **kwargs):
+    q = request(handle, control=control, limit=0, data=data, **kwargs)
+    c, t = handle.connection, handle.tree_connect
+    raw = c.receive(c.send(q, t.session.session_id, t.tree_connect_id))
+    response = SMB2IOCTLResponse()
+    response['ctl_code'].enum_strict = False
+    response.unpack(raw['data'].get_value())
+    assert response['ctl_code'].get_value() == control
+    assert response['file_id'].get_value() == handle.file_id
+    assert response['input_count'].get_value() == response['output_count'].get_value() == 0
+    assert response['buffer'].get_value() == b''
 
 
 def main():
@@ -153,6 +167,48 @@ def main():
             metadata = create(t, name + '-metadata', access=0x80, disposition=1)
             assert identifier(metadata) != value
             metadata.close()
+            # Extended information is opaque, exactly 48 bytes, and cannot
+            # change the first 16-byte identity. Check rights on actual opens.
+            h = create(t, name + '-renamed', access=0x100, disposition=1)
+            payload = bytes(range(48))
+            for bad in (b'', bytes(47), bytes(49), bytes(64)):
+                denied(lambda bad=bad: mutate(h, EXTENDED, bad), 0xc000000d)
+            denied(lambda: mutate(h, DELETE, b'x'), 0xc000000d)
+            readonly = create(t, name + '-renamed', access=0x80, disposition=1)
+            denied(lambda: mutate(readonly, EXTENDED, payload), 0xc0000022)
+            denied(lambda: mutate(readonly, DELETE), 0xc0000022)
+            assert identifier(readonly, control=GET) == value
+            readonly.close()
+            mutate(h, EXTENDED, payload)
+            value = value[:16] + payload
+            assert identifier(h, control=GET) == value
+            if os.name == 'nt':
+                assert ntfs_identifier(f.root / 'smbdata' / (name + '-renamed')) == value
+            denied(lambda: h.write(b'forbidden'), 0xc0000022)
+            h.close()
+            d = create(t, name + '-dir', access=0x100, disposition=1, options=1)
+            mutate(d, EXTENDED, bytes(reversed(payload)))
+            directory_value = directory_value[:16] + bytes(reversed(payload))
+            assert identifier(d, control=GET) == directory_value
+            d.close()
+            removable = create(t, name + '-delete-id')
+            removable.write(b'file survives identifier deletion')
+            mutate(removable, DELETE)  # Idempotent even before assignment.
+            denied(lambda: mutate(removable, EXTENDED, payload), 0xc0000034)
+            identifier(removable)
+            mutate(removable, DELETE); mutate(removable, DELETE)
+            denied(lambda: identifier(removable, control=GET), 0xc00002f0)
+            assert removable.read(0, 33) == b'file survives identifier deletion'
+            if os.name == 'nt':
+                assert ntfs_identifier(f.root / 'smbdata' / (name + '-delete-id')) is None
+            removable.close()
+            removable_dir = create(t, name + '-delete-id-dir', options=1)
+            identifier(removable_dir)
+            mutate(removable_dir, DELETE); mutate(removable_dir, DELETE)
+            denied(lambda: identifier(removable_dir, control=GET), 0xc00002f0)
+            create(t, name + '-delete-id-dir/child').close()
+            removable_dir.close()
+            passed(f'{dialect:x}: extended info preserves identity across file/directory metadata-only opens; malformed/unauthorized mutations leave metadata intact; DELETE is idempotent and preserves data')
             saved[name + '-renamed'] = value
             saved[name + '-dir'] = directory_value
             c.disconnect()
@@ -220,6 +276,16 @@ def main():
         denied(lambda: identifier(h, control=GET), 0xc00002f0)
         h.close()
         passed('read-only share can retrieve existing IDs but cannot create metadata')
+        h = create(t, 'object-300-renamed', access=0x100, disposition=1)
+        f.api('shares', f.admin, dict(id='smb', space='smbdata', exposures={'smb':'r'}, update=True))
+        denied(lambda: mutate(h, EXTENDED, bytes(48)), 0xc0000022)
+        denied(lambda: mutate(h, DELETE), 0xc0000022)
+        # Reauthorization may retire the old write handle. Verify unchanged
+        # storage through a fresh read-only open, rather than requiring it live.
+        h = create(rt, 'object-300-renamed', access=0x80, disposition=1)
+        assert identifier(h, control=GET) == saved['object-300-renamed']
+        h.close()
+        passed('revoking share write authority denies mutations through an already-open WRITE_ATTRIBUTES handle without changing its identifier')
         report['status'] = 'passed'
     except Exception:
         report['error'] = traceback.format_exc()
