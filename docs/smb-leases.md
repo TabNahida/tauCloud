@@ -71,8 +71,7 @@ opens, legacy-cache coexistence, permission isolation, expiry, NFS read/write
 coherence and delivery boundaries. The initial file-domain integration passed
 58 checks in seven scenarios, alongside 3,214 state checks; see
 [file-domain evidence](evidence/pre-m8/smb-lease-domain-local.json).
-The native and state steps pass GCC/Clang/MSVC at `c45d5f2`; the whole jobs
-were still running when recorded ([remote evidence](evidence/pre-m8/smb-lease-domain-c45-remote.json)).
+The complete targeted GCC/Clang/MSVC jobs pass at `c45d5f2` ([remote evidence](evidence/pre-m8/smb-lease-domain-c45-remote.json)).
 
 The frontend now reserves client/key/name tuples across connections and file
 domains before CREATE suspends. It returns v1/v2 RqLs contexts, ignores v2 on
@@ -88,16 +87,19 @@ ACKs use ClientGuid/LeaseKey, can arrive through another authenticated connectio
 and reauthorize the owning open before applying the file-domain transition.
 Cross-connection dispatch releases its own gate before waiting on a peer.
 
-Seventeen independent wire groups pass locally under ASan/UBSan/LSan, including
+Twenty-one independent wire groups pass locally under ASan/UBSan/LSan, including
 four dialects, same-key joins during recall, client isolation, invalid ACKs,
 shared upgrades, native no-ACK invalidation, failed CREATE cleanup and timeout
-fencing. Updated state checks total 3,217; native checks total 61. See
-[network evidence](evidence/pre-m8/smb-lease-wire-local.json). Cross-platform
-network acceptance is scheduled in Actions and is not yet established.
+fencing. Updated state checks total 3,217; native checks total 62. See
+[current network evidence](evidence/pre-m8/smb-lease-sharing-local.json).
+The initial 13-group network step passes GCC/Clang/MSVC at `3450ec6`, while
+that run fails a Windows security/oplock regression after eight cases. Its
+root cause remains open ([remote evidence](evidence/pre-m8/smb-lease-wire-3450-remote.json)).
+The later metadata/sharing additions still await remote acceptance.
 
 Metadata-only and write-only opens can hold native-backed RWH without gaining
 READ_DATA or WRITE_DATA. Renewal and ACK use the open's actual authority,
-including read-only shares. READ_CONTROL joins the attribute/SYNCHRONIZE stat
+including read-only shares. For leases, READ_CONTROL joins the attribute/SYNCHRONIZE stat
 access mask: these opens retain the pinned description and do not recall data
 caches merely to query metadata. An initial metadata-only open pins an RW native
 description when permitted so a later write-only lease can share that object;
@@ -105,6 +107,17 @@ the logical rights of both handles remain unchanged. A foreign data open or
 cache prevents WRITE caching. Classic oplocks prevent a new HANDLE lease, and
 an existing HANDLE lease prevents new classic oplocks. Read-only lease/native
 exclusion can still coexist with Level II.
+
+A sharing violation first recalls HANDLE caching only: RWH becomes RW,
+retaining dirty-data authority while the client has an opportunity to close
+cached handles. If it ACKs without closing the conflicting open, CREATE still
+fails with SHARING_VIOLATION. A later compatible CREATE independently removes
+WRITE, taking RW to R. READ_CONTROL is exempt from recalling a lease, while a
+classic oplock retains the narrower attribute/SYNCHRONIZE exemption required
+by MS-FSA 2.1.4.12. These distinctions are covered by four-dialect wire tests
+and the original Samba break_twice, statopen4 and oplock.statopen1 cases.
+The full original suite now reports 27 passed, nine failed and three skipped
+([sharing-recall evidence](evidence/pre-m8/smb-lease-sharing-local.json)).
 
 All four original Samba statopen cases and its bidirectional oplock/lease
 matrix pass, alongside 17 independent wire groups, 61 native checks, 12 security

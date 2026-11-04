@@ -1,0 +1,2253 @@
+{
+  "recorded_at": "2026-11-04T17:25:37.714192+00:00",
+  "base_source": "ceddb7b3bddb44abb2fcd8c90b22d1cd959b787d",
+  "status": "targeted-local-passed-full-lease-suite-27-pass-9-fail-3-skip-remote-pending",
+  "scope": "HANDLE-only sharing recall and distinct lease/classic READ_CONTROL exemptions; Full SMB/NFS remains unfinished.",
+  "sanitizers": "Linux Clang ASan/UBSan/LSan",
+  "source_sha256": {
+    "src/file_smb.inc": "bf09d05c47cfc90646ed502cdfb1de294dcc32834bc1b30b55a3593f2fe32377",
+    "tests/smb_lease_native.cpp": "3bbcfd8d82fa37233a04c9e183f31f8d31762efa4ba97ce083b2ca8c110ad513",
+    "tests/smb_lease_integration.py": "a1c2ec64305127d1374c19eac39ee328df55f3b1379e237d4edd597d744058aa",
+    "tests/smb_oplock_integration.py": "9d9676302f6dd9a33f96677f6cd9b042860fb954e98939fb7d92da1ae9c98890",
+    ".github/workflows/smb-metadata.yml": "caebe65d2366a50bd03c7900953c41f10e85f7f644e62729cdc67ed731fe45f0"
+  },
+  "core": {
+    "smb_lease_native": 62,
+    "M5": 12583
+  },
+  "reports": {
+    "taucloud-lease-sharing-wire": {
+      "sha256": "4b0cc95f9cdbc00040d67ad5770326daefa3a65051cf91953064fbd0b8d9308c",
+      "report": {
+        "status": "passed",
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "checks": [
+          "210: v1 shared lease survives renewal, joins during recall, validates client/key/ACK state and coherently breaks RWH to RH to NONE",
+          "300: v2 shared lease survives renewal, joins during recall, validates client/key/ACK state and coherently breaks RWH to RH to NONE",
+          "302: v2 shared lease survives renewal, joins during recall, validates client/key/ACK state and coherently breaks RWH to RH to NONE",
+          "311: v2 shared lease survives renewal, joins during recall, validates client/key/ACK state and coherently breaks RWH to RH to NONE",
+          "same-client authenticated transport without an open routes the native recall ACK to the owning connection",
+          "R-only native invalidation delivers an encrypted no-ACK break before releasing exclusion",
+          "global key/name reservation covers NONE leases, rejects another path and is released after final close or failed CREATE",
+          "all eight v1/v2 requested state combinations return legal grants; H/W without READ succeeds with NONE",
+          "an original NONE member renews promoted shared authority after the promoting member closes",
+          "a conflicting lease prevents partial promotion of an existing R lease to RH when RWH was requested",
+          "malformed sizes, unknown state bits and duplicate lease contexts fail; reserved flags are ignored and v2 is ignored on SMB 2.1",
+          "the same LeaseKey under different client GUIDs identifies independent leases",
+          "unacknowledged native recall fences stale lease authority before admitting the native writer",
+          "metadata-only and write-only opens hold renewable RWH without gaining READ/WRITE rights; foreign leases recall to shared RH",
+          "a pre-existing metadata-only handle shares native identity with a later write-only leased handle without adding data access",
+          "READ_CONTROL, attribute and synchronize-only opens retain native exclusion without a data-cache recall",
+          "read-only-share metadata lease renews and ACKs without obtaining write authority or data access",
+          "210: incompatible sharing recalls only HANDLE (RWH to RW), preserves dirty writes on denial, then a compatible open recalls WRITE (RW to R)",
+          "300: incompatible sharing recalls only HANDLE (RWH to RW), preserves dirty writes on denial, then a compatible open recalls WRITE (RW to R)",
+          "302: incompatible sharing recalls only HANDLE (RWH to RW), preserves dirty writes on denial, then a compatible open recalls WRITE (RW to R)",
+          "311: incompatible sharing recalls only HANDLE (RWH to RW), preserves dirty writes on denial, then a compatible open recalls WRITE (RW to R)"
+        ],
+        "recorded_at": "2026-11-04T17:19:55.482904+00:00"
+      }
+    },
+    "taucloud-lease-sharing-classic": {
+      "sha256": "6af88726c57b56cf404ef330ee6c177be17d56cc2a44156320c0f2a2b5510489",
+      "report": {
+        "status": "passed",
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "checks": [
+          "210: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "210: READ_CONTROL-only CREATE recalls classic EXCLUSIVE and does not gain READ_DATA; its stat-open exemption applies only to leases",
+          "210: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "210: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "300: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "300: READ_CONTROL-only CREATE recalls classic EXCLUSIVE and does not gain READ_DATA; its stat-open exemption applies only to leases",
+          "300: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "300: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "302: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "302: READ_CONTROL-only CREATE recalls classic EXCLUSIVE and does not gain READ_DATA; its stat-open exemption applies only to leases",
+          "302: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "302: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "311: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "311: READ_CONTROL-only CREATE recalls classic EXCLUSIVE and does not gain READ_DATA; its stat-open exemption applies only to leases",
+          "311: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "311: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "210: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "300: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "302: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "311: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "sharing violations do not recall dirty caches; readonly, directory, delete-on-close and conflicting native opens receive no unsupported cache grant",
+          "a lease-form ACK for a classic oplock is rejected and finishes the recall without leaving native exclusion stuck",
+          "two encrypted sessions on one transport renew independent cache authority and route breaks/ACKs with their own keys; a foreign-session ACK cannot release another open",
+          "native host reads/writes wait for SMB recall; dirty client data flushes before host access and the original handle observes subsequent native writes",
+          "own EXCLUSIVE SET_INFO EOF completes synchronously and preserves its cache without a self-recall",
+          "related cached CREATE/SET_INFO/READ preserves the inherited FileId and completes without an unnecessary self-recall",
+          "NFSv3 READ on an existing handle returns JUKEBOX during native recall; repeated retries leave SMB flush/ACK live and the next read returns current data",
+          "DAV GET returns a retryable response while a cache recall is pending and reads freshly flushed bytes after ACK",
+          "another transport cannot ACK the holder FileId; CLOSE flushes/releases authority and wakes the peer CREATE",
+          "unacknowledged recall fences the holder transport and open while the conflicting client completes after native exclusion releases",
+          "credential revocation closes the cache-bearing transport and releases native exclusion without requiring a client request",
+          "stalled identity RPC cannot hold the cache transport past its authority: independent watchdog closes it before IPC timeout and autonomous worker expiry releases native exclusion"
+        ],
+        "recorded_at": "2026-11-04T17:19:55.462190+00:00"
+      }
+    },
+    "taucloud-lease-sharing-samba": {
+      "sha256": "98397e03f199f7f13bf76bfca6d51b109c75adbe9fb069f5c9ee1ed66f557dbe",
+      "report": {
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "recorded_at": "2026-11-04T17:19:56.249781+00:00",
+        "tests": [
+          {
+            "selector": "smb2.lease.break_twice",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "taucloud-lease-sharing-samba-smb2.lease.break_twice.log",
+            "services_before": {
+              "api": {
+                "failures": [],
+                "generation": "5075d94712031d5d6575736c0fee64ce",
+                "identity": {
+                  "birth": 32596704,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_api",
+                  "generation": "5075d94712031d5d6575736c0fee64ce",
+                  "pid": 1765874,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 88494080,
+                "started": 1793812802717,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file": {
+                "failures": [],
+                "generation": "f67b070c32acb515066c2ad6ef09fe5c",
+                "identity": {
+                  "birth": 32596535,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file",
+                  "generation": "f67b070c32acb515066c2ad6ef09fe5c",
+                  "pid": 1765694,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 65024000,
+                "started": 1793812801025,
+                "status": "running",
+                "open_descriptors": 13
+              },
+              "file_1": {
+                "failures": [],
+                "generation": "63208c0e05af2f3de89c0415b994f407",
+                "identity": {
+                  "birth": 32596546,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_1",
+                  "generation": "63208c0e05af2f3de89c0415b994f407",
+                  "pid": 1765706,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 60112896,
+                "started": 1793812801143,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file_2": {
+                "failures": [],
+                "generation": "ff2b8d580acc0ba9e563b7436560cd67",
+                "identity": {
+                  "birth": 32596558,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_2",
+                  "generation": "ff2b8d580acc0ba9e563b7436560cd67",
+                  "pid": 1765718,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 59801600,
+                "started": 1793812801261,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file_3": {
+                "failures": [],
+                "generation": "738df430701c7d82990a6ed671f4c7b8",
+                "identity": {
+                  "birth": 32596570,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_3",
+                  "generation": "738df430701c7d82990a6ed671f4c7b8",
+                  "pid": 1765730,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 60284928,
+                "started": 1793812801379,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "ftp": {
+                "failures": [],
+                "generation": "e43535f912b93a05c91033ed5d146a7a",
+                "identity": {
+                  "birth": 32596656,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_ftp",
+                  "generation": "e43535f912b93a05c91033ed5d146a7a",
+                  "pid": 1765845,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 51421184,
+                "started": 1793812802236,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "helper": {
+                "failures": [],
+                "generation": "0e04b8bca58757b24a0de22435ac34db",
+                "identity": {
+                  "birth": 32596632,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_helper",
+                  "generation": "0e04b8bca58757b24a0de22435ac34db",
+                  "pid": 1765810,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 50561024,
+                "started": 1793812801994,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "identity": {
+                "failures": [],
+                "generation": "6b0cabe8bb431e7c9f2863e028d128ca",
+                "identity": {
+                  "birth": 32596523,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_identity",
+                  "generation": "6b0cabe8bb431e7c9f2863e028d128ca",
+                  "pid": 1765682,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 141443072,
+                "started": 1793812800907,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "monitor": {
+                "failures": [],
+                "generation": "a073c620531e32826c7a5f7e2d9d1038",
+                "identity": {
+                  "birth": 32596594,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_monitor",
+                  "generation": "a073c620531e32826c7a5f7e2d9d1038",
+                  "pid": 1765764,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 51339264,
+                "started": 1793812801616,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "nfs": {
+                "failures": [],
+                "generation": "4ce312d0373df0803c6f2c7bab78106b",
+                "identity": {
+                  "birth": 32596679,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_nfs",
+                  "generation": "4ce312d0373df0803c6f2c7bab78106b",
+                  "pid": 1765865,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 51531776,
+                "started": 1793812802473,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "plugins": {
+                "failures": [],
+                "generation": "77ecf8dcff515904a30efd80dfd08cbc",
+                "identity": {
+                  "birth": 32596692,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_plugins",
+                  "generation": "77ecf8dcff515904a30efd80dfd08cbc",
+                  "pid": 1765870,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 51294208,
+                "started": 1793812802598,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "protocol": {
+                "failures": [],
+                "generation": "adccd0e8bf2a825e1b675042940c5fbd",
+                "identity": {
+                  "birth": 32596582,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_protocol",
+                  "generation": "adccd0e8bf2a825e1b675042940c5fbd",
+                  "pid": 1765752,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 51601408,
+                "started": 1793812801498,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "smb": {
+                "failures": [],
+                "generation": "5f20f81258e51bc53afd738a233e1776",
+                "identity": {
+                  "birth": 32596668,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_smb",
+                  "generation": "5f20f81258e51bc53afd738a233e1776",
+                  "pid": 1765853,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 56700928,
+                "started": 1793812802354,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "storage_admin": {
+                "failures": [],
+                "generation": "d8c30bbeb0e36c58f257faa05cffc7c7",
+                "identity": {
+                  "birth": 32596619,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_storage_admin",
+                  "generation": "d8c30bbeb0e36c58f257faa05cffc7c7",
+                  "pid": 1765797,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 50688000,
+                "started": 1793812801873,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "updater": {
+                "failures": [],
+                "generation": "bf3c6ee516bfe1b96dc97448353df1ff",
+                "identity": {
+                  "birth": 32596606,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_updater",
+                  "generation": "bf3c6ee516bfe1b96dc97448353df1ff",
+                  "pid": 1765770,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 50950144,
+                "started": 1793812801742,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "webdav": {
+                "failures": [],
+                "generation": "f445ad508b27302023393103efc0f5ed",
+                "identity": {
+                  "birth": 32596644,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_webdav",
+                  "generation": "f445ad508b27302023393103efc0f5ed",
+                  "pid": 1765833,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 55611392,
+                "started": 1793812802118,
+                "status": "running",
+                "open_descriptors": 8
+              }
+            },
+            "services_after": {
+              "api": {
+                "failures": [],
+                "generation": "5075d94712031d5d6575736c0fee64ce",
+                "identity": {
+                  "birth": 32596704,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_api",
+                  "generation": "5075d94712031d5d6575736c0fee64ce",
+                  "pid": 1765874,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 97144832,
+                "started": 1793812802717,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file": {
+                "failures": [],
+                "generation": "f67b070c32acb515066c2ad6ef09fe5c",
+                "identity": {
+                  "birth": 32596535,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file",
+                  "generation": "f67b070c32acb515066c2ad6ef09fe5c",
+                  "pid": 1765694,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 88727552,
+                "started": 1793812801025,
+                "status": "running",
+                "open_descriptors": 15
+              },
+              "file_1": {
+                "failures": [],
+                "generation": "63208c0e05af2f3de89c0415b994f407",
+                "identity": {
+                  "birth": 32596546,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_1",
+                  "generation": "63208c0e05af2f3de89c0415b994f407",
+                  "pid": 1765706,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 66011136,
+                "started": 1793812801143,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file_2": {
+                "failures": [],
+                "generation": "ff2b8d580acc0ba9e563b7436560cd67",
+                "identity": {
+                  "birth": 32596558,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_2",
+                  "generation": "ff2b8d580acc0ba9e563b7436560cd67",
+                  "pid": 1765718,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 65306624,
+                "started": 1793812801261,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file_3": {
+                "failures": [],
+                "generation": "738df430701c7d82990a6ed671f4c7b8",
+                "identity": {
+                  "birth": 32596570,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_3",
+                  "generation": "738df430701c7d82990a6ed671f4c7b8",
+                  "pid": 1765730,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 65789952,
+                "started": 1793812801379,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "ftp": {
+                "failures": [],
+                "generation": "e43535f912b93a05c91033ed5d146a7a",
+                "identity": {
+                  "birth": 32596656,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_ftp",
+                  "generation": "e43535f912b93a05c91033ed5d146a7a",
+                  "pid": 1765845,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 60268544,
+                "started": 1793812802236,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "helper": {
+                "failures": [],
+                "generation": "0e04b8bca58757b24a0de22435ac34db",
+                "identity": {
+                  "birth": 32596632,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_helper",
+                  "generation": "0e04b8bca58757b24a0de22435ac34db",
+                  "pid": 1765810,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 59211776,
+                "started": 1793812801994,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "identity": {
+                "failures": [],
+                "generation": "6b0cabe8bb431e7c9f2863e028d128ca",
+                "identity": {
+                  "birth": 32596523,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_identity",
+                  "generation": "6b0cabe8bb431e7c9f2863e028d128ca",
+                  "pid": 1765682,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 155418624,
+                "started": 1793812800907,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "monitor": {
+                "failures": [],
+                "generation": "a073c620531e32826c7a5f7e2d9d1038",
+                "identity": {
+                  "birth": 32596594,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_monitor",
+                  "generation": "a073c620531e32826c7a5f7e2d9d1038",
+                  "pid": 1765764,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 60186624,
+                "started": 1793812801616,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "nfs": {
+                "failures": [],
+                "generation": "4ce312d0373df0803c6f2c7bab78106b",
+                "identity": {
+                  "birth": 32596679,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_nfs",
+                  "generation": "4ce312d0373df0803c6f2c7bab78106b",
+                  "pid": 1765865,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 60379136,
+                "started": 1793812802473,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "plugins": {
+                "failures": [],
+                "generation": "77ecf8dcff515904a30efd80dfd08cbc",
+                "identity": {
+                  "birth": 32596692,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_plugins",
+                  "generation": "77ecf8dcff515904a30efd80dfd08cbc",
+                  "pid": 1765870,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 60534784,
+                "started": 1793812802598,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "protocol": {
+                "failures": [],
+                "generation": "adccd0e8bf2a825e1b675042940c5fbd",
+                "identity": {
+                  "birth": 32596582,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_protocol",
+                  "generation": "adccd0e8bf2a825e1b675042940c5fbd",
+                  "pid": 1765752,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 60252160,
+                "started": 1793812801498,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "smb": {
+                "failures": [],
+                "generation": "5f20f81258e51bc53afd738a233e1776",
+                "identity": {
+                  "birth": 32596668,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_smb",
+                  "generation": "5f20f81258e51bc53afd738a233e1776",
+                  "pid": 1765853,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 120492032,
+                "started": 1793812802354,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "storage_admin": {
+                "failures": [],
+                "generation": "d8c30bbeb0e36c58f257faa05cffc7c7",
+                "identity": {
+                  "birth": 32596619,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_storage_admin",
+                  "generation": "d8c30bbeb0e36c58f257faa05cffc7c7",
+                  "pid": 1765797,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 59535360,
+                "started": 1793812801873,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "updater": {
+                "failures": [],
+                "generation": "bf3c6ee516bfe1b96dc97448353df1ff",
+                "identity": {
+                  "birth": 32596606,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_updater",
+                  "generation": "bf3c6ee516bfe1b96dc97448353df1ff",
+                  "pid": 1765770,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 59600896,
+                "started": 1793812801742,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "webdav": {
+                "failures": [],
+                "generation": "f445ad508b27302023393103efc0f5ed",
+                "identity": {
+                  "birth": 32596644,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_webdav",
+                  "generation": "f445ad508b27302023393103efc0f5ed",
+                  "pid": 1765833,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 64458752,
+                "started": 1793812802118,
+                "status": "running",
+                "open_descriptors": 8
+              }
+            }
+          },
+          {
+            "selector": "smb2.lease.statopen4",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "taucloud-lease-sharing-samba-smb2.lease.statopen4.log",
+            "services_before": {
+              "api": {
+                "failures": [],
+                "generation": "5075d94712031d5d6575736c0fee64ce",
+                "identity": {
+                  "birth": 32596704,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_api",
+                  "generation": "5075d94712031d5d6575736c0fee64ce",
+                  "pid": 1765874,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 97144832,
+                "started": 1793812802717,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file": {
+                "failures": [],
+                "generation": "f67b070c32acb515066c2ad6ef09fe5c",
+                "identity": {
+                  "birth": 32596535,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file",
+                  "generation": "f67b070c32acb515066c2ad6ef09fe5c",
+                  "pid": 1765694,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 88727552,
+                "started": 1793812801025,
+                "status": "running",
+                "open_descriptors": 15
+              },
+              "file_1": {
+                "failures": [],
+                "generation": "63208c0e05af2f3de89c0415b994f407",
+                "identity": {
+                  "birth": 32596546,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_1",
+                  "generation": "63208c0e05af2f3de89c0415b994f407",
+                  "pid": 1765706,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 66011136,
+                "started": 1793812801143,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file_2": {
+                "failures": [],
+                "generation": "ff2b8d580acc0ba9e563b7436560cd67",
+                "identity": {
+                  "birth": 32596558,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_2",
+                  "generation": "ff2b8d580acc0ba9e563b7436560cd67",
+                  "pid": 1765718,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 65306624,
+                "started": 1793812801261,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file_3": {
+                "failures": [],
+                "generation": "738df430701c7d82990a6ed671f4c7b8",
+                "identity": {
+                  "birth": 32596570,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_3",
+                  "generation": "738df430701c7d82990a6ed671f4c7b8",
+                  "pid": 1765730,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 65789952,
+                "started": 1793812801379,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "ftp": {
+                "failures": [],
+                "generation": "e43535f912b93a05c91033ed5d146a7a",
+                "identity": {
+                  "birth": 32596656,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_ftp",
+                  "generation": "e43535f912b93a05c91033ed5d146a7a",
+                  "pid": 1765845,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 60268544,
+                "started": 1793812802236,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "helper": {
+                "failures": [],
+                "generation": "0e04b8bca58757b24a0de22435ac34db",
+                "identity": {
+                  "birth": 32596632,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_helper",
+                  "generation": "0e04b8bca58757b24a0de22435ac34db",
+                  "pid": 1765810,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 59211776,
+                "started": 1793812801994,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "identity": {
+                "failures": [],
+                "generation": "6b0cabe8bb431e7c9f2863e028d128ca",
+                "identity": {
+                  "birth": 32596523,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_identity",
+                  "generation": "6b0cabe8bb431e7c9f2863e028d128ca",
+                  "pid": 1765682,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 155418624,
+                "started": 1793812800907,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "monitor": {
+                "failures": [],
+                "generation": "a073c620531e32826c7a5f7e2d9d1038",
+                "identity": {
+                  "birth": 32596594,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_monitor",
+                  "generation": "a073c620531e32826c7a5f7e2d9d1038",
+                  "pid": 1765764,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 60186624,
+                "started": 1793812801616,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "nfs": {
+                "failures": [],
+                "generation": "4ce312d0373df0803c6f2c7bab78106b",
+                "identity": {
+                  "birth": 32596679,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_nfs",
+                  "generation": "4ce312d0373df0803c6f2c7bab78106b",
+                  "pid": 1765865,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 60379136,
+                "started": 1793812802473,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "plugins": {
+                "failures": [],
+                "generation": "77ecf8dcff515904a30efd80dfd08cbc",
+                "identity": {
+                  "birth": 32596692,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_plugins",
+                  "generation": "77ecf8dcff515904a30efd80dfd08cbc",
+                  "pid": 1765870,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 60534784,
+                "started": 1793812802598,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "protocol": {
+                "failures": [],
+                "generation": "adccd0e8bf2a825e1b675042940c5fbd",
+                "identity": {
+                  "birth": 32596582,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_protocol",
+                  "generation": "adccd0e8bf2a825e1b675042940c5fbd",
+                  "pid": 1765752,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 60252160,
+                "started": 1793812801498,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "smb": {
+                "failures": [],
+                "generation": "5f20f81258e51bc53afd738a233e1776",
+                "identity": {
+                  "birth": 32596668,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_smb",
+                  "generation": "5f20f81258e51bc53afd738a233e1776",
+                  "pid": 1765853,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 120492032,
+                "started": 1793812802354,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "storage_admin": {
+                "failures": [],
+                "generation": "d8c30bbeb0e36c58f257faa05cffc7c7",
+                "identity": {
+                  "birth": 32596619,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_storage_admin",
+                  "generation": "d8c30bbeb0e36c58f257faa05cffc7c7",
+                  "pid": 1765797,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 59535360,
+                "started": 1793812801873,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "updater": {
+                "failures": [],
+                "generation": "bf3c6ee516bfe1b96dc97448353df1ff",
+                "identity": {
+                  "birth": 32596606,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_updater",
+                  "generation": "bf3c6ee516bfe1b96dc97448353df1ff",
+                  "pid": 1765770,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 59600896,
+                "started": 1793812801742,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "webdav": {
+                "failures": [],
+                "generation": "f445ad508b27302023393103efc0f5ed",
+                "identity": {
+                  "birth": 32596644,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_webdav",
+                  "generation": "f445ad508b27302023393103efc0f5ed",
+                  "pid": 1765833,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 64458752,
+                "started": 1793812802118,
+                "status": "running",
+                "open_descriptors": 8
+              }
+            },
+            "services_after": {
+              "api": {
+                "failures": [],
+                "generation": "5075d94712031d5d6575736c0fee64ce",
+                "identity": {
+                  "birth": 32596704,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_api",
+                  "generation": "5075d94712031d5d6575736c0fee64ce",
+                  "pid": 1765874,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 101076992,
+                "started": 1793812802717,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file": {
+                "failures": [],
+                "generation": "f67b070c32acb515066c2ad6ef09fe5c",
+                "identity": {
+                  "birth": 32596535,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file",
+                  "generation": "f67b070c32acb515066c2ad6ef09fe5c",
+                  "pid": 1765694,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 127066112,
+                "started": 1793812801025,
+                "status": "running",
+                "open_descriptors": 15
+              },
+              "file_1": {
+                "failures": [],
+                "generation": "63208c0e05af2f3de89c0415b994f407",
+                "identity": {
+                  "birth": 32596546,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_1",
+                  "generation": "63208c0e05af2f3de89c0415b994f407",
+                  "pid": 1765706,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 69353472,
+                "started": 1793812801143,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file_2": {
+                "failures": [],
+                "generation": "ff2b8d580acc0ba9e563b7436560cd67",
+                "identity": {
+                  "birth": 32596558,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_2",
+                  "generation": "ff2b8d580acc0ba9e563b7436560cd67",
+                  "pid": 1765718,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 69042176,
+                "started": 1793812801261,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file_3": {
+                "failures": [],
+                "generation": "738df430701c7d82990a6ed671f4c7b8",
+                "identity": {
+                  "birth": 32596570,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_3",
+                  "generation": "738df430701c7d82990a6ed671f4c7b8",
+                  "pid": 1765730,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 69328896,
+                "started": 1793812801379,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "ftp": {
+                "failures": [],
+                "generation": "e43535f912b93a05c91033ed5d146a7a",
+                "identity": {
+                  "birth": 32596656,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_ftp",
+                  "generation": "e43535f912b93a05c91033ed5d146a7a",
+                  "pid": 1765845,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 64200704,
+                "started": 1793812802236,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "helper": {
+                "failures": [],
+                "generation": "0e04b8bca58757b24a0de22435ac34db",
+                "identity": {
+                  "birth": 32596632,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_helper",
+                  "generation": "0e04b8bca58757b24a0de22435ac34db",
+                  "pid": 1765810,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 63143936,
+                "started": 1793812801994,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "identity": {
+                "failures": [],
+                "generation": "6b0cabe8bb431e7c9f2863e028d128ca",
+                "identity": {
+                  "birth": 32596523,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_identity",
+                  "generation": "6b0cabe8bb431e7c9f2863e028d128ca",
+                  "pid": 1765682,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 179994624,
+                "started": 1793812800907,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "monitor": {
+                "failures": [],
+                "generation": "a073c620531e32826c7a5f7e2d9d1038",
+                "identity": {
+                  "birth": 32596594,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_monitor",
+                  "generation": "a073c620531e32826c7a5f7e2d9d1038",
+                  "pid": 1765764,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 63922176,
+                "started": 1793812801616,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "nfs": {
+                "failures": [],
+                "generation": "4ce312d0373df0803c6f2c7bab78106b",
+                "identity": {
+                  "birth": 32596679,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_nfs",
+                  "generation": "4ce312d0373df0803c6f2c7bab78106b",
+                  "pid": 1765865,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 64114688,
+                "started": 1793812802473,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "plugins": {
+                "failures": [],
+                "generation": "77ecf8dcff515904a30efd80dfd08cbc",
+                "identity": {
+                  "birth": 32596692,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_plugins",
+                  "generation": "77ecf8dcff515904a30efd80dfd08cbc",
+                  "pid": 1765870,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 64270336,
+                "started": 1793812802598,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "protocol": {
+                "failures": [],
+                "generation": "adccd0e8bf2a825e1b675042940c5fbd",
+                "identity": {
+                  "birth": 32596582,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_protocol",
+                  "generation": "adccd0e8bf2a825e1b675042940c5fbd",
+                  "pid": 1765752,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 63987712,
+                "started": 1793812801498,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "smb": {
+                "failures": [],
+                "generation": "5f20f81258e51bc53afd738a233e1776",
+                "identity": {
+                  "birth": 32596668,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_smb",
+                  "generation": "5f20f81258e51bc53afd738a233e1776",
+                  "pid": 1765853,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 180850688,
+                "started": 1793812802354,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "storage_admin": {
+                "failures": [],
+                "generation": "d8c30bbeb0e36c58f257faa05cffc7c7",
+                "identity": {
+                  "birth": 32596619,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_storage_admin",
+                  "generation": "d8c30bbeb0e36c58f257faa05cffc7c7",
+                  "pid": 1765797,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 63074304,
+                "started": 1793812801873,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "updater": {
+                "failures": [],
+                "generation": "bf3c6ee516bfe1b96dc97448353df1ff",
+                "identity": {
+                  "birth": 32596606,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_updater",
+                  "generation": "bf3c6ee516bfe1b96dc97448353df1ff",
+                  "pid": 1765770,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 63336448,
+                "started": 1793812801742,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "webdav": {
+                "failures": [],
+                "generation": "f445ad508b27302023393103efc0f5ed",
+                "identity": {
+                  "birth": 32596644,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_webdav",
+                  "generation": "f445ad508b27302023393103efc0f5ed",
+                  "pid": 1765833,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 67997696,
+                "started": 1793812802118,
+                "status": "running",
+                "open_descriptors": 8
+              }
+            }
+          },
+          {
+            "selector": "smb2.oplock.statopen1",
+            "returncode": 0,
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "taucloud-lease-sharing-samba-smb2.oplock.statopen1.log",
+            "services_before": {
+              "api": {
+                "failures": [],
+                "generation": "5075d94712031d5d6575736c0fee64ce",
+                "identity": {
+                  "birth": 32596704,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_api",
+                  "generation": "5075d94712031d5d6575736c0fee64ce",
+                  "pid": 1765874,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 101076992,
+                "started": 1793812802717,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file": {
+                "failures": [],
+                "generation": "f67b070c32acb515066c2ad6ef09fe5c",
+                "identity": {
+                  "birth": 32596535,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file",
+                  "generation": "f67b070c32acb515066c2ad6ef09fe5c",
+                  "pid": 1765694,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 127066112,
+                "started": 1793812801025,
+                "status": "running",
+                "open_descriptors": 15
+              },
+              "file_1": {
+                "failures": [],
+                "generation": "63208c0e05af2f3de89c0415b994f407",
+                "identity": {
+                  "birth": 32596546,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_1",
+                  "generation": "63208c0e05af2f3de89c0415b994f407",
+                  "pid": 1765706,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 69353472,
+                "started": 1793812801143,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file_2": {
+                "failures": [],
+                "generation": "ff2b8d580acc0ba9e563b7436560cd67",
+                "identity": {
+                  "birth": 32596558,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_2",
+                  "generation": "ff2b8d580acc0ba9e563b7436560cd67",
+                  "pid": 1765718,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 69042176,
+                "started": 1793812801261,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file_3": {
+                "failures": [],
+                "generation": "738df430701c7d82990a6ed671f4c7b8",
+                "identity": {
+                  "birth": 32596570,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_3",
+                  "generation": "738df430701c7d82990a6ed671f4c7b8",
+                  "pid": 1765730,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 69328896,
+                "started": 1793812801379,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "ftp": {
+                "failures": [],
+                "generation": "e43535f912b93a05c91033ed5d146a7a",
+                "identity": {
+                  "birth": 32596656,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_ftp",
+                  "generation": "e43535f912b93a05c91033ed5d146a7a",
+                  "pid": 1765845,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 64200704,
+                "started": 1793812802236,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "helper": {
+                "failures": [],
+                "generation": "0e04b8bca58757b24a0de22435ac34db",
+                "identity": {
+                  "birth": 32596632,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_helper",
+                  "generation": "0e04b8bca58757b24a0de22435ac34db",
+                  "pid": 1765810,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 63143936,
+                "started": 1793812801994,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "identity": {
+                "failures": [],
+                "generation": "6b0cabe8bb431e7c9f2863e028d128ca",
+                "identity": {
+                  "birth": 32596523,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_identity",
+                  "generation": "6b0cabe8bb431e7c9f2863e028d128ca",
+                  "pid": 1765682,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 179994624,
+                "started": 1793812800907,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "monitor": {
+                "failures": [],
+                "generation": "a073c620531e32826c7a5f7e2d9d1038",
+                "identity": {
+                  "birth": 32596594,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_monitor",
+                  "generation": "a073c620531e32826c7a5f7e2d9d1038",
+                  "pid": 1765764,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 63922176,
+                "started": 1793812801616,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "nfs": {
+                "failures": [],
+                "generation": "4ce312d0373df0803c6f2c7bab78106b",
+                "identity": {
+                  "birth": 32596679,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_nfs",
+                  "generation": "4ce312d0373df0803c6f2c7bab78106b",
+                  "pid": 1765865,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 64114688,
+                "started": 1793812802473,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "plugins": {
+                "failures": [],
+                "generation": "77ecf8dcff515904a30efd80dfd08cbc",
+                "identity": {
+                  "birth": 32596692,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_plugins",
+                  "generation": "77ecf8dcff515904a30efd80dfd08cbc",
+                  "pid": 1765870,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 64270336,
+                "started": 1793812802598,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "protocol": {
+                "failures": [],
+                "generation": "adccd0e8bf2a825e1b675042940c5fbd",
+                "identity": {
+                  "birth": 32596582,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_protocol",
+                  "generation": "adccd0e8bf2a825e1b675042940c5fbd",
+                  "pid": 1765752,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 63987712,
+                "started": 1793812801498,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "smb": {
+                "failures": [],
+                "generation": "5f20f81258e51bc53afd738a233e1776",
+                "identity": {
+                  "birth": 32596668,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_smb",
+                  "generation": "5f20f81258e51bc53afd738a233e1776",
+                  "pid": 1765853,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 180850688,
+                "started": 1793812802354,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "storage_admin": {
+                "failures": [],
+                "generation": "d8c30bbeb0e36c58f257faa05cffc7c7",
+                "identity": {
+                  "birth": 32596619,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_storage_admin",
+                  "generation": "d8c30bbeb0e36c58f257faa05cffc7c7",
+                  "pid": 1765797,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 63074304,
+                "started": 1793812801873,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "updater": {
+                "failures": [],
+                "generation": "bf3c6ee516bfe1b96dc97448353df1ff",
+                "identity": {
+                  "birth": 32596606,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_updater",
+                  "generation": "bf3c6ee516bfe1b96dc97448353df1ff",
+                  "pid": 1765770,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 63336448,
+                "started": 1793812801742,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "webdav": {
+                "failures": [],
+                "generation": "f445ad508b27302023393103efc0f5ed",
+                "identity": {
+                  "birth": 32596644,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_webdav",
+                  "generation": "f445ad508b27302023393103efc0f5ed",
+                  "pid": 1765833,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 67997696,
+                "started": 1793812802118,
+                "status": "running",
+                "open_descriptors": 8
+              }
+            },
+            "services_after": {
+              "api": {
+                "failures": [],
+                "generation": "5075d94712031d5d6575736c0fee64ce",
+                "identity": {
+                  "birth": 32596704,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_api",
+                  "generation": "5075d94712031d5d6575736c0fee64ce",
+                  "pid": 1765874,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 103632896,
+                "started": 1793812802717,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file": {
+                "failures": [],
+                "generation": "f67b070c32acb515066c2ad6ef09fe5c",
+                "identity": {
+                  "birth": 32596535,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file",
+                  "generation": "f67b070c32acb515066c2ad6ef09fe5c",
+                  "pid": 1765694,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 155967488,
+                "started": 1793812801025,
+                "status": "running",
+                "open_descriptors": 15
+              },
+              "file_1": {
+                "failures": [],
+                "generation": "63208c0e05af2f3de89c0415b994f407",
+                "identity": {
+                  "birth": 32596546,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_1",
+                  "generation": "63208c0e05af2f3de89c0415b994f407",
+                  "pid": 1765706,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 72302592,
+                "started": 1793812801143,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file_2": {
+                "failures": [],
+                "generation": "ff2b8d580acc0ba9e563b7436560cd67",
+                "identity": {
+                  "birth": 32596558,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_2",
+                  "generation": "ff2b8d580acc0ba9e563b7436560cd67",
+                  "pid": 1765718,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 71794688,
+                "started": 1793812801261,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file_3": {
+                "failures": [],
+                "generation": "738df430701c7d82990a6ed671f4c7b8",
+                "identity": {
+                  "birth": 32596570,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_3",
+                  "generation": "738df430701c7d82990a6ed671f4c7b8",
+                  "pid": 1765730,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 72278016,
+                "started": 1793812801379,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "ftp": {
+                "failures": [],
+                "generation": "e43535f912b93a05c91033ed5d146a7a",
+                "identity": {
+                  "birth": 32596656,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_ftp",
+                  "generation": "e43535f912b93a05c91033ed5d146a7a",
+                  "pid": 1765845,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 66953216,
+                "started": 1793812802236,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "helper": {
+                "failures": [],
+                "generation": "0e04b8bca58757b24a0de22435ac34db",
+                "identity": {
+                  "birth": 32596632,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_helper",
+                  "generation": "0e04b8bca58757b24a0de22435ac34db",
+                  "pid": 1765810,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 65896448,
+                "started": 1793812801994,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "identity": {
+                "failures": [],
+                "generation": "6b0cabe8bb431e7c9f2863e028d128ca",
+                "identity": {
+                  "birth": 32596523,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_identity",
+                  "generation": "6b0cabe8bb431e7c9f2863e028d128ca",
+                  "pid": 1765682,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 199852032,
+                "started": 1793812800907,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "monitor": {
+                "failures": [],
+                "generation": "a073c620531e32826c7a5f7e2d9d1038",
+                "identity": {
+                  "birth": 32596594,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_monitor",
+                  "generation": "a073c620531e32826c7a5f7e2d9d1038",
+                  "pid": 1765764,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 66478080,
+                "started": 1793812801616,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "nfs": {
+                "failures": [],
+                "generation": "4ce312d0373df0803c6f2c7bab78106b",
+                "identity": {
+                  "birth": 32596679,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_nfs",
+                  "generation": "4ce312d0373df0803c6f2c7bab78106b",
+                  "pid": 1765865,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 67063808,
+                "started": 1793812802473,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "plugins": {
+                "failures": [],
+                "generation": "77ecf8dcff515904a30efd80dfd08cbc",
+                "identity": {
+                  "birth": 32596692,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_plugins",
+                  "generation": "77ecf8dcff515904a30efd80dfd08cbc",
+                  "pid": 1765870,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 67219456,
+                "started": 1793812802598,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "protocol": {
+                "failures": [],
+                "generation": "adccd0e8bf2a825e1b675042940c5fbd",
+                "identity": {
+                  "birth": 32596582,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_protocol",
+                  "generation": "adccd0e8bf2a825e1b675042940c5fbd",
+                  "pid": 1765752,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 66740224,
+                "started": 1793812801498,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "smb": {
+                "failures": [],
+                "generation": "5f20f81258e51bc53afd738a233e1776",
+                "identity": {
+                  "birth": 32596668,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_smb",
+                  "generation": "5f20f81258e51bc53afd738a233e1776",
+                  "pid": 1765853,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 230002688,
+                "started": 1793812802354,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "storage_admin": {
+                "failures": [],
+                "generation": "d8c30bbeb0e36c58f257faa05cffc7c7",
+                "identity": {
+                  "birth": 32596619,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_storage_admin",
+                  "generation": "d8c30bbeb0e36c58f257faa05cffc7c7",
+                  "pid": 1765797,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 65826816,
+                "started": 1793812801873,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "updater": {
+                "failures": [],
+                "generation": "bf3c6ee516bfe1b96dc97448353df1ff",
+                "identity": {
+                  "birth": 32596606,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_updater",
+                  "generation": "bf3c6ee516bfe1b96dc97448353df1ff",
+                  "pid": 1765770,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 66088960,
+                "started": 1793812801742,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "webdav": {
+                "failures": [],
+                "generation": "f445ad508b27302023393103efc0f5ed",
+                "identity": {
+                  "birth": 32596644,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_webdav",
+                  "generation": "f445ad508b27302023393103efc0f5ed",
+                  "pid": 1765833,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 70946816,
+                "started": 1793812802118,
+                "status": "running",
+                "open_descriptors": 8
+              }
+            }
+          }
+        ],
+        "standard_differences_not_counted_as_passes": [],
+        "memory_limit_mib": 1024,
+        "server_log": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793812796322}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793812796405}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793812796510}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793812796619}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793812796737}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793812796856}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793812796951}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793812797069}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793812797186}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793812797312}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793812797430}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793812797551}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793812797666}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793812797785}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793812797902}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793812798141}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"api\",\"time\":1793812799960}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"nfs\",\"time\":1793812800064}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"smb\",\"time\":1793812800107}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"ftp\",\"time\":1793812800149}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"webdav\",\"time\":1793812800192}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"helper\",\"time\":1793812800233}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"storage_admin\",\"time\":1793812800276}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"updater\",\"time\":1793812800338}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"monitor\",\"time\":1793812800380}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"protocol\",\"time\":1793812800423}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_3\",\"time\":1793812800465}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_2\",\"time\":1793812800507}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_1\",\"time\":1793812800549}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file\",\"time\":1793812800591}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"identity\",\"time\":1793812800633}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"supervisor\",\"time\":1793812800670}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793812800897}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793812800972}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793812801101}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793812801212}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793812801334}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793812801444}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793812801520}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793812801637}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793812801766}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793812801894}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793812802015}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793812802143}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793812802257}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793812802484}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793812802502}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793812802742}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812804577}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812804577}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812804614}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812804614}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812806936}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812806936}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812809328}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812809328}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812809394}\n{\"code\":\"1\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812809394}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812809760}\n{\"code\":\"2\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812809761}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812810131}\n{\"code\":\"8\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812810131}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812810498}\n{\"code\":\"16\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812810498}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812810870}\n{\"code\":\"32\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812810870}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812813404}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812813404}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812814840}\n{\"code\":\"262144\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812814840}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812815203}\n{\"code\":\"524288\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812815203}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812816850}\n{\"code\":\"1\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812816850}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812817186}\n{\"code\":\"2\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812817186}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812817546}\n{\"code\":\"8\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812817546}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812817906}\n{\"code\":\"16\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812817906}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812818243}\n{\"code\":\"32\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812818243}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812820704}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812820705}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812821039}\n{\"code\":\"131072\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812821039}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812821398}\n{\"code\":\"262144\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812821398}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812821759}\n{\"code\":\"524288\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812821759}\n",
+        "status": "passed"
+      }
+    },
+    "taucloud-lease-sharing-full": {
+      "sha256": "611ba908d3f1d4a7ba691b2a8fd0081288a8a5288d27cf4ad114e094d429c709",
+      "report": {
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "recorded_at": "2026-11-04T17:20:46.659550+00:00",
+        "tests": [
+          {
+            "selector": "smb2.lease",
+            "returncode": 1,
+            "status": "failed",
+            "counts": {
+              "success": 27,
+              "failure": 9,
+              "error": 0,
+              "skip": 3
+            },
+            "log": "taucloud-lease-sharing-full-smb2.lease.log",
+            "services_before": {
+              "api": {
+                "failures": [],
+                "generation": "984aaa1f0f6f80571bd1db207dd9c8b0",
+                "identity": {
+                  "birth": 32601727,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_api",
+                  "generation": "984aaa1f0f6f80571bd1db207dd9c8b0",
+                  "pid": 1766348,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 88289280,
+                "started": 1793812852950,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file": {
+                "failures": [],
+                "generation": "d39391a8b197024bff40d3c7071948a7",
+                "identity": {
+                  "birth": 32601562,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file",
+                  "generation": "d39391a8b197024bff40d3c7071948a7",
+                  "pid": 1766282,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 64925696,
+                "started": 1793812851296,
+                "status": "running",
+                "open_descriptors": 13
+              },
+              "file_1": {
+                "failures": [],
+                "generation": "43b3fc6997a7725f195884dc2f74d539",
+                "identity": {
+                  "birth": 32601574,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_1",
+                  "generation": "43b3fc6997a7725f195884dc2f74d539",
+                  "pid": 1766286,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 59555840,
+                "started": 1793812851415,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file_2": {
+                "failures": [],
+                "generation": "7bae5f041e1f2c00b5df9662013fbea0",
+                "identity": {
+                  "birth": 32601585,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_2",
+                  "generation": "7bae5f041e1f2c00b5df9662013fbea0",
+                  "pid": 1766290,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 59973632,
+                "started": 1793812851533,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file_3": {
+                "failures": [],
+                "generation": "e5b9f721ffd71791039bdf53d42ad604",
+                "identity": {
+                  "birth": 32601597,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_3",
+                  "generation": "e5b9f721ffd71791039bdf53d42ad604",
+                  "pid": 1766294,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 60182528,
+                "started": 1793812851651,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "ftp": {
+                "failures": [],
+                "generation": "65bc4d6284372d77f168443d8c0a630a",
+                "identity": {
+                  "birth": 32601680,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_ftp",
+                  "generation": "65bc4d6284372d77f168443d8c0a630a",
+                  "pid": 1766327,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 51892224,
+                "started": 1793812852478,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "helper": {
+                "failures": [],
+                "generation": "01c5b373e97768ba13ebeccb2cc5d00c",
+                "identity": {
+                  "birth": 32601656,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_helper",
+                  "generation": "01c5b373e97768ba13ebeccb2cc5d00c",
+                  "pid": 1766314,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 51200000,
+                "started": 1793812852241,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "identity": {
+                "failures": [],
+                "generation": "0991ea94214d2cda72cd28ddeef8a190",
+                "identity": {
+                  "birth": 32601550,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_identity",
+                  "generation": "0991ea94214d2cda72cd28ddeef8a190",
+                  "pid": 1766278,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 141512704,
+                "started": 1793812851177,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "monitor": {
+                "failures": [],
+                "generation": "a2e976549b93f49a4de9a2d3b838ae1d",
+                "identity": {
+                  "birth": 32601621,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_monitor",
+                  "generation": "a2e976549b93f49a4de9a2d3b838ae1d",
+                  "pid": 1766302,
+                  "rss": 208896
+                },
+                "next": 0,
+                "rss": 51097600,
+                "started": 1793812851887,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "nfs": {
+                "failures": [],
+                "generation": "a17156b19231d9a50c78cce6e8542399",
+                "identity": {
+                  "birth": 32601704,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_nfs",
+                  "generation": "a17156b19231d9a50c78cce6e8542399",
+                  "pid": 1766340,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 51175424,
+                "started": 1793812852714,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "plugins": {
+                "failures": [],
+                "generation": "4ccfdf916d692a8d136123037797c849",
+                "identity": {
+                  "birth": 32601715,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_plugins",
+                  "generation": "4ccfdf916d692a8d136123037797c849",
+                  "pid": 1766344,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 50409472,
+                "started": 1793812852833,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "protocol": {
+                "failures": [],
+                "generation": "8fedd1770256ced66e8f3b6e8cd813b1",
+                "identity": {
+                  "birth": 32601609,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_protocol",
+                  "generation": "8fedd1770256ced66e8f3b6e8cd813b1",
+                  "pid": 1766298,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 51351552,
+                "started": 1793812851769,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "smb": {
+                "failures": [],
+                "generation": "622deb6a41d73e0d50936cec3bf1374e",
+                "identity": {
+                  "birth": 32601692,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_smb",
+                  "generation": "622deb6a41d73e0d50936cec3bf1374e",
+                  "pid": 1766331,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 56619008,
+                "started": 1793812852596,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "storage_admin": {
+                "failures": [],
+                "generation": "e2b1ac662114729c9c9dfe29880e92d0",
+                "identity": {
+                  "birth": 32601644,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_storage_admin",
+                  "generation": "e2b1ac662114729c9c9dfe29880e92d0",
+                  "pid": 1766310,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 51261440,
+                "started": 1793812852123,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "updater": {
+                "failures": [],
+                "generation": "4d349d6ffe7ea23cfc57ebdb669fed4a",
+                "identity": {
+                  "birth": 32601633,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_updater",
+                  "generation": "4d349d6ffe7ea23cfc57ebdb669fed4a",
+                  "pid": 1766306,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 50982912,
+                "started": 1793812852005,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "webdav": {
+                "failures": [],
+                "generation": "d5e20347457da70060c4e81c08bf150f",
+                "identity": {
+                  "birth": 32601668,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_webdav",
+                  "generation": "d5e20347457da70060c4e81c08bf150f",
+                  "pid": 1766318,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 56934400,
+                "started": 1793812852359,
+                "status": "running",
+                "open_descriptors": 8
+              }
+            },
+            "services_after": {
+              "api": {
+                "failures": [],
+                "generation": "984aaa1f0f6f80571bd1db207dd9c8b0",
+                "identity": {
+                  "birth": 32601727,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_api",
+                  "generation": "984aaa1f0f6f80571bd1db207dd9c8b0",
+                  "pid": 1766348,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 143142912,
+                "started": 1793812852950,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file": {
+                "failures": [],
+                "generation": "d39391a8b197024bff40d3c7071948a7",
+                "identity": {
+                  "birth": 32601562,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file",
+                  "generation": "d39391a8b197024bff40d3c7071948a7",
+                  "pid": 1766282,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 494759936,
+                "started": 1793812851296,
+                "status": "running",
+                "open_descriptors": 15
+              },
+              "file_1": {
+                "failures": [],
+                "generation": "43b3fc6997a7725f195884dc2f74d539",
+                "identity": {
+                  "birth": 32601574,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_1",
+                  "generation": "43b3fc6997a7725f195884dc2f74d539",
+                  "pid": 1766286,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 112050176,
+                "started": 1793812851415,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file_2": {
+                "failures": [],
+                "generation": "7bae5f041e1f2c00b5df9662013fbea0",
+                "identity": {
+                  "birth": 32601585,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_2",
+                  "generation": "7bae5f041e1f2c00b5df9662013fbea0",
+                  "pid": 1766290,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 112271360,
+                "started": 1793812851533,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "file_3": {
+                "failures": [],
+                "generation": "e5b9f721ffd71791039bdf53d42ad604",
+                "identity": {
+                  "birth": 32601597,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_file_3",
+                  "generation": "e5b9f721ffd71791039bdf53d42ad604",
+                  "pid": 1766294,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 112480256,
+                "started": 1793812851651,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "ftp": {
+                "failures": [],
+                "generation": "65bc4d6284372d77f168443d8c0a630a",
+                "identity": {
+                  "birth": 32601680,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_ftp",
+                  "generation": "65bc4d6284372d77f168443d8c0a630a",
+                  "pid": 1766327,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 108318720,
+                "started": 1793812852478,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "helper": {
+                "failures": [],
+                "generation": "01c5b373e97768ba13ebeccb2cc5d00c",
+                "identity": {
+                  "birth": 32601656,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_helper",
+                  "generation": "01c5b373e97768ba13ebeccb2cc5d00c",
+                  "pid": 1766314,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 106840064,
+                "started": 1793812852241,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "identity": {
+                "failures": [],
+                "generation": "0991ea94214d2cda72cd28ddeef8a190",
+                "identity": {
+                  "birth": 32601550,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_identity",
+                  "generation": "0991ea94214d2cda72cd28ddeef8a190",
+                  "pid": 1766278,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 486481920,
+                "started": 1793812851177,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "monitor": {
+                "failures": [],
+                "generation": "a2e976549b93f49a4de9a2d3b838ae1d",
+                "identity": {
+                  "birth": 32601621,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_monitor",
+                  "generation": "a2e976549b93f49a4de9a2d3b838ae1d",
+                  "pid": 1766302,
+                  "rss": 208896
+                },
+                "next": 0,
+                "rss": 107327488,
+                "started": 1793812851887,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "nfs": {
+                "failures": [],
+                "generation": "a17156b19231d9a50c78cce6e8542399",
+                "identity": {
+                  "birth": 32601704,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_nfs",
+                  "generation": "a17156b19231d9a50c78cce6e8542399",
+                  "pid": 1766340,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 108191744,
+                "started": 1793812852714,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "plugins": {
+                "failures": [],
+                "generation": "4ccfdf916d692a8d136123037797c849",
+                "identity": {
+                  "birth": 32601715,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_plugins",
+                  "generation": "4ccfdf916d692a8d136123037797c849",
+                  "pid": 1766344,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 108408832,
+                "started": 1793812852833,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "protocol": {
+                "failures": [],
+                "generation": "8fedd1770256ced66e8f3b6e8cd813b1",
+                "identity": {
+                  "birth": 32601609,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_protocol",
+                  "generation": "8fedd1770256ced66e8f3b6e8cd813b1",
+                  "pid": 1766298,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 107384832,
+                "started": 1793812851769,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "smb": {
+                "failures": [],
+                "generation": "622deb6a41d73e0d50936cec3bf1374e",
+                "identity": {
+                  "birth": 32601692,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_smb",
+                  "generation": "622deb6a41d73e0d50936cec3bf1374e",
+                  "pid": 1766331,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 566067200,
+                "started": 1793812852596,
+                "status": "running",
+                "open_descriptors": 8
+              },
+              "storage_admin": {
+                "failures": [],
+                "generation": "e2b1ac662114729c9c9dfe29880e92d0",
+                "identity": {
+                  "birth": 32601644,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_storage_admin",
+                  "generation": "e2b1ac662114729c9c9dfe29880e92d0",
+                  "pid": 1766310,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 107884544,
+                "started": 1793812852123,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "updater": {
+                "failures": [],
+                "generation": "4d349d6ffe7ea23cfc57ebdb669fed4a",
+                "identity": {
+                  "birth": 32601633,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_updater",
+                  "generation": "4d349d6ffe7ea23cfc57ebdb669fed4a",
+                  "pid": 1766306,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 107016192,
+                "started": 1793812852005,
+                "status": "running",
+                "open_descriptors": 5
+              },
+              "webdav": {
+                "failures": [],
+                "generation": "d5e20347457da70060c4e81c08bf150f",
+                "identity": {
+                  "birth": 32601668,
+                  "exe": "/media/data1/Project/Network/tauCloud/build/linux/x86_64/debug/taucloud_webdav",
+                  "generation": "d5e20347457da70060c4e81c08bf150f",
+                  "pid": 1766318,
+                  "rss": 0
+                },
+                "next": 0,
+                "rss": 113164288,
+                "started": 1793812852359,
+                "status": "running",
+                "open_descriptors": 8
+              }
+            }
+          }
+        ],
+        "standard_differences_not_counted_as_passes": [],
+        "memory_limit_mib": 1024,
+        "server_log": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793812846727}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793812846789}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793812846896}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793812847015}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793812847133}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793812847253}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793812847349}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793812847466}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793812847584}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793812847702}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793812847820}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793812847942}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793812848055}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793812848173}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793812848291}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793812848531}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"api\",\"time\":1793812850323}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"nfs\",\"time\":1793812850407}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"smb\",\"time\":1793812850449}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"ftp\",\"time\":1793812850491}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"webdav\",\"time\":1793812850533}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"helper\",\"time\":1793812850575}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"storage_admin\",\"time\":1793812850617}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"updater\",\"time\":1793812850660}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"monitor\",\"time\":1793812850702}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"protocol\",\"time\":1793812850744}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_3\",\"time\":1793812850786}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_2\",\"time\":1793812850829}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_1\",\"time\":1793812850891}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file\",\"time\":1793812850933}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"identity\",\"time\":1793812850975}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"supervisor\",\"time\":1793812851006}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793812851167}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793812851219}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793812851353}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793812851470}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793812851590}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793812851707}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793812851792}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793812851909}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793812852027}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793812852145}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793812852263}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793812852385}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793812852500}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793812852699}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793812852735}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793812852975}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812853866}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812853866}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812853875}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812853875}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812853883}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812853883}\n{\"code\":\"3221225485\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812853948}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812853948}\n{\"code\":\"unsupported_name\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812853949}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812853949}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793812853963}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812854013}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812854014}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812854100}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812854100}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812854136}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812854136}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812856465}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812856465}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812858727}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812858727}\n{\"code\":\"cache_break_pending\",\"event\":\"command_9\",\"role\":\"smb\",\"time\":1793812858775}\n{\"code\":\"cache_break_pending\",\"event\":\"command_9\",\"role\":\"smb\",\"time\":1793812860121}\n{\"code\":\"cache_break_pending\",\"event\":\"command_9\",\"role\":\"smb\",\"time\":1793812861377}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812862558}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812862558}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812863654}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812863654}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812866090}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812866090}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812866278}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812866278}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812866445}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812866445}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812866511}\n{\"code\":\"1\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812866511}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812866872}\n{\"code\":\"2\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812866873}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812867216}\n{\"code\":\"8\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812867216}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812867578}\n{\"code\":\"16\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812867578}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812867916}\n{\"code\":\"32\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812867917}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812870413}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812870413}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812871854}\n{\"code\":\"262144\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812871854}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812872229}\n{\"code\":\"524288\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812872229}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812873728}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812873728}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793812873843}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812873923}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812873923}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793812876488}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793812876488}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812876563}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812876563}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812876569}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812876569}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793812879168}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793812879168}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793812879169}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812879245}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812879245}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812888388}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812888388}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812890843}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812890843}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812893293}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812893293}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812895736}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812895736}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812898188}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812898188}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812900615}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812900615}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812903063}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812903063}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812905509}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812905509}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793812907926}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793812907926}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812907934}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812907934}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812907970}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812907970}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812914639}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812914639}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812917038}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812917038}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812919455}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812919455}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812921872}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812921872}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812924291}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812924291}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812926690}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812926690}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812933539}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812933547}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812934961}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812934961}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812936359}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812936359}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812937754}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812937754}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812939159}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812939159}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812940560}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812940560}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812941955}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812941955}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812943362}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812943362}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793812944733}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793812944733}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812944739}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812944739}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812944775}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812944775}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812944826}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812944826}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812948214}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812948214}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812950685}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812950685}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812950720}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812950720}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793812953087}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812953179}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812953179}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812953214}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812953214}\n{\"code\":\"3221225680\",\"event\":\"command_18\",\"role\":\"smb\",\"time\":1793812954529}\n{\"code\":\"3221225680\",\"event\":\"command_18\",\"role\":\"smb\",\"time\":1793812954536}\n{\"code\":\"3221225680\",\"event\":\"command_18\",\"role\":\"smb\",\"time\":1793812954542}\n{\"code\":\"3221225680\",\"event\":\"command_18\",\"role\":\"smb\",\"time\":1793812954548}\n{\"code\":\"3221225680\",\"event\":\"command_18\",\"role\":\"smb\",\"time\":1793812954555}\n{\"code\":\"3221225680\",\"event\":\"command_18\",\"role\":\"smb\",\"time\":1793812954563}\n{\"code\":\"3221225680\",\"event\":\"command_18\",\"role\":\"smb\",\"time\":1793812954570}\n{\"code\":\"3221225473\",\"event\":\"command_18\",\"role\":\"smb\",\"time\":1793812954585}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793812955668}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812955765}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812955765}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812955802}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812955802}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812956118}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812956118}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793812961492}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812961595}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812961595}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812961630}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812961630}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812961956}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812961956}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793812967343}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812967442}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812967442}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812968478}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812968478}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812969583}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812969583}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812970618}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812970618}\n{\"code\":\"3221225473\",\"event\":\"command_18\",\"role\":\"smb\",\"time\":1793812973712}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812974823}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812974823}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812974857}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812974857}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793812977220}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812977363}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812977363}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812977398}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812977398}\n{\"code\":\"cache_break_pending\",\"event\":\"command_10\",\"role\":\"smb\",\"time\":1793812980708}\n{\"code\":\"cache_break_pending\",\"event\":\"command_10\",\"role\":\"smb\",\"time\":1793812985082}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812987443}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812987443}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812987503}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812987503}\n{\"code\":\"cache_break_pending\",\"event\":\"command_9\",\"role\":\"smb\",\"time\":1793812989802}\n{\"code\":\"cache_break_pending\",\"event\":\"command_9\",\"role\":\"smb\",\"time\":1793812990997}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793812993081}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812993223}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812993223}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812993414}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812993414}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812993499}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812993499}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793812995831}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793812995831}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812995905}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812995905}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812995991}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812995991}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793812998324}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793812998324}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812998422}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812998422}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793812998481}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793812998481}\n{\"code\":\"cache_break_pending\",\"event\":\"command_9\",\"role\":\"smb\",\"time\":1793813000781}\n{\"code\":\"cache_break_pending\",\"event\":\"command_9\",\"role\":\"smb\",\"time\":1793813001969}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793813004048}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813004163}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813004163}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813004198}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813004198}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813004585}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813004585}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813004591}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813004591}\n{\"code\":\"cache_break_pending\",\"event\":\"command_17\",\"role\":\"smb\",\"time\":1793813004629}\n{\"code\":\"cache_break_pending\",\"event\":\"command_17\",\"role\":\"smb\",\"time\":1793813008039}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793813010277}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813010333}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813010333}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813010341}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813010341}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813010413}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813010413}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813010447}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813010447}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813015428}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813015428}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813015465}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813015465}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793813018815}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813018822}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813018822}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813018857}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813018858}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813018944}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813018944}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813024250}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813024250}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813024258}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813024258}\n{\"code\":\"cache_break_pending\",\"event\":\"command_17\",\"role\":\"smb\",\"time\":1793813024317}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813024325}\n{\"code\":\"2147483648\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813024325}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813024331}\n{\"code\":\"2147483648\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813024331}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813024337}\n{\"code\":\"2147483648\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813024338}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813024344}\n{\"code\":\"2147483648\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813024344}\n{\"code\":\"3221225524\",\"event\":\"command_18\",\"role\":\"smb\",\"time\":1793813024344}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793813024366}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813024411}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813024411}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813024447}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813024447}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813024454}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813024454}\n{\"code\":\"3221225485\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813024483}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813024483}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793813024495}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793813024495}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813024541}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813024541}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813024577}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813024577}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813024585}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813024585}\n{\"code\":\"3221225485\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813024645}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813024645}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793813024645}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813024782}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813024782}\n{\"code\":\"cache_break_pending\",\"event\":\"command_9\",\"role\":\"smb\",\"time\":1793813026838}\n{\"code\":\"cache_break_pending\",\"event\":\"command_9\",\"role\":\"smb\",\"time\":1793813028946}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813030156}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813030156}\n{\"code\":\"cache_break_pending\",\"event\":\"command_9\",\"role\":\"smb\",\"time\":1793813032210}\n{\"code\":\"cache_break_pending\",\"event\":\"command_9\",\"role\":\"smb\",\"time\":1793813034305}\n",
+        "status": "failed"
+      }
+    }
+  },
+  "full_suite_log": {
+    "path": "smb-lease-full-sharing.log",
+    "sha256": "362ff633e47a20111d03e4f84c60bcadadd7044cbfef4b6b45ac3cf5ebc0159a"
+  },
+  "remaining_original_tests": {
+    "failure": [
+      "request ",
+      "breaking3 ",
+      "v2_breaking3 ",
+      "breaking4 ",
+      "v2_complex1 ",
+      "v2_rename ",
+      "timeout ",
+      "unlink ",
+      "rename_wait "
+    ],
+    "skip": [
+      "v2_request_parent ",
+      "v2_request ",
+      "dynamic_share "
+    ]
+  }
+}

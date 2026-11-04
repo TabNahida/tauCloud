@@ -23,7 +23,8 @@ void smb_sharing(const std::string &space, const std::string &path, uint32_t acc
         h.lease_cache_state == lease_owner || !(h.lease_cache_state->state.state() & 2)) continue;
     auto existing = smb_categories(h.access), incoming = smb_categories(access);
     if (existing && incoming && ((incoming & ~h.sharing) || (existing & ~share))) {
-      cache_break(h, 0, 1);
+      // OPEN_BREAK_H removes cached handles without discarding dirty data.
+      cache_break(h, 0, 5);
       lease_conflict = true;
     }
   }
@@ -421,7 +422,10 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     bool data_open = (requested_lease || requested_cache == 1 || requested_cache == 8 || requested_cache == 9) && (access & 1);
     bool preserving_data = disposition == 1 || disposition == 3;
     bool preserving_open = preserving_data && !(options & 0x1000);
-    bool attribute_open = !body.value("maximum", false) && !(access & ~0x00120180u);
+    bool metadata_open = !body.value("maximum", false) && !(access & ~0x00120180u);
+    // MS-FSA 2.1.4.12: READ_CONTROL is stat-only for leases, but not for
+    // classic oplocks. Determine the exemption from the existing cache.
+    bool attribute_open = metadata_open && !(access & 0x20000u);
     bool shared_read_open = false;
     bool needs_write_handle = false;
     // All cached-path opens can inspect the pinned object's security metadata
@@ -429,6 +433,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     // must resolve its actual rights and fail sharing before any cache break.
     for (const auto &[id, held] : handles)
       if (held.cache && held.space == space && held.path == path && !held.directory) {
+        attribute_open = metadata_open && (held.lease_cache_state || !(access & 0x20000u));
         cached_info = held.file.info(true);
         require(cached_info->at("object") == object(space, path).at("native"),
                 "object_replaced");
@@ -619,7 +624,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
           // A logical lease or metadata-only open may gain a writable sibling.
           // Pin an RW native description when possible, while keeping all
           // granted SMB rights and every mutation check strictly per open.
-          if ((requested_lease || attribute_open) && !truncate && !(access & 6)) {
+          if ((requested_lease || metadata_open) && !truncate && !(access & 6)) {
             try { file = s.directory.open(path, false, false, true); }
             catch (const error &e) {
               if (std::string_view(e.what()) != "forbidden") throw;

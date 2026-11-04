@@ -299,6 +299,31 @@ def main():
             ack(c, s, readonly, key, 0); assert read.result(timeout=10) == b'policy'
         h.close(); readonly.disconnect()
         passed('read-only-share metadata lease renews and ACKs without obtaining write authority or data access')
+        for dialect in (0x210, 0x300, 0x302, 0x311):
+            version = 1 if dialect == 0x210 else 2
+            owner, owner_session, owner_tree, owner_queue = connect(dialect)
+            contender_c, contender_s, contender_t, _ = connect(dialect)
+            key = uuid.uuid4().bytes; other_key = uuid.uuid4().bytes
+            name = f'sharing-recalls-{dialect:x}'
+            holder, ctx = leased(owner_tree, name, key, version=version, epoch=10)
+            response(ctx, key, 7, version, 11); holder.write(b'dirty data')
+            contender, result = leased(contender_t, name, other_key, version=version, share=1, send=False)
+            request, receive = begin(contender, result)
+            assert owner_queue.get(timeout=10) == (key, 7, 5, 0 if version == 1 else 12, 1, owner_session.encrypt_data)
+            ack(owner, owner_session, owner_tree, key, 5)
+            denied(lambda: receive(request), 0xc0000043)
+            holder.write(b'newer data'); holder.flush()
+            assert owner_queue.empty()
+            # The failed CREATE's key reservation is reusable. This compatible
+            # open now recalls WRITE, independently of the earlier HANDLE break.
+            contender, result = leased(contender_t, name, other_key, version=version, send=False)
+            request, receive = begin(contender, result)
+            assert owner_queue.get(timeout=10) == (key, 5, 1, 0 if version == 1 else 13, 1, owner_session.encrypt_data)
+            ack(owner, owner_session, owner_tree, key, 1)
+            response(receive(request), other_key, 3, version, 1)
+            assert contender.read(0, 10) == b'newer data'
+            holder.close(); contender.close(); owner.disconnect(); contender_c.disconnect()
+            passed(f'{dialect:x}: incompatible sharing recalls only HANDLE (RWH to RW), preserves dirty writes on denial, then a compatible open recalls WRITE (RW to R)')
         report['status'] = 'passed'
     except Exception:
         report['error'] = traceback.format_exc(); print(report['error'], flush=True)

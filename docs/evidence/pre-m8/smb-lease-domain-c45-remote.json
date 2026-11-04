@@ -1,15 +1,15 @@
 {
-  "recorded_at": "2026-11-04T17:03:01.209Z",
+  "recorded_at": "2026-11-04T17:22:23.018Z",
   "source_commit": "c45d5f2cd54e31d03883f08840f0c86fb4f0e408",
   "run_id": 41870351356,
   "url": "https://github.com/TabNahida/tauCloud/actions/runs/41870351356",
-  "status": "lease-core-and-native-steps-passed-on-all-three-platforms-whole-jobs-in-progress",
+  "status": "all-three-targeted-jobs-passed-full-compatibility-remains-open",
   "jobs": [
     {
       "id": 126715401610,
       "name": "clang metadata",
-      "status": "in_progress",
-      "conclusion": null,
+      "status": "completed",
+      "conclusion": "success",
       "lease_steps": [
         {
           "name": "SMB shared lease state, wire vectors and break transitions",
@@ -28,8 +28,8 @@
     {
       "id": 126715402631,
       "name": "msvc metadata",
-      "status": "in_progress",
-      "conclusion": null,
+      "status": "completed",
+      "conclusion": "success",
       "lease_steps": [
         {
           "name": "SMB shared lease state, wire vectors and break transitions",
@@ -48,8 +48,8 @@
     {
       "id": 126715403826,
       "name": "gcc metadata",
-      "status": "in_progress",
-      "conclusion": null,
+      "status": "completed",
+      "conclusion": "success",
       "lease_steps": [
         {
           "name": "SMB shared lease state, wire vectors and break transitions",

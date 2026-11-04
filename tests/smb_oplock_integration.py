@@ -183,6 +183,16 @@ def main():
             other.close(); holder.close()
             passed(f'{dialect:x}: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes')
 
+            holder = cached(t, f'read-control-cache-{dialect:x}')
+            metadata = Open(t, holder.file_name)
+            message, receive_metadata = metadata.create(2, 0x20000, 0x80, 7, 1, 0x40, send=False)
+            request = c.send(message, s.session_id, t.tree_connect_id); pending(request)
+            recalled(q, s, holder); ack(c, s, t, holder)
+            receive_metadata(request)
+            denied(lambda: metadata.read(0, 1), 0xc0000022)
+            metadata.close(); holder.close()
+            passed(f'{dialect:x}: READ_CONTROL-only CREATE recalls classic EXCLUSIVE and does not gain READ_DATA; its stat-open exemption applies only to leases')
+
             holder = cached(t, f'compound-cache-{dialect:x}'); holder.write(b'previous')
             other = Open(t, holder.file_name)
             opening, receive_open = other.create(2, 0x13019f, 0x80, 7, 1, 0x40, send=False)

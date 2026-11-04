@@ -118,6 +118,7 @@ int main() {
       cookie = acquire("sharing", h).at("cookie");
       rejects([&] { open("sharing", peer); }, "cache_break_pending");
       check(poll("sharing", h, cookie).at("ack_required"));
+      check(get(decode_bytes(poll("sharing", h, cookie).at("notification").at("body").get<std::string>()), 28, 4) == 5);
       rejects([&] { open("sharing", client); }, "sharing_violation");
       close("sharing", h);
       auto contender = open("sharing", peer); close("sharing", contender);

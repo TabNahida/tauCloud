@@ -1,0 +1,108 @@
+{
+  "recorded_at": "2026-11-04T17:25:37.527Z",
+  "source_commit": "3450ec6869e570adb0901c7f48c967cbf1639503",
+  "run_id": 41873722027,
+  "url": "https://github.com/TabNahida/tauCloud/actions/runs/41873722027",
+  "status": "lease-wire-steps-passed-all-three-platforms-msvc-security-failure",
+  "jobs": [
+    {
+      "id": 126727398218,
+      "name": "msvc metadata",
+      "status": "completed",
+      "conclusion": "failure",
+      "lease_steps": [
+        {
+          "name": "SMB file lease CREATE, shared recall and cross-connection acknowledgments",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 16
+        }
+      ],
+      "failures": [
+        {
+          "name": "SMB security and size updates preserve classic oplock ownership",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 34
+        }
+      ]
+    },
+    {
+      "id": 126727398772,
+      "name": "gcc metadata",
+      "status": "in_progress",
+      "conclusion": null,
+      "lease_steps": [
+        {
+          "name": "SMB file lease CREATE, shared recall and cross-connection acknowledgments",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 16
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": 126727398852,
+      "name": "clang metadata",
+      "status": "in_progress",
+      "conclusion": null,
+      "lease_steps": [
+        {
+          "name": "SMB file lease CREATE, shared recall and cross-connection acknowledgments",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 16
+        }
+      ],
+      "failures": []
+    }
+  ],
+  "remaining": "MSVC closes the SMB transport during security/oplock case 0x302/BATCH after eight passing cases; root cause not established. No timeout/authority limits weakened.",
+  "msvc_artifact": {
+    "id": 13347505964,
+    "sha256": "fd8b861a69c70678a6d75276b98464a4eb4960537c1a161f4b3828306254bc4b",
+    "reports": {
+      "leases.json": {
+        "sha256": "07f4074d4eff0a31014277c0fef7404ee996cb7b3c282b9626b9be0eb51d13c3",
+        "report": {
+          "status": "passed",
+          "host": "Windows-2025Server-10.0.26100-SP0",
+          "checks": [
+            "210: v1 shared lease survives renewal, joins during recall, validates client/key/ACK state and coherently breaks RWH to RH to NONE",
+            "300: v2 shared lease survives renewal, joins during recall, validates client/key/ACK state and coherently breaks RWH to RH to NONE",
+            "302: v2 shared lease survives renewal, joins during recall, validates client/key/ACK state and coherently breaks RWH to RH to NONE",
+            "311: v2 shared lease survives renewal, joins during recall, validates client/key/ACK state and coherently breaks RWH to RH to NONE",
+            "same-client authenticated transport without an open routes the native recall ACK to the owning connection",
+            "R-only native invalidation delivers an encrypted no-ACK break before releasing exclusion",
+            "global key/name reservation covers NONE leases, rejects another path and is released after final close or failed CREATE",
+            "all eight v1/v2 requested state combinations return legal grants; H/W without READ succeeds with NONE",
+            "an original NONE member renews promoted shared authority after the promoting member closes",
+            "a conflicting lease prevents partial promotion of an existing R lease to RH when RWH was requested",
+            "malformed sizes, unknown state bits and duplicate lease contexts fail; reserved flags are ignored and v2 is ignored on SMB 2.1",
+            "the same LeaseKey under different client GUIDs identifies independent leases",
+            "unacknowledged native recall fences stale lease authority before admitting the native writer"
+          ],
+          "recorded_at": "2026-11-04T17:12:15.636456+00:00"
+        }
+      },
+      "security-oplocks.json": {
+        "sha256": "ec59e67108311687cb245f07f2ec5e3df63f7408b08b71df1484df56cd4c95a3",
+        "report": {
+          "status": "failed",
+          "checks": [
+            "210/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+            "210/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+            "210/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+            "300/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+            "300/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+            "300/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+            "302/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+            "302/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK"
+          ],
+          "error": "Traceback (most recent call last):\n  File \"D:\\a\\tauCloud\\tauCloud\\tests\\smb_security_oplocks.py\", line 76, in main\n    time.sleep(.3); c.echo(sid=s.session_id, timeout=5)\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Lib\\site-packages\\smbprotocol\\connection.py\", line 1128, in echo\n    req = self.send(echo_msg, sid=sid, credit_request=credit_request)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Lib\\site-packages\\smbprotocol\\connection.py\", line 975, in send\n    return self._send(\n           ^^^^^^^^^^^\n  File \"C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Lib\\site-packages\\smbprotocol\\connection.py\", line 1299, in _send\n    self._check_worker_running()\n  File \"C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Lib\\site-packages\\smbprotocol\\connection.py\", line 1187, in _check_worker_running\n    raise SMBConnectionClosed(\"SMB socket was closed, cannot send or receive any more data\")\nsmbprotocol.exceptions.SMBConnectionClosed: SMB socket was closed, cannot send or receive any more data\n"
+        }
+      }
+    }
+  }
+}
