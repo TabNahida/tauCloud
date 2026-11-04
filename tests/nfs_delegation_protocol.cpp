@@ -43,6 +43,7 @@ int main(int argc, char **argv) {
     };
     auto directory = nfs("root", "").at("handle").get<std::string>();
     auto handle = nfs("create", directory, {{"name", "file"}}).at("handle").get<std::string>();
+    nfs("create", directory, {{"name", "other"}});
     nfs("write", handle, {{"offset", 0}, {"data", encode_bytes("original")}});
     auto native = native_file::root(base / "root");
     bool component_provider = false, authorized = true, slow_read = false;
@@ -162,13 +163,18 @@ int main(int argc, char **argv) {
       if (!delegated.empty()) operation.fixed(delegated);
       return operation;
     };
-    auto open_result = [&](const std::string &result, uint32_t expected_delegation) {
+    auto named_claim = [&](peer &p, const std::string &delegated,
+                           const std::string &name = "file", uint32_t access = 1) {
+      return writer().u32(18).u32(0).u32(access).u32(0).u64(p.client).opaque("named-owner")
+          .u32(0).u32(2).fixed(delegated).opaque(name);
+    };
+    auto open_result = [&](const std::string &result, uint32_t expected_delegation, bool recalling = false) {
       reader r(result); auto state = r.fixed(16);
       r.boolean(); r.u64(); r.u64(); r.u32(); auto words = r.u32(); while (words--) r.u32();
       auto type = r.u32(); ok(type == expected_delegation);
       std::string delegated;
       if (type == 1) {
-        delegated = r.fixed(16); ok(!r.boolean());
+        delegated = r.fixed(16); ok(r.boolean() == recalling);
         ok(r.u32() == 1 && r.u32() == 0 && r.u32() == 0x1f01ff && r.opaque() == "EVERYONE@");
       } else if (type == 3) { ok(r.u32() == 2 && !r.boolean()); }
       r.end(); return std::pair{state, delegated};
@@ -214,6 +220,21 @@ int main(int argc, char **argv) {
     send(b, {put(), writer().u32(8).fixed(delegated)}, 10025);
     auto materialized = open_result(send(a, {put(), opening(a, 1, delegated)}), 1);
     state = materialized.first; ok(materialized.second == delegated);
+    auto named = open_result(send(a, {put(directory), named_claim(a, delegated)}), 1);
+    ok(named.second == delegated && named.first != state);
+    ok(protocol->dispatch(last_request, a.connection) == last_response);
+    send(a, {put(), writer().u32(25).fixed(named.first).u64(0).u32(8)});
+    send(a, {put(), writer().u32(4).u32(0).fixed(named.first)});
+    send(a, {put(directory), named_claim(a, state)}, 10025);
+    send(a, {put(directory), named_claim(a, delegated, "other")}, 10025);
+    send(a, {put(directory), named_claim(a, delegated, "missing")}, 2);
+    send(a, {put(directory), named_claim(a, delegated, "file", 2)}, 10038);
+    send(b, {put(directory), named_claim(b, delegated)}, 10025);
+    a.uid = 1001;
+    send(a, {put(directory), named_claim(a, delegated)}, 10025);
+    a.uid = 1000;
+    ok(callbacks.empty());
+    std::cout << "PASS named CLAIM_DELEGATE_CUR materializes and replays without self-recall; foreign states, clients, principals and write access are rejected\n";
     send(a, {put(), writer().u32(4).u32(0).fixed(state)});
     auto data = send(a, {put(), writer().u32(25).fixed(delegated).u64(0).u32(8)});
     reader read(data); ok(read.boolean() && read.opaque() == "original"); read.end();
@@ -243,8 +264,12 @@ int main(int argc, char **argv) {
     auto retry = receive_callback(); ok(retry.sequence == recall.sequence + 1 && retry.state == delegated);
     reply_callback(retry);
     held();
+    auto recalled_open = open_result(send(a, {put(directory), named_claim(a, delegated)}), 1, true);
+    ok(recalled_open.second == delegated);
     send(b, {put(), opening(b, 3)}, 10008);
     send(a, {put(), writer().u32(8).fixed(delegated)});
+    send(a, {put(), writer().u32(25).fixed(recalled_open.first).u64(0).u32(8)});
+    send(a, {put(), writer().u32(4).u32(0).fixed(recalled_open.first)});
     auto writer_open = open_result(send(b, {put(), opening(b, 3)}), 0);
     send(b, {put(), writer().u32(4).u32(0).fixed(writer_open.first)});
     std::cout << "PASS WANT replay, typed CB_RECALL, definitive DELAY retry and acknowledgment without premature release\n";

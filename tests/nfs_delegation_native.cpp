@@ -112,6 +112,10 @@ int main(int argc, char **argv) {
     auto contender = control("acquire"); contender["client"] = random_hex(16);
     check(!store->dispatch("nfs_delegation", contender, ctx()).at("granted"));
     check(nfs("read", fh, {{"offset", 0}, {"count", 8}}).at("data") == encode_bytes("original"));
+    check(native.metadata("space/cached").at("size") == 8);
+    check(nfs("lookup", dir, {{"name", "cached"}}).at("handle") == fh);
+    auto listed = nfs("list", dir).at("entries");
+    check(listed.size() == 1 && listed.at(0).at("handle") == fh);
     check(call("poll", cookie).at("state") == "active");
     rejects([&] { call("forget", cookie); }, "locked");
     rejects([&] { call("poll", "wrong-cookie"); }, "stale_handle");
@@ -133,6 +137,29 @@ int main(int argc, char **argv) {
     returned(cookie);
     check(native.open("space/cached").read(0, 8) == "original");
     std::cout << "PASS native write exclusion, own filehandle reads, capability binding and explicit return\n";
+
+#ifdef __linux__
+    // The legacy component provider intentionally cannot protect namespace
+    // changes. Exercise replacement there to prove lookup never trusts only
+    // the delegation's cached pathname. The real F_SETDELEG guest separately
+    // requires such a host rename to wait for recall and release.
+    d = call("acquire"); check(d.at("granted")); cookie = d.at("cookie");
+    if (d.at("provider") == "local-primitive") {
+      fs::rename(base / "root/space/cached", base / "root/space/old-incarnation");
+      {
+        auto replacement = native.open("space/cached", false, true, true);
+        replacement.write(0, "replacement");
+      }
+      auto current = nfs("lookup", dir, {{"name", "cached"}}).at("handle").get<std::string>();
+      check(current != fh);
+      check(nfs("read", current, {{"offset", 0}, {"count", 11}}).at("data") == encode_bytes("replacement"));
+      returned(cookie);
+      fs::remove(base / "root/space/cached");
+      fs::rename(base / "root/space/old-incarnation", base / "root/space/cached");
+      check(nfs("lookup", dir, {{"name", "cached"}}).at("handle") == fh);
+      std::cout << "PASS pathname replacement cannot reuse a retained delegation incarnation\n";
+    } else returned(cookie);
+#endif
 
     // An expired data grant must not release a live delegation. The original
     // signed grant remains sufficient for cleanup, but never for renewal/IO.

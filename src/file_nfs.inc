@@ -120,6 +120,21 @@ native_file nfs_open(space_state &s, const std::string &path, bool dir, bool wri
     return s.root.open(s.data.at("space").at("path"), true);
   return s.directory.open(path, dir, false, write);
 }
+native_file nfs_lookup_file(space_state &s, const std::string &path, bool dir) {
+  // A pathname is not a retained filehandle. Revalidate the actual confined
+  // directory entry before reusing a delegation's descriptor for metadata.
+  // In particular, an unlinked or replaced name cannot resolve to old state.
+  if (!dir) {
+    auto space = s.data.at("space").at("id").get<std::string>();
+    for (auto &[cookie, d] : nfs_delegations) {
+      if (!d.lifetime.held() || d.space != space || d.root != s.data.at("root").dump() ||
+          d.path != path) continue;
+      auto current = s.directory.metadata(path);
+      if (current.at("object") == d.file.info().at("object")) return d.file.retain();
+    }
+  }
+  return nfs_open(s, path, dir);
+}
 std::string nfs_handle(const std::string &export_id, const std::string &id) {
   auto it = std::find(file_roles().begin(), file_roles().end(), role);
   std::string wire(1, 1);
@@ -595,9 +610,8 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     require(dir, "not_directory");
     auto n = name("name");
     auto child = p.empty() ? n : p + "/" + n;
-    auto meta = dav_exists(s, child);
-    require(meta.has_value(), "not_found");
-    auto f = nfs_open(s, child, meta->at("directory"));
+    auto meta = object(space, child); // The scan above already reconciled this name.
+    auto f = nfs_lookup_file(s, child, meta.at("directory"));
     return metadata(nfs_meta(s, g, child, f));
   }
   if (op == "list") {
@@ -610,7 +624,7 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
       if (n.starts_with(".tc-"))
         continue;
       auto child = p.empty() ? n : p + "/" + n;
-      auto f = nfs_open(s, child, e.at("directory"));
+      auto f = nfs_lookup_file(s, child, e.at("directory"));
       auto entry = nfs_meta(s, g, child, f);
       entry["name"] = n;
       bytes += entry.dump().size();

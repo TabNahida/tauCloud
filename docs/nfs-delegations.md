@@ -3,8 +3,10 @@
 Full delegation support remains an open compatibility requirement. The protocol
 engine now implements READ delegation state, CB_RECALL, return and revocation,
 and has component tests using an injected native file-domain provider. The
-production file authority still declines wire handout: it cannot yet protect
-every host metadata/namespace change or retain guards across worker death.
+production file authority still declines wire handout: acknowledged native
+protection through the complete reply lifetime, worker replacement and reclaim
+remain unfinished. Linux 6.19 native namespace protection and retention across
+file-worker death now have component acceptance; Windows equivalents remain open.
 There is no configuration switch that bypasses this production gate. Component
 passes below are not end-to-end delegation or complete RFC conformance.
 
@@ -63,9 +65,9 @@ now verifies the explicit refusal. Both full logs and every failure remain in
   Windows still needs equivalent native namespace protection.
 - Complete durable delegation reclaim, including server/client restart and
   file-domain failure. Recorded delegation ownership alone is not recovery.
-- Validate authenticated CB_RECALL against independent Kerberos/SSV clients,
-  and complete named CLAIM_DELEGATE_CUR namespace handling. The component
-  suite currently covers AUTH_NONE callbacks and CLAIM_DELEG_CUR_FH.
+- Validate authenticated CB_RECALL against independent Kerberos/SSV clients.
+  The component suite currently covers AUTH_NONE callbacks, CLAIM_DELEG_CUR_FH
+  and named CLAIM_DELEGATE_CUR with native namespace identity checks.
 - Preserve exclusion through the required recall/revocation interval. The new
   configurable lease reconciles the advertised duration with the native bound;
   default settings still decline a native guard on a host with a 45-second
@@ -353,3 +355,39 @@ transport completion and backchannel responses, with failure handling before wir
 success. Requests waiting in the executor before authenticated SEQUENCE admission
 also need receipt-time handling. Worker replacement/reclaim and full restart fencing
 remain open; production delegation handout remains disabled.
+
+## Namespace lookup under a delegation
+
+Internal namespace reconciliation now reads metadata without opening files for
+data access. Linux uses confined `openat2` with O_PATH; Windows uses a relative
+NtCreateFile handle with FILE_READ_ATTRIBUTES and SYNCHRONIZE. Neither API
+returns a data handle to the caller. Existing root/volume/type checks, symlink
+and reparse-point rejection, reserved-name checks and hardlink confinement stay
+in force. See [Linux O_PATH](https://man7.org/linux/man-pages/man2/open.2.html)
+and [Windows metadata-open oplock behavior](https://learn.microsoft.com/en-us/windows-hardware/drivers/ifs/irp-mj-create2).
+
+NFS LOOKUP and directory enumeration may reuse an active delegation's retained
+descriptor only after matching its root, space and path, then comparing the
+actual confined directory entry with the retained native incarnation. A cached
+pathname alone is insufficient. Missing/replaced entries cannot revive old
+state; normal parent traversal, file permissions and stateid checks still run.
+This removes two unintended data opens: whole-space reconciliation and the
+DAV existence query previously used by LOOKUP.
+
+Named CLAIM_DELEGATE_CUR can consequently materialize OPEN state without
+recalling its own guard. The protocol component tests cover exact replay,
+independent OPEN/delegation stateids, foreign file/state/client/principal and
+write-access rejection. They also materialize a named OPEN after CB_RECALL and
+prove that OPEN remains readable after DELEGRETURN. This implements the named
+claim's normal and recall-time behavior in
+[RFC 8881 section 18.16](https://www.rfc-editor.org/rfc/rfc8881.html#section-18.16);
+server-restart reclaim remains a separate unfinished requirement.
+
+Native tests verify that metadata observation, LOOKUP and enumeration leave the
+guard active. The older Linux component provider additionally permits a real
+host rename/replacement, proving that the replacement gets its own filehandle;
+the Linux 6.19 guest requires namespace mutations to block instead. The core
+adapter test covers concurrent symlink substitution and hardlink rejection for
+metadata access. [Local evidence](evidence/pre-m8/nfs-named-delegation-local.json)
+records component and shared-protocol regressions. These results do not enable
+production wire handout or close the remaining recovery and lifetime gates.

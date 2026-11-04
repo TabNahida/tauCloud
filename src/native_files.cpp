@@ -393,8 +393,11 @@ native_file native_file::open(const std::string &path, bool directory, bool crea
                               bool write_access) const {
   return open_impl(path, directory, create, write_access, false);
 }
+json native_file::metadata(const std::string &path, bool directory) const {
+  return open_impl(path, directory, false, false, false, true).info();
+}
 native_file native_file::open_impl(const std::string &path, bool directory, bool create,
-                                   bool write_access, bool pin) const {
+                                   bool write_access, bool pin, bool metadata_only) const {
   portable_path(path, true);
   native_file result;
   result.impl_->private_pin = pin;
@@ -420,6 +423,7 @@ native_file native_file::open_impl(const std::string &path, bool directory, bool
     IO_STATUS_BLOCK io{};
     auto next = std::make_shared<resource>();
     ACCESS_MASK rights = GENERIC_READ | SYNCHRONIZE;
+    if (last && metadata_only) rights = FILE_READ_ATTRIBUTES | SYNCHRONIZE;
     if (last && write_access)
       rights |= GENERIC_WRITE | DELETE;
     next->access = rights;
@@ -469,6 +473,8 @@ native_file native_file::open_impl(const std::string &path, bool directory, bool
   // the file worker that also has to service the holder's flush/acknowledgment.
   how.flags = O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK |
               (directory ? O_RDONLY | O_DIRECTORY : (write_access ? O_RDWR : O_RDONLY));
+  if (metadata_only)
+    how.flags = O_CLOEXEC | O_NOFOLLOW | O_PATH | (directory ? O_DIRECTORY : 0);
   if (create && !directory) {
     how.flags |= O_CREAT | O_EXCL;
     how.mode = 0600;

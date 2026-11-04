@@ -19,7 +19,7 @@ class native_file {
   friend class native_delegation_owner;
   struct impl;
   std::unique_ptr<impl> impl_;
-  native_file open_impl(const std::string &, bool, bool, bool, bool) const;
+  native_file open_impl(const std::string &, bool, bool, bool, bool, bool = false) const;
   std::unique_ptr<native_cache_guard> cache_guard_impl(bool, bool, bool = true) const;
 
 public:
@@ -47,6 +47,9 @@ public:
   static native_file root(const fs::path &path);
   native_file open(const std::string &path, bool directory = false, bool create = false,
                    bool write = false) const;
+  // Confined namespace observation, without opening a file for data access or
+  // breaking its native data-cache guard. Never returns a usable IO handle.
+  json metadata(const std::string &path, bool directory = false) const;
   json info(bool change_stamp = false) const;
   // Filesystems without native incarnation evidence are ineligible for persistent NFS handles.
   std::string stable_identity() const;

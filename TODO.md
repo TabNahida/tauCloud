@@ -140,6 +140,14 @@ Selected-profile acceptance: [M7 guide](docs/m7.md), [中文](docs/m7.zh-CN.md),
 
 ## Full SMB/NFS compatibility prerequisite (user decision, 2026-10-31)
 
+Named NFS CLAIM_DELEGATE_CUR now materializes OPEN state through native-identity
+checked namespace lookup, including during CB_RECALL and subsequent DELEGRETURN.
+Internal scans no longer reopen delegated files for data access. Component tests
+cover replay, ownership, replacement and confinement; production delegation
+handout still awaits acknowledged protection through reply lifetime and recovery.
+See [implementation](docs/nfs-delegations.md#namespace-lookup-under-a-delegation)
+and [local evidence](docs/evidence/pre-m8/nfs-named-delegation-local.json).
+
 Native Linux CIFS and macOS failures at `0bf303f` exposed pending responses
 inside compound frames. The dispatcher now splits asynchronous batches into
 independently signed/encrypted frames while preserving request dependencies.

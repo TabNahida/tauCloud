@@ -406,8 +406,7 @@ struct file_store::impl {
         portable_path(name);
         require(++count <= 10000, "reconcile_limit");
         auto relative = path.empty() ? name : path + "/" + name;
-        auto native = s.directory.open(relative, entry.at("directory"));
-        auto info = native.info();
+        auto info = s.directory.metadata(relative, entry.at("directory"));
         require(found.emplace(lower(relative), json{{"path", relative}, {"info", info}}).second,
                 "case_collision");
         if (info.at("directory"))

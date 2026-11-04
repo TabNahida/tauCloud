@@ -97,6 +97,8 @@ static bool suite(const fs::path &base, bool mandatory) {
     auto f = root.open(relative, false, false, write);
     auto guard = f.delegation_guard(write);
     check(bool(guard), "delegation_acquire_failed");
+    check(root.metadata(relative).at("object") == f.info().at("object") && !guard->breaking(),
+          "metadata_observation_recalled_delegation");
     try { conflict(*guard, [&] { return op(base / relative); }); }
     catch (...) { std::cerr << "FAIL " << base << " " << name << '\n'; throw; }
     std::cout << "PASS " << base << " " << name << '\n';
@@ -346,6 +348,10 @@ static void file_domain_suite(const fs::path &base) {
   check(d.at("granted") && d.at("provider") == "independent-owner" && d.at("owner_available"), "domain_owner_not_used");
   auto cookie = d.at("cookie");
   check(call("renew", cookie).at("granted"), "domain_owner_renew_failed");
+  check(nfs("lookup", dir, {{"name", "cached"}}).at("handle") == fh, "domain_lookup_lost_incarnation");
+  auto listed = nfs("list", dir).at("entries");
+  check(listed.size() == 1 && listed.at(0).at("handle") == fh, "domain_list_lost_incarnation");
+  check(call("poll", cookie).at("state") == "active", "domain_namespace_read_recalled_delegation");
   int writer = open((base / "root/space/cached").c_str(), O_WRONLY | O_NONBLOCK);
   check(writer < 0 && errno == EWOULDBLOCK, "domain_native_conflict_not_blocked");
   auto limit = std::chrono::steady_clock::now() + 1s;

@@ -44,6 +44,8 @@ int main() {
       std::future<std::string> external;
       auto guard = file.cache_guard(true);
       check(bool(guard) && !guard->breaking());
+      check(directory.metadata("cache-exclusion").at("object") == file.info().at("object"));
+      check(!guard->breaking());
       check(!file.cache_guard(true));
       auto retained = file.retain();
       check(!retained.cache_guard(false));
@@ -357,6 +359,11 @@ int main() {
           escaped = true;
         } catch (const error &) {
         }
+        try {
+          root_handle.metadata("race/link");
+          escaped = true;
+        } catch (const error &) {
+        }
       }
       stop = true;
       attacker.join();
@@ -365,6 +372,7 @@ int main() {
     // All links to an outside object are denied even when they remain under the root name.
     fs::create_hard_link(outside, root_path / "hardlink");
     rejects([&] { root_handle.open("hardlink"); }, "hardlink_denied");
+    rejects([&] { root_handle.metadata("hardlink"); }, "hardlink_denied");
     root_handle = native_file();
     fs::remove_all(temp);
     std::cout << json{{"status", "passed"},
