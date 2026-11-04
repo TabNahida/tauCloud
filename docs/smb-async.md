@@ -72,9 +72,9 @@ asynchronous compound tests also pass. See
 [before/after evidence](evidence/pre-m8/smb-directory-retry-local.json).
 
 A dedicated Linux Actions job now runs real Kerberos CIFS mounts directly after
-build, in addition to the full metadata matrix. Native reacceptance on this
-change is pending. macOS SMB still fails at `ed77b4d`; its NFSv3 client passes.
-No full native-client compatibility is claimed from the independent-client tests.
+build, in addition to the full metadata matrix. At `ed77b4d`, macOS SMB fails
+while its NFSv3 client passes; the later fixed-source results appear below.
+Independent-client tests alone do not establish native-client compatibility.
 
 The retained [macOS result](evidence/pre-m8/macos-ed77-native-failure.json) fails
 during the first payload write with EBADF/STATUS_FILE_CLOSED, rather than the
@@ -82,4 +82,16 @@ previous rename framing error. Its metadata artifact was byte-truncated into
 invalid JSON and mixed different connections' message IDs. The harness now
 retains the complete 512-frame-bounded metadata document and labels connection
 numbers and opaque CREATE/CLOSE/IO FileIds. It still omits authentication blobs,
-keys and file data. This improves diagnosis; the macOS defect is not yet fixed.
+keys and file data. The following native reacceptance now verifies the corrected
+server behavior, without attributing every earlier failure to a single cause.
+
+The [fixed-source Linux native workflow](evidence/pre-m8/smb-native-c243-pass.json)
+passes at `c243218`, including signed SMB 2.1 and encrypted SMB 3.0/3.0.2/3.1.1
+kernel CIFS/Kerberos roundtrips with rename and enumeration. The earlier
+`c4226c2` run passed those profiles but failed to write its metadata report;
+the harness now creates that directory before mounting.
+
+[macOS 15.7.9 native acceptance](evidence/pre-m8/macos-native-4188-pass.json)
+passes SMB and NFSv3 roundtrips at `4188fcc`, with complete bounded header
+metadata retained by the proxy. These are native client results, not a claim
+that the remaining Full SMB/NFS conformance gates have closed.

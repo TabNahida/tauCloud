@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "client_host": "macOS-15.7.9-x86_64-i386-64bit-Mach-O",
+  "source_commit": "4188fcc91538202769c9d7272f5c7d931a904383",
+  "harness_commit": "4188fcc91538202769c9d7272f5c7d931a904383",
+  "profiles": [
+    {
+      "name": "macos-native-smb",
+      "status": "passed",
+      "mount_output": "",
+      "payload_sha256": "08e33aedf25337c87eb15e08c32a58f6f4caa21fe073d00b53014c57f8d148e0"
+    },
+    {
+      "name": "macos-native-nfs3",
+      "status": "passed",
+      "mount_output": "",
+      "payload_sha256": "08e33aedf25337c87eb15e08c32a58f6f4caa21fe073d00b53014c57f8d148e0"
+    }
+  ],
+  "server_archive_sha256": "a5f7bde76def76f420a661e9ed764edb91c8200c4faa6fae0982f3dc902f63f2",
+  "url": "https://github.com/TabNahida/tauCloud/actions/runs/41925828294/job/126928618655",
+  "artifact_sha256": "3841461758188480e66023e81172bf8776a4621f5768ab038e8f7533ddc1e030",
+  "limits": [
+    "Native SMB and NFSv3 functional roundtrips on macOS 15.7.9; this does not establish full standards conformance.",
+    "The encompassing backend run has a separate Windows NFS fixture-startup failure."
+  ]
+}

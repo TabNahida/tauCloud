@@ -1,0 +1,73 @@
+{
+  "status": "passed",
+  "source": "c243218fd2d5bc3ef39a44c0c72231838a74a57f",
+  "url": "https://github.com/TabNahida/tauCloud/actions/runs/41931029968",
+  "artifact_sha256": "2febe5bec2e92c5cc0f54c8b2b7d2e3a7d01a44fdf5a6a443d5b5b7e5c97a0d5",
+  "native": {
+    "status": "passed",
+    "profiles": [
+      {
+        "dialect": "2.1",
+        "security": "krb5",
+        "status": "passed",
+        "checks": [
+          "kernel CIFS Kerberos mount",
+          "mandatory signing",
+          "1 MiB write/fsync/read",
+          "rename/overwrite/truncate/enumerate/delete"
+        ]
+      },
+      {
+        "dialect": "3.0",
+        "security": "krb5",
+        "status": "passed",
+        "checks": [
+          "kernel CIFS Kerberos mount",
+          "required SMB3 encryption",
+          "1 MiB write/fsync/read",
+          "rename/overwrite/truncate/enumerate/delete"
+        ]
+      },
+      {
+        "dialect": "3.02",
+        "security": "krb5",
+        "status": "passed",
+        "checks": [
+          "kernel CIFS Kerberos mount",
+          "required SMB3 encryption",
+          "1 MiB write/fsync/read",
+          "rename/overwrite/truncate/enumerate/delete"
+        ]
+      },
+      {
+        "dialect": "3.1.1",
+        "security": "krb5",
+        "status": "passed",
+        "checks": [
+          "kernel CIFS Kerberos mount",
+          "required SMB3 encryption",
+          "1 MiB write/fsync/read",
+          "rename/overwrite/truncate/enumerate/delete"
+        ]
+      }
+    ]
+  },
+  "checks": [
+    "principal mappings require administrator authority and reject ambiguous duplicate principal bindings",
+    "real Kerberos and SPNEGO negotiate authenticate SMB2.1/3.0/3.0.2/3.1.1; independent client validates signing and AES encryption during write/read/flush/rename/truncate/delete",
+    "AES-256-CCM/GCM derive from the complete 32-byte Kerberos key with independent signed setup, encrypted I/O and renewal checks for Kerberos/SPNEGO",
+    "unmodified Samba smbclient requires Kerberos and verifies 1 MiB signed SMB2.1 and encrypted SMB3.1.1 roundtrips",
+    "unmapped principals, tickets for another acceptor and modified authenticators fail without NTLM or guest fallback",
+    "independent raw Kerberos verifies mutual AP-REP and final SMB2 HMAC; replaying the same AP-REQ on a fresh transport is rejected",
+    "Kerberos without GSS mutual authentication still verifies SMB2 SESSION_SETUP signing and signed file I/O; replay remains rejected",
+    "fresh Kerberos and SPNEGO renew all SMB2/3 dialects with unchanged signing/cipher keys and live file handles",
+    "renewal cannot switch to another Kerberos principal mapped to the same account or revive a revoked mapping token; failures release exclusive opens",
+    "live principal mapping revocation terminates existing file authority and new logins; explicit reenable admits fresh authentication",
+    "atomic cifs keytab rotation admits fresh tickets while existing signed/encrypted sessions remain valid",
+    "ticket lifetime bounds SMB authority; Kerberos is independent of NTLM enrollment and existing mandatory-MIC NTLM authentication still works",
+    "native Linux kernel CIFS uses Kerberos for signed SMB2.1 and encrypted SMB3.0/3.0.2/3.1.1 roundtrips"
+  ],
+  "limits": [
+    "Fixed-source native CIFS/Kerberos roundtrips and authentication regression; other SMB conformance gates remain open."
+  ]
+}
