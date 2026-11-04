@@ -165,7 +165,7 @@ static pace::task<pace::http::server_response> handle(api_state &s, pace::http::
     }
     bool write = r.method != "GET";
     static const std::set<std::string> resources = {
-        "nfs-exports", "smb-principals", "users", "groups", "memberships", "storage-roots", "spaces", "shares", "grants", "audit"};
+        "nfs-exports", "smb-principals", "smb-owner-authority", "users", "groups", "memberships", "storage-roots", "spaces", "shares", "grants", "audit"};
     auto resource = r.target.starts_with("/api/v1/") ? r.target.substr(8) : std::string();
     bool file_request = r.target.starts_with("/api/v1/files/");
     auto file_op = file_request ? r.target.substr(14) : std::string();

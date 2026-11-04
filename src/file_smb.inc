@@ -234,6 +234,8 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     writing = body.value("write", false);
   auto grant = verify(body.at("grant"), writing, cleanup);
   require(grant.at("protocol") == "smb", "forbidden");
+  auto owner_authority = grant.value("owner_authority", "none");
+  bool restore_owner = owner_authority == "restore" && grant.at("write").get<bool>();
   auto space = grant.at("space").at("id").get<std::string>(),
        path = grant.at("path").get<std::string>(), actor = grant.at("actor").get<std::string>();
   auto &s = attach(grant, ctx);
@@ -298,21 +300,31 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
       if (body.contains("security")) {
         auto supplied = security::decode(decode_bytes(body.at("security").get<std::string>()));
         auto owner = security::principal(actor);
-        require(supplied.at("owner") == "" || supplied.at("owner") == owner, "invalid_owner");
+        require(supplied.at("owner") == "" || supplied.at("owner") == owner || restore_owner,
+                "invalid_owner");
+        if (supplied.at("owner") != "") {
+          owner = supplied.at("owner");
+          descriptor["owner"] = owner;
+        }
         if (supplied.at("group") != "") {
           bool valid_group = supplied.at("group") == descriptor.at("group");
           for (const auto &group : grant.value("groups", json::array()))
             valid_group |=
                 supplied.at("group") == security::principal(group.get<std::string>(), true);
-          require(valid_group, "invalid_owner");
+          require(valid_group || restore_owner, "invalid_owner");
           descriptor["group"] = supplied.at("group");
         }
+        auto parent_sd = security_get(s, security_info(s, security_parent(path)));
+        // Resolve CREATOR OWNER/GROUP using the restored creation identities,
+        // including a SecD that supplies ownership without an explicit DACL.
+        if (supplied.at("group") != "")
+          parent_sd["group"] = descriptor.at("group");
+        descriptor = security::inherit(parent_sd, owner, descriptor.at("group"), directory);
         auto control = supplied.at("control").get<uint32_t>();
         if (control & 4) {
           descriptor["dacl"] = supplied.at("dacl");
           descriptor["control"] = (control & 0x100c) | 0x8000;
           if (!(control & 0x1000) && !supplied.at("dacl").is_null()) {
-            auto parent_sd = security_get(s, security_info(s, security_parent(path)));
             auto inherited =
                 security::inherit(parent_sd, owner, descriptor.at("group"), directory, false);
             for (const auto &entry : inherited.at("dacl"))
@@ -327,6 +339,12 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
       }
     }
     auto permitted = security::allowed(descriptor, security::token(grant));
+    // Taking ownership overrides WRITE_OWNER. Restoration bypasses this DACL
+    // right only on backup-intent opens; ordinary MAXIMUM_ALLOWED/MxAc must
+    // still reflect the DACL. Neither mode grants data, WRITE_DAC or SACL access.
+    if (grant.at("write").get<bool>() &&
+        (owner_authority == "take" || (restore_owner && (options & 0x4000))))
+      permitted |= 0x80000;
     if (existing && !path.empty()) {
       auto parent_access = security_allowed(s, grant, security_info(s, security_parent(path)));
       if (parent_access & 0x40)
@@ -498,7 +516,8 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
       descriptor["mode_special"] = descriptor.value("mode_special", 0u) & ~06000u;
     auto subjects = security::token(grant);
     if (information & 1) {
-      require(replacement.at("owner") == subjects.at(0), "invalid_owner");
+      require(replacement.at("owner") != "" &&
+                  (replacement.at("owner") == subjects.at(0) || restore_owner), "invalid_owner");
       descriptor["owner"] = replacement.at("owner");
     }
     if (information & 2) {
@@ -507,7 +526,8 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
       for (const auto &name : grant.value("groups", json::array()))
         valid_group |= group == security::principal(name.get<std::string>(), true);
       // The primary group of an existing descriptor may be retained.
-      require(valid_group || group == descriptor.at("group"), "invalid_owner");
+      require(group != "" && (valid_group || group == descriptor.at("group") || restore_owner),
+              "invalid_owner");
       descriptor["group"] = group;
       if (!descriptor.at("dacl").is_null())
         for (auto &entry : descriptor["dacl"])

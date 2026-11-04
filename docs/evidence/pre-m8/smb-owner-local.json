@@ -1,0 +1,88 @@
+{
+  "recorded_at": "2026-11-04T04:58:48.007999+00:00",
+  "base_source": "c5ab9d8e4476f6260857a06230f61b831323945f",
+  "scope": "Explicit SMB per-user/space ownership authority; complete backup/restore privilege and Full SMB/NFS remain open.",
+  "status": "passed",
+  "files_sha256": {
+    "src/api.cpp": "cea0d4f0ffb99cffffddb0bab3d38e465e28f83873431582083e486b567ca91d",
+    "src/policy.cpp": "83fdf75862695b9c39edb61f1eb9c62554dc8e7113b77cb3f5664be13f514fb7",
+    "src/file_smb.inc": "7d40c37f10a8ae40c1ec8798cac7dbc9a1960be25954524f1f890785484e2556",
+    "tests/smb_owner_integration.py": "4b6b68e0d9234d46993613c7ede767358cee1dadb0e60dcfcfd5b79d61765dc4",
+    "tests/smb_reauthentication.py": "3e8fa8776c1845b2e6c8446de792c3bd0c743cd19cd28ffc7f676e4d09a1430a",
+    "tests/samba_torture.py": "2769dceed091b2aacf07d307b0317c3b170e855e8227670d9ca00d345c8fbd1f",
+    ".github/workflows/smb-metadata.yml": "1ee8360ab0d44f20a02faa3c5b9d070640b06bd35193b36f9dbe829ea1babd62",
+    "scripts/run_m7.py": "3f8aa47b725bad1a0e687497d725ce4968bcbdb59c9cdbaab0691bd2f4cfe926"
+  },
+  "local": {
+    "ownership": {
+      "status": "passed",
+      "checks": [
+        "admin-only scoped ownership assignment; take overrides denied WRITE_OWNER and MAXIMUM_ALLOWED only, allows self ownership and denies arbitrary SIDs",
+        "restore accepts valid arbitrary owner/group SIDs atomically and overrides WRITE_OWNER only with backup intent; it cannot bypass data/WRITE_DAC/SACL rights, readonly shares or its configured space",
+        "SecD restores initial owner/group and resolves inherited CREATOR OWNER/GROUP against those identities, with or without an explicit DACL",
+        "authority revocation drains old privileged handles; fresh ordinary handles cannot restore, and explicitly restored authority persists across service restart"
+      ]
+    },
+    "reauthentication": {
+      "status": "passed",
+      "checks": [
+        "SMB2.1/3.0/3.0.2/3.1.1 repeated signed/encrypted NTLM renewal preserves session ID, keys, opens and byte-range locks",
+        "expired authority reports NETWORK_SESSION_EXPIRED and renews the same open after an intervening management login",
+        "wrong proof and different-user renewal fail, remove old session authority and release exclusive handles before the error reply",
+        "fresh valid credentials cannot renew a revoked token or resurrect its exclusive open",
+        "LOGOFF during an incomplete renewal resets authentication state and permits a fresh encrypted session on the same transport",
+        "SESSION_SETUP for an unknown session does not abort another session's in-progress renewal or borrow its signing key"
+      ]
+    },
+    "shared_security": {
+      "status": "passed",
+      "checks": [
+        "schema 5 migration backs up each file authority before adding persistent security descriptors",
+        "self-relative owner/group/DACL query, requested sections, required buffer size and READ_CONTROL/WRITE_DAC/SACL boundaries",
+        "ordered deny/allow access checks, MAXIMUM_ALLOWED and explicit-right intersection; existing handles retain granted rights",
+        "SMB denial enforced by NFSv3 READ/ACCESS, NFSv4 ACCESS, core API and WebDAV readonly aliases",
+        "ACE order, empty versus NULL DACL, implicit owner rights and OWNER RIGHTS SID",
+        "malformed offsets, overlaps, truncation and unsupported ACEs rejected atomically; ownership cannot be assigned to another user",
+        "file/directory inheritance with CREATOR OWNER substitution and multi-generation propagation; ACL follows rename",
+        "SecD CREATE persists protected initial ACL, validates ownership and rejects duplicate/malformed contexts before mutation",
+        "group ACE enforcement and membership revocation use freshly signed identity grants",
+        "schema 6 durability across process restart; replacement object receives fresh owner and ACL",
+        "NFS writer publication still enforces file DACL; WRITE and chmod cannot bypass SMB restrictions",
+        "DAV writer cannot bypass ACL; staged PUT retains restrictions, recursive COPY checks descendants and inherits destination ACL through private staging parents",
+        "DAV LOCK on unmapped URL checks parent create rights and persists inherited DACL"
+      ]
+    },
+    "samba": {
+      "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+      "recorded_at": "2026-11-04T04:56:31.173329+00:00",
+      "tests": [
+        {
+          "selector": "smb2.acls",
+          "returncode": 0,
+          "status": "passed",
+          "counts": {
+            "success": 14,
+            "failure": 0,
+            "error": 0,
+            "skip": 0
+          },
+          "log": "smb-owner-samba-final-smb2.acls.log"
+        }
+      ],
+      "owner_authority": "explicit restore grant for alice in smbdata",
+      "status": "passed"
+    },
+    "core": {
+      "checks": 12409,
+      "status": "passed"
+    }
+  },
+  "prior_regression": {
+    "counts": {
+      "success": 9,
+      "failure": 5
+    },
+    "cause": "Restoration authority incorrectly added WRITE_OWNER to ordinary MAXIMUM_ALLOWED/MxAc; now overridden only on backup-intent opens. Original Samba ACL expectations retained."
+  },
+  "remote": "Pending GCC/Clang ASan+UBSan/MSVC acceptance. At source 456e2b4 MSVC renewal functional checks all passed but fixture cleanup failed because sqlite3 transaction context did not close its connection; explicit close fixed in this change."
+}

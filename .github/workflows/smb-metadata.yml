@@ -28,6 +28,8 @@ on:
       - 'tests/nfs_mode_integration.py'
       - 'src/file_dav.inc'
       - 'tests/smb_security_integration.py'
+      - 'tests/smb_owner_integration.py'
+      - 'tests/samba_torture.py'
       - 'tests/windows_native_smb.py'
       - 'src/native_files.cpp'
       - 'include/taucloud/files.hpp'
@@ -93,12 +95,17 @@ jobs:
         run: python tests/smb_reauthentication.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/smb-reauth.json
       - name: Persistent ACLs and cross-protocol permission checks
         run: python tests/smb_security_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/security.json
+      - name: Scoped SMB ownership authority and revocation
+        run: python tests/smb_owner_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/smb-owner.json
       - name: Native Windows security descriptor operations
         if: runner.os == 'Windows'
         run: python tests/windows_native_smb.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/windows-native-security.json
       - name: Unmodified Samba ACL conformance
         if: runner.os == 'Linux'
         run: python tests/samba_torture.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/samba-acls.json smb2.acls.CREATOR smb2.acls.GENERIC smb2.acls.OWNER smb2.acls.INHERITANCE smb2.acls.INHERITFLAGS smb2.acls.DYNAMIC smb2.acls.ACCESSBASED smb2.acls.OWNER-RIGHTS smb2.acls.OWNER-RIGHTS-DENY smb2.acls.OWNER-RIGHTS-DENY1 smb2.acls.DENY1 smb2.acls.MXAC-NOT-GRANTED smb2.acls.OVERWRITE_READ_ONLY_FILE
+      - name: Full unmodified Samba ACL suite with explicit owner restoration
+        if: runner.os == 'Linux'
+        run: python tests/samba_torture.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --owner-restore --output build/acceptance/samba-acls-restore.json smb2.acls
       - name: DOS metadata, timestamps, EAs and modes
         run: python tests/smb_attributes_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/metadata.json
       - name: Asynchronous SMB blocking locks and cancellation

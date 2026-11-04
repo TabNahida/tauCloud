@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """SMB renewal with independent SPNEGO tokens and the original channel keys."""
 import argparse
+from contextlib import closing
 import json
 from pathlib import Path
 import sqlite3
@@ -107,8 +108,9 @@ def main():
         h = create(t, 'expired'); h.write(b'kept')
         # Advance only the authority expiry; the actual NTLM/SPNEGO exchange and
         # SMB cryptography remain unmodified on both sides.
-        with sqlite3.connect(f.state / 'identity.db') as db:
-            db.execute("UPDATE sessions SET expires=expires-3601000 WHERE kind='smb' AND name='alice'")
+        with closing(sqlite3.connect(f.state / 'identity.db')) as db:
+            with db:
+                db.execute("UPDATE sessions SET expires=expires-3601000 WHERE kind='smb' AND name='alice'")
         denied(lambda: h.read(0, 4), 0xc000035c)
         denied(lambda: create(t, 'expired-denied'), 0xc000035c)
         # Ordinary management login must not prune an SMB renewal candidate.

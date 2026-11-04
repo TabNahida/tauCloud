@@ -14,6 +14,7 @@ def main():
     p.add_argument('--bin', type=Path, required=True)
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--client', default='smbtorture')
+    p.add_argument('--owner-restore', action='store_true', help='Explicitly authorize arbitrary owner restoration for the test account and space')
     p.add_argument('--timeout', type=int, default=300,
                    help='Per-selector runtime; credit stress performs 8191 durable writes')
     p.add_argument('selectors', nargs='*', help='Defaults to the versioned bounded-profile regression selection')
@@ -24,6 +25,9 @@ def main():
     report = dict(host=platform.platform(), recorded_at=datetime.datetime.now(datetime.timezone.utc).isoformat(), tests=[])
     f = Fixture(args.bin)
     try:
+        if args.owner_restore:
+            f.api('smb-owner-authority', f.admin, dict(id='samba-owner', username='alice', space='smbdata', mode='restore'))
+            report['owner_authority'] = 'explicit restore grant for alice in smbdata'
         if any('acls' in selector for selector in args.selectors):
             f.api('shares', f.admin, dict(id='hideunread', space='smbdata', exposures={'smb':'rw'}, access_based_enumeration=True))
         credentials = f.base / 'samba-credentials'

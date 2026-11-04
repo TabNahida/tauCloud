@@ -84,6 +84,9 @@ def main():
                  + (['--sanitizers'] if args.sanitizers else [])]
     commands += [[sys.executable, 'tests/smb_security_integration.py', '--bin', str(binary),
                   '--output', str(output.with_suffix('.security.json'))]]
+    commands += [[sys.executable, 'tests/smb_owner_integration.py', '--bin', str(binary),
+                  '--output', str(output.with_suffix('.smb-owner.json'))]
+                 + (['--sanitizers'] if args.sanitizers else [])]
     commands += [[sys.executable, 'tests/nfs_acl_integration.py', '--bin', str(binary),
                   '--output', str(output.with_suffix('.nfs-acl.json'))]
                  + (['--sanitizers'] if args.sanitizers else [])]

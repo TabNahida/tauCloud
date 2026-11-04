@@ -281,6 +281,12 @@ json policy_dispatch(sqlite3 *db, const config &c, const std::string &operation,
         {"epoch", epoch(db)}, {"expires", std::min<int64_t>(now() + 2000, who.at("expires"))},
         {"protocol", profile}};
     grant["access_based_enumeration"] = access_based;
+    if (profile == "smb") {
+      grant["owner_authority"] = "none";
+      for (const auto &entry : records(db, "smb-owner-authority"))
+        if (entry.at("username") == actor && entry.at("space") == space.at("id"))
+          grant["owner_authority"] = entry.at("mode");
+    }
     if (discovery) grant["security_discovery"] = true;
     grant["groups"] = json::array();
     statement memberships(db,
@@ -383,7 +389,7 @@ json policy_dispatch(sqlite3 *db, const config &c, const std::string &operation,
       return rows;
     }
     require(kind == "storage-roots" || kind == "groups" || kind == "nfs-exports" ||
-                kind == "smb-principals", "invalid_request");
+                kind == "smb-principals" || kind == "smb-owner-authority", "invalid_request");
     return records(db, kind);
   }
   require(operation == "policy_write" && who.at("role") == "admin" && who.at("scope") == "admin",
@@ -446,6 +452,19 @@ json policy_dispatch(sqlite3 *db, const config &c, const std::string &operation,
       q.row();
       result = {{"username", name}, {"role", role}};
     }
+  } else if (kind == "smb-owner-authority") {
+    identifier(id);
+    auto user = data.at("username").get<std::string>();
+    auto space = data.at("space").get<std::string>();
+    auto mode = data.at("mode").get<std::string>();
+    require(exists_user(db, user), "not_found");
+    record(db, "spaces", space);
+    require(mode == "none" || mode == "take" || mode == "restore", "invalid_request");
+    for (const auto &entry : records(db, kind))
+      require(entry.at("id") == id || entry.at("username") != user || entry.at("space") != space,
+              "already_exists");
+    result = {{"id", id}, {"username", user}, {"space", space}, {"mode", mode}};
+    put(db, kind, id, result, data.value("update", false));
   } else if (kind == "smb-principals") {
     identifier(id);
     auto principal = data.at("principal").get<std::string>();
