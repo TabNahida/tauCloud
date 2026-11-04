@@ -257,7 +257,25 @@ json policy_dispatch(sqlite3 *db, const config &c, const std::string &operation,
     memberships.bind(1, actor);
     while (memberships.row())
       grant["groups"].push_back(memberships.text(0));
-    if (!nfs_export.is_null()) grant["export"] = nfs_export;
+    if (!nfs_export.is_null()) {
+      grant["export"] = nfs_export;
+      const auto &credential = body.at("credential");
+      bool squashed = credential.at("uid") == 0;
+      grant["nfs_uid"] = squashed ? json(65534) : credential.at("uid");
+      grant["nfs_gid"] = squashed ? json(65534) : credential.at("gid");
+      grant["groups"] = json::array();
+      if (!squashed) {
+        auto add = [&](const json &id) {
+          auto name = nfs_export.at("gids").at(std::to_string(id.get<uint32_t>()));
+          if (std::find(grant["groups"].begin(), grant["groups"].end(), name) ==
+              grant["groups"].end())
+            grant["groups"].push_back(name);
+        };
+        add(credential.at("gid"));
+        for (const auto &id : credential.at("groups"))
+          add(id);
+      }
+    }
     auto key = read_json(c.state / "ipc-keys.json").at("identity").get<std::string>();
     grant["signature"] = mac(key, grant.dump());
     return grant;

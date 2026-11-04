@@ -1,5 +1,6 @@
 #include <taucloud/smb.hpp>
 #include <taucloud/files.hpp>
+#include <taucloud/security.hpp>
 #include <iostream>
 using namespace tc;
 using namespace tc::smb_detail;
@@ -21,6 +22,18 @@ int main() {
   };
   auto base = fs::temp_directory_path() / ("tc5-unit-" + random_hex(6));
   try {
+    auto mode_owner = security::principal("mode-owner"),
+         mode_group = security::principal("mode-group", true);
+    auto mode_base = security::defaults(mode_owner, mode_group);
+    for (unsigned mode = 0; mode <= 0777; ++mode) {
+      auto descriptor = security::chmod(mode_base, mode, false);
+      ok(security::mode(descriptor) == mode);
+      auto other = security::allowed(
+          descriptor, json::array({security::principal("other"), "010100000000000100000000"}));
+      ok(bool(other & 1) == bool(mode & 4));
+      auto twice = security::chmod(descriptor, mode, false);
+      ok(twice == descriptor);
+    }
     ok(encode_bytes(nt_hash("Password")) == "a4f49c406510bdcab6824ee7c30fd852");
     ok(encode_bytes(hmac(nt_hash("Password"), utf16("USERDomain"))) ==
        "0c868a403bfd7a93a3001ef22ef02e3f");

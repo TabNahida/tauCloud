@@ -14,6 +14,8 @@ on:
       - 'include/taucloud/security.hpp'
       - 'src/policy.cpp'
       - 'src/file_nfs.inc'
+      - 'src/file_nfs_security.inc'
+      - 'tests/nfs_acl_integration.py'
       - 'src/file_dav.inc'
       - 'tests/smb_security_integration.py'
       - 'tests/windows_native_smb.py'
@@ -82,6 +84,8 @@ jobs:
         run: python tests/smb_allocation_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/allocation.json
       - name: NFS attributes and native allocation
         run: python tests/nfs_attributes_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/nfs-attributes.json
+      - name: NFSv4 ACLs, mode and cross-protocol access
+        run: python tests/nfs_acl_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/nfs-acl.json
       - name: SMB3 dialects and encrypted allocation
         run: python tests/m6_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --large-mib 1 ${{ matrix.test_options }} --output build/acceptance/smb3.json
       - uses: actions/upload-artifact@v4

@@ -133,11 +133,21 @@ int main() {
     auto export_id = random_hex(16);
     auto call = [&](std::string op, std::string handle, json b = json::object(),
                     std::string id = "") {
-      json g = {{"actor", "alice"},  {"root", storage},
-                {"space", space},    {"path", ""},
-                {"write", true},     {"share", "nfs"},
-                {"epoch", 2},        {"expires", now() + 2000},
-                {"protocol", "nfs"}, {"export", {{"uuid", export_id}}}};
+      json g = {
+          {"actor", "alice"},
+          {"root", storage},
+          {"space", space},
+          {"path", ""},
+          {"write", true},
+          {"share", "nfs"},
+          {"epoch", 2},
+          {"expires", now() + 2000},
+          {"protocol", "nfs"},
+          {"nfs_uid", 1000},
+          {"nfs_gid", 1000},
+          {"groups", json::array({"unix"})},
+          {"export",
+           {{"uuid", export_id}, {"uids", {{"1000", "alice"}}}, {"gids", {{"1000", "unix"}}}}}};
       g["signature"] = mac(key, g.dump());
       b["grant"] = g;
       b["op"] = op;

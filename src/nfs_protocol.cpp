@@ -15,6 +15,8 @@ void check(bool b, uint32_t status = 22) {
     throw failure{status};
 }
 uint32_t status(std::string_view code) {
+  if (code == "invalid_owner")
+    return 10039;
   if (code == "not_found")
     return 2;
   if (code == "forbidden" || code == "permission_denied" || code == "policy_revoked" ||
@@ -90,7 +92,7 @@ std::string component(reader &r) {
   return n;
 }
 json attrs3(reader &r) {
-  // Mode/ownership are NFS metadata; application ACLs remain the authority.
+  // The file authority translates mode/ownership into the shared descriptor.
   json a = json::object();
   if (r.boolean())
     a["mode"] = r.u32();
@@ -495,6 +497,8 @@ struct server::impl {
     }
   }
   std::string v3_error(uint32_t proc, uint32_t code) {
+    if (code == 10039) // NFS4ERR_BADOWNER has no NFSv3 equivalent.
+      code = 22;
     if (code == 10012 || code == 10015) code = 13;
     if (code == 10018) code = 10008;
     writer w;

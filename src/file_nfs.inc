@@ -41,6 +41,7 @@ void nfs_init() {
     add.row();
   }
 }
+#include "file_nfs_security.inc"
 void nfs_forget_pin(const std::string &token) {
   statement q(*nfs_db, "DELETE FROM retained WHERE token=?");
   q.bind(1, token); q.row();
@@ -199,8 +200,39 @@ json nfs_meta(space_state &s, const json &g, const std::string &path, native_fil
     stamp["uid"] = info["uid"]; stamp["gid"] = info["gid"];
   }
   auto descriptor = security_get(s, info);
+  auto preferred_uid = std::to_string(info.at("uid").get<uint64_t>());
+  auto preferred_gid = std::to_string(info.at("gid").get<uint64_t>());
+  info["uid"] = 65534;
+  info["gid"] = 65534;
+  for (const auto &[uid, user] : g.at("export").at("uids").items())
+    if (security::principal(user) == descriptor.at("owner").get<std::string>()) {
+      info["uid"] = std::stoull(uid);
+      break;
+    }
+  for (const auto &[gid, group] : g.at("export").at("gids").items())
+    if (security::principal(group, true) == descriptor.at("group").get<std::string>()) {
+      info["gid"] = std::stoull(gid);
+      break;
+    }
+  auto preferred_user = g.at("export").at("uids").value(preferred_uid, "");
+  auto preferred_group = g.at("export").at("gids").value(preferred_gid, "");
+  if (!preferred_user.empty() &&
+      security::principal(preferred_user) == descriptor.at("owner").get<std::string>())
+    info["uid"] = std::stoull(preferred_uid);
+  if (!preferred_group.empty() &&
+      security::principal(preferred_group, true) == descriptor.at("group").get<std::string>())
+    info["gid"] = std::stoull(preferred_gid);
+  stamp["uid"] = info["uid"];
+  stamp["gid"] = info["gid"];
+  info["mode"] = security::mode(descriptor);
+  stamp["mode"] = info["mode"];
   stamp["security"] = descriptor;
   info["security_access"] = security::allowed(descriptor, security::token(g));
+  // RFC 8881 section 6.3.1.1: NFS clients must be able to fetch executable
+  // file data even when READ_DATA itself is denied. This is NFS-specific;
+  // the underlying descriptor and SMB access checks retain the exact rights.
+  if (!info.at("directory").get<bool>() && (info["security_access"].get<uint32_t>() & 0x20))
+    info["security_access"] = info["security_access"].get<uint32_t>() | 1;
   auto signature = digest(stamp.dump());
   int64_t change = 0;
   {
@@ -224,6 +256,31 @@ json nfs_meta(space_state &s, const json &g, const std::string &path, native_fil
   (void)s;
   return info;
 }
+json nfs_updated_security(const json &g, json descriptor, const json &attrs, bool directory) {
+  if (attrs.contains("uid")) {
+    auto uid = std::to_string(number(attrs, "uid"));
+    auto name = g.at("export").at("uids").value(uid, "");
+    if (name.empty() && uid == "65534" && g.value("nfs_uid", 0u) == 65534)
+      name = g.at("actor");
+    require(!name.empty(), "invalid_owner");
+    descriptor["owner"] = security::principal(name);
+  }
+  if (attrs.contains("gid")) {
+    auto gid = std::to_string(number(attrs, "gid"));
+    auto name = g.at("export").at("gids").value(gid, "");
+    require(!name.empty() || (gid == "65534" && g.value("nfs_uid", 0u) == 65534), "invalid_owner");
+    descriptor["group"] = security::principal(name, true);
+    if (!descriptor.at("dacl").is_null())
+      for (auto &entry : descriptor["dacl"])
+        if (entry.value("nfs_who", "") == "GROUP@")
+          entry["sid"] = descriptor.at("group");
+  }
+  if (attrs.contains("mode"))
+    descriptor = security::chmod(descriptor, number(attrs, "mode"), directory);
+  if (attrs.contains("acl"))
+    descriptor = nfs_decode_acl(g, descriptor, attrs.at("acl"), directory);
+  return descriptor;
+}
 void nfs_apply_attrs(space_state &s, const json &g, const std::string &path, native_file &f,
                      const json &attrs) {
   auto meta = nfs_meta(s, g, path, f);
@@ -232,6 +289,7 @@ void nfs_apply_attrs(space_state &s, const json &g, const std::string &path, nat
   native.bind(1, encode_bytes(raw.substr(18, 16)));
   require(native.row(), "stale_handle");
   auto id = native.text(0);
+  auto descriptor = nfs_updated_security(g, security_get(s, meta), attrs, meta.at("directory"));
   if (attrs.contains("atime_ns") || attrs.contains("mtime_ns"))
     f.set_times(attrs.contains("atime_ns") ? std::optional<uint64_t>(number(attrs, "atime_ns")) : std::nullopt,
                 attrs.contains("mtime_ns") ? std::optional<uint64_t>(number(attrs, "mtime_ns")) : std::nullopt);
@@ -245,7 +303,10 @@ void nfs_apply_attrs(space_state &s, const json &g, const std::string &path, nat
     q.bind(3, int64_t(attrs.value("gid", meta.at("gid").get<uint64_t>()))); q.row();
   }
   if (attrs.contains("mode") || attrs.contains("uid") || attrs.contains("gid") ||
-      attrs.contains("atime_ns") || attrs.contains("mtime_ns")) {
+      attrs.contains("acl"))
+    security_save(meta, descriptor);
+  if (attrs.contains("mode") || attrs.contains("acl") || attrs.contains("uid") ||
+      attrs.contains("gid") || attrs.contains("atime_ns") || attrs.contains("mtime_ns")) {
     statement q(*nfs_db, "INSERT INTO metadata_times VALUES(?,?) ON CONFLICT(token) DO UPDATE SET changed_ns=MAX(changed_ns,excluded.changed_ns)");
     q.bind(1, id);q.bind(2, now() * int64_t(1000000));q.row();
   }
@@ -417,15 +478,18 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
                       : op == "mkdir"                    ? 4
                                                          : 0;
   if (op == "setattr") {
-    required = 0x100;
+    required = body.contains("atime_ns") || body.contains("mtime_ns") ? 0x100 : 0;
     if (body.contains("size"))
       required |= 2;
-    if (body.contains("mode"))
+    if (body.contains("mode") || body.contains("acl"))
       required |= 0x40000;
     if (body.contains("uid") || body.contains("gid"))
       required |= 0x80000;
   }
-  security_check(s, g, before, required);
+  if (op == "read" && !dir)
+    require(security_allowed(s, g, before) & 0x21, "forbidden");
+  else
+    security_check(s, g, before, required);
   std::string request, hash;
   if (mutation) {
     request = body.at("request_id");
@@ -462,6 +526,10 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     require(n.find('/') == std::string::npos, "invalid_path");
     return n;
   };
+  if (op == "acl") {
+    security_check(s, g, before, 0x20000);
+    return {{"acl", nfs_encode_acl(g, security_get(s, before))}};
+  }
   if (op == "stat")
     return nfs_meta(s, g, p, o.file);
   if (op == "parent") {
@@ -528,6 +596,8 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     auto data = op == "write" ? decode_bytes(body.at("data").get<std::string>()) : std::string();
     require(data.size() <= 65536 && off <= uint64_t(INT64_MAX) - data.size(), "invalid_offset");
     auto end = off + data.size();
+    if (op == "setattr")
+      nfs_updated_security(g, security_get(s, before), body, dir);
     quota(s, growth(before, end));
     pending(request, hash);
     try {
@@ -575,8 +645,14 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     }
     case_check(s.directory, child);
     if (body.contains("size")) quota(s, number(body, "size"));
+    auto initial = body;
+    if (!initial.contains("uid"))
+      initial["uid"] = g.value("nfs_uid", 65534u);
+    if (!initial.contains("gid"))
+      initial["gid"] = g.value("nfs_gid", 65534u);
+    auto descriptor =
+        nfs_updated_security(g, security_new(s, g, child, op == "mkdir"), initial, op == "mkdir");
     pending(request, hash);
-    auto descriptor = security_new(s, g, child, op == "mkdir");
     auto f = s.directory.open(child, op == "mkdir", true, op == "create");
     security_save(f.info(), descriptor);
     if (body.contains("size")) {
@@ -585,7 +661,7 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     }
     f.flush();
     o.file.flush();
-    nfs_apply_attrs(s, g, child, f, body);
+    nfs_apply_attrs(s, g, child, f, initial);
     f.flush();
     auto result = nfs_meta(s, g, child, f);
     result["created"] = true;

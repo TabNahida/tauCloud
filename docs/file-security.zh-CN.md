@@ -10,7 +10,13 @@ SMB 支持查询/设置 owner、group、DACL，以及 CREATE SecD 初始描述�
 
 用户名和组名映射为稳定服务 SID，算法见[英文说明](file-security.md)。身份服务把当前组成员关系签入短期授权，不信任客户端传来的 SID 身份。所有者只可设为自身 SID；组只可设为所属服务组或保留原组。管理 API 的管理员身份不等于 Windows 恢复/审计特权。请求 ACCESS_SYSTEM_SECURITY 的打开操作返回 STATUS_PRIVILEGE_NOT_HELD，允许原生 ACL 工具退回仅修改 DACL；普通句柄仍不能读写 SACL。未保存描述符的旧对象保留既有共享权限语义，新对象以创建者为所有者。
 
-NFSv3 读写/命名空间操作、NFSv4 OPEN/ACCESS、core/WebDAV/FTP 文件操作均检查同一 DACL。NFS 修改 mode/属主需要相应文件权限；ACCESS 与导出权限相交。分阶段上传在发布前再次检查权限并保留目标描述符；复制检查每个来源及被覆盖的后代，私有分阶段复制目录也传递继承权限。DAV 对不存在的 URL 执行 LOCK 时，检查父目录添加权限并持久化新资源的继承描述符。NFS 的 mode/UID/GID 仍是投影，完整 POSIX 权限和 NFSv4 ACL 互操作尚未实现。
+NFSv3 读写/命名空间操作、NFSv4 OPEN/ACCESS、core/WebDAV/FTP 文件操作均检查同一 DACL。NFS 修改 mode/属主需要相应文件权限；ACCESS 与导出权限相交。分阶段上传在发布前再次检查权限并保留目标描述符；复制检查每个来源及被覆盖的后代，私有分阶段复制目录也传递继承权限。DAV 对不存在的 URL 执行 LOCK 时，检查父目录添加权限并持久化新资源的继承描述符。NFS 的 mode/UID/GID 现从共享描述符派生，chmod 会真正改变所有协议后续访问的权限。
+
+NFSv4 已支持 `acl`/`aclsupport` 的允许/拒绝 ACE，覆盖 GETATTR、VERIFY/NVERIFY、READDIR、SETATTR 和创建。READ_ACL/WRITE_ACL 分别检查；同时修改 mode 和 ACL 时先应用 mode；仅设置 ACL 时重新计算低九位 mode。目录继承保留特殊主体，普通 acl 属性按 RFC 清除继承来源标志；无效 ACL 在创建或截断前拒绝。上限为 1024 个 ACE、64 KiB 属性/描述符。高三位 mode、audit/alarm、单独 dacl/sacl、完整所有权和域映射仍待完成。
+
+主体支持 OWNER@、GROUP@、EVERYONE@、导出映射中的 `用户名@taucloud`/`组名@taucloud`；无法命名的 SMB SID 使用 `sid-十六进制SID@taucloud` 往返。GROUP@ 随所属组修改和子对象继承更新。AUTH_SYS 只使用已验证且实际提交的组，root squash 清空组，不能靠未提交的数据库成员关系取得文件权限。NFS 按 RFC 允许读取具有执行权限的普通文件，SMB 仍按原始 ACL 检查。旧对象的有效访问保持不变，回报 mode 改为反映真实 DACL。
+
+独立 NFS/SMB 客户端新增测试覆盖多用户拒绝、组身份、mode/ACL 同步、错误输入无副作用、继承、大 ACL、跨协议和重启；Actions 同时加入 Linux 内核挂载后的原生 chmod、nfs4_getfacl/nfs4_setfacl 验收。
 
 SMB 共享可设置 `access_based_enumeration:true`，按 DACL 隐藏无完整读取权限的目录项，并宣告对应 TREE_CONNECT 标志。默认关闭。无论是否隐藏，直接打开都检查权限。
 

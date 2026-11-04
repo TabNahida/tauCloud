@@ -37,7 +37,7 @@ def main():
         r=call(c,[op.putfh(root),op.getattr([0,0,1<<11])])
         val=r.resarray[-1].opgetattr.resok4.obj_attributes
         assert val.attrmask==[0,0,1<<11],val
-        u=p4.NFS4Unpacker(val.attr_vals);assert u.unpack_bitmap4()==[16,0x410032];u.done()
+        u=p4.NFS4Unpacker(val.attr_vals);assert u.unpack_bitmap4()==[16 | (1 << 12),0x410032];u.done()
         checks.append('required suppattr_exclcreat advertises actual writable creation attributes')
         how=t4.openflag4(1,t4.createhow4(3,ch_createboth=t4.creatverfattr(b'abcdefgh',attrs(32,0o600))))
         result,h=opening(c,root,b'exclusive',how);assert result.attrset==[16,2],result

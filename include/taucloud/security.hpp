@@ -11,4 +11,6 @@ json defaults(const std::string &owner, const std::string &group);
 json inherit(const json &parent, const std::string &owner, const std::string &group, bool directory,
              bool fallback = true);
 uint32_t allowed(const json &descriptor, const json &token);
+unsigned mode(const json &descriptor);
+json chmod(json descriptor, unsigned mode, bool directory);
 } // namespace tc::security

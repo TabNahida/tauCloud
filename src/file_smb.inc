@@ -504,6 +504,10 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
       // The primary group of an existing descriptor may be retained.
       require(valid_group || group == descriptor.at("group"), "invalid_owner");
       descriptor["group"] = group;
+      if (!descriptor.at("dacl").is_null())
+        for (auto &entry : descriptor["dacl"])
+          if (entry.value("nfs_who", "") == "GROUP@")
+            entry["sid"] = group;
     }
     if (information & 4) {
       descriptor["dacl"] = replacement.at("dacl");

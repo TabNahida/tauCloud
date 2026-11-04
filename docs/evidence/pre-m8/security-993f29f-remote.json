@@ -1330,5 +1330,45 @@
       }
     }
   },
-  "scope": "Persistent simple DACL and shared permission increment; this passing targeted matrix does not establish Full SMB/NFS conformance."
+  "scope": "Persistent simple DACL and shared permission increment; this passing targeted matrix does not establish Full SMB/NFS conformance.",
+  "backend_workflow": {
+    "headSha": "993f29fe031cad19d09bda02ac0e004686f9619a",
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/TabNahida/tauCloud/actions/runs/41742617772",
+    "jobs": [
+      {
+        "name": "windows",
+        "status": "completed",
+        "conclusion": "success",
+        "databaseId": 126287633828,
+        "startedAt": "2026-11-03T23:53:13Z",
+        "completedAt": "2026-11-04T00:13:58Z"
+      },
+      {
+        "name": "linux (clang)",
+        "status": "completed",
+        "conclusion": "success",
+        "databaseId": 126287634193,
+        "startedAt": "2026-11-03T23:53:13Z",
+        "completedAt": "2026-11-04T00:07:54Z"
+      },
+      {
+        "name": "linux (gcc)",
+        "status": "completed",
+        "conclusion": "success",
+        "databaseId": 126287634572,
+        "startedAt": "2026-11-03T23:53:13Z",
+        "completedAt": "2026-11-04T00:18:40Z"
+      },
+      {
+        "name": "macos-clients",
+        "status": "completed",
+        "conclusion": "success",
+        "databaseId": 126298519830,
+        "startedAt": "2026-11-04T00:18:45Z",
+        "completedAt": "2026-11-04T00:27:28Z"
+      }
+    ]
+  }
 }

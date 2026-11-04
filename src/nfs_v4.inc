@@ -144,16 +144,16 @@ bool has(const std::vector<uint32_t> &bits, unsigned i) {
 }
 std::vector<uint32_t> supported_attrs() {
   std::vector<uint32_t> b(3);
-  for (unsigned n : {0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 19, 20, 27, 28,
-                     29, 30, 31, 33, 35, 36, 37, 42, 43, 44, 45, 47, 48, 51, 52, 53, 54, 55, 75})
+  for (unsigned n : {0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 19, 20, 27, 28, 29,
+                     30, 31, 33, 35, 36, 37, 42, 43, 44, 45, 47, 48, 51, 52, 53, 54, 55, 75})
     b[n / 32] |= 1u << (n % 32);
   return b;
 }
 std::vector<uint32_t> writable_attrs() {
   // Verifiers live in the database, so timestamps need not be reserved.
-  return {1u << 4, (1u << 1) | (1u << 4) | (1u << 5) | (1u << 16) | (1u << 22)};
+  return {(1u << 4) | (1u << 12), (1u << 1) | (1u << 4) | (1u << 5) | (1u << 16) | (1u << 22)};
 }
-json meta4(const identity &who, const std::string &h) {
+json meta4(const identity &who, const std::string &h, bool acl = false) {
   check(!h.empty(), 10020);
   if (h == pseudo) {
     auto view = export_view(who);
@@ -164,11 +164,16 @@ json meta4(const identity &who, const std::string &h) {
             {"modified_ns", 0},
             {"change", view.at("epoch")},
             {"mode", 0555},
+            {"acl",
+             json::array({{{"type", 0}, {"flags", 0}, {"mask", 0x1200a9}, {"who", "EVERYONE@"}}})},
             {"quota", 0},
             {"used", 0},
             {"handle", pseudo}};
   }
-  return file(who, h, "stat");
+  auto result = file(who, h, "stat");
+  if (acl)
+    result["acl"] = file(who, h, "acl").at("acl");
+  return result;
 }
 void attributes4(writer &out, const std::vector<uint32_t> &requested, const json &m) {
   check(!has(requested, 48) && !has(requested, 54)); // Write-only time attributes.
@@ -214,6 +219,17 @@ void attributes4(writer &out, const std::vector<uint32_t> &requested, const json
         break;
       case 11:
         values.u32(0);
+        break;
+      case 12:
+        values.u32(uint32_t(m.at("acl").size()));
+        for (const auto &ace : m.at("acl"))
+          values.u32(ace.at("type"))
+              .u32(ace.at("flags"))
+              .u32(ace.at("mask"))
+              .opaque(ace.at("who").get<std::string>());
+        break;
+      case 13:
+        values.u32(3); // ACL4_SUPPORT_ALLOW_ACL | ACL4_SUPPORT_DENY_ACL
         break;
       case 19:
         values.opaque(decode_bytes(m.at("handle").get<std::string>()));
@@ -287,7 +303,7 @@ void attributes4(writer &out, const std::vector<uint32_t> &requested, const json
 }
 json parse_attrs4(reader &r) {
   auto bits = bitmap(r);
-  auto bytes = r.opaque(4096);
+  auto bytes = r.opaque(65536);
   return {{"bits", bits}, {"bytes", encode_bytes(bytes)}};
 }
 json create_attrs4(const json &a, bool dir, bool create = true) {
@@ -297,12 +313,25 @@ json create_attrs4(const json &a, bool dir, bool create = true) {
   json attrs = json::object();
   for (unsigned i = 0; i < bits.size() * 32; ++i)
     if (has(bits, i)) {
-      if (i == 33) {
+      if (i == 12) {
+        auto count = r.u32();
+        check(count <= 1024);
+        attrs["acl"] = json::array();
+        for (uint32_t n = 0; n < count; ++n) {
+          auto type = r.u32(), flags = r.u32(), mask = r.u32();
+          auto who = r.opaque(1024);
+          check(type <= 1, 10032);
+          check(!(flags & ~0xcfu) && !(mask & ~0x1f01ffu));
+          check(dir || !(flags & 15), 10032);
+          check(!(flags & 12) || (flags & 3), 10032);
+          check(!who.empty());
+          attrs["acl"].push_back({{"type", type}, {"flags", flags}, {"mask", mask}, {"who", who}});
+        }
+      } else if (i == 33) {
         auto mode = r.u32();
         check(mode <= 0777, 10032);
         attrs["mode"] = mode;
-      }
-      else if (i == 4) {
+      } else if (i == 4) {
         auto size = r.u64();
         check(size <= uint64_t(INT64_MAX), 27);
         check(!dir, 21);
@@ -951,7 +980,7 @@ std::string v4(const identity &who, reader &r) {
           current = m.at("handle");
           current_state.clear();
         } else if (op == 9) {
-          auto m = meta4(who, current);
+          auto m = meta4(who, current, has(a.at("bits").get<std::vector<uint32_t>>(), 12));
           attributes4(body, a.at("bits").get<std::vector<uint32_t>>(), m);
         } else if (op == 16) {
           check(!current.empty(), 10020);
@@ -966,7 +995,7 @@ std::string v4(const identity &who, reader &r) {
           for (size_t i = 0; i < bits.size(); ++i)
             check((bits[i] & ~(i < supported.size() ? supported[i] : 0u)) == 0, 10032);
           writer attrs;
-          attributes4(attrs, bits, meta4(who, current));
+          attributes4(attrs, bits, meta4(who, current, has(bits, 12)));
           reader actual(attrs.data);
           bitmap(actual);
           bool same = encode_bytes(actual.opaque()) == a.at("attrs").at("bytes").get<std::string>();
@@ -1243,7 +1272,22 @@ std::string v4(const identity &who, reader &r) {
             writer item;
             // Cookies 1 and 2 are reserved by NFSv4 for client-side dot entries.
             item.boolean(true).u64(i + 3).opaque(e.at("name").get<std::string>());
-            attributes4(item, bits, e);
+            uint32_t attr_error = 0;
+            if (has(bits, 12)) {
+              try {
+                e["acl"] = file(who, e.at("handle"), "acl").at("acl");
+              } catch (const error &error) {
+                attr_error = status(error.what());
+              }
+            }
+            if (attr_error) {
+              check(has(bits, 11), attr_error);
+              put_bitmap(item, {1u << 11});
+              writer error;
+              error.u32(attr_error);
+              item.opaque(error.data);
+            } else
+              attributes4(item, bits, e);
             if (body.data.size() + item.data.size() + 12 > budget) {
               check(i != first, 10005); // Never return an empty non-final page.
               break;

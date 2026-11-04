@@ -147,6 +147,26 @@ p.unlink()
 '''
                         run(['python3','-c',cache_code,str(mount),str(f.root/'nfsdata')])
                         current.setdefault('checks', []).append('native v4.1 close-to-open cache invalidation after independent equal-size write with restored mtime')
+                        acl_code = '''import os,sys,stat,subprocess
+from pathlib import Path
+p=Path(sys.argv[1])/'acl-probe'
+p.write_bytes(b'private')
+p.chmod(0o600)
+assert stat.S_IMODE(p.stat().st_mode)==0o600
+before=subprocess.check_output(['nfs4_getfacl',str(p)],text=True)
+assert 'OWNER@' in before
+subprocess.run(['nfs4_setfacl','-s','A::OWNER@:RWXdo,A:g:GROUP@:R,A::EVERYONE@:R',str(p)],check=True)
+after=subprocess.check_output(['nfs4_getfacl',str(p)],text=True)
+assert 'OWNER@' in after and 'GROUP@' in after and 'EVERYONE@' in after
+assert stat.S_IMODE(p.stat().st_mode)==0o744
+assert p.read_bytes()==b'private'
+p.chmod(0o640)
+assert stat.S_IMODE(p.stat().st_mode)==0o640
+print(before,after,subprocess.check_output(['nfs4_getfacl',str(p)],text=True),sep=chr(10))
+p.unlink()
+'''
+                        run(['python3','-c',acl_code,str(mount)])
+                        current['checks'].append('native chmod plus unmodified nfs4_getfacl/nfs4_setfacl ACL roundtrip and mode synchronization')
                 assert not args.require_mic_rejection, 'client unexpectedly authenticated without the required rejection'
                 current.update(status='passed',payload_sha256=hashlib.sha256(payload).hexdigest())
             except Exception:

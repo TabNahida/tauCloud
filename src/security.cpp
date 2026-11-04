@@ -161,6 +161,8 @@ json inherit(const json &parent, const std::string &owner, const std::string &gr
         continue;
     }
     entry["flags"] = next;
+    if (entry.value("nfs_who", "") == "GROUP@")
+      entry["sid"] = group;
     auto trustee = entry.at("sid").get<std::string>();
     if (!(next & 8) && (trustee == creator_owner || trustee == creator_group)) {
       auto effective = entry;
@@ -199,5 +201,89 @@ uint32_t allowed(const json &descriptor, const json &subjects) {
     remaining &= ~bits; // Preserve ACE order: a later deny cannot undo an earlier allow.
   }
   return granted;
+}
+unsigned mode(const json &descriptor) {
+  auto projected = descriptor;
+  if (!projected.at("dacl").is_null())
+    std::erase_if(projected["dacl"].get_ref<json::array_t &>(), [&](const auto &entry) {
+      auto who = entry.value("nfs_who", "");
+      return !who.empty() && who != "OWNER@" && who != "GROUP@" && who != "EVERYONE@";
+    });
+  unsigned result = 0;
+  for (unsigned category = 0; category < 3; ++category) {
+    json subjects = json::array(
+        {category == 0 ? descriptor.at("owner").get<std::string>() : std::string("mode-non-owner"),
+         everyone});
+    if (category == 1)
+      subjects.push_back(descriptor.at("group"));
+    auto access = allowed(projected, subjects);
+    unsigned bits =
+        ((access & 1) ? 4u : 0u) | ((access & 6) == 6 ? 2u : 0u) | ((access & 0x20) ? 1u : 0u);
+    result |= bits << (6 - 3 * category);
+  }
+  return result;
+}
+json chmod(json descriptor, unsigned value, bool directory) {
+  require(value <= 0777, "not_supported");
+  const uint32_t data = directory ? 0x67 : 0x27;
+  auto rights = [directory](unsigned bits) {
+    return ((bits & 4) ? 1u : 0u) | ((bits & 2) ? (directory ? 0x46u : 6u) : 0u) |
+           ((bits & 1) ? 0x20u : 0u);
+  };
+  auto owner = rights(value >> 6), group = rights(value >> 3), other = rights(value);
+  json acl = json::array();
+  auto add = [&](const std::string &sid, uint32_t mask, unsigned type,
+                 const std::string &who = "") {
+    if (mask)
+      acl.push_back({{"sid", sid},
+                     {"mask", mask},
+                     {"type", type},
+                     {"flags", 0},
+                     {"nfs_who", who},
+                     {"mode_generated", true}});
+  };
+  // An owner/group class decision must precede EVERYONE, otherwise a more
+  // permissive other class can silently widen an owner's requested mode.
+  add(owner_rights, owner | 0xe0188, 0, "OWNER@");
+  add(owner_rights, data & ~owner, 1, "OWNER@");
+  add(descriptor.at("group"), group, 0, "GROUP@");
+  add(descriptor.at("group"), data & ~group, 1, "GROUP@");
+  if (!descriptor.at("dacl").is_null())
+    for (auto entry : descriptor.at("dacl")) {
+      if (entry.value("mode_generated", false))
+        continue;
+      auto flags = entry.at("flags").get<unsigned>();
+      if (flags & 8) {
+        acl.push_back(entry);
+        continue;
+      }
+      auto sid = entry.at("sid").get<std::string>();
+      auto mask = entry.at("mask").get<uint32_t>();
+      bool standard = sid == everyone || sid == owner_rights ||
+                      sid == descriptor.at("owner").get<std::string>() ||
+                      sid == descriptor.at("group").get<std::string>();
+      auto effective = entry;
+      effective["flags"] = flags & ~7u;
+      // Keep unrelated permissions and bounded named-principal grants. Keep a
+      // separate inherit-only ACE so chmod does not erase child inheritance.
+      auto preserved = mask & ~data;
+      if (sid == everyone || sid == descriptor.at("group").get<std::string>())
+        preserved &= ~0xc0000u;
+      effective["mask"] =
+          preserved | (standard ? 0u : mask & data & (entry.at("type") == 0 ? group : data));
+      if (effective.at("mask") != 0)
+        acl.push_back(effective);
+      if (flags & 3) {
+        entry["flags"] = flags | 8;
+        acl.push_back(entry);
+      }
+    }
+  add(everyone, other | 0x120088, 0, "EVERYONE@");
+  add(everyone, data & ~other, 1, "EVERYONE@");
+  descriptor["dacl"] = std::move(acl);
+  descriptor["control"] = descriptor.at("control").get<unsigned>() | 4;
+  require(descriptor.at("dacl").size() <= 1024 && encode(descriptor, 7).size() <= 65536,
+          "invalid_security_descriptor");
+  return descriptor;
 }
 } // namespace tc::security
