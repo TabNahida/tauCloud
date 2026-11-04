@@ -8,6 +8,37 @@ struct pending_reply {
 mutable std::mutex reply_mutex;
 std::map<uint64_t, pending_reply> replies;
 uint64_t next_reply = 0, current_reply = 0;
+struct received_request {
+  std::string connection;
+  int64_t received;
+  bool claimed = false;
+};
+std::map<uint64_t, received_request> arrivals;
+uint64_t next_arrival = 0;
+uint64_t request_boundary() {
+  std::lock_guard lock(reply_mutex);
+  require(next_arrival != UINT64_MAX, "overloaded");
+  return next_arrival + 1;
+}
+uint64_t admit_request(std::string bound) {
+  std::lock_guard lock(reply_mutex);
+  require(arrivals.size() < 32 && next_arrival != UINT64_MAX, "overloaded");
+  auto id = ++next_arrival;
+  arrivals.emplace(id, received_request{std::move(bound), now()});
+  return id;
+}
+void cancel_request(uint64_t id) {
+  if (!id) return;
+  std::lock_guard lock(reply_mutex);
+  arrivals.erase(id);
+}
+void claim_request(uint64_t id, const std::string &bound) {
+  std::lock_guard lock(reply_mutex);
+  auto found = arrivals.find(id);
+  require(found != arrivals.end() && !found->second.claimed && found->second.connection == bound,
+          "cancelled");
+  found->second.claimed = true;
+}
 uint64_t reserve_reply() {
   std::lock_guard lock(reply_mutex);
   require(replies.size() < 512 && next_reply != UINT64_MAX, "overloaded");
@@ -25,7 +56,13 @@ bool client_live(uint64_t id) const {
   if (client == client_ids.end()) return false;
   if (client->second.expires > now()) return true;
   std::lock_guard lock(reply_mutex);
-  return std::any_of(replies.begin(), replies.end(), [&](const auto &r) { return r.second.client == id; });
+  if (std::any_of(replies.begin(), replies.end(), [&](const auto &r) { return r.second.client == id; })) return true;
+  // An encrypted RPC cannot be associated with a client until authentication.
+  // Defer cleanup only for records received before this client's fixed expiry;
+  // later unauthenticated traffic cannot extend that eligibility window.
+  return std::any_of(arrivals.begin(), arrivals.end(), [&](const auto &a) {
+    return a.first >= client->second.first_arrival && a.second.received < client->second.expires;
+  });
 }
 void complete_reply(uint64_t id) {
   if (!id) return;
@@ -40,6 +77,7 @@ void complete_connection_replies(const std::string &bound) {
   auto time = now();
   for (auto &[id, r] : replies)
     if (r.connection == bound && !r.completed) r.completed = time;
+  std::erase_if(arrivals, [&](const auto &a) { return a.second.connection == bound; });
 }
 void finish_replies() {
   std::map<uint64_t, int64_t> renewals;

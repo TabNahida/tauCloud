@@ -9,10 +9,17 @@ void gss_expire() {
     return c == client_ids.end() || !client_live(g.ssv_client) || c->second.ssv != g.ssv;
   });
 }
-std::string dispatch(std::string_view packet, std::string connection_id, uint64_t *completion) {
-  std::lock_guard guard(mutex);
-  connection = std::move(connection_id);
+std::string dispatch(std::string_view packet, std::string connection_id, uint64_t *completion, uint64_t admission) {
   if (completion) *completion = 0;
+  if (!admission) admission = admit_request(connection_id);
+  struct finish_admission {
+    impl &self;
+    uint64_t id;
+    ~finish_admission() { self.cancel_request(id); }
+  } admitted{*this, admission};
+  std::lock_guard guard(mutex);
+  claim_request(admission, connection_id);
+  connection = std::move(connection_id);
   finish_replies();
   current_reply = completion ? reserve_reply() : 0;
   struct finish_tracking {

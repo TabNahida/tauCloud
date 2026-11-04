@@ -92,12 +92,20 @@ pace::task<outgoing_reply> process(nfs_runtime &s, std::string packet, std::stri
     bool abandoned = false;
   };
   auto p = std::make_shared<pending>();
+  // This runs on the transport reactor after record assembly, before either
+  // the bounded executor or the protocol mutex can delay authentication.
+  auto admission = s.protocol.admit_request(connection);
+  struct admission_cleanup {
+    nfs_detail::server &protocol;
+    uint64_t id;
+    ~admission_cleanup() { protocol.cancel_request(id); }
+  } admitted{s.protocol, admission};
   taucloud::bounded_executor::ticket ticket;
   require(s.pool.submit(
               s.io, nfs_detail::max_record, std::chrono::steady_clock::now() + 5s,
-              [&s, p, packet = std::move(packet), connection](std::stop_token stop) {
+              [&s, p, packet = std::move(packet), connection, admission](std::stop_token stop) {
                 require(!stop.stop_requested(), "cancelled");
-                p->reply.packet = s.protocol.dispatch(packet, connection, &p->reply.completion);
+                p->reply.packet = s.protocol.dispatch(packet, connection, &p->reply.completion, admission);
               },
               [&s, p](taucloud::bounded_executor::result r) {
                 p->failure = r.error;

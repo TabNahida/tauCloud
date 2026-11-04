@@ -802,8 +802,14 @@ struct server::impl {
 server::server(const config &c, domain_call f, callback_call cb, backchannel_send bc, backchannel_close close)
     : impl_(std::make_unique<impl>(c, std::move(f), std::move(cb), std::move(bc), std::move(close))) {}
 server::~server() = default;
-std::string server::dispatch(std::string_view record, std::string connection, uint64_t *completion) {
-  return impl_->dispatch(record, std::move(connection), completion);
+uint64_t server::admit_request(std::string connection) {
+  return impl_->admit_request(std::move(connection));
+}
+void server::cancel_request(uint64_t admission) {
+  impl_->cancel_request(admission);
+}
+std::string server::dispatch(std::string_view record, std::string connection, uint64_t *completion, uint64_t admission) {
+  return impl_->dispatch(record, std::move(connection), completion, admission);
 }
 void server::complete_reply(uint64_t completion) {
   impl_->complete_reply(completion);

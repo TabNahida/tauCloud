@@ -352,8 +352,8 @@ and 25 SSV groups. See [reply lifetime evidence](evidence/pre-m8/nfs-reply-lifet
 This is client-state lifetime accounting, not proof of full delegation retention.
 The independent native owner still needs reservations covering slow dispatch,
 transport completion and backchannel responses, with failure handling before wire
-success. Requests waiting in the executor before authenticated SEQUENCE admission
-also need receipt-time handling. Worker replacement/reclaim and full restart fencing
+success. Request receipt tracking now covers executor and protocol-mutex waits
+as described below. Worker replacement/reclaim and full restart fencing
 remain open; production delegation handout remains disabled.
 
 ## Namespace lookup under a delegation
@@ -391,3 +391,43 @@ adapter test covers concurrent symlink substitution and hardlink rejection for
 metadata access. [Local evidence](evidence/pre-m8/nfs-named-delegation-local.json)
 records component and shared-protocol regressions. These results do not enable
 production wire handout or close the remaining recovery and lifetime gates.
+The [fixed-source Linux 6.19 Actions run](evidence/pre-m8/nfs-named-delegation-229-remote.json)
+also passes all 479 native checks on tmpfs/ext4 for commit `2294038`.
+
+## Request receipt before execution
+
+Complete TCP records are registered before submission to the bounded executor,
+using a separate small mutex shared with reply-completion bookkeeping. A record
+waiting for either a worker or the protocol mutex cannot prematurely lose client
+state that was live at receipt. Authentication still runs before any SEQUENCE
+renewal or file operation. The record does not itself change client expiry or
+renew a native delegation.
+
+RPC privacy prevents safely selecting a client before authentication. Until
+authentication finishes, cleanup is deferred only for clients that existed
+before that record arrived and whose fixed expiry is later than its receipt
+time. A monotonically increasing admission boundary excludes future clients.
+Late traffic cannot extend that eligibility window. Successful SEQUENCE/replay
+then uses the existing authenticated renewal and reply-delivery tracking;
+failed authentication/SEQUENCE, malformed records, executor submit failure,
+cancellation and disconnect release the reservation. Admission is limited to
+32 records, matching the bounded transport/executor model without an unbounded
+queue. Tokens are single-use, bound to the transport connection, never on wire,
+and duplicate cancellation is harmless.
+
+This implements the receipt-time requirement in
+[RFC 8881 section 8.3](https://www.rfc-editor.org/rfc/rfc8881.html#section-8.3)
+for protocol-owned client/OPEN/lock/session state. Native delegation-owner
+retention across the same interval still needs its own acknowledged reservation;
+this change does not enable production handout.
+
+Component acceptance covers delayed admission across expiry and maintenance,
+rejected SEQUENCE without renewal, cancelled/late records, exclusion of clients
+created after receipt, nonblocking registration during a slow operation, capacity
+and disconnect cleanup. A real TCP fixture briefly suspends only its disposable
+file worker: one NFS executor worker waits in file IPC, the second waits for the
+protocol mutex and a third client queues. Its request is sent before the
+five-second lease expires and reads its original OPEN after expiry. The fixture
+checks timings, successful SEQUENCE replies and unchanged worker identity, and
+always resumes the file process during cleanup. See
+[local evidence](evidence/pre-m8/nfs-arrival-local.json).

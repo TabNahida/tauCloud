@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
     struct peer { std::string connection, session; uint64_t client = 0; uint32_t sequence = 0, uid = 1000; };
     uint32_t xid = 0, last_flags = 0;
     bool track_reply = false;
-    uint64_t completion = 0;
+    uint64_t completion = 0, admission = 0;
     std::string last_request, last_response;
     auto send = [&](peer &p, std::vector<writer> operations, uint32_t expected = 0, bool session = true) {
       writer auth;
@@ -83,7 +83,8 @@ int main(int argc, char **argv) {
       if (session) request.u32(53).fixed(p.session).u32(++p.sequence).u32(0).u32(0).boolean(true);
       for (auto &operation : operations) request.fixed(operation.data);
       last_request = request.data;
-      auto response = protocol->dispatch(request.data, p.connection, track_reply ? &completion : nullptr);
+      auto received = admission; admission = 0;
+      auto response = protocol->dispatch(request.data, p.connection, track_reply ? &completion : nullptr, received);
       last_response = response;
       reader r(response);
       ok(r.u32() == xid && r.u32() == 1 && r.u32() == 0 && r.u32() == 0 && r.opaque().empty() && r.u32() == 0);
@@ -386,6 +387,8 @@ int main(int argc, char **argv) {
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
     auto completed_at = std::chrono::steady_clock::now();
     protocol->complete_reply(first_completion);
+    auto concurrent_admission = protocol->admit_request("queued-while-executing");
+    protocol->cancel_request(concurrent_admission);
     auto completion_time = std::chrono::steady_clock::now() - completed_at;
     executing.join();
     if (concurrent_failure) std::rethrow_exception(concurrent_failure);
@@ -416,6 +419,55 @@ int main(int argc, char **argv) {
     std::this_thread::sleep_for(std::chrono::milliseconds(5300));
     protocol->maintenance(); send(dropped, {}, 10052);
     std::cout << "PASS disconnect conservatively ends pending transmission with a full lease and leaves no immortal client pin\n";
+
+    auto queued = connect("queued-arrival");
+    auto queued_open = open_result(send(queued, {put(), opening(queued, 1)}), 0).first;
+    admission = protocol->admit_request(queued.connection);
+    std::this_thread::sleep_for(std::chrono::milliseconds(5300));
+    protocol->maintenance();
+    send(queued, {put(), writer().u32(25).fixed(queued_open).u64(0).u32(8)});
+    send(queued, {put(), writer().u32(4).u32(0).fixed(queued_open)});
+    std::cout << "PASS a request received before expiry retains its OPEN across executor delay and maintenance until validated SEQUENCE\n";
+
+    auto rejected = connect("rejected-arrival");
+    auto cancelled = connect("cancelled-arrival");
+    auto late = connect("late-arrival");
+    auto invalid_receipt = protocol->admit_request(rejected.connection);
+    auto cancelled_receipt = protocol->admit_request(cancelled.connection);
+    // A queued record cannot contain a client ID that did not yet exist.
+    auto future = connect("created-after-arrival");
+    std::this_thread::sleep_for(std::chrono::milliseconds(5300));
+    auto late_receipt = protocol->admit_request(late.connection);
+    protocol->maintenance();
+    send(future, {}, 10052);
+    admission = invalid_receipt; rejected.sequence += 10;
+    track_reply = true; completion = 999;
+    send(rejected, {}, 10063); ok(completion == 0); track_reply = false;
+    protocol->cancel_request(cancelled_receipt);
+    protocol->cancel_request(cancelled_receipt);
+    protocol->cancel_request(UINT64_MAX);
+    protocol->maintenance();
+    send(rejected, {}, 10052);
+    send(cancelled, {}, 10052);
+    // This token arrived after expiry; its mere presence must not revive state.
+    admission = late_receipt;
+    send(late, {}, 10052);
+    std::cout << "PASS rejected SEQUENCE, cancellation, duplicate cleanup and late arrivals cannot renew expired clients; old arrivals cannot pin future clients\n";
+
+    std::vector<uint64_t> full;
+    for (unsigned i = 0; i < 32; ++i) full.push_back(protocol->admit_request("bounded-arrivals"));
+    bool overloaded = false;
+    try { protocol->admit_request("over-budget"); }
+    catch (const error &e) { overloaded = std::string_view(e.what()) == "overloaded"; }
+    ok(overloaded);
+    for (auto id : full) protocol->cancel_request(id);
+    auto unused = protocol->admit_request("unused-arrival");
+    protocol->disconnect("unused-arrival");
+    bool abandoned = false;
+    try { protocol->dispatch(last_request, "unused-arrival", nullptr, unused); }
+    catch (const error &e) { abandoned = std::string_view(e.what()) == "cancelled"; }
+    ok(abandoned);
+    std::cout << "PASS request admission is bounded, cancellation restores capacity and disconnect invalidates undispatched tokens\n";
     std::cout << "PASS " << checks << " delegation protocol/native component checks; production handout remains gated\n";
     // Keep destruction order explicit: protocol has no live delegations here.
     native = native_file(); protocol.reset(); store.reset();

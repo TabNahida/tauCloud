@@ -10,6 +10,7 @@ struct client_id {
   std::vector<uint32_t> enforce, allow;
   std::shared_ptr<ssv_context> ssv;
   std::shared_ptr<uint32_t> ssv_callback_sequence;
+  uint64_t first_arrival = 0;
 };
 struct slot {
   uint32_t seq = 0;
@@ -1095,6 +1096,7 @@ std::string v4(const identity &who, reader &r) {
           check(client_ids.size() < 128, 10018);
           id = hex64(random_hex(8)) & INT64_MAX;
           client_ids[id] = {a.at("owner"), who.key, a.at("verifier"), 1, "", ""};
+          client_ids.at(id).first_arrival = request_boundary();
           client_ids.at(id).expires = now() + int64_t(cfg.nfs_lease_seconds) * 1000;
           client_ids.at(id).replaces = replaces;
         }

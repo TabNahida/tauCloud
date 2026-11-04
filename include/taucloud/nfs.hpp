@@ -47,10 +47,16 @@ class server {
 public:
   server(const config &, domain_call, callback_call = {}, backchannel_send = {}, backchannel_close = {});
   ~server();
+  // Register a complete received record before waiting in the executor. This
+  // preserves still-live state for authentication; it does not renew a lease.
+  // Every token must be dispatched once or cancelled, including submit failure.
+  uint64_t admit_request(std::string connection);
+  void cancel_request(uint64_t admission);
   // A transport may request a private completion token. A nonzero token pins
   // the client lease until complete_reply or disconnect; it is never on wire.
   // Without a token, the caller treats return from dispatch as delivery.
-  std::string dispatch(std::string_view record, std::string connection = "test", uint64_t *completion = nullptr);
+  std::string dispatch(std::string_view record, std::string connection = "test", uint64_t *completion = nullptr,
+                       uint64_t admission = 0);
   void complete_reply(uint64_t completion);
   void disconnect(const std::string &connection);
   void maintenance();
