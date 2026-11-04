@@ -1,0 +1,442 @@
+{
+  "recorded_at": "2026-11-04T19:01:15.498089+00:00",
+  "base_source": "ff33f83e3181b4b0f530410b8d65c44ac9040b05",
+  "status": "negotiation-passed-delegation-authority-incomplete",
+  "scope": "OPEN preference responses and standalone WANT_DELEGATION validation/refusal/cancellation, without granting cache authority or callback promises.",
+  "sanitizers": "Clang ASan/UBSan/LSan",
+  "source_sha256": {
+    "src/nfs_v4.inc": "5858a304837919305f227ea8d54881dbb075350dbf28e2e9d5fbf15b53ed2aa7",
+    "tests/nfs_delegation_negotiation.py": "98114dfd7f8f9e7eec427ee03f363f0dd646c4d620ff7518c64351bc83940358",
+    "tests/nfs_discovery_integration.py": "82b79b57a094fcff66739ac7cf2c1edd3415b73f8609c8ed305d307f25e3834d",
+    "tests/smb_lease_native.cpp": "eb600908a8c816f1954d6881262f2ddd99795b978ecbd9a83491a16c26194d42",
+    ".github/workflows/smb-metadata.yml": "41bf82ee5520bb9785b7954a64458832507040431f501f340239ed67531f4003"
+  },
+  "core": {
+    "checks": 1537,
+    "status": "passed"
+  },
+  "native": {
+    "checks": 125,
+    "status": "passed"
+  },
+  "independent": {
+    "wire": {
+      "sha256": "36a840086d3064778e8573cd103ea0006895b04e327628e27eb4fa188495ad09",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "all 72 OPEN access/preference/hint combinations encode exact NONE/NONE_EXT reasons without gaining data rights or promising callbacks",
+          "invalid OPEN preferences/access bits stop before CREATE and do not mutate the namespace",
+          "CLAIM_FH honors cancellation while upgrading ordinary OPEN rights; exact slot replay does not advance the state twice",
+          "standalone WANT_DELEGATION ignores data-access bits, returns extended reasons, supports idempotent cancellation and preserves the current filehandle",
+          "standalone validation distinguishes invalid preference, missing handle, directory refusal, unsupported previous-client recovery and grace/reclaim errors",
+          "WANT refuses unmapped callers, reauthorizes cached replies after export revocation and creates no hidden OPEN/client-busy state",
+          "real service restart preserves ordinary OPEN reclaim while rejecting invented delegation recovery during grace and after RECLAIM_COMPLETE"
+        ],
+        "recorded_at": "2026-11-04T19:02:26.176509+00:00"
+      }
+    },
+    "discovery": {
+      "sha256": "51ca32e5793710197ee4edccd328bffae5537efa8f8f0815f5d13d4363efe09b",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "EXPORT and DUMP filter root-squashed/unmapped principals; duplicate MNT is idempotent",
+          "mount records survive reconnect; UMNT/UMNTALL affect only caller and preserve NFS filehandles",
+          "rpcbind DUMP/GETVERSADDR advertise implemented TCP services plus UDP NSM; older NLM versions remain absent",
+          "recognized unsupported file types return per-operation errors after successful SEQUENCE/PUTFH",
+          "BACKCHANNEL_CTL updates bounded callback configuration; unknown GSS, SP4_NONE SET_SSV and obsolete v4.0 operations return defined per-operation errors",
+          "optional pNFS/delegation/attribute operations are decoded and return NOTSUPP with their own operation number, not OP_ILLEGAL",
+          "WANT_DELEGATION with no explicit delegation preference returns INVAL and stops the compound",
+          "AUTH_NONE negotiates through a separately scoped anonymous identity; no file access or AUTH_SYS reply reuse; anonymous policy revocation invalidates security replies",
+          "export revocation immediately hides discovery and denies subsequent MNT"
+        ]
+      }
+    },
+    "state": {
+      "sha256": "02406db8dafaad61cdf97e2eae64cb8ac74cc8b2496b3ccb303622b1e14bd96e",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "BIND_CONN_TO_SESSION on a fresh connection, PUTPUBFH, TEST_STATEID old/current states, FREE_STATEID held/unlocked states and read-only OPEN_DOWNGRADE",
+          "one kernel-style session accepts multiple mapped users without sharing their open authority",
+          "exclusive lock conflicts, denied owner details, disjoint writes and CLOSE with held locks",
+          "partial unlock splits ranges and preserves neighboring conflicts",
+          "process restart persists split lock ranges; matching client reclaims OPEN and locks before RECLAIM_COMPLETE"
+        ]
+      }
+    },
+    "wire_before_recovery_case": {
+      "sha256": "53741de9e9d37b3a2538f977725b5d78061ed35799e67822c93a88b517338994",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "all 72 OPEN access/preference/hint combinations encode exact NONE/NONE_EXT reasons without gaining data rights or promising callbacks",
+          "invalid OPEN preferences/access bits stop before CREATE and do not mutate the namespace",
+          "CLAIM_FH honors cancellation while upgrading ordinary OPEN rights; exact slot replay does not advance the state twice",
+          "standalone WANT_DELEGATION ignores data-access bits, returns extended reasons, supports idempotent cancellation and preserves the current filehandle",
+          "standalone validation distinguishes invalid preference, missing handle, directory refusal, unsupported previous-client recovery and grace/reclaim errors",
+          "WANT refuses unmapped callers, reauthorizes cached replies after export revocation and creates no hidden OPEN/client-busy state"
+        ],
+        "recorded_at": "2026-11-04T18:57:39.269164+00:00"
+      }
+    }
+  },
+  "upstream": {
+    "initial": {
+      "source_report_sha256": "ff9c012412018d8a0af8eaeb43a6e4ea16577c5a546e566e23d6373ab38ab5c9",
+      "summary": {
+        "errors": 0,
+        "failures": 12,
+        "name": "all",
+        "skipped": 253,
+        "tests": 266,
+        "time": 2.3584911823272705,
+        "timestamp": "2026-11-04 18:54:28.778408"
+      },
+      "selected": 13,
+      "cases": [
+        {
+          "classname": "st_delegation",
+          "code": "DELEG9",
+          "name": "testWriteOpenvsReadDeleg",
+          "time": "0.43129944801330566"
+        },
+        {
+          "classname": "st_delegation",
+          "code": "DELEG2",
+          "failure": {
+            "err": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/testmod.py\", line 234, in run\n    self.runtest(self, environment)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 82, in testWriteDeleg\n    _testDeleg(t, env, OPEN4_SHARE_ACCESS_READ|OPEN4_SHARE_ACCESS_WRITE,\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 46, in _testDeleg\n    fh = _create_file_with_deleg(sess1, env.testname(t), openaccess | want)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 30, in _create_file_with_deleg\n    fh, deleg = __create_file_with_deleg(sess, name, access)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 26, in __create_file_with_deleg\n    fail(\"Could not get delegation\")\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/environment.py\", line 278, in fail\n    raise testmod.FailureException(msg)\ntestmod.FailureException: Could not get delegation\n",
+            "message": "Could not get delegation"
+          },
+          "name": "testWriteDeleg",
+          "time": "0.1912074089050293"
+        },
+        {
+          "classname": "st_delegation",
+          "code": "DELEG23",
+          "failure": {
+            "err": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/testmod.py\", line 234, in run\n    self.runtest(self, environment)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 267, in testServerSelfConflict3\n    fh, deleg = __create_file_with_deleg(sess1, env.testname(t),\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 26, in __create_file_with_deleg\n    fail(\"Could not get delegation\")\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/environment.py\", line 278, in fail\n    raise testmod.FailureException(msg)\ntestmod.FailureException: Could not get delegation\n",
+            "message": "Could not get delegation"
+          },
+          "name": "testServerSelfConflict3",
+          "time": "0.18494606018066406"
+        },
+        {
+          "classname": "st_delegation",
+          "code": "DELEG1",
+          "failure": {
+            "err": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/testmod.py\", line 234, in run\n    self.runtest(self, environment)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 73, in testReadDeleg\n    _testDeleg(t, env, OPEN4_SHARE_ACCESS_READ,\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 46, in _testDeleg\n    fh = _create_file_with_deleg(sess1, env.testname(t), openaccess | want)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 30, in _create_file_with_deleg\n    fh, deleg = __create_file_with_deleg(sess, name, access)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 26, in __create_file_with_deleg\n    fail(\"Could not get delegation\")\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/environment.py\", line 278, in fail\n    raise testmod.FailureException(msg)\ntestmod.FailureException: Could not get delegation\n",
+            "message": "Could not get delegation"
+          },
+          "name": "testReadDeleg",
+          "time": "0.1826472282409668"
+        },
+        {
+          "classname": "st_delegation",
+          "code": "DELEG4",
+          "failure": {
+            "err": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/testmod.py\", line 234, in run\n    self.runtest(self, environment)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 108, in testNoDeleg\n    fail(\"Got no delegation, expected OPEN_DELEGATE_NONE_EXT\")\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/environment.py\", line 278, in fail\n    raise testmod.FailureException(msg)\ntestmod.FailureException: Got no delegation, expected OPEN_DELEGATE_NONE_EXT\n",
+            "message": "Got no delegation, expected OPEN_DELEGATE_NONE_EXT"
+          },
+          "name": "testNoDeleg",
+          "time": "0.12863445281982422"
+        },
+        {
+          "classname": "st_delegation",
+          "code": "DELEG8",
+          "failure": {
+            "err": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/testmod.py\", line 234, in run\n    self.runtest(self, environment)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 173, in testDelegRevocation\n    fh, deleg = __create_file_with_deleg(sess1, env.testname(t),\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 26, in __create_file_with_deleg\n    fail(\"Could not get delegation\")\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/environment.py\", line 278, in fail\n    raise testmod.FailureException(msg)\ntestmod.FailureException: Could not get delegation\n",
+            "message": "Could not get delegation"
+          },
+          "name": "testDelegRevocation",
+          "time": "0.18698525428771973"
+        },
+        {
+          "classname": "st_delegation",
+          "code": "DELEG26",
+          "failure": {
+            "err": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/testmod.py\", line 234, in run\n    self.runtest(self, environment)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 431, in testDelegReadAfterClose\n    fail(\"Failed to get delegation\")\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/environment.py\", line 278, in fail\n    raise testmod.FailureException(msg)\ntestmod.FailureException: Failed to get delegation\n",
+            "message": "Failed to get delegation"
+          },
+          "name": "testDelegReadAfterClose",
+          "time": "0.2545197010040283"
+        },
+        {
+          "classname": "st_delegation",
+          "code": "DELEG25",
+          "failure": {
+            "err": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/testmod.py\", line 234, in run\n    self.runtest(self, environment)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 385, in testCbGetattrWithChange\n    attrs1, attrs2 = _testCbGetattr(t, env, change=1, size=5)\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 315, in _testCbGetattr\n    fail(\"FATTR4_OPEN_ARGUMENTS not supported\")\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/environment.py\", line 278, in fail\n    raise testmod.FailureException(msg)\ntestmod.FailureException: FATTR4_OPEN_ARGUMENTS not supported\n",
+            "message": "FATTR4_OPEN_ARGUMENTS not supported"
+          },
+          "name": "testCbGetattrWithChange",
+          "time": "0.014221906661987305"
+        },
+        {
+          "classname": "st_delegation",
+          "code": "DELEG24",
+          "failure": {
+            "err": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/testmod.py\", line 234, in run\n    self.runtest(self, environment)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 366, in testCbGetattrNoChange\n    attrs1, attrs2 = _testCbGetattr(t, env)\n                     ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 315, in _testCbGetattr\n    fail(\"FATTR4_OPEN_ARGUMENTS not supported\")\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/environment.py\", line 278, in fail\n    raise testmod.FailureException(msg)\ntestmod.FailureException: FATTR4_OPEN_ARGUMENTS not supported\n",
+            "message": "FATTR4_OPEN_ARGUMENTS not supported"
+          },
+          "name": "testCbGetattrNoChange",
+          "time": "0.014203548431396484"
+        },
+        {
+          "classname": "st_delegation",
+          "code": "DELEG6",
+          "failure": {
+            "err": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/testmod.py\", line 234, in run\n    self.runtest(self, environment)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 137, in testCBSecParmsNull\n    recall = _testDeleg(t, env, OPEN4_SHARE_ACCESS_READ,\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 46, in _testDeleg\n    fh = _create_file_with_deleg(sess1, env.testname(t), openaccess | want)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 30, in _create_file_with_deleg\n    fh, deleg = __create_file_with_deleg(sess, name, access)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 26, in __create_file_with_deleg\n    fail(\"Could not get delegation\")\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/environment.py\", line 278, in fail\n    raise testmod.FailureException(msg)\ntestmod.FailureException: Could not get delegation\n",
+            "message": "Could not get delegation"
+          },
+          "name": "testCBSecParmsNull",
+          "time": "0.1927344799041748"
+        },
+        {
+          "classname": "st_delegation",
+          "code": "DELEG7",
+          "failure": {
+            "err": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/testmod.py\", line 234, in run\n    self.runtest(self, environment)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 156, in testCBSecParmsChange\n    recall = _testDeleg(t, env, OPEN4_SHARE_ACCESS_READ,\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 46, in _testDeleg\n    fh = _create_file_with_deleg(sess1, env.testname(t), openaccess | want)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 30, in _create_file_with_deleg\n    fh, deleg = __create_file_with_deleg(sess, name, access)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 26, in __create_file_with_deleg\n    fail(\"Could not get delegation\")\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/environment.py\", line 278, in fail\n    raise testmod.FailureException(msg)\ntestmod.FailureException: Could not get delegation\n",
+            "message": "Could not get delegation"
+          },
+          "name": "testCBSecParmsChange",
+          "time": "0.19101405143737793"
+        },
+        {
+          "classname": "st_delegation",
+          "code": "DELEG5",
+          "failure": {
+            "err": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/testmod.py\", line 234, in run\n    self.runtest(self, environment)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 124, in testCBSecParms\n    recall = _testDeleg(t, env, OPEN4_SHARE_ACCESS_READ,\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 46, in _testDeleg\n    fh = _create_file_with_deleg(sess1, env.testname(t), openaccess | want)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 30, in _create_file_with_deleg\n    fh, deleg = __create_file_with_deleg(sess, name, access)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 26, in __create_file_with_deleg\n    fail(\"Could not get delegation\")\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/environment.py\", line 278, in fail\n    raise testmod.FailureException(msg)\ntestmod.FailureException: Could not get delegation\n",
+            "message": "Could not get delegation"
+          },
+          "name": "testCBSecParms",
+          "time": "0.19647812843322754"
+        },
+        {
+          "classname": "st_delegation",
+          "code": "DELEG3",
+          "failure": {
+            "err": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/testmod.py\", line 234, in run\n    self.runtest(self, environment)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 91, in testAnyDeleg\n    _testDeleg(t, env, OPEN4_SHARE_ACCESS_READ,\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 46, in _testDeleg\n    fh = _create_file_with_deleg(sess1, env.testname(t), openaccess | want)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 30, in _create_file_with_deleg\n    fh, deleg = __create_file_with_deleg(sess, name, access)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 26, in __create_file_with_deleg\n    fail(\"Could not get delegation\")\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/environment.py\", line 278, in fail\n    raise testmod.FailureException(msg)\ntestmod.FailureException: Could not get delegation\n",
+            "message": "Could not get delegation"
+          },
+          "name": "testAnyDeleg",
+          "time": "0.18959951400756836"
+        }
+      ],
+      "log": "nfs-delegation-initial.log",
+      "log_sha256": "eaddaac97b3cc7d40af5ea067d5145d6a90318a16a9410b8a5086e425adc715f"
+    },
+    "final": {
+      "source_report_sha256": "8f3ab26b5439fdb1619919bbbe8e2062a1f18547a77a5f0fe16957a21e21c0ae",
+      "summary": {
+        "errors": 0,
+        "failures": 11,
+        "name": "all",
+        "skipped": 253,
+        "tests": 266,
+        "time": 2.863499164581299,
+        "timestamp": "2026-11-04 18:58:21.299543"
+      },
+      "selected": 13,
+      "cases": [
+        {
+          "classname": "st_delegation",
+          "code": "DELEG9",
+          "name": "testWriteOpenvsReadDeleg",
+          "time": "0.683652400970459"
+        },
+        {
+          "classname": "st_delegation",
+          "code": "DELEG2",
+          "failure": {
+            "err": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/testmod.py\", line 234, in run\n    self.runtest(self, environment)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 82, in testWriteDeleg\n    _testDeleg(t, env, OPEN4_SHARE_ACCESS_READ|OPEN4_SHARE_ACCESS_WRITE,\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 46, in _testDeleg\n    fh = _create_file_with_deleg(sess1, env.testname(t), openaccess | want)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 30, in _create_file_with_deleg\n    fh, deleg = __create_file_with_deleg(sess, name, access)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 26, in __create_file_with_deleg\n    fail(\"Could not get delegation\")\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/environment.py\", line 278, in fail\n    raise testmod.FailureException(msg)\ntestmod.FailureException: Could not get delegation\n",
+            "message": "Could not get delegation"
+          },
+          "name": "testWriteDeleg",
+          "time": "0.21992826461791992"
+        },
+        {
+          "classname": "st_delegation",
+          "code": "DELEG23",
+          "failure": {
+            "err": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/testmod.py\", line 234, in run\n    self.runtest(self, environment)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 267, in testServerSelfConflict3\n    fh, deleg = __create_file_with_deleg(sess1, env.testname(t),\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 26, in __create_file_with_deleg\n    fail(\"Could not get delegation\")\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/environment.py\", line 278, in fail\n    raise testmod.FailureException(msg)\ntestmod.FailureException: Could not get delegation\n",
+            "message": "Could not get delegation"
+          },
+          "name": "testServerSelfConflict3",
+          "time": "0.22292876243591309"
+        },
+        {
+          "classname": "st_delegation",
+          "code": "DELEG1",
+          "failure": {
+            "err": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/testmod.py\", line 234, in run\n    self.runtest(self, environment)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 73, in testReadDeleg\n    _testDeleg(t, env, OPEN4_SHARE_ACCESS_READ,\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 46, in _testDeleg\n    fh = _create_file_with_deleg(sess1, env.testname(t), openaccess | want)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 30, in _create_file_with_deleg\n    fh, deleg = __create_file_with_deleg(sess, name, access)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 26, in __create_file_with_deleg\n    fail(\"Could not get delegation\")\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/environment.py\", line 278, in fail\n    raise testmod.FailureException(msg)\ntestmod.FailureException: Could not get delegation\n",
+            "message": "Could not get delegation"
+          },
+          "name": "testReadDeleg",
+          "time": "0.2308800220489502"
+        },
+        {
+          "classname": "st_delegation",
+          "code": "DELEG4",
+          "name": "testNoDeleg",
+          "time": "0.1648101806640625"
+        },
+        {
+          "classname": "st_delegation",
+          "code": "DELEG8",
+          "failure": {
+            "err": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/testmod.py\", line 234, in run\n    self.runtest(self, environment)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 173, in testDelegRevocation\n    fh, deleg = __create_file_with_deleg(sess1, env.testname(t),\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 26, in __create_file_with_deleg\n    fail(\"Could not get delegation\")\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/environment.py\", line 278, in fail\n    raise testmod.FailureException(msg)\ntestmod.FailureException: Could not get delegation\n",
+            "message": "Could not get delegation"
+          },
+          "name": "testDelegRevocation",
+          "time": "0.20267009735107422"
+        },
+        {
+          "classname": "st_delegation",
+          "code": "DELEG26",
+          "failure": {
+            "err": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/testmod.py\", line 234, in run\n    self.runtest(self, environment)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 431, in testDelegReadAfterClose\n    fail(\"Failed to get delegation\")\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/environment.py\", line 278, in fail\n    raise testmod.FailureException(msg)\ntestmod.FailureException: Failed to get delegation\n",
+            "message": "Failed to get delegation"
+          },
+          "name": "testDelegReadAfterClose",
+          "time": "0.27129292488098145"
+        },
+        {
+          "classname": "st_delegation",
+          "code": "DELEG25",
+          "failure": {
+            "err": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/testmod.py\", line 234, in run\n    self.runtest(self, environment)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 385, in testCbGetattrWithChange\n    attrs1, attrs2 = _testCbGetattr(t, env, change=1, size=5)\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 315, in _testCbGetattr\n    fail(\"FATTR4_OPEN_ARGUMENTS not supported\")\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/environment.py\", line 278, in fail\n    raise testmod.FailureException(msg)\ntestmod.FailureException: FATTR4_OPEN_ARGUMENTS not supported\n",
+            "message": "FATTR4_OPEN_ARGUMENTS not supported"
+          },
+          "name": "testCbGetattrWithChange",
+          "time": "0.014835119247436523"
+        },
+        {
+          "classname": "st_delegation",
+          "code": "DELEG24",
+          "failure": {
+            "err": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/testmod.py\", line 234, in run\n    self.runtest(self, environment)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 366, in testCbGetattrNoChange\n    attrs1, attrs2 = _testCbGetattr(t, env)\n                     ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 315, in _testCbGetattr\n    fail(\"FATTR4_OPEN_ARGUMENTS not supported\")\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/environment.py\", line 278, in fail\n    raise testmod.FailureException(msg)\ntestmod.FailureException: FATTR4_OPEN_ARGUMENTS not supported\n",
+            "message": "FATTR4_OPEN_ARGUMENTS not supported"
+          },
+          "name": "testCbGetattrNoChange",
+          "time": "0.01481175422668457"
+        },
+        {
+          "classname": "st_delegation",
+          "code": "DELEG6",
+          "failure": {
+            "err": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/testmod.py\", line 234, in run\n    self.runtest(self, environment)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 137, in testCBSecParmsNull\n    recall = _testDeleg(t, env, OPEN4_SHARE_ACCESS_READ,\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 46, in _testDeleg\n    fh = _create_file_with_deleg(sess1, env.testname(t), openaccess | want)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 30, in _create_file_with_deleg\n    fh, deleg = __create_file_with_deleg(sess, name, access)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 26, in __create_file_with_deleg\n    fail(\"Could not get delegation\")\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/environment.py\", line 278, in fail\n    raise testmod.FailureException(msg)\ntestmod.FailureException: Could not get delegation\n",
+            "message": "Could not get delegation"
+          },
+          "name": "testCBSecParmsNull",
+          "time": "0.19452953338623047"
+        },
+        {
+          "classname": "st_delegation",
+          "code": "DELEG7",
+          "failure": {
+            "err": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/testmod.py\", line 234, in run\n    self.runtest(self, environment)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 156, in testCBSecParmsChange\n    recall = _testDeleg(t, env, OPEN4_SHARE_ACCESS_READ,\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 46, in _testDeleg\n    fh = _create_file_with_deleg(sess1, env.testname(t), openaccess | want)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 30, in _create_file_with_deleg\n    fh, deleg = __create_file_with_deleg(sess, name, access)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 26, in __create_file_with_deleg\n    fail(\"Could not get delegation\")\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/environment.py\", line 278, in fail\n    raise testmod.FailureException(msg)\ntestmod.FailureException: Could not get delegation\n",
+            "message": "Could not get delegation"
+          },
+          "name": "testCBSecParmsChange",
+          "time": "0.2092268466949463"
+        },
+        {
+          "classname": "st_delegation",
+          "code": "DELEG5",
+          "failure": {
+            "err": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/testmod.py\", line 234, in run\n    self.runtest(self, environment)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 124, in testCBSecParms\n    recall = _testDeleg(t, env, OPEN4_SHARE_ACCESS_READ,\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 46, in _testDeleg\n    fh = _create_file_with_deleg(sess1, env.testname(t), openaccess | want)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 30, in _create_file_with_deleg\n    fh, deleg = __create_file_with_deleg(sess, name, access)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 26, in __create_file_with_deleg\n    fail(\"Could not get delegation\")\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/environment.py\", line 278, in fail\n    raise testmod.FailureException(msg)\ntestmod.FailureException: Could not get delegation\n",
+            "message": "Could not get delegation"
+          },
+          "name": "testCBSecParms",
+          "time": "0.22330617904663086"
+        },
+        {
+          "classname": "st_delegation",
+          "code": "DELEG3",
+          "failure": {
+            "err": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/testmod.py\", line 234, in run\n    self.runtest(self, environment)\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 91, in testAnyDeleg\n    _testDeleg(t, env, OPEN4_SHARE_ACCESS_READ,\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 46, in _testDeleg\n    fh = _create_file_with_deleg(sess1, env.testname(t), openaccess | want)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 30, in _create_file_with_deleg\n    fh, deleg = __create_file_with_deleg(sess, name, access)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/st_delegation.py\", line 26, in __create_file_with_deleg\n    fail(\"Could not get delegation\")\n  File \"/media/data1/Project/Network/tauCloud/build/pynfs/nfs4.1/server41tests/environment.py\", line 278, in fail\n    raise testmod.FailureException(msg)\ntestmod.FailureException: Could not get delegation\n",
+            "message": "Could not get delegation"
+          },
+          "name": "testAnyDeleg",
+          "time": "0.21062707901000977"
+        }
+      ],
+      "log": "nfs-delegation-final.log",
+      "log_sha256": "54aa9f04f597c7f4b721ff25792839724948b4398aba0e5b80e4291f19eb286a"
+    },
+    "open_regression": {
+      "source_report_sha256": "6c5e1f3ac76bbb394bca3250a55cb149230e59e45beaa394e46688e509bf1e0a",
+      "summary": {
+        "errors": 0,
+        "failures": 0,
+        "name": "all",
+        "skipped": 258,
+        "tests": 266,
+        "time": 1.9234955310821533,
+        "timestamp": "2026-11-04 18:59:44.510392"
+      },
+      "selected": 8,
+      "cases": [
+        {
+          "classname": "st_delegation",
+          "code": "DELEG4",
+          "name": "testNoDeleg",
+          "time": "0.46764183044433594"
+        },
+        {
+          "classname": "st_open",
+          "code": "OPEN1",
+          "name": "testSupported",
+          "time": "0.1738731861114502"
+        },
+        {
+          "classname": "st_open",
+          "code": "OPEN2",
+          "name": "testServerStateSeqid",
+          "time": "0.21587800979614258"
+        },
+        {
+          "classname": "st_open",
+          "code": "OPEN30",
+          "name": "testReadWrite",
+          "time": "0.22265362739562988"
+        },
+        {
+          "classname": "st_open",
+          "code": "OPEN7",
+          "name": "testOPENClaimFH",
+          "time": "0.262209415435791"
+        },
+        {
+          "classname": "st_open",
+          "code": "OPEN6",
+          "name": "testEXCLUSIVE4AtNameAttribute",
+          "time": "0.2068767547607422"
+        },
+        {
+          "classname": "st_open",
+          "code": "OPEN8",
+          "name": "testCloseWithZeroSeqid",
+          "time": "0.15301871299743652"
+        },
+        {
+          "classname": "st_open",
+          "code": "OPEN31",
+          "name": "testAnonReadWrite",
+          "time": "0.221343994140625"
+        }
+      ],
+      "log": "nfs-want-open.log",
+      "log_sha256": "0fc1b2981e44d43660f931112a11a5791ab26c25e91196fe2d23ab73bfee8dd2"
+    }
+  },
+  "limitations": [
+    "Full SMB/NFS remains incomplete; no NFS read/write delegation is issued by this change.",
+    "The complete unmodified delegation selection improves from 1 passed/12 failed to 2 passed/11 failed. The 253 skipped entries in upstream JSON are tests outside this 13-case selection, not successes.",
+    "DELEG4 now passes. DELEG9 already passed because no incompatible delegation is granted; neither case proves positive delegation handout.",
+    "Native cache authority, CB_RECALL/DELEGRETURN, revoked stateids, CLOSE-independent lifetime, recovery and CB_GETATTR remain open.",
+    "Windows 0811b01 native file-domain failure was lease_expired after_checks=0. Operation timing diagnostics are added; the underlying delay/cause is not yet proven.",
+    "This source has local evidence only; remote matrix acceptance is pending."
+  ]
+}

@@ -98,6 +98,7 @@ on:
       - 'src/nfs_v4.inc'
       - 'tests/nfs_attributes_integration.py'
       - 'tests/nfs_session_negotiation.py'
+      - 'tests/nfs_delegation_negotiation.py'
       - 'tests/pynfs_acceptance.py'
       - 'tests/pynfs_notify_lock.py'
       - 'tests/native_allocation.py'
@@ -174,6 +175,9 @@ jobs:
         run: python tests/nfs_callback_recovery.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/nfs-callback-recovery.json
       - name: NFSv4.1 channel limits and CREATE_SESSION replay
         run: python tests/nfs_session_negotiation.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/nfs-session-negotiation.json
+      - name: NFSv4.1 OPEN and WANT_DELEGATION negotiation, authority and replay
+        if: ${{ !cancelled() && steps.compile.outcome == 'success' }}
+        run: python tests/nfs_delegation_negotiation.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/nfs-delegation-negotiation.json
       - name: NFSv4.1 blocking lock notification and callback replay
         run: python tests/nfs_notify_lock_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/nfs-notify-lock.json
       - name: SMB session renewal and failure cleanup
@@ -273,6 +277,15 @@ jobs:
       - name: Unmodified pynfs callback program and RPC version
         if: runner.os == 'Linux'
         run: python tests/pynfs_acceptance.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/pynfs-backchannel.json CSESS20 CSESS21
+      - name: Unmodified pynfs explicit no-delegation request
+        if: ${{ !cancelled() && steps.compile.outcome == 'success' && runner.os == 'Linux' }}
+        run: |
+          python scripts/prepare_pynfs.py
+          python tests/pynfs_acceptance.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/pynfs-no-delegation.json DELEG4
+      - name: Full pynfs delegation diagnostic (grants and recall incomplete)
+        if: ${{ !cancelled() && steps.compile.outcome == 'success' && runner.os == 'Linux' }}
+        continue-on-error: true
+        run: python tests/pynfs_acceptance.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/pynfs-delegation-full.json deleg
       - name: Unmodified pynfs client blocking lock notification
         if: runner.os == 'Linux'
         run: python tests/pynfs_notify_lock.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/pynfs-notify-lock.json

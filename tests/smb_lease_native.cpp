@@ -33,7 +33,17 @@ int main() {
       g["signature"] = mac(signing, g.dump()); return g;
     };
     auto call = [&](std::string op, std::string path, json body = json::object()) {
-      body["grant"] = grant(path); return store->dispatch("smb_" + op, body, ctx());
+      body["grant"] = grant(path);
+      auto started = std::chrono::steady_clock::now();
+      try { return store->dispatch("smb_" + op, body, ctx()); }
+      catch (const error &e) {
+        if (std::string_view(e.what()) == "lease_expired")
+          std::cerr << "expired_operation=" << op << " path=" << path
+                    << " elapsed_ms=" << std::chrono::duration_cast<std::chrono::milliseconds>(
+                        std::chrono::steady_clock::now() - started).count()
+                    << " grant_remaining_ms=" << body.at("grant").at("expires").get<int64_t>() - now() << '\n';
+        throw;
+      }
     };
     auto client = random_hex(16), peer = random_hex(16), key = decode_bytes(random_hex(16));
     bytes context(52, '\0'); context.replace(0, 16, key);

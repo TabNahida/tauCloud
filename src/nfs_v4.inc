@@ -243,6 +243,25 @@ std::vector<uint32_t> writable_attrs() {
   // Verifiers live in the database, so timestamps need not be reserved.
   return {(1u << 4) | (1u << 12), (1u << 1) | (1u << 4) | (1u << 5) | (1u << 16) | (1u << 22)};
 }
+uint32_t delegation_want(uint32_t access, bool standalone = false) {
+  check((access & ~0x3ff03u) == 0 && (access & 0xff00u) <= 0x500u);
+  auto want = access & 0xff00u;
+  if (standalone) {
+    // WANT_DELEGATION ignores the data-access bits and WANT_NO_DELEG, but
+    // still requires an explicit READ/WRITE/ANY/CANCEL selection.
+    check(want != 0 && want != 0x400u);
+  } else check((access & 3) != 0);
+  return want;
+}
+void no_delegation4(writer &body, uint32_t access, bool directory = false) {
+  if (!(access & 0x3ff00u)) { body.u32(0); return; }
+  auto want = access & 0xff00u;
+  // No cache authority or callback promise is created by a refusal. File
+  // delegation grants/CB_RECALL still need a native-backed coordinator.
+  auto why = want == 0x400u ? 0u : want == 0x500u ? 7u : directory ? 8u : 2u;
+  body.u32(3).u32(why); // OPEN_DELEGATE_NONE_EXT / why_no_delegation4.
+  if (why == 2) body.boolean(false); // No native cache authority / future signal promise.
+}
 json meta4(const identity &who, const std::string &h, bool acl = false) {
   check(!h.empty(), 10020);
   if (h == pseudo) {
@@ -719,9 +738,10 @@ json parse4(reader &r) {
     if (r.u32() == 1) { r.u64(); r.u64(); r.fixed(16); r.opaque(65536); }
     break;
   case 56: {
-    r.u32();
+    a["want"] = r.u32();
     auto claim = r.u32();
-    if (claim == 1) r.u32();
+    a["claim"] = claim;
+    if (claim == 1) a["delegation"] = r.u32();
     else if (claim != 4 && claim != 6) throw xdr_error();
     break;
   }
@@ -1413,10 +1433,23 @@ std::string v4(const identity &who, reader &r) {
                 .u32(flavor == "krb5" ? 1 : flavor == "krb5i" ? 2 : 3);
           }
           current.clear();
+        } else if (op == 56) {
+          auto want = a.at("want").get<uint32_t>();
+          delegation_want(want, true);
+          auto m = meta4(who, current);
+          auto claim = a.at("claim").get<uint32_t>();
+          check(claim != 6, 10004); // Previous-client recovery needs DELEGPURGE.
+          if (claim == 1) {
+            check(grace_end && !client.reclaim_complete, 10033);
+            check(false, 10034); // No persisted delegation was granted to reclaim.
+          }
+          check(client.reclaim_complete && !grace_end, 10013);
+          no_delegation4(body, want, m.at("directory"));
         } else if (op == 18) {
           auto access = a.at("access").get<uint32_t>(), deny = a.at("deny").get<uint32_t>();
-          check((access & 3) > 0 && (access & ~0x3ff03u) == 0 &&
-                    (access & 0xff00u) <= 0x500 && deny <= 3);
+          delegation_want(access);
+          check(deny <= 3);
+          auto delegation_access = access;
           access &= 3;
           // NFSv4.1 takes the client identity from SEQUENCE, not open_owner4.clientid.
           check(opens.size() < 1024, 10018);
@@ -1528,7 +1561,7 @@ std::string v4(const identity &who, reader &r) {
           body.fixed(state.data);
           change4(body, parent_before, parent_after);
           body.u32(send_backchannel ? 0x20 : 0); // OPEN4_RESULT_MAY_NOTIFY_LOCK
-          put_bitmap(body, attrset); body.u32(0);
+          put_bitmap(body, attrset); no_delegation4(body, delegation_access);
         } else if (op == 4) {
           auto id = open_key(a.at("state"), sid);
           auto &o = state4(id, sid, current, 0, who, op);

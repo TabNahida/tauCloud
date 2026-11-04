@@ -158,13 +158,15 @@ def main():
             op.layoutcommit(0, 1, False, zero, t4.newoffset4(False),
                 t4.newtime4(False), t4.layoutupdate4(1, b'')),
             op.layoutget(False, 1, 1, 0, 1, 1, zero, 1024),
-            op.layoutreturn(False, 1, 1, t4.layoutreturn4(3)),
-            op.want_delegation(0, t4.deleg_claim4(4))]
+            op.layoutreturn(False, 1, 1, t4.layoutreturn4(3))]
         for operation in optional:
             result = alice.compound([op.putfh(root_handle), operation, op.getfh()])
             assert result.status == 10004 and len(result.resarray) == 3, result
             assert result.resarray[-1].resop == operation.argop, result
         checks.append('optional pNFS/delegation/attribute operations are decoded and return NOTSUPP with their own operation number, not OP_ILLEGAL')
+        result = alice.compound([op.putfh(root_handle), op.want_delegation(0, t4.deleg_claim4(4)), op.getfh()])
+        assert result.status == 22 and len(result.resarray) == 3 and result.resarray[-1].resop == 56, result
+        checks.append('WANT_DELEGATION with no explicit delegation preference returns INVAL and stops the compound')
 
         anonymous = NoneClient(port)
         clients.append(anonymous)

@@ -140,6 +140,8 @@ Selected-profile acceptance: [M7 guide](docs/m7.md), [中文](docs/m7.zh-CN.md),
 
 ## Full SMB/NFS compatibility prerequisite (user decision, 2026-10-31)
 
+NFS delegation negotiation now honors OPEN preferences and standalone WANT_DELEGATION cancellation/refusal, with exact XDR, permission and replay checks. All seven independent negotiation groups (72 OPEN combinations and real restart/reclaim), nine discovery groups, five state/recovery groups and eight original OPEN/DELEG4 cases pass locally. The full unmodified delegation selection is **2 passed / 11 failed**; positive read/write grants, CB_RECALL and recovery remain required ([evidence](docs/evidence/pre-m8/nfs-delegation-negotiation-local.json), [remaining native-authority requirements](docs/nfs-delegations.md)). No delegation-completion checkbox is closed by these results.
+
 Latest file-lease timeout work completes all delivered ACK expirations to NONE after 35 seconds while preserving valid opens, with separate authority/delivery/native fencing deadlines. Local checks pass 42 wire groups, 3,451 state checks, 125 native checks and all 23 M6 groups. The unmodified Samba lease suite improves to **34 passed / 2 failed / 3 skipped**, with `timeout` added to mandatory Actions acceptance; ADS, legacy chained-epoch expectations and directory-related exclusions remain visible ([evidence](docs/evidence/pre-m8/smb-lease-timeout-local.json)). The `0811b01` native Windows gate passes, while its matrix has a pending Windows file-domain failure and an obsolete M6 leasing-disabled assertion, now corrected ([remote snapshot](docs/evidence/pre-m8/smb-lease-0811-remote.json)). Full SMB/NFS remains open.
 
 Native exclusion uses Linux leases / Windows RW oplocks. The adapter and file-domain
