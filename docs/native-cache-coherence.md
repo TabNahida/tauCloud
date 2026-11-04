@@ -84,12 +84,43 @@ This internal authority is not yet called by SMB CREATE, so network clients
 still receive no caching grant. Wire-level pending operations and break/ACK
 acceptance remain necessary before enabling that grant.
 
+## Asynchronous related SMB operations
+
+The SMB transport now retains dependent operations after an asynchronous LOCK,
+CHANGE_NOTIFY or cache-blocked CREATE. Each operation has its own nonzero
+AsyncId and interim response. Later operations execute only after their
+predecessor finishes, using the resulting FileId and tree. Final replies use
+the owning session's signing/encryption keys and grant no additional credits.
+A resumed LOCK/CHANGE_NOTIFY can itself wait without changing its announced ID.
+Notification order follows registration order, independently of those IDs.
+
+CANCEL by AsyncId or MessageId, predecessor failure, tree/session teardown and
+revocation complete or discard the dependent work without executing its writes.
+The transport bounds retained commands to 128 and request bytes to 1 MiB.
+Cache-blocked CREATE retries reauthorize and have a ten-second monotonic
+retry deadline. Authentication continuations remain in their dedicated flow;
+a SESSION_SETUP dependent on a waiting operation is explicitly refused.
+
+Independent clients exercise signed SMB 2.1 and encrypted SMB 3.0/3.0.2/3.1.1
+chains, nested waits, cancellation, generated/inherited FileIds, teardown,
+notification FIFO and resource exhaustion in
+`tests/smb_compound_async.py`. [Local evidence](evidence/pre-m8/smb-compound-async-local.json)
+records the exact source hashes and results. This verifies transport continuation;
+CREATE has not yet enabled cache grants, so actual native-cache-conflict wire
+acceptance, break messages and ACKs remain open.
+
+The continuation follows Microsoft's
+[related compound processing](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/46dd4182-62d3-4e30-9fe5-e2ec124edca1)
+and [asynchronous interim response](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/c1692ece-7c6d-45c8-a0e3-6b53c0483030)
+rules.
+
 ## Remaining integration
 
 The coordinator's namespace and complete cross-protocol behavior still need
 wire-level acceptance. SMB still needs signed/encrypted unsolicited breaks, ACK
-validation, asynchronous conflicting operations, cancellation and disconnect
-cleanup. NFS still needs delegation state, recalls and revocation. Linux's
+validation and actual cache-conflict wire acceptance, including cancellation
+and disconnect cleanup. Related asynchronous continuation is now implemented
+and independently tested as described above. NFS still needs delegation state, recalls and revocation. Linux's
 finite kernel break deadline and namespace changes need explicit treatment.
 Passing these native tests alone cannot enable network caches or close the
 full compatibility gate.

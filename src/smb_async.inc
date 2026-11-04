@@ -1,3 +1,121 @@
+// A related compound cannot execute past an unfinished operation. Keep only
+// authenticated request bytes, with bounded memory, and give each dependent
+// operation its own transport AsyncId. No credit is granted twice.
+static int64_t async_clock() {
+  return std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+uint64_t defer_command(const bytes &request, uint32_t tid, bool encrypted,
+                       uint64_t dependency, const bytes &file) {
+  size_t count = 0, size = request.size();
+  for (auto sid : session_ids())
+    for (const auto &[id, item] : find_session(sid)->pending_commands) {
+      ++count; size += item.request.size();
+    }
+  check(count < 128 && size <= 1024 * 1024 && next_async_id != UINT64_MAX, 0xc000009a);
+  auto id = next_async_id++;
+  pending_command item{request, tid, encrypted, 0, {}, 0, false, {}, {}, 0};
+  item.dependency = dependency;
+  item.file = file;
+  pending_commands.emplace(id, std::move(item));
+  return id;
+}
+void complete_dependents(uint64_t id, uint32_t code, const bytes &file, uint32_t tid = 0) {
+  for (auto &[other, item] : pending_commands) {
+    if (item.dependency != id) continue;
+    item.dependency = 0;
+    item.failure = code;
+    item.file = file;
+    if (tid) item.tree_id = tid;
+  }
+}
+pace::task<void> finish_command(uint64_t id, uint32_t code, bytes body = {}) {
+  auto found = pending_commands.find(id);
+  if (found == pending_commands.end()) co_return;
+  if (!found->second.announced && socket.is_open()) {
+    found->second.completion = code;
+    found->second.body = std::move(body);
+    co_return;
+  }
+  auto item = std::move(found->second);
+  pending_commands.erase(found);
+  complete_dependents(id, code, item.file, item.tree_id);
+  if (!socket.is_open()) co_return;
+  auto response = sized(64, 64);
+  response.replace(0, 4, "\xfeSMB", 4);
+  put(response, 4, 64, 2); put(response, 6, 1, 2); put(response, 8, code, 4);
+  auto cmd = get(item.request, 12, 2);
+  put(response, 12, cmd, 2); put(response, 16, 3 | (item.encrypted ? 0 : 8), 4);
+  put(response, 24, get(item.request, 24, 8), 8); put(response, 32, id, 8);
+  put(response, 40, session, 8);
+  if (code && code != 0x80000005 && !(cmd == 15 && (code == 0x10b || code == 0x10c)))
+    body = sized(9, 9);
+  response += body;
+  if (!item.encrypted) response.replace(48, 16, signature(key, response, selected.signing));
+  co_await send_packet(std::move(response), item.encrypted);
+}
+// A resumed command may itself wait for a range lock or directory event. Move
+// its waiter under the already announced ID; never send a second interim.
+void adopt_waiter(uint64_t id) {
+  auto temporary = next_async_id - 1;
+  if (auto node = pending_locks.extract(temporary); !node.empty()) {
+    node.key() = id; node.mapped().announced = true;
+    pending_locks.insert(std::move(node));
+  } else if (auto node = pending_notifications.extract(temporary); !node.empty()) {
+    node.key() = id; node.mapped().announced = true;
+    pending_notifications.insert(std::move(node));
+  } else throw status_error(0xc000000d);
+  pending_commands.erase(id);
+}
+pace::task<void> pump_commands(uint64_t sid) {
+  auto *context = find_session(sid);
+  if (!context) co_return;
+  std::vector<uint64_t> ids;
+  for (const auto &[id, item] : context->pending_commands) ids.push_back(id);
+  for (auto id : ids) {
+    while (dispatching && socket.is_open()) co_await s.io->sleep_for(1ms);
+    if (!socket.is_open()) break;
+    dispatch_guard guard(dispatching);
+    if (!select_session(sid)) continue;
+    auto found = pending_commands.find(id);
+    if (found == pending_commands.end() || !found->second.announced || found->second.dependency)
+      continue;
+    // Authorization may revoke the whole session and erase this entry.
+    auto item = found->second;
+    uint32_t code = item.failure;
+    bytes body;
+    related_file = item.file;
+    executing_command = id;
+    try {
+      if (code) throw status_error(code);
+      if (item.deadline && async_clock() >= item.deadline) throw status_error(0xc00000b5);
+      body = co_await command(item.request, item.tree_id, code, item.encrypted);
+    } catch (const status_error &e) { code = e.status; }
+      catch (const error &e) {
+        if (get(item.request, 12, 2) == 5 && std::string_view(e.what()) == "cache_break_pending") {
+          auto current = pending_commands.find(id);
+          if (current != pending_commands.end() && !current->second.deadline)
+            current->second.deadline = async_clock() + 10000;
+          executing_command = 0;
+          continue;
+        }
+        code = status(e.what());
+      } catch (const json::exception &) { code = 0xc000000d; }
+    executing_command = 0;
+    if (!pending_commands.contains(id)) continue;
+    pending_commands.at(id).file = related_file;
+    pending_commands.at(id).tree_id = item.tree_id;
+    if (code == 0x103) adopt_waiter(id);
+    else {
+      co_await finish_command(id, code, std::move(body));
+      auto cmd = get(item.request, 12, 2);
+      if (cmd == 2 || cmd == 4 || cmd == 5 || cmd == 6 || cmd == 9 || cmd == 17) {
+        co_await complete_frame_notifications();
+        co_await complete_peer_notifications();
+      }
+    }
+  }
+}
 // All connection state and writes stay on the reactor. The dispatcher and
 // waiter pump share a cooperative gate, including their RPC suspension points.
 struct dispatch_guard {
@@ -50,6 +168,7 @@ pace::task<void> finish_lock(uint64_t async_id, uint32_t code) {
     found->second.completion = code;
     co_return;
   }
+  complete_dependents(async_id, code, pending.fid);
   pending_locks.erase(found);
   if (!socket.is_open())
     co_return;
@@ -108,6 +227,7 @@ pace::task<void> finish_notify(uint64_t async_id, uint32_t code, bytes data = {}
     co_return;
   }
   auto pending = std::move(found->second);
+  complete_dependents(async_id, code, pending.fid);
   pending_notifications.erase(found);
   auto response = sized(64, 64);
   response.replace(0, 4, "\xfeSMB", 4);
@@ -129,7 +249,7 @@ pace::task<void> poll_notification(uint64_t id) {
   // Only the oldest request on a handle can consume its buffered events.
   bool first = true;
   for (const auto &[other, pending] : pending_notifications)
-    if (other < id && pending.fid == found->second.fid) first = false;
+    if (pending.order < found->second.order && pending.fid == found->second.fid) first = false;
   if (!first) co_return;
   uint32_t code = 0;
   bool waiting = false;
@@ -206,6 +326,7 @@ pace::task<void> pump_locks() {
           co_await finish_lock(id, code);
       }
       for (auto sid : session_ids()) co_await pump_notifications(sid);
+      for (auto sid : session_ids()) co_await pump_commands(sid);
     }
   } catch (...) {
     close();

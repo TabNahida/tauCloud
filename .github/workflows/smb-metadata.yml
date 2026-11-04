@@ -20,6 +20,7 @@ on:
       - 'tests/smb_notify_reuse.py'
       - 'tests/smb_notify_peers.py'
       - 'tests/smb_blocking_locks.py'
+      - 'tests/smb_compound_async.py'
       - 'tests/samba-profile.json'
       - 'src/file_smb.inc'
       - 'src/files.cpp'
@@ -165,6 +166,8 @@ jobs:
         run: python tests/smb_attributes_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/metadata.json
       - name: Asynchronous SMB blocking locks and cancellation
         run: python tests/smb_blocking_locks.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.blocking_options }} --output build/acceptance/blocking-locks.json
+      - name: Related asynchronous SMB compounds and dependent cancellation
+        run: python tests/smb_compound_async.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/compound-async.json
       - name: Unmodified Samba asynchronous locks
         if: runner.os == 'Linux'
         run: python tests/samba_torture.py ${{ matrix.test_options }} --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/samba-async.json smb2.lock.async smb2.lock.cancel smb2.lock.cancel-tdis smb2.lock.cancel-logoff

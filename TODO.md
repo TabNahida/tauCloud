@@ -150,9 +150,13 @@ coordination remains open. This foundation does not enable SMB caching or NFS de
 The file-domain cache coordinator now adds acquisition cookies, authenticated
 polling, ACK/flush ordering, monotonic authority/break deadlines and autonomous
 open fencing. Local tests cover SMB/core/NFS conflicts and a real idle file
-worker; its new remote matrix is pending. SMB CREATE still does not grant
-network caching; unsolicited breaks, asynchronous retries and wire acceptance
-remain required.
+worker; [remote GCC and MSVC targeted acceptance](docs/evidence/pre-m8/cache-authority-9b-remote.json) passes, while Clang is still running. The separate Windows backend DAV-after-restore `lease_expired` failure remains unresolved. SMB CREATE still does not grant
+network caching; unsolicited breaks and actual cache-conflict wire acceptance
+remain required. Related asynchronous SMB continuation now retains dependent
+commands, preserves AsyncIds across nested waits, orders inherited FileIds and
+cancels dependent work without side effects. Four dialects and resource bounds
+pass [local client checks](docs/evidence/pre-m8/smb-compound-async-local.json);
+remote acceptance of this transport addition is pending.
 
 The earlier ADR exclusions describe the existing implementation, not permission to exclude features from this expanded goal. Preserve the passing limited-profile evidence while adding independent evidence for the following gates. Optional protocol facilities must be explicitly negotiated/refused according to the standards; refusal alone is not feature implementation.
 

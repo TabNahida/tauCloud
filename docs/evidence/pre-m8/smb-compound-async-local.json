@@ -1,0 +1,131 @@
+{
+  "recorded_at": "2026-11-04T11:41:35.320205+00:00",
+  "base_source": "c5f7036",
+  "status": "passed",
+  "scope": "Related asynchronous SMB transport continuation, not full SMB/NFS or network caching acceptance",
+  "sanitizers": "Linux Clang ASan/UBSan/LSan",
+  "files_sha256": {
+    "src/smb.cpp": "60d6ec1e155c6afc896c14991b5598923f2aa24c17e504cc570768127329a41e",
+    "src/smb_async.inc": "4d7ffe5e7249b1b6b837009a6b27a74360f67209f3b04f62bd9e9e1c0b2ebc02",
+    "src/smb_sessions.inc": "a760c8b333b42f6a0a7008d3153eb2f20ee059f05584cd672212af5efeac5669",
+    "tests/smb_compound_async.py": "f234bbb34bb2c1651d5c916537f297fc002fe85fe58d57d1802a105f06f8ac69",
+    ".github/workflows/smb-metadata.yml": "a158b121a165713cf56c814dda91492e6bff09c8ccca019a5a4f170c9cb497f2"
+  },
+  "reports": {
+    "smb-compound-async": {
+      "sha256": "bcad2d2e3d6b439092c7b56cc71153d16344e7e9b41b755c320b1bb8780411d4",
+      "report": {
+        "status": "passed",
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "checks": [
+          "210: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+          "210: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+          "210: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+          "210: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+          "300: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+          "300: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+          "300: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+          "300: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+          "302: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+          "302: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+          "302: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+          "302: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+          "311: LOCK/WRITE/READ/UNLOCK/CLOSE waits in order, resolves inherited FileIds, keeps ECHO live and grants final credits once",
+          "311: a resumed LOCK can wait again without replacing its announced AsyncId or executing its dependent READ",
+          "311: cancelling the predecessor or a dependent operation propagates failure without writes, CLOSE side effects or ghost locks",
+          "311: deferred CREATE changes the inherited FileId and dependent writes target only the newly opened object",
+          "deferred CHANGE_NOTIFY keeps its AsyncId, honors actual registration FIFO and releases its dependent ECHO only after notification",
+          "deferred TREE_DISCONNECT and LOGOFF complete successfully without cancelling their own response",
+          "128 dependent-command bound rejects excess work and its descendants without side effects; cancellation releases all capacity for reuse",
+          "TREE_DISCONNECT and LOGOFF finish pending dependencies under their owning encryption keys"
+        ],
+        "recorded_at": "2026-11-04T11:40:33.354743+00:00"
+      }
+    },
+    "compound-blocking-locks": {
+      "sha256": "85f23ff09e44d9f4a2e3505e596c8e8c5520a68ad5c45e04c345cc830b2e1373",
+      "report": {
+        "status": "passed",
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "recorded_at": "2026-11-04T11:35:59.935871+00:00",
+        "checks": [
+          "210: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "210: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "210: cross-connection FIFO for conflicts and queued writer fairness",
+          "210: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "300: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "300: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "300: cross-connection FIFO for conflicts and queued writer fairness",
+          "300: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "302: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "302: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "302: cross-connection FIFO for conflicts and queued writer fairness",
+          "302: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "311: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+          "311: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+          "311: cross-connection FIFO for conflicts and queued writer fairness",
+          "311: CLOSE cancels waiting requests and releases held ranges to another connection",
+          "compound LOCK/ECHO and LOCK/CLOSE preserve interim/final ordering and connection progress",
+          "TREE_DISCONNECT cancels pending locks before removing the tree",
+          "session teardown cancels pending locks before discarding signing and encryption keys",
+          "peer disconnect removes a pending waiter before granting the next connection",
+          "holder disconnect releases locks and wakes the surviving client",
+          "32 concurrent CANCEL/unlock races produce one final result and no leaked lock or duplicate response",
+          "16 concurrent CLOSE/unlock races produce one final result and release every acquired range",
+          "bounded pending requests return INSUFFICIENT_RESOURCES and all cancelled capacity is reusable",
+          "credential revocation drains all session locks before its final reply, without transport teardown"
+        ]
+      }
+    },
+    "compound-multisession": {
+      "sha256": "bb47908539ebe4cc6ab65f394a7c942df569ec1db50c318b6020f4417ba3cc4d",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "four dialects multiplex independent signing/encryption, scoped tree/file IDs, shared locks and rename across inactive opens; LOGOFF preserves the other session and its pending watch",
+          "interleaved SMB3.1.1 authentication exchanges retain separate preauthentication transcripts and independently verified encryption keys",
+          "failed new authentication preserves established sessions; valid different-user authentication cannot replace a guessed PreviousSessionId",
+          "same-transport replacement authenticates first, completes old watches under old keys and releases old exclusive opens while another session survives",
+          "cross-transport replacement drains only the matching old session and keeps its transport and unrelated sessions usable",
+          "four simultaneous reciprocal replacement races complete without holding transport gates in a cycle, and both new encrypted sessions remain usable",
+          "abrupt transport loss releases every session and all exclusive opens, including the inactive context",
+          "known-session requests signed or encrypted with a different session key are rejected at the transport boundary",
+          "sixteen-session transport bound rejects excess authentication without damaging peers; LOGOFF and expired abandoned handshakes release capacity"
+        ]
+      }
+    },
+    "compound-notify": {
+      "sha256": "bf5f2c50edc37468b77b5c220c2d5988eb07dadfbc1dc9b2fd189f5535d0b6af",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup",
+          "four dialects complete pending creation before the next write and preserve that write for the next synchronous buffered notification",
+          "per-open first filter/watch-tree settings, FIFO completion and events buffered between requests",
+          "internal reconciliation, recursive watch installation and empty-directory checks preserve access time while real host directory reads remain observable",
+          "native host writes trigger recursive watches while nonrecursive watches ignore descendants",
+          "rapid service-created recursive subtrees retain every ordered directory/file event between requests without requiring a rescan",
+          "recursive file/directory cross-parent moves report REMOVED/ADDED, same-parent renames report OLD/NEW and moved subtrees retain native coverage",
+          "events buffered across service operations remain byte-bounded, overflow without a partial batch and resume from fresh changes",
+          "recursive watches stop observing moved-out subtrees and do not disclose queued outside names",
+          "SIZE filter ignores equal-length writes and reports actual growth",
+          "LAST_WRITE observes new-file writes even when native CREATE and WRITE are drained together",
+          "first per-open zero/short capacity persists, reopening restores capacity; NOTIFY_ENUM_DIR has no partial records; invalid-only filters stay pending and cancel cleanly",
+          "directory/list-access validation and persistent shared security descriptor changes generate SECURITY notifications",
+          "portable DOS attributes, creation-time and EA changes participate in native notification streams",
+          "initial CREATE metadata produces only ADDED; subsequent changes still produce MODIFIED",
+          "recursive descriptor exhaustion stays visibly overflowed across requests and releases all watches on close",
+          "delete-pending directories complete outstanding watches without waiting for last-handle deletion",
+          "TREE_DISCONNECT and LOGOFF finish pending notifications with NOTIFY_CLEANUP before releasing keys",
+          "policy revocation denies the pending poll, invalidates its old handle and permits a fresh exclusive read open without retained watch/sharing authority"
+        ]
+      }
+    }
+  },
+  "remaining": [
+    "Actual cache-blocked CREATE wire tests before enabling cache grants",
+    "SMB unsolicited break and ACK integration",
+    "NFS delegations and recalls",
+    "Cross-platform acceptance of this continuation change"
+  ]
+}

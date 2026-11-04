@@ -1,0 +1,334 @@
+{
+  "recorded_at": "2026-11-04T11:41:35.319810+00:00",
+  "source": "9b32f48460ee3a66b506fda9f0f54d5d96735c69",
+  "status": "partial-remote-acceptance",
+  "scope": "Internal native cache authority; network caching and NFS delegations remain disabled.",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41819913310",
+  "hosts": {
+    "gcc": {
+      "conclusion": "success",
+      "job": 126540451215,
+      "artifact": 13317802165,
+      "artifact_sha256": "dfd070cbaa3a1d8100e0aa49247fa57f3c539749b990d5c432dbfc4ef8a531b2",
+      "reports": {
+        "blocking-locks.json": {
+          "sha256": "49fc8e7daf8b4543172fb5533344523d5b2d03976a1cb8fed75cb72830cd6c0e",
+          "status": "passed",
+          "check_groups": 27
+        },
+        "metadata.json": {
+          "sha256": "86962dee9b9fce3e3d247cacf16c3f2f881e7b3e8f9850e64b88163fc2db70a8",
+          "status": "passed",
+          "check_groups": 9
+        },
+        "allocation.json": {
+          "sha256": "285527f362a3a8b1b45ffbc5d92063866ab797a902aa74ec21b1f4db70d1094e",
+          "status": "passed",
+          "check_groups": 4
+        },
+        "nfs-acl.json": {
+          "sha256": "f2ff14446675f0a470a09759cc8d41dd4916e5a0fae4b8abd5a04b7c3fb2dcdb",
+          "status": "passed",
+          "check_groups": 8
+        },
+        "nfs-attributes.json": {
+          "sha256": "d23a0e9c884d7688792d4f2a629375e41d458108a8f4f3a009e6b438e33b1529",
+          "status": "passed",
+          "check_groups": 7
+        },
+        "nfs-backchannel.json": {
+          "sha256": "3aa61083dd4c5e0b09c6e2e59bceea7a73a0537be1edf2c57703a774e2b91ffc",
+          "status": "passed",
+          "check_groups": 19
+        },
+        "nfs-discovery.json": {
+          "sha256": "9c966f2cddb3be26474dc3d8c6514dc9a2c86081149215b8fcc120e7c1f07930",
+          "status": "passed",
+          "check_groups": 8
+        },
+        "nfs-gss-backchannel.json": {
+          "sha256": "61196ef2a8c3b55f66a770165b516a8477dedb66ccc87bb80c5f507d616de05f",
+          "status": "passed",
+          "check_groups": 8
+        },
+        "nfs-gss.json": {
+          "sha256": "410021845c80c1a840bcc2ccdbc83257354106599477c0c200ba5f81c70c6ee5",
+          "status": "passed",
+          "check_groups": 10
+        },
+        "nfs-gss.krb5.json": {
+          "sha256": "e02f9c40030881255371ba1a73e1494d7255345b1f838c22c229568f46189885",
+          "status": null,
+          "check_groups": 0
+        },
+        "nfs-gss.krb5i.json": {
+          "sha256": "eb0931e60fea5badb5e44e6ed96c75048aa595f4bce4abb6a64740596d646073",
+          "status": null,
+          "check_groups": 0
+        },
+        "nfs-gss.krb5p.json": {
+          "sha256": "268fca3a3ad0a6bc0829e90ff6b3a61ddae6f1e76af37d16dac1b241fd3751de",
+          "status": null,
+          "check_groups": 0
+        },
+        "nfs-mode.json": {
+          "sha256": "c7c393e259ba9e347c28a59e9a8952084f3a4b5733e3c1041571c20a8c803acd",
+          "status": "passed",
+          "check_groups": 7
+        },
+        "nfs-notify-lock.json": {
+          "sha256": "ef6ff7c4987731d477f9884fffb22ddf9edcb36ce0f03bc1eaf87f79119ec4ca",
+          "status": "passed",
+          "check_groups": 9
+        },
+        "nfs-session-negotiation.json": {
+          "sha256": "abe8f29f7914bdddf454f6678979f5d0e8e77ceadc9f9836f41a8ac0ec2ac73e",
+          "status": "passed",
+          "check_groups": 2
+        },
+        "pynfs-backchannel.json": {
+          "sha256": "0cfd6e38ab0c17137e962ce24b279ce712aa594770d5f2be722e768505c1cce4",
+          "status": null,
+          "check_groups": 0
+        },
+        "pynfs-notify-lock.json": {
+          "sha256": "688b820ee5b76c73f17e6ab6fdfdec778f7182895c57fb95fa9bcb8abe78565e",
+          "status": "passed",
+          "check_groups": 1
+        },
+        "samba-acls-restore.json": {
+          "sha256": "12a784d72ee3d7deac6fb3a0c11292eea6d33caa451017eacff60c2429550b30",
+          "status": "passed",
+          "check_groups": 0
+        },
+        "samba-acls.json": {
+          "sha256": "3f05f14f54a65aa3efc2ea55e099bd3f181d93f192b838ea7e87ab53702f1e58",
+          "status": "passed",
+          "check_groups": 0
+        },
+        "samba-async.json": {
+          "sha256": "b2efa5964696eed2ce26b46a1b9dc15a439e457969aefd67ae05f728d4684d41",
+          "status": "passed",
+          "check_groups": 0
+        },
+        "samba-notify.json": {
+          "sha256": "6f66f35607d0929f4573a633a10c1dca98425f4517173f32f2676d0e30831576",
+          "status": "passed",
+          "check_groups": 0
+        },
+        "security.json": {
+          "sha256": "67a379cc4b82505f33241d48b35ef18941b673dbfaa565e65345639bd9703b5f",
+          "status": "passed",
+          "check_groups": 13
+        },
+        "smb-delete-close.json": {
+          "sha256": "fce4fded4382b973256396618069c9001db000ad030782406fde5994dd730ea2",
+          "status": "passed",
+          "check_groups": 4
+        },
+        "smb-gss.json": {
+          "sha256": "fbcd13cc0c4e05fe0bf9d196d5ae1713a6338fe68f31e71c9c72ea0b105d4ae6",
+          "status": "passed",
+          "check_groups": 13
+        },
+        "smb-multisession.json": {
+          "sha256": "bb47908539ebe4cc6ab65f394a7c942df569ec1db50c318b6020f4417ba3cc4d",
+          "status": "passed",
+          "check_groups": 9
+        },
+        "smb-notify-peers.json": {
+          "sha256": "daba8066c3ed428ec3ad0033dbf6286968a2cdcbda3a018dd20bcadd9a866f82",
+          "status": "passed",
+          "check_groups": 3
+        },
+        "smb-notify-reuse.json": {
+          "sha256": "21501cf260a139cd8e87561813bcf62047b5700a5f894a9d097f5928db71bc74",
+          "status": "passed",
+          "check_groups": 1
+        },
+        "smb-notify.json": {
+          "sha256": "bf5f2c50edc37468b77b5c220c2d5988eb07dadfbc1dc9b2fd189f5535d0b6af",
+          "status": "passed",
+          "check_groups": 19
+        },
+        "smb-owner.json": {
+          "sha256": "f93206f6ca8f8cb8e24e30ffa21feaf028af94d99ac1a49105363c45216e4552",
+          "status": "passed",
+          "check_groups": 4
+        },
+        "smb-reauth.json": {
+          "sha256": "389cb23cbbaa06a5196ec84af10a5108ba732ce8af8cfcfb545c838f7e9ca07f",
+          "status": "passed",
+          "check_groups": 6
+        },
+        "smb-paths.json": {
+          "sha256": "2282b88a71afa6e1a3109cd4943c17d1dbcc4d30389f03898935638d9300637c",
+          "status": "passed",
+          "check_groups": 3
+        },
+        "smb-rename-metadata.json": {
+          "sha256": "528d01d10582ceccc57fc9dc73e5c89412546332fe46deb5a2c3f9b1427ea33f",
+          "status": "passed",
+          "check_groups": 7
+        },
+        "smb-rename.json": {
+          "sha256": "ac766d7c13d1d213ae82eb5e95b37288b03ea84ca7b7befe3fc24e11c57dbc8d",
+          "status": "passed",
+          "check_groups": 2
+        },
+        "smb-signing.json": {
+          "sha256": "d7a52c57031f44080baf222bdc3c4bc8c77bfbc71279b86fc3762c50fbcb63f7",
+          "status": "passed",
+          "check_groups": 4
+        },
+        "smb3.json": {
+          "sha256": "cdf8b937bb23a93f9da2fe9157290e266482068fcac03471ceaaee5c8bf029aa",
+          "status": "passed",
+          "check_groups": 23
+        }
+      }
+    },
+    "msvc": {
+      "conclusion": "success",
+      "job": 126540078357,
+      "artifact": 13316308818,
+      "artifact_sha256": "4025e8b3989d07e223b4d84e497fd8e2c3d0bfab3c8de8de1feb95c659f5d898",
+      "reports": {
+        "allocation.json": {
+          "sha256": "21aff4cdf17283c9b78c9c3b349528a6769444446909fdad7b342ff347499b4d",
+          "status": "passed",
+          "check_groups": 4
+        },
+        "blocking-locks.json": {
+          "sha256": "5aef1c4946290cd67d65dba07473cc0f2f30f9aefd597d24c196261c18dd1482",
+          "status": "passed",
+          "check_groups": 25
+        },
+        "metadata.json": {
+          "sha256": "74c5ae47060f0a2d5835475a9949f919d978ab88b4337b8c02e37975a53d3cee",
+          "status": "passed",
+          "check_groups": 9
+        },
+        "nfs-acl.json": {
+          "sha256": "26aba51056739c73be4ab500764fbda2b26392ff8c0648f1778e37ae6546a2f9",
+          "status": "passed",
+          "check_groups": 8
+        },
+        "nfs-attributes.json": {
+          "sha256": "b397bb3f8d3b8d3b4b82366013fc1ac064c1b699fe6cf97ec51edf0f7ce2129e",
+          "status": "passed",
+          "check_groups": 7
+        },
+        "nfs-backchannel.json": {
+          "sha256": "718103c6361b2068fdee3ed7db403f57d34a64903edaeeec7f011419539ff77a",
+          "status": "passed",
+          "check_groups": 19
+        },
+        "nfs-discovery.json": {
+          "sha256": "51e253f5be7bb07fa3b1700b9ed6f1c14ef8ad8cef261652c28484cedcd2f6de",
+          "status": "passed",
+          "check_groups": 8
+        },
+        "nfs-mode.json": {
+          "sha256": "192ccfb16acd7a21a65b2777aa2b96fcd091f5ce9cd6ca11310e6485a6b79f86",
+          "status": "passed",
+          "check_groups": 7
+        },
+        "nfs-notify-lock.json": {
+          "sha256": "9ccbf21ed7bc20a2c1461dd606fa2da483f9ca89c6bea233cc33830a2912e35f",
+          "status": "passed",
+          "check_groups": 9
+        },
+        "nfs-session-negotiation.json": {
+          "sha256": "514b44af62038a5c422f7dee264440c44dcea37adf4465cb2411719b916c4b3b",
+          "status": "passed",
+          "check_groups": 2
+        },
+        "security.json": {
+          "sha256": "b71a4b19b72ebe4b6884966ff79b2409a3a02b0bfe7fa7ad279ca6fbffa0acfd",
+          "status": "passed",
+          "check_groups": 13
+        },
+        "smb-delete-close.json": {
+          "sha256": "9ce4a28447e5471a1f774f1a30d15f5ae2e74bfc1d95e5a421a8d22c65a3b083",
+          "status": "passed",
+          "check_groups": 4
+        },
+        "smb-multisession.json": {
+          "sha256": "fc41a4c543f2e7a3e132411c10ace965967bc2d4eb6b65f1ec2f4341656db8ac",
+          "status": "passed",
+          "check_groups": 9
+        },
+        "smb-notify-peers.json": {
+          "sha256": "d99b68071bf2a570e169496c52c82687a69c5bfb0ba767159fc05d4c09584f7d",
+          "status": "passed",
+          "check_groups": 3
+        },
+        "smb-notify-reuse.json": {
+          "sha256": "828cf9693e7b23a559a75a1a878744a3169821f41df7cb56bfd1fec502e93036",
+          "status": "passed",
+          "check_groups": 1
+        },
+        "smb-notify.json": {
+          "sha256": "86981bf78366dc512256e899164d03fc01d2f95b83c277524c6d5703e43fae25",
+          "status": "passed",
+          "check_groups": 16
+        },
+        "smb-owner.json": {
+          "sha256": "3b81cdfe411224a0ebd4d237a645ffde9883684aa2eeb5903cf59254c1205b24",
+          "status": "passed",
+          "check_groups": 4
+        },
+        "smb-paths.json": {
+          "sha256": "d87d434a6feafc5f152172f61a8a0feee846c0d36cbeb009d97d4731da7c94e4",
+          "status": "passed",
+          "check_groups": 3
+        },
+        "smb-reauth.json": {
+          "sha256": "adafa4be62ff4f6934c5f1badd9fb34c901b668b85e52a868992c5a101eaf4ee",
+          "status": "passed",
+          "check_groups": 6
+        },
+        "smb-rename-metadata.json": {
+          "sha256": "cd0f60d0c89159e87784b444b13a1610eb152877e71a9ff1c30b169f3e3018b6",
+          "status": "passed",
+          "check_groups": 7
+        },
+        "smb-rename.json": {
+          "sha256": "9e6cbdb51e86874c237d1034d0f9cb6c07e460318b03e73816c50b76543c93b7",
+          "status": "passed",
+          "check_groups": 2
+        },
+        "smb-signing.json": {
+          "sha256": "8d5929592861e53e5c80d90890de8f14cb1e3bb915e6f0293e0b60693f7cd920",
+          "status": "passed",
+          "check_groups": 4
+        },
+        "smb3.json": {
+          "sha256": "1d6c9b698d8b2df577409ac8e1bdf2e4543838327262326d225ebf26c448fcaa",
+          "status": "passed",
+          "check_groups": 23
+        },
+        "windows-native-security.json": {
+          "sha256": "164c5b48df358b4b8625a6728e6b172f2abe730ccf518c762e6f1622db4c16db",
+          "status": "passed",
+          "check_groups": 0
+        }
+      }
+    }
+  },
+  "clang": "in_progress",
+  "backend_failure": {
+    "run": "https://github.com/TabNahida/tauCloud/actions/runs/41819913016",
+    "job": 126540076199,
+    "artifact": 13317601470,
+    "artifact_sha256": "10657f63cfb6da7704c9959a3c117cdb3983f102daa1a2a04b700a85a6846aaf",
+    "log_sha256": "385ff0f102530bbceedf06f1e4a4cc97775bb8604486f9ff6f6752d114469ef4",
+    "command": "tests/m3_integration.py",
+    "failure": "GET conditional after backup restore returned HTTP 503 lease_expired instead of 200",
+    "state": "unresolved; no retries hidden or test expectation relaxed",
+    "native_smb": "passed",
+    "native_nfs_v3": "passed",
+    "filezilla": "passed"
+  }
+}

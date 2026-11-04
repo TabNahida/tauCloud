@@ -470,8 +470,22 @@ struct session_state {
     bool announced = false;
     std::optional<uint32_t> completion;
     bytes data;
+    uint64_t order = 0;
   };
   std::map<uint64_t, pending_notify> pending_notifications;
+  struct pending_command {
+    bytes request;
+    uint32_t tree_id;
+    bool encrypted;
+    uint64_t dependency = 0;
+    bytes file;
+    uint32_t failure = 0;
+    bool announced = false;
+    std::optional<uint32_t> completion;
+    bytes body;
+    int64_t deadline = 0;
+  };
+  std::map<uint64_t, pending_command> pending_commands;
   session_state() = default;
   session_state(session_state &&) = default;
   session_state &operator=(session_state &&) = default;
@@ -491,7 +505,7 @@ struct client : session_state, std::enable_shared_from_this<client> {
   negotiation selected;
   bytes negotiate_transcript = bytes(64, '\0');
   std::map<uint64_t, session_state> sessions;
-  uint64_t next_async_id = 1;
+  uint64_t next_async_id = 1, executing_command = 0;
   bool dispatching = false, pump_done = false;
   int64_t last_activity = now();
   client(smb_state &state, pace::tcp::stream tcp) : s(state), socket(std::move(tcp)) {
@@ -511,9 +525,9 @@ struct client : session_state, std::enable_shared_from_this<client> {
     return ids;
   }
   bool has_pending() const {
-    if (!pending_locks.empty() || !pending_notifications.empty()) return true;
+    if (!pending_locks.empty() || !pending_notifications.empty() || !pending_commands.empty()) return true;
     for (const auto &[id, context] : sessions)
-      if (!context.pending_locks.empty() || !context.pending_notifications.empty()) return true;
+      if (!context.pending_locks.empty() || !context.pending_notifications.empty() || !context.pending_commands.empty()) return true;
     return false;
   }
   bool has_notifications() const {
@@ -600,6 +614,9 @@ struct client : session_state, std::enable_shared_from_this<client> {
     // Closing the session's opens completes their watches with cleanup,
     // independently of the authentication error returned by SESSION_SETUP.
     for (auto id : waiting) co_await finish_notify(id, 0x10b);
+    waiting.clear();
+    for (const auto &[id, pending] : pending_commands) waiting.push_back(id);
+    for (auto id : waiting) co_await finish_command(id, 0xc000006d);
   }
   pace::task<json> operation(opened &h, std::string op, bool writing, json body = json::object()) {
     check(!h.pipe, 0xc00000bb);
@@ -635,6 +652,10 @@ struct client : session_state, std::enable_shared_from_this<client> {
     }
   }
   pace::task<void> cleanup(uint32_t tid = 0) {
+    std::vector<uint64_t> waiting;
+    for (const auto &[id, pending] : pending_commands)
+      if (id != executing_command && (!tid || pending.tree_id == tid)) waiting.push_back(id);
+    for (auto id : waiting) co_await finish_command(id, 0xc000007e);
     std::vector<bytes> ids;
     for (auto &[id, h] : files)
       if (!tid || tid == h.tree_id)
@@ -1232,7 +1253,8 @@ struct client : session_state, std::enable_shared_from_this<client> {
         co_return notify_body(data);
       }
       pending_notifications.emplace(next_async_id++, pending_notify{fid_for(h), get(p, 24, 8),
-          static_cast<uint32_t>(limit), encrypted, false, {}, {}});
+          static_cast<uint32_t>(limit), encrypted, false, {}, {}, 0});
+      pending_notifications.at(next_async_id - 1).order = next_async_id - 1;
       code = 0x103;
       co_return sized(9, 9);
     }
@@ -1636,11 +1658,17 @@ struct client : session_state, std::enable_shared_from_this<client> {
                 break;
               }
             if (target) co_await finish_notify(target, 0xc0000120);
+            target = 0;
+            for (const auto &[id, pending] : pending_commands)
+              if ((get(p, 16, 4) & 2) ? id == get(p, 32, 8) :
+                  get(pending.request, 24, 8) == get(p, 24, 8)) { target = id; break; }
+            if (target) co_await finish_command(target, 0xc0000120);
           }
           continue; // CANCEL consumes no credit and never receives its own reply.
         }
         for (auto sid : session_ids()) find_session(sid)->related_file.clear();
         uint32_t inherited_tree = 0, inherited_failure = 0;
+        uint64_t inherited_async = 0;
         bytes output;
         for (size_t i = 0; i < requests.size(); ++i) {
           auto &p = requests[i];
@@ -1653,6 +1681,7 @@ struct client : session_state, std::enable_shared_from_this<client> {
           else {
             related_file.clear();
             inherited_failure = 0;
+            inherited_async = 0;
           }
           bytes body;
           bool connection_echo = cmd == 13 && request_sessions[i] == 0;
@@ -1666,12 +1695,21 @@ struct client : session_state, std::enable_shared_from_this<client> {
             if (unknown_session)
               throw status_error(0xc0000203);
             check(cmd <= 18);
-            body = co_await command(p, tid, code, encrypted);
+            if (related && inherited_async) {
+              // Authentication has a separate preauth/reauth transcript flow;
+              // do not move it through the file-operation continuation queue.
+              check(cmd != 1, 0xc00000bb);
+              defer_command(p, tid, encrypted, inherited_async, related_file);
+              code = 0x103;
+            } else body = co_await command(p, tid, code, encrypted);
           } catch (const status_error &e) {
             code = e.status;
             log("smb", "command_" + std::to_string(cmd), std::to_string(code));
           } catch (const error &e) {
-            code = status(e.what());
+            if (cmd == 5 && std::string_view(e.what()) == "cache_break_pending") {
+              try { defer_command(p, tid, encrypted, 0, {}); code = 0x103; }
+              catch (const status_error &limit) { code = limit.status; }
+            } else code = status(e.what());
             log("smb", "command_" + std::to_string(cmd), e.what());
           } catch (const json::exception &) {
             code = 0xc000000d;
@@ -1753,8 +1791,10 @@ struct client : session_state, std::enable_shared_from_this<client> {
             negotiate_transcript = transcript;
           output += response;
           inherited_tree = tid;
+          auto previous_async = inherited_async;
+          inherited_async = code == 0x103 ? next_async_id - 1 : 0;
           if (code == 0xc0000203 || code == 0xc00000c9) inherited_failure = 0xc000000d;
-          else if (cmd == 5 && code) inherited_failure = code;
+          else if ((cmd == 5 || previous_async) && code && code != 0x103) inherited_failure = code;
         }
         if (!socket.is_open())
           break;

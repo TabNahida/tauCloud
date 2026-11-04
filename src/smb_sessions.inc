@@ -69,6 +69,13 @@ pace::task<void> complete_frame_notifications() {
     }
     for (auto [id, code] : completed)
       co_await finish_notify(id, code, pending_notifications.at(id).data);
+    completed.clear();
+    for (auto &[id, pending] : pending_commands) {
+      pending.announced = true;
+      if (pending.completion) completed.emplace_back(id, *pending.completion);
+    }
+    for (auto [id, code] : completed)
+      co_await finish_command(id, code, pending_commands.at(id).body);
     std::vector<uint64_t> ready;
     for (const auto &[id, pending] : pending_notifications) ready.push_back(id);
     for (auto id : ready) {
