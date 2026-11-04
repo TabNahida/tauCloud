@@ -1,10 +1,20 @@
 # NFS delegation implementation
 
-Full delegation support remains an open compatibility requirement. The current
-wire implementation handles negotiation and refusal; it does not grant
-read/write delegations, send CB_RECALL, or establish delegation recovery state.
-The file domain now has a separately tested native exclusion/lifetime primitive
-that will back those grants. Its private IPC availability is not wire support.
+Full delegation support remains an open compatibility requirement. The protocol
+engine now implements READ delegation state, CB_RECALL, return and revocation,
+and has component tests using an injected native file-domain provider. The
+production file authority still declines wire handout: it cannot yet protect
+every host metadata/namespace change or retain guards across worker death.
+There is no configuration switch that bypasses this production gate. Component
+passes below are not end-to-end delegation or complete RFC conformance.
+
+Linux [F_SETLEASE](https://man7.org/linux/man-pages/man2/F_SETLEASE.2const.html)
+documents open/truncate exclusion. The newer
+[F_SETDELEG](https://man7.org/linux/man-pages/man2/F_GETDELEG.2const.html), introduced
+in Linux 6.19, also describes namespace and directory delegation support. It is
+a candidate for the native provider, not an already validated replacement.
+The development kernel is 6.18.40.1; newer-kernel Actions/VM acceptance, metadata
+coverage and surviving-owner recovery still need implementation and evidence.
 
 OPEN preserves the client's delegation preference independently of ordinary
 READ/WRITE access. A request without new flags retains the legacy NONE reply.
@@ -45,15 +55,15 @@ now verifies the explicit refusal. Both full logs and every failure remain in
 
 ## Required before granting a delegation
 
-- Connect the native cache coordinator below to protocol OPEN/lock state and
-  client lease renewal, including other NFS clients' existing writers/locks.
-  Conflict detection must precede exposure of changed data.
-- Give delegation state its own client/file/principal identity and lifecycle,
-  including DELEGRETURN, stateid use and validation, CLOSE-independent lifetime,
-  TEST_STATEID/FREE_STATEID revocation, and durable reclaim evidence.
-- Queue authenticated CB_RECALL using the existing bound backchannel and slot
-  replay machinery. A callback ACK confirms receipt; it does not release the
-  delegation. Only return or verified revocation permits conflicting access.
+- Provide native protection for host metadata/namespace operations as well as
+  data opens. Linux F_SETLEASE alone is insufficient for the former. The
+  protocol OPEN/lock checks and file-domain conflicts are now connected, but
+  that does not prove coherence for arbitrary host mutations.
+- Complete durable delegation reclaim, including server/client restart and
+  file-domain failure. Recorded delegation ownership alone is not recovery.
+- Validate authenticated CB_RECALL against independent Kerberos/SSV clients,
+  and complete named CLAIM_DELEGATE_CUR namespace handling. The component
+  suite currently covers AUTH_NONE callbacks and CLAIM_DELEG_CUR_FH.
 - Preserve exclusion through the required recall/revocation interval. The new
   configurable lease reconciles the advertised duration with the native bound;
   default settings still decline a native guard on a host with a 45-second
@@ -110,7 +120,40 @@ renewal, session/state expiry and recovery after reducing the lease. Both are
 mandatory in the GCC/Clang sanitizer/MSVC Actions matrix.
 
 The guard still lives in the file worker. It does not survive that worker's
-death; no crash-safe native guard broker or durable delegation reclaim record
-exists yet. This is why the primitive is not wired into positive OPEN/WANT
-responses. Positive grants, callback delivery, protocol revocation stateids and
+death. Durable protocol ownership records are now written, but reclaim and a
+surviving native guard owner do not exist yet. This is why the production file
+authority refuses `wire:true` acquisition. Actual client handout and
 crash/recovery coherence remain required rather than being counted as passed.
+
+## Protocol state and recall components
+
+The protocol uses a separate delegation stateid bound to client, filehandle and
+principal. OPEN and WANT_DELEGATION can consume a provider-certified READ
+guard; no new guard is published if a writer/deny-read open or byte lock exists.
+READ delegation state permits READ, not WRITE. A deny-all delegation ACE keeps
+per-user ACCESS checks necessary. Existing READ-to-WRITE upgrade requests get
+NOT_SUPP_UPGRADE. CLOSE and transport loss do not discard the delegation.
+
+Conflicting OPEN/lock requests recall and return DELAY. CB_RECALL uses the
+existing authenticated callback transport and exact slot retry machinery.
+Replies are checked against the actual queued operation, so a CB_NOTIFY_LOCK
+reply cannot acknowledge a CB_RECALL. A successful callback only confirms
+receipt. A definitive DELAY retries on a new callback sequence; malformed
+replies preserve the old sequence until transport loss is confirmed.
+
+DELEGRETURN releases the corresponding native cookie. A fixed recall timeout
+produces DELEG_REVOKED even when SEQUENCE/callbacks keep renewing the ordinary
+client lease. SEQUENCE advertises RECALLABLE_STATE_REVOKED until FREE_STATEID
+acknowledges the marker; TEST_STATEID exposes it. Compatible ordinary OPEN
+state remains valid. Renewal rechecks current identity scope, and policy loss
+recalls using the original signed cleanup capability rather than dropping the
+guard. Authenticated cleanup remains possible when ordinary access is denied.
+
+`tests/nfs_delegation_protocol.cpp` first verifies that the real production
+provider declines handout without creating a guard. Only then does its
+test-only injected provider connect the actual native primitive to real RPC
+messages. It checks exact OPEN/WANT replay, state isolation, read-only access,
+CLOSE/disconnect lifetime, callback error/retry/return, revocation flags and
+policy cleanup. The fixture explicitly does not simulate crash-safe exclusion
+or claim successful delegation recovery. Actions runs this component suite on
+GCC, Clang sanitizers and MSVC alongside the unchanged full pynfs diagnostic.

@@ -227,6 +227,7 @@ void callback_reply(uint32_t xid, reader &r) {
   }
   bool valid = false;
   uint32_t sequence_error = 0;
+  uint32_t operation_status = 0;
   std::string clear;
   try {
     if (probe.deadline > now() && r.data.size() <= s.callback_response_limit && r.u32() == 0) {
@@ -274,10 +275,12 @@ void callback_reply(uint32_t xid, reader &r) {
           // allocation or concurrency increase is needed to honor either value.
           r.u32(); // csr_highest_slotid
           r.u32(); // csr_target_highest_slotid
-          // CB_NOTIFY_LOCK is an optional hint. Even NOTSUPP or an uncached
-          // replay result consumes the sequence; no lock authority is granted.
           if (notification) {
-            if (r.u32() != 13 || r.u32() != status) throw xdr_error();
+            reader sent(s.callback_extra);
+            auto operation = sent.u32();
+            if ((operation != 13 && operation != 4) || r.u32() != operation || r.u32() != status)
+              throw xdr_error();
+            operation_status = status;
           } else if (status != 0) throw xdr_error();
         }
       }
@@ -319,11 +322,13 @@ void callback_reply(uint32_t xid, reader &r) {
       s.callback_session_seen = true;
       ++s.callback_sequence; // Unsigned wraparound is part of the protocol.
       s.callback_unresolved = false;
+      delegation_callback_completed(s.callback_extra, operation_status);
       s.callback_extra.clear();
       s.callback_references.clear();
       if (current_config) s.callback_up.insert(connection);
       s.expires = now() + int64_t(cfg.nfs_lease_seconds) * 1000;
       client_ids.at(s.client).expires = s.expires;
+      renew_delegations(s.client);
     }
   }
   sequence_callback(probe.session);

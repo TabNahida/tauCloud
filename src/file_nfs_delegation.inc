@@ -72,6 +72,12 @@ json nfs_delegation_dispatch(const json &body, const call_context &ctx) {
   };
   if (op == "acquire") {
     auto interval = remaining();
+    // F_SETLEASE does not interpose every host metadata/namespace mutation;
+    // this worker also cannot retain its native guard after process death.
+    // The wire coordinator must not publish state until the file authority
+    // can guarantee those properties. Direct component tests exercise the
+    // primitive separately; no configuration switch bypasses this gate.
+    if (body.value("wire", false)) return {{"granted", false}};
     auto &s = attach(g, ctx);
     nfs_init();
     auto handle = body.at("handle").get<std::string>();

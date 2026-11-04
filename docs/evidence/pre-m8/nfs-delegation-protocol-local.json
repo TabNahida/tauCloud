@@ -1,0 +1,129 @@
+{
+  "recorded_at": "2026-11-04T19:47:55.972020+00:00",
+  "base_source": "5303323f10b29a439bb447b49f710f4c16a5d9bd",
+  "status": "components-passed-production-delegation-handout-gated",
+  "source_sha256": {
+    "src/nfs_delegations.inc": "eff4af34e539794cbba80728c61069c7175d17eb81999987ae112718a4fa499c",
+    "src/nfs_v4.inc": "5718a6de7c81fb3d8533647f5ab79e4268fd32a559d0c617d2ea6fb1788f187a",
+    "src/nfs_backchannel.inc": "e9425a2929ef72e349c23645a24ed4bbfc9fd11d364228d3c32ce47abe0e2b15",
+    "src/nfs_protocol.cpp": "ecd00e351ecfaca46c2e599c5761436975b1b46b8d863bc54df34f439f86d51a",
+    "src/file_nfs_delegation.inc": "cc3c04a9067c6407c1cb2a3686fe74bb9d7b05fcf7da8fceb0fc7f6e49af3cac",
+    "tests/nfs_delegation_protocol.cpp": "a02cb45ed303bfca8147803d4a9d532649eb332b27d9f9a04d6a3d00acb4206a",
+    "tests/nfs_discovery_integration.py": "186141b37d898c17c3b94e8b0f048095e7a2b6ff723b6447f3e2817c3c99a992",
+    "tests/nfs_lease_lifetime.py": "8c8ce5f430005ad0746c77cc05cdcab0122d5ff59c035cb887d4531cb854d86f",
+    ".github/workflows/smb-metadata.yml": "34aa9d9c16f287833902223b4d1939963af866b9190dfaaa5680f0fde2dbc1bc",
+    "xmake.lua": "b2932cb9902e0e9a6ad4195602cbe38f7fcb95340b646ef16de086ea275f96b9"
+  },
+  "component": {
+    "checks": 641,
+    "status": "passed",
+    "provider": "Test-only injection connects actual file_store native guards to in-process RPC/XDR dispatch; production wire:true acquisition is first verified to decline.",
+    "log": "PASS production file authority declines wire handout without creating a hidden native guard\n{\"code\":\"10037\",\"event\":\"operation_45\",\"role\":\"nfs\",\"time\":1793821449218}\n{\"code\":\"10038\",\"event\":\"operation_38\",\"role\":\"nfs\",\"time\":1793821449221}\n{\"code\":\"10025\",\"event\":\"operation_8\",\"role\":\"nfs\",\"time\":1793821449225}\n{\"code\":\"10025\",\"event\":\"operation_8\",\"role\":\"nfs\",\"time\":1793821449229}\n{\"code\":\"10025\",\"event\":\"operation_8\",\"role\":\"nfs\",\"time\":1793821449232}\n{\"code\":\"10025\",\"event\":\"operation_8\",\"role\":\"nfs\",\"time\":1793821449275}\nPASS distinct delegation state, CLAIM_DELEG_CUR_FH, CLOSE/disconnect independence and client/principal/file/access checks\n{\"code\":\"10008\",\"event\":\"operation_18\",\"role\":\"nfs\",\"time\":1793821449293}\n{\"code\":\"10008\",\"event\":\"operation_18\",\"role\":\"nfs\",\"time\":1793821449602}\nPASS WANT replay, typed CB_RECALL, definitive DELAY retry and acknowledgment without premature release\n{\"code\":\"10008\",\"event\":\"operation_18\",\"role\":\"nfs\",\"time\":1793821449641}\nPASS wrong callback operation preserves the exact slot until confirmed disconnect and replays on a replacement backchannel\n{\"code\":\"10008\",\"event\":\"operation_18\",\"role\":\"nfs\",\"time\":1793821449670}\n{\"code\":\"10087\",\"event\":\"operation_25\",\"role\":\"nfs\",\"time\":1793821455212}\nPASS recall deadline survives continued renewals; TEST_STATEID/FREE_STATEID acknowledge revocation while OPEN remains valid\nPASS authority loss recalls without dropping native protection and still permits authenticated return\n{\"code\":\"10074\",\"event\":\"operation_57\",\"role\":\"nfs\",\"time\":1793821455257}\n{\"code\":\"10017\",\"event\":\"operation_42\",\"role\":\"nfs\",\"time\":1793821455258}\nPASS session destruction retains client-owned delegation; foreign owner replacement and premature client destruction are refused\nPASS 641 delegation protocol/native component checks; production handout remains gated\n"
+  },
+  "core": {
+    "checks": 1549,
+    "status": "passed"
+  },
+  "independent": {
+    "backchannel": {
+      "sha256": "51edb28636374d7de2b1160cfabcd1ff1064c48d818a6da7b9c2eafa389d8171",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "CREATE_SESSION binds a bidirectional transport; CB_NULL uses the requested program/version and AUTH_NONE while forechannel RPC stays usable",
+          "probe replies are bound to their exact TCP connection and XID; cross-connection, duplicate and unknown replies cannot change path state",
+          "BACKCHANNEL_CTL changes program and invalidates old probes; malformed matched replies keep path down and idempotent rebinding reprobes it",
+          "cleared callback credentials and destroyed/recreated sessions cannot be validated by a stale probe response",
+          "BIND_CONN_TO_SESSION supports BACK and BACK_OR_BOTH on new transports, rejects invalid directions and changes to existing channel roles",
+          "AUTH_SYS CB_NULL carries the offered timestamp, machine name, UID/GID and supplementary groups exactly",
+          "five-second probe timeout ignores late success; rebind recovers the path without recreating the session",
+          "losing the only callback transport sets CB_PATH_DOWN on a surviving forechannel connection",
+          "CB_NULL success alone does not validate the sequenced backchannel; CB_SEQUENCE success on the wrong transport is ignored",
+          "truncated/trailing XDR and mismatched status/tag/count/op/session/sequence/slot close the transport before exact retry; only a valid success advances the slot",
+          "successful CB_SEQUENCE advances exactly once; BACKCHANNEL_CTL retains the session sequence and ignores old duplicate replies",
+          "BIND and callback program replacement never retry an outstanding CB_COMPOUND on a live transport; its original reply releases the slot without validating the new program",
+          "completion of a callback issued before credential removal advances its slot but cannot resurrect the disabled backchannel",
+          "CB_COMPOUND timeout closes the original transport before retry; stale RPC replies on the replacement cannot complete the unresolved slot",
+          "one callback slot serializes multiple bound paths; transport loss retries the unresolved request on another bound connection",
+          "loss of the only backchannel with an unanswered CB_COMPOUND reports CB_PATH_DOWN_SESSION; binding a replacement clears that flag and preserves the pending sequence",
+          "client-advertised slot growth beyond CREATE_SESSION and shrink back to zero are accepted without allocation or increasing callback concurrency",
+          "destroying and recreating a session starts a distinct callback slot at sequence one; old CB_COMPOUND success cannot validate it",
+          "UINT32_MAX offered callback slots require only slot zero; AUTH_SYS credentials must fit the negotiated complete CB_COMPOUND request size"
+        ],
+        "sanitizers": true
+      }
+    },
+    "notify": {
+      "sha256": "027c953efcf1d6f60c5ceaa6ae1e82180cc9cac1632831ab3945c6f15a13bb29",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "OPEN advertises MAY_NOTIFY_LOCK; READW conflict release delivers exact handle/owner/referring request; the hint neither grants nor reserves the lock",
+          "nonblocking LOCK denial does not enroll a waiter and cancels a previous blocking request for the same owner/file",
+          "closing the waiting OPEN removes its unsent notification without granting lock state",
+          "fresh write-policy authority is required before dispatch; revocation drops the waiter and restoring rights does not resurrect it",
+          "inconsistent operation status and lost notification reply cause disconnect then exact two-operation replay; RETRY_UNCACHED_REP consumes the slot without granting a lock",
+          "multiple waiting owners share one bounded callback slot and no second notification is sent before the first completes",
+          "client NOTSUPP completes the optional callback; foreground polling and explicit lock acquisition remain usable",
+          "two-operation callbacks respect negotiated operation and full RPC size limits; constrained clients can still poll for locks",
+          "expired client and OPEN state remove the queued hint; releasing the competing lock never notifies or revives the expired session"
+        ],
+        "sanitizers": true
+      }
+    },
+    "discovery": {
+      "sha256": "51ca32e5793710197ee4edccd328bffae5537efa8f8f0815f5d13d4363efe09b",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "EXPORT and DUMP filter root-squashed/unmapped principals; duplicate MNT is idempotent",
+          "mount records survive reconnect; UMNT/UMNTALL affect only caller and preserve NFS filehandles",
+          "rpcbind DUMP/GETVERSADDR advertise implemented TCP services plus UDP NSM; older NLM versions remain absent",
+          "recognized unsupported file types return per-operation errors after successful SEQUENCE/PUTFH",
+          "BACKCHANNEL_CTL updates bounded callback configuration; unknown GSS, SP4_NONE SET_SSV and obsolete v4.0 operations return defined per-operation errors",
+          "optional pNFS/delegation/attribute operations are decoded and return NOTSUPP with their own operation number, not OP_ILLEGAL",
+          "WANT_DELEGATION with no explicit delegation preference returns INVAL and stops the compound",
+          "AUTH_NONE negotiates through a separately scoped anonymous identity; no file access or AUTH_SYS reply reuse; anonymous policy revocation invalidates security replies",
+          "export revocation immediately hides discovery and denies subsequent MNT"
+        ]
+      }
+    },
+    "negotiation": {
+      "sha256": "c0afb38fd7b15a17c057b40548fe8564e04ec978388fcd5bcf63fec6f684086f",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "all 72 OPEN access/preference/hint combinations encode exact NONE/NONE_EXT reasons without gaining data rights or promising callbacks",
+          "invalid OPEN preferences/access bits stop before CREATE and do not mutate the namespace",
+          "CLAIM_FH honors cancellation while upgrading ordinary OPEN rights; exact slot replay does not advance the state twice",
+          "standalone WANT_DELEGATION ignores data-access bits, returns extended reasons, supports idempotent cancellation and preserves the current filehandle",
+          "standalone validation distinguishes invalid preference, missing handle, directory refusal, unsupported previous-client recovery and grace/reclaim errors",
+          "WANT refuses unmapped callers, reauthorizes cached replies after export revocation and creates no hidden OPEN/client-busy state",
+          "real service restart preserves ordinary OPEN reclaim while rejecting invented delegation recovery during grace and after RECLAIM_COMPLETE"
+        ],
+        "recorded_at": "2026-11-04T19:40:02.721245+00:00"
+      }
+    },
+    "lease": {
+      "sha256": "29b56167d0f39b30b09870705e0d16bae191d9d3cf2fce68ef3d6ebcebbfabad",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "default lease is 60 seconds; configured five-second lease is advertised and SEQUENCE renews OPEN beyond its initial expiry",
+          "idle session and OPEN expire at the advertised lease; another client opens the file while the expired stateid remains invalid",
+          "reducing the lease preserves the old reclaim window across repeated restarts, then converges to the configured duration after grace"
+        ],
+        "recorded_at": "2026-11-04T19:44:21.144798+00:00"
+      }
+    }
+  },
+  "limits": [
+    "No production delegation handout: native provider must cover host metadata/namespace changes and worker death before it can certify wire safety.",
+    "No end-to-end delegation recovery, WRITE delegations, CB_GETATTR or availability/push callbacks yet.",
+    "Named CLAIM_DELEGATE_CUR and authenticated Kerberos/SSV CB_RECALL need further implementation/acceptance; component coverage uses CLAIM_DELEG_CUR_FH and AUTH_NONE callbacks.",
+    "Durable delegation ownership records are not proof of reclaim.",
+    "The full upstream delegation gate remains open; no failed upstream case was reclassified as passing.",
+    "New component suite and SQLite cleanup repair still require remote MSVC/GCC/Clang acceptance."
+  ],
+  "validation_order": "Shared backchannel/CB_NOTIFY_LOCK regression ran before the final EXCHANGE_ID guard for detached delegations. The final component suite exercises that additional ownership guard and final upgrade/replay behavior."
+}

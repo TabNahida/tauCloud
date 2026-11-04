@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Advertised NFS lease, SEQUENCE renewal, expiry and lease-change recovery."""
 import argparse
+from contextlib import closing
 import datetime
 import json
 from pathlib import Path
@@ -80,11 +81,11 @@ def main():
         restart(5)
         # Read persisted state without changing it. A second restart must not
         # lose the old advertised lease while its reclaim records remain.
-        with sqlite3.connect(f.state/'nfs.db') as db:
+        with closing(sqlite3.connect(f.state/'nfs.db')) as db:
             assert db.execute('SELECT seconds FROM lease_history WHERE id=1').fetchone() == (9,)
         restart(5)
         started = time.monotonic()
-        with sqlite3.connect(f.state/'nfs.db') as db:
+        with closing(sqlite3.connect(f.state/'nfs.db')) as db:
             assert db.execute('SELECT seconds FROM lease_history WHERE id=1').fetchone() == (9,)
         contender = client()
         assert lease(contender, root) == 5
@@ -101,7 +102,7 @@ def main():
         r = call(contender, opening(contender, root, b'after-grace'))
         call(contender, [op.putfh(r.resarray[3].opgetfh.resok4.object),
                          op.close(0, r.resarray[2].opopen.resok4.stateid)])
-        with sqlite3.connect(f.state/'nfs.db') as db:
+        with closing(sqlite3.connect(f.state/'nfs.db')) as db:
             assert db.execute('SELECT seconds FROM lease_history WHERE id=1').fetchone() == (5,)
         passed('reducing the lease preserves the old reclaim window across repeated restarts, then converges to the configured duration after grace')
         report['status'] = 'passed'

@@ -69,6 +69,15 @@ struct lock_waiter {
   lock_range range;
   std::string references;
 };
+struct delegation_state {
+  uint64_t client;
+  std::string fh, object, principal, cookie, worker, recovery;
+  json credential, grant;
+  uint32_t revoked = 0;
+  bool recalling = false, callback_done = false;
+  int64_t retry_after = 0;
+};
+std::map<std::string, delegation_state> delegations;
 std::map<uint64_t, client_id> client_ids;
 std::map<std::string, session> sessions;
 std::map<std::string, open_state> opens;
@@ -81,6 +90,7 @@ std::map<std::string, std::string> retained_sets;
 void reap_retained() {
   std::set<std::string> live;
   for (const auto &[id, o] : opens) live.insert(o.fh);
+  for (const auto &[id, d] : delegations) if (!d.revoked) live.insert(d.fh);
   for (const auto &[id, r] : reclaim)
     if (r.contains("handle")) live.insert(r.at("handle"));
   for (size_t i = 0; i < file_roles().size(); ++i) {
@@ -133,6 +143,7 @@ void remove_recovery(const std::string &id) {
   q.row();
 }
 void retire_client(uint64_t client) {
+  retire_delegations(client);
   for (auto it = byte_locks.begin(); it != byte_locks.end();)
     if (it->second.client == client) {
       persist_locks(it->second, {}); it = byte_locks.erase(it);
@@ -147,6 +158,7 @@ void retire_client(uint64_t client) {
 void expire() {
   expire_callback_probes();
   nlm_expire();
+  expire_delegations();
   if (grace_end && now() >= grace_end) {
     for (auto &[id, b] : reclaim)
       remove_recovery(id);
@@ -275,7 +287,7 @@ void no_delegation4(writer &body, uint32_t access, bool directory = false) {
   if (!(access & 0x3ff00u)) { body.u32(0); return; }
   auto want = access & 0xff00u;
   // No cache authority or callback promise is created by a refusal. File
-  // delegation grants/CB_RECALL still need a native-backed coordinator.
+  // The file authority must certify wire-safe native exclusion before handout.
   auto why = want == 0x400u ? 0u : want == 0x500u ? 7u : directory ? 8u : 2u;
   body.u32(3).u32(why); // OPEN_DELEGATE_NONE_EXT / why_no_delegation4.
   if (why == 2) body.boolean(false); // No native cache authority / future signal promise.
@@ -675,7 +687,7 @@ json parse4(reader &r) {
     r.u64();
     break;
   case 8:
-    r.fixed(16);
+    a["state"] = encode_bytes(r.fixed(16));
     break;
   case 19:
     r.boolean();
@@ -818,6 +830,10 @@ json parse4(reader &r) {
       a["name"] = r.opaque(128 * 1024);
     else if (claim == 1)
       a["delegation"] = r.u32();
+    else if (claim == 2 || claim == 5) {
+      a["delegation_state"] = encode_bytes(r.fixed(16));
+      if (claim == 2) a["name"] = r.opaque(128 * 1024);
+    }
     else
       check(claim == 4, 10004);
     break;
@@ -931,6 +947,7 @@ open_state &state4(const std::string &id, const std::string &sid, const std::str
   return it->second;
 }
 #include "nfs_locks.inc"
+#include "nfs_delegations.inc"
 void change4(writer &w, uint64_t before, uint64_t after) {
   // External host mutations cannot be serialized with the server's operation.
   w.boolean(false).u64(before).u64(after);
@@ -1060,6 +1077,7 @@ std::string v4(const identity &who, reader &r) {
           } else if (c.principal == who.key || ssv_owner) replaces = existing;
           else {
             for (const auto &[key, o] : opens) check(o.client != existing, 10017);
+            for (const auto &[key, d] : delegations) check(d.client != existing, 10017);
             for (const auto &[key, s] : sessions) check(s.client != existing, 10017);
             retire_client(existing);
           }
@@ -1211,6 +1229,7 @@ std::string v4(const identity &who, reader &r) {
           sequence_callback(sid);
           s.expires = now() + int64_t(cfg.nfs_lease_seconds) * 1000;
           client_ids.at(s.client).expires = s.expires;
+          renew_delegations(s.client);
           return sl.reply;
         }
         check(seq == sl.seq + 1 && !sl.pending, 10063);
@@ -1225,13 +1244,14 @@ std::string v4(const identity &who, reader &r) {
         recording_authority = &sl.authority;
         s.expires = now() + int64_t(cfg.nfs_lease_seconds) * 1000;
         client_ids.at(s.client).expires = s.expires;
+        renew_delegations(s.client);
         body.fixed(decode_bytes(sid))
             .u32(seq)
             .u32(n)
             .u32(uint32_t(s.slots.size() - 1))
             .u32(uint32_t(s.slots.size() - 1))
             .u32((callback_path_up(s.client) ? 0 : 1) | callback_gss_flags(s) |
-                 (s.callback_fault ? 0x400 : 0) |
+                 (s.callback_fault ? 0x400 : 0) | (delegation_revoked(s.client) ? 0x40 : 0) |
                  (s.callback_unresolved && s.back_connections.empty() ? 0x200 : 0));
         sequence_args = writer().fixed(decode_bytes(sid)).u32(seq).u32(n)
             .u32(a.at("highest")).boolean(a.at("cache")).data;
@@ -1278,6 +1298,7 @@ std::string v4(const identity &who, reader &r) {
           check(s.client != id, 10074);
         for (const auto &[n, o] : opens)
           check(o.client != id, 10074);
+        for (const auto &[n, d] : delegations) check(d.client != id, 10074);
         client_ids.erase(i);
       } else {
         check(!sid.empty(), 10071);
@@ -1315,6 +1336,12 @@ std::string v4(const identity &who, reader &r) {
               (following == 18 && ops[next].value("claim", 0u) == 0);
           if (handle != pseudo) {
             bool cleanup_handle = false;
+            if (following == 8 && ops[next].contains("state")) {
+              try {
+                delegation_key(ops[next].at("state"), sid, who, handle, true, 8);
+                cleanup_handle = true;
+              } catch (const failure &) {}
+            }
             if (next < ops.size() && ops[next].contains("state") && machine_cleanup(sid, who, following)) {
               // Permit PUTFH for releasing this client's known state even if
               // the user's mapping/ticket is gone. Never use this for data I/O.
@@ -1463,7 +1490,8 @@ std::string v4(const identity &who, reader &r) {
             check(false, 10034); // No persisted delegation was granted to reclaim.
           }
           check(client.reclaim_complete && !grace_end, 10013);
-          no_delegation4(body, want, m.at("directory"));
+          if (!delegation4(body, who, sid, current, m, want))
+            no_delegation4(body, want, m.at("directory"));
         } else if (op == 18) {
           auto access = a.at("access").get<uint32_t>(), deny = a.at("deny").get<uint32_t>();
           delegation_want(access);
@@ -1492,8 +1520,9 @@ std::string v4(const identity &who, reader &r) {
           auto target = current;
           bool created = false;
           std::vector<uint32_t> attrset;
-          uint64_t parent_before = claim == 0 ? meta4(who, current).at("change").get<uint64_t>() : 0;
-          if (claim == 0) {
+          bool named = claim == 0 || claim == 2;
+          uint64_t parent_before = named ? meta4(who, current).at("change").get<uint64_t>() : 0;
+          if (named) {
             try {
               target = file(who, current, "lookup", {{"name", a.at("name")}}).at("handle");
               check(a.at("create") == 0 || a.at("mode") != 1, 17);
@@ -1515,10 +1544,15 @@ std::string v4(const identity &who, reader &r) {
               target = result.at("handle"); created = result.value("created", false);
             }
           }
-          uint64_t parent_after = claim == 0 ? meta4(who, current).at("change").get<uint64_t>() : 0;
+          uint64_t parent_after = named ? meta4(who, current).at("change").get<uint64_t>() : 0;
           auto m = meta4(who, target);
           check(!m.at("directory").get<bool>(), 21);
           check((access & ~m.at("security_access").get<uint32_t>()) == 0, 13);
+          if (claim == 2 || claim == 5) {
+            delegation_key(a.at("delegation_state"), sid, who, target);
+            check(access == 1 && !(deny & 1), 10038);
+          }
+          delegation_open_conflict(m.at("object"), access, deny);
           // Authorization is checked for read and for the requested write access.
           if (access & 2) {
             auto raw = decode_bytes(target);
@@ -1580,7 +1614,19 @@ std::string v4(const identity &who, reader &r) {
           body.fixed(state.data);
           change4(body, parent_before, parent_after);
           body.u32(send_backchannel ? 0x20 : 0); // OPEN4_RESULT_MAY_NOTIFY_LOCK
-          put_bitmap(body, attrset); no_delegation4(body, delegation_access);
+          put_bitmap(body, attrset);
+          if (recovering || !delegation4(body, who, sid, target, m, delegation_access))
+            no_delegation4(body, delegation_access);
+        } else if (op == 8) {
+          check(!current.empty(), 10020);
+          auto it = delegation_key(a.at("state"), sid, who, current, false, 8);
+          auto result = delegation_control(it->second, "return");
+          delegation_snapshot(it->second, result);
+          check(result.at("state") == "returned", it->second.revoked ? it->second.revoked : 10008);
+          delegation_control(it->second, "forget");
+          remove_recovery(it->second.recovery);
+          delegations.erase(it);
+          reap_retained();
         } else if (op == 4) {
           auto id = open_key(a.at("state"), sid);
           auto &o = state4(id, sid, current, 0, who, op);
@@ -1608,15 +1654,30 @@ std::string v4(const identity &who, reader &r) {
           opens.insert(std::move(node));
           body.fixed(decode_bytes(current_state));
         } else if (op == 12 || op == 13 || op == 14 || op == 45) {
-          lock_operation(who, a, sid, current, current_state, body, ops.front());
+          if (op == 45 && find_delegation(a.at("state")) != delegations.end()) {
+            auto it = delegation_key(a.at("state"), sid, who, "", true, 45);
+            check(it->second.revoked != 0, 10037);
+            try { delegation_control(it->second, "forget"); }
+            catch (const error &e) { if (std::string_view(e.what()) != "stale_handle") throw; }
+            delegations.erase(it);
+          } else {
+            if ((op == 12 || op == 13) && !delegations.empty())
+              delegation_open_conflict(meta4(who, current).at("object"), 2, 0);
+            lock_operation(who, a, sid, current, current_state, body, ops.front());
+          }
         } else if (op == 25 || op == 38 || op == 34) {
           check(current != pseudo, 21);
           auto id = a.at("state").get<std::string>();
           auto io_args = json::object();
           if (id != std::string(32, '0') && !(op == 25 && id == std::string(32, 'f'))) {
-            auto openid = io_state(id, sid);
-            state4(openid, sid, current, op == 25 ? 1 : 2, who);
-            io_args["state_owner"] = openid.substr(8);
+            if (find_delegation(id) != delegations.end()) {
+              delegation_key(id, sid, who, current);
+              check(op == 25, 10038);
+            } else {
+              auto openid = io_state(id, sid);
+              state4(openid, sid, current, op == 25 ? 1 : 2, who);
+              io_args["state_owner"] = openid.substr(8);
+            }
           }
           if (op == 25) {
             io_args["offset"] = a.at("offset");
@@ -1719,8 +1780,11 @@ std::string v4(const identity &who, reader &r) {
           body.u32(uint32_t(a.at("states").size()));
           for (auto &id : a.at("states")) {
             try {
-              auto key = io_state(id, sid);
-              check(opens.at(key).principal == who.key, 10025);
+              if (find_delegation(id) != delegations.end()) delegation_key(id, sid, who);
+              else {
+                auto key = io_state(id, sid);
+                check(opens.at(key).principal == who.key, 10025);
+              }
               body.u32(0);
             } catch (const failure &e) { body.u32(e.status); }
           }

@@ -12,6 +12,8 @@ on:
       - 'tests/smb_lease_core.cpp'
       - 'tests/smb_lease_native.cpp'
       - 'tests/nfs_delegation_native.cpp'
+      - 'tests/nfs_delegation_protocol.cpp'
+      - 'src/nfs_delegations.inc'
       - 'tests/nfs_lease_lifetime.py'
       - 'include/taucloud/nfs_delegation.hpp'
       - 'src/file_nfs_delegation.inc'
@@ -150,6 +152,9 @@ jobs:
       - name: NFS delegation native exclusion, recall and authority lifetime
         if: ${{ !cancelled() && steps.compile.outcome == 'success' }}
         run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_nfs_delegation_native_tests${{ matrix.suffix }}
+      - name: NFS delegation protocol components (injected native provider, not production handout)
+        if: ${{ !cancelled() && steps.compile.outcome == 'success' }}
+        run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_nfs_delegation_protocol_tests${{ matrix.suffix }}
       - name: NFS advertised lease, session expiry and recovery after configuration changes
         if: ${{ !cancelled() && steps.compile.outcome == 'success' }}
         run: python tests/nfs_lease_lifetime.py ${{ matrix.test_options }} --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/nfs-lease-lifetime.json

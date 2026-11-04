@@ -820,6 +820,7 @@ void server::maintenance() {
   std::lock_guard guard(impl_->mutex);
   impl_->expire();
   impl_->nlm_maintenance();
+  impl_->maintain_delegations();
   impl_->notify_lock_waiters();
   impl_->gss_expire();
 }

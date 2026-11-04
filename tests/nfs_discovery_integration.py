@@ -152,7 +152,9 @@ def main():
         checks.append('BACKCHANNEL_CTL updates bounded callback configuration; unknown GSS, SP4_NONE SET_SSV and obsolete v4.0 operations return defined per-operation errors')
 
         zero = t4.stateid4(0, bytes(12))
-        optional = [op.delegpurge(alice.cid), op.delegreturn(zero), op.openattr(False),
+        returned = alice.compound([op.putfh(root_handle), op.delegreturn(zero)])
+        assert returned.status == 10025 and returned.resarray[-1].resop == 8, returned
+        optional = [op.delegpurge(alice.cid), op.openattr(False),
             op.getdeviceinfo(bytes(16), 1, 1024, []),
             op.getdevicelist(1, 1, 0, bytes(8)),
             op.layoutcommit(0, 1, False, zero, t4.newoffset4(False),
