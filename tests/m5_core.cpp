@@ -303,6 +303,89 @@ int main(int argc, char **argv) {
       call("close", "cache-domain", {{"handle", h}});
       rejected([&] { open("cache-domain", 0x120089, 7, 1); }, "not_found");
     }
+    {
+      const std::string path = "shared-cache";
+      auto first = open(path);
+      auto write = [&](const std::string &id, const std::string &value) {
+        return call("write", path, {{"handle", id}, {"offset", 0},
+            {"data", encode_bytes(value)}, {"request_id", random_hex(16)}});
+      };
+      auto read = [&](const std::string &id) {
+        return call("read", path, {{"handle", id}, {"offset", 0}, {"count", 3}}).at("data");
+      };
+      auto state = [&](const std::string &id, const json &cookie) {
+        return call("cache_poll", path, {{"handle", id}, {"cookie", cookie}});
+      };
+      auto ack = [&](const std::string &id, const json &cookie, unsigned level = 0) {
+        return call("cache_ack", path, {{"handle", id}, {"cookie", cookie}, {"level", level}});
+      };
+      auto contender = [&] {
+        return call("open", path, {{"access", 0x13019f}, {"sharing", 7},
+            {"disposition", 1}, {"options", 0x40}, {"oplock", 8}}).at("handle").get<std::string>();
+      };
+      write(first, "old");
+      auto initial = call("cache_acquire", path, {{"handle", first}});
+      auto cookie1 = initial.at("cookie");
+      ok(initial.at("level") == 8);
+      rejected(contender, "cache_break_pending");
+      ok(state(first, cookie1).at("break_level") == 1);
+      write(first, "new");
+      auto downgraded = ack(first, cookie1, 1);
+      ok(downgraded.at("granted") && downgraded.at("level") == 1 &&
+          !downgraded.at("breaking") && downgraded.at("cookie") == cookie1);
+      auto second = contender();
+      auto joined = call("cache_acquire", path, {{"handle", second}});
+      auto cookie2 = joined.at("cookie");
+      ok(joined.at("granted") && joined.at("level") == 1 && cookie1 != cookie2);
+      ok(read(first) == encode_bytes("new") && read(second) == encode_bytes("new"));
+      auto reader = store->dispatch("smb_open", {{"grant", grant(path, false, false)},
+          {"access", 0x120089}, {"sharing", 7}, {"disposition", 1},
+          {"options", 0x40}, {"oplock", 1}}, ctx("smb")).at("handle");
+      auto reader_cache = store->dispatch("smb_cache_acquire",
+          {{"grant", grant(path, false, false)}, {"handle", reader}, {"level", 1}}, ctx("smb"));
+      ok(reader_cache.at("level") == 1 && read(reader) == encode_bytes("new"));
+      rejected([&] { write(reader, "bad"); }, "forbidden");
+      call("close", path, {{"handle", reader}});
+      auto attrs = open(path, 0x100180, 0, 1);
+      call("close", path, {{"handle", attrs}});
+      ok(!state(first, cookie1).at("breaking") && !state(second, cookie2).at("breaking"));
+      rejected([&] { call("lock", path, {{"handle", first}, {"locks", json::array({
+          {{"offset", 0}, {"length", 1}, {"flags", 0x12}}})}}); }, "cache_break_pending");
+      rejected([&] { write(first, "bad"); }, "cache_break_pending");
+      ok(state(first, cookie1).at("break_level") == 0 && state(second, cookie2).at("breaking"));
+      ok(read(second) == encode_bytes("new"));
+      rejected([&] { ack(second, cookie2, 1); }, "invalid_request");
+      ok(!ack(first, cookie1).at("granted"));
+      auto native = native_file::root(base / "files");
+      rejected([&] { native.open("alice/" + path); }, "locked");
+      rejected([&] { write(first, "bad"); }, "cache_break_pending");
+      ok(!ack(second, cookie2).at("granted"));
+      write(first, "end");
+      ok(read(second) == encode_bytes("end"));
+      // The old uncached peer shares the native descriptor. It must prevent a
+      // later acquisition from incorrectly claiming exclusive network caching.
+      auto again = call("cache_acquire", path, {{"handle", first}});
+      cookie1 = again.at("cookie");
+      ok(again.at("level") == 1);
+      joined = call("cache_acquire", path, {{"handle", second}, {"level", 1}});
+      cookie2 = joined.at("cookie");
+      ok(joined.at("level") == 1);
+      auto expiring = grant(path); expiring.erase("signature");
+      expiring["expires"] = now() + 100;
+      expiring["signature"] = mac(grantkey, expiring.dump());
+      store->dispatch("smb_cache_poll", {{"grant", expiring}, {"handle", first},
+          {"cookie", cookie1}}, ctx("smb"));
+      std::this_thread::sleep_for(std::chrono::milliseconds(130));
+      ok(state(second, cookie2).at("granted"));
+      rejected([&] { read(first); }, "stale_handle");
+      call("close", path, {{"handle", first}});
+      rejected([&] { native.open("alice/" + path); }, "locked");
+      ok(state(second, cookie2).at("breaking"));
+      ack(second, cookie2);
+      ok(native.open("alice/" + path).read(0, 3) == "end");
+      call("disposition", path, {{"handle", second}, {"delete", true}});
+      call("close", path, {{"handle", second}});
+    }
     auto h = open("data", 0x13019f, 1);
     rejected([&] { open("data"); }, "sharing_violation");
     call("close", "data", {{"handle", h}});

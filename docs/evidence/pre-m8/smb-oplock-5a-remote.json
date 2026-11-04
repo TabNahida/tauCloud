@@ -1,0 +1,189 @@
+{
+  "recorded_at": "2026-11-04T12:37:45.610163+00:00",
+  "source": "5a78b2958983b2f4527fd42adb3acb50d6eab128",
+  "run_id": 41827084467,
+  "url": "https://github.com/TabNahida/tauCloud/actions/runs/41827084467",
+  "conclusion": "failure",
+  "scope": "Independent EXCLUSIVE wire tests pass on all three platforms. The targeted matrix fails on original Samba exclusive3 on GCC and Clang; MSVC passes. Full SMB/NFS remains unfinished.",
+  "jobs": {
+    "gcc": {
+      "job_id": 126564455525,
+      "artifact_id": 13321027813,
+      "artifact_sha256": "33c4a5a7e638882d231bfe7ce73ff5d5f9aaa7ccd2aa0eeeeff486fa4a831a0b",
+      "conclusion": "failure",
+      "wire": {
+        "sha256": "ee0f2533fe6ef451404fbbf13e4a2b758764a3d3b6acd61ee523547e9486cde1",
+        "report": {
+          "status": "passed",
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+          "checks": [
+            "210: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+            "210: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+            "210: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+            "300: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+            "300: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+            "300: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+            "302: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+            "302: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+            "302: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+            "311: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+            "311: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+            "311: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+            "sharing violations do not recall dirty caches; readonly, directory, delete-on-close and conflicting native opens receive no unsupported cache grant",
+            "a lease-form ACK for a classic oplock is rejected and finishes the recall without leaving native exclusion stuck",
+            "two encrypted sessions on one transport renew independent cache authority and route breaks/ACKs with their own keys; a foreign-session ACK cannot release another open",
+            "native host reads/writes wait for SMB recall; dirty client data flushes before host access and the original handle observes subsequent native writes",
+            "SET_INFO recalls before mutation, permits cached flush while pending and applies EOF after ACK without replaying side effects",
+            "a new cached CREATE is announced before its own compound SET_INFO recall; asynchronous retries preserve the inherited FileId through the dependent READ",
+            "NFSv3 READ on an existing handle returns JUKEBOX during native recall; repeated retries leave SMB flush/ACK live and the next read returns current data",
+            "DAV GET returns a retryable response while a cache recall is pending and reads freshly flushed bytes after ACK",
+            "another transport cannot ACK the holder FileId; CLOSE flushes/releases authority and wakes the peer CREATE",
+            "unacknowledged recall fences the holder transport and open while the conflicting client completes after native exclusion releases",
+            "credential revocation closes the cache-bearing transport and releases native exclusion without requiring a client request",
+            "stalled identity RPC cannot hold the cache transport past its authority: independent watchdog closes it before IPC timeout and autonomous worker expiry releases native exclusion"
+          ],
+          "recorded_at": "2026-11-04T12:29:04.528541+00:00"
+        }
+      },
+      "samba": {
+        "report_sha256": "78c8047471f92c86d786c9d519edcdfc05e177f1a00b8197f6057240cf2cdc5c",
+        "status": "failed",
+        "tests": [
+          {
+            "selector": "smb2.oplock.exclusive1",
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log_sha256": "3562f434f1b3ede902a2b4b8475e3a92520540100b1102c85b183183da6005c3",
+            "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793795390\ntime: 2026-11-04 12:29:50.887374\ntest: exclusive1\ntime: 2026-11-04 12:29:50.887658\nEXCLUSIVE1: open a file with an exclusive oplock (share mode: none)\na 2nd open should not cause a break\nWaiting for a potential oplock break...\n... waiting for an oplock break timed out\nunlink it - should also be no break\nWaiting for a potential oplock break...\n... waiting for an oplock break timed out\ntime: 2026-11-04 12:29:52.994180\nsuccess: exclusive1\n"
+          },
+          {
+            "selector": "smb2.oplock.exclusive3",
+            "status": "failed",
+            "counts": {
+              "success": 0,
+              "failure": 1,
+              "error": 0,
+              "skip": 0
+            },
+            "log_sha256": "f32a9bc03991f40e33ce7175077809a83cdbd43142236bd3e46e5627d19273ac",
+            "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793795393\ntime: 2026-11-04 12:29:53.067956\ntest: exclusive3\ntime: 2026-11-04 12:29:53.068228\nEXCLUSIVE3: open a file with an exclusive oplock (share mode: none)\nsetpathinfo EOF should trigger a break to none\nAcking to none [0x00] in oplock handler\nWaiting for a potential oplock break...\n... waiting for an oplock break timed out\ntime: 2026-11-04 12:29:54.444596\nfailure: exclusive3 [\n(source4/torture/smb2/oplock.c:514): wrong value for break_info.count got 0x1 - should be 0x0\n]\n"
+          }
+        ]
+      }
+    },
+    "clang": {
+      "job_id": 126564454966,
+      "artifact_id": 13322611768,
+      "artifact_sha256": "42c5585963d9f03ae6207d423cd0e52bcfb9bb99a4f5bd72d293fea2d518f2d0",
+      "conclusion": "failure",
+      "wire": {
+        "sha256": "3d9ab8819bb81768a5381344108df6e6bcea20d174f6b701dea4ecb7b19bc9b3",
+        "report": {
+          "status": "passed",
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+          "checks": [
+            "210: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+            "210: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+            "210: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+            "300: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+            "300: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+            "300: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+            "302: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+            "302: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+            "302: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+            "311: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+            "311: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+            "311: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+            "sharing violations do not recall dirty caches; readonly, directory, delete-on-close and conflicting native opens receive no unsupported cache grant",
+            "a lease-form ACK for a classic oplock is rejected and finishes the recall without leaving native exclusion stuck",
+            "two encrypted sessions on one transport renew independent cache authority and route breaks/ACKs with their own keys; a foreign-session ACK cannot release another open",
+            "native host reads/writes wait for SMB recall; dirty client data flushes before host access and the original handle observes subsequent native writes",
+            "SET_INFO recalls before mutation, permits cached flush while pending and applies EOF after ACK without replaying side effects",
+            "a new cached CREATE is announced before its own compound SET_INFO recall; asynchronous retries preserve the inherited FileId through the dependent READ",
+            "NFSv3 READ on an existing handle returns JUKEBOX during native recall; repeated retries leave SMB flush/ACK live and the next read returns current data",
+            "DAV GET returns a retryable response while a cache recall is pending and reads freshly flushed bytes after ACK",
+            "another transport cannot ACK the holder FileId; CLOSE flushes/releases authority and wakes the peer CREATE",
+            "unacknowledged recall fences the holder transport and open while the conflicting client completes after native exclusion releases",
+            "credential revocation closes the cache-bearing transport and releases native exclusion without requiring a client request",
+            "stalled identity RPC cannot hold the cache transport past its authority: independent watchdog closes it before IPC timeout and autonomous worker expiry releases native exclusion"
+          ],
+          "recorded_at": "2026-11-04T12:30:54.612941+00:00"
+        }
+      },
+      "samba": {
+        "report_sha256": "38575243889418d88baa492179774db1cc3c648dd1f82c753ab77e1a524113ae",
+        "status": "failed",
+        "tests": [
+          {
+            "selector": "smb2.oplock.exclusive1",
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log_sha256": "9c0474cb429926da5f12af396eee446fbbe48addccd2404590f72c5649acc9ed",
+            "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793795519\ntime: 2026-11-04 12:31:59.489446\ntest: exclusive1\ntime: 2026-11-04 12:31:59.489698\nEXCLUSIVE1: open a file with an exclusive oplock (share mode: none)\na 2nd open should not cause a break\nWaiting for a potential oplock break...\n... waiting for an oplock break timed out\nunlink it - should also be no break\nWaiting for a potential oplock break...\n... waiting for an oplock break timed out\ntime: 2026-11-04 12:32:01.977046\nsuccess: exclusive1\n"
+          },
+          {
+            "selector": "smb2.oplock.exclusive3",
+            "status": "failed",
+            "counts": {
+              "success": 0,
+              "failure": 1,
+              "error": 0,
+              "skip": 0
+            },
+            "log_sha256": "a9b406fd7d320eae0b1fdb3e3071a0fc704acabe627394890b2dd12ffc1d0231",
+            "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793795522\ntime: 2026-11-04 12:32:02.157346\ntest: exclusive3\ntime: 2026-11-04 12:32:02.157571\nEXCLUSIVE3: open a file with an exclusive oplock (share mode: none)\nsetpathinfo EOF should trigger a break to none\nAcking to none [0x00] in oplock handler\nWaiting for a potential oplock break...\n... waiting for an oplock break timed out\ntime: 2026-11-04 12:32:03.752314\nfailure: exclusive3 [\n(source4/torture/smb2/oplock.c:514): wrong value for break_info.count got 0x1 - should be 0x0\n]\n"
+          }
+        ]
+      }
+    },
+    "msvc": {
+      "job_id": 126564455578,
+      "artifact_id": 13321127682,
+      "artifact_sha256": "14793a5ee336ece2efdb236b55c776d99ccc5fa0d1e1d93a0933bf0a49782539",
+      "conclusion": "success",
+      "wire": {
+        "sha256": "79632c55e464d6c24b5dd04508938933d5a377b484ad509ef14850da39709764",
+        "report": {
+          "status": "passed",
+          "host": "Windows-2025Server-10.0.26100-SP0",
+          "checks": [
+            "210: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+            "210: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+            "210: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+            "300: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+            "300: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+            "300: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+            "302: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+            "302: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+            "302: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+            "311: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+            "311: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+            "311: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+            "sharing violations do not recall dirty caches; readonly, directory, delete-on-close and conflicting native opens receive no unsupported cache grant",
+            "a lease-form ACK for a classic oplock is rejected and finishes the recall without leaving native exclusion stuck",
+            "two encrypted sessions on one transport renew independent cache authority and route breaks/ACKs with their own keys; a foreign-session ACK cannot release another open",
+            "native host reads/writes wait for SMB recall; dirty client data flushes before host access and the original handle observes subsequent native writes",
+            "SET_INFO recalls before mutation, permits cached flush while pending and applies EOF after ACK without replaying side effects",
+            "a new cached CREATE is announced before its own compound SET_INFO recall; asynchronous retries preserve the inherited FileId through the dependent READ",
+            "NFSv3 READ on an existing handle returns JUKEBOX during native recall; repeated retries leave SMB flush/ACK live and the next read returns current data",
+            "DAV GET returns a retryable response while a cache recall is pending and reads freshly flushed bytes after ACK",
+            "another transport cannot ACK the holder FileId; CLOSE flushes/releases authority and wakes the peer CREATE",
+            "unacknowledged recall fences the holder transport and open while the conflicting client completes after native exclusion releases",
+            "credential revocation closes the cache-bearing transport and releases native exclusion without requiring a client request"
+          ],
+          "recorded_at": "2026-11-04T12:25:23.226872+00:00"
+        }
+      }
+    }
+  }
+}

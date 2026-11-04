@@ -1,0 +1,117 @@
+{
+  "recorded_at": "2026-11-04T12:40:26.290206+00:00",
+  "base_source": "58f7f3a6828f8f50f9f9dc4684d11c4c185babfb",
+  "status": "local-passed-remote-pending",
+  "scope": "File-domain shared Level II authority and MAXIMUM_ALLOWED sharing-before-recall repair; Level II wire integration and Full SMB/NFS remain unfinished",
+  "sanitizers": "Linux Clang ASan/UBSan/LSan",
+  "source_sha256": {
+    "src/files.cpp": "b85c3b2cd2f748f6048f2ff017a8659dbc8c44ad326083078cfcec3848c3d898",
+    "src/file_cache.inc": "7f920413be08144987ef53307004f63121c0eb9aca43daacdd01023c01d91953",
+    "src/file_smb.inc": "7321d084ba2a0cb1bbce011d79c8e2c31a4d20395ce55ad16c636ee029c1f0a8",
+    "tests/m5_core.cpp": "e469a1248609c824c38911d0efa0167bded882c7e00111db0e5d392ecd01adff",
+    "tests/smb_oplock_integration.py": "c9e94c3c9edf601188f678618e3423aff68b29985867322e76f7c015a54f917f"
+  },
+  "core": {
+    "m5-final": {
+      "sha256": "aabd5c9dc5b0c393ab745250f70b1a1ae92898d186fccd23419d8c048e15b55b",
+      "output": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793796012198}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file\",\"time\":1793796014312}\n{\"checks\":12501,\"status\":\"passed\"}\n"
+    },
+    "m7": {
+      "sha256": "1ab6994c15b868b8106508b840801fe2e75bcd93ea4a7a95d900bff59fb22fe7",
+      "output": "{\"checks\":98,\"status\":\"passed\"}\n"
+    }
+  },
+  "reports": {
+    "smb-shared-cache-regression": {
+      "sha256": "3986bfccfb1500ba61c27fbbb8a110af6681cfec6e0c5f6ff6d52a95877b6309",
+      "report": {
+        "status": "passed",
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "checks": [
+          "210: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "210: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "210: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "300: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "300: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "300: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "302: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "302: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "302: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "311: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "311: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "311: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "210: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "300: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "302: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "311: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "sharing violations do not recall dirty caches; readonly, directory, delete-on-close and conflicting native opens receive no unsupported cache grant",
+          "a lease-form ACK for a classic oplock is rejected and finishes the recall without leaving native exclusion stuck",
+          "two encrypted sessions on one transport renew independent cache authority and route breaks/ACKs with their own keys; a foreign-session ACK cannot release another open",
+          "native host reads/writes wait for SMB recall; dirty client data flushes before host access and the original handle observes subsequent native writes",
+          "SET_INFO recalls before mutation, permits cached flush while pending and applies EOF after ACK without replaying side effects",
+          "a new cached CREATE is announced before its own compound SET_INFO recall; asynchronous retries preserve the inherited FileId through the dependent READ",
+          "NFSv3 READ on an existing handle returns JUKEBOX during native recall; repeated retries leave SMB flush/ACK live and the next read returns current data",
+          "DAV GET returns a retryable response while a cache recall is pending and reads freshly flushed bytes after ACK",
+          "another transport cannot ACK the holder FileId; CLOSE flushes/releases authority and wakes the peer CREATE",
+          "unacknowledged recall fences the holder transport and open while the conflicting client completes after native exclusion releases",
+          "credential revocation closes the cache-bearing transport and releases native exclusion without requiring a client request",
+          "stalled identity RPC cannot hold the cache transport past its authority: independent watchdog closes it before IPC timeout and autonomous worker expiry releases native exclusion"
+        ],
+        "recorded_at": "2026-11-04T12:35:55.609226+00:00"
+      }
+    },
+    "samba-shared-cache-regression": {
+      "sha256": "a4bd41972a006f0283cd0b9aa450888d57e041d50cb47941e00b2c6f8f005b57",
+      "report": {
+        "status": "passed",
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "tests": [
+          {
+            "selector": "smb2.oplock.exclusive1",
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log_sha256": "729f11ef59f141ed5f9f13df2b18362eb70749af395e5290ed81d30380d5ae43",
+            "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793795798\ntime: 2026-11-04 12:36:38.338188\ntest: exclusive1\ntime: 2026-11-04 12:36:38.338350\nEXCLUSIVE1: open a file with an exclusive oplock (share mode: none)\na 2nd open should not cause a break\nWaiting for a potential oplock break...\n... waiting for an oplock break timed out\nunlink it - should also be no break\nWaiting for a potential oplock break...\n... waiting for an oplock break timed out\ntime: 2026-11-04 12:36:40.689182\nsuccess: exclusive1\n"
+          },
+          {
+            "selector": "smb2.oplock.exclusive3",
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log_sha256": "3ef4ef2ec84b69254369e5cc5cd35cfc229852d509971a3da23a941deb30859a",
+            "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793795800\ntime: 2026-11-04 12:36:40.828739\ntest: exclusive3\ntime: 2026-11-04 12:36:40.828899\nEXCLUSIVE3: open a file with an exclusive oplock (share mode: none)\nsetpathinfo EOF should trigger a break to none\nWaiting for a potential oplock break...\n... waiting for an oplock break timed out\ntime: 2026-11-04 12:36:42.119072\nsuccess: exclusive3\n"
+          },
+          {
+            "selector": "smb2.oplock.exclusive4",
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log_sha256": "03c1a7b42acacdb2e602600c4636955f1b8887c8b0ab5b3236d25cbd00953d35",
+            "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793795802\ntime: 2026-11-04 12:36:42.198051\ntest: exclusive4\ntime: 2026-11-04 12:36:42.198184\nEXCLUSIVE4: open with exclusive oplock\nsecond open with attributes only shouldn't cause oplock break\nWaiting for a potential oplock break...\n... waiting for an oplock break timed out\ntime: 2026-11-04 12:36:43.529955\nsuccess: exclusive4\n"
+          }
+        ]
+      }
+    }
+  },
+  "regression_origin": "smb-oplock-5a-remote.json preserves GCC/Clang original exclusive3 failure: maximum-access sharing denial unnecessarily recalled the holder. The corrected source passes original exclusive1, exclusive3 and exclusive4 locally.",
+  "remaining": [
+    "SMB Level II wire grants, notification without client ACK and downgrade/escalation races",
+    "Standalone read-only native-cache acquisition on all hosts and complete transitions",
+    "BATCH, leases, durable/replay/multichannel",
+    "NFS delegations and remaining mandatory security/operation behavior",
+    "Full independent upstream suites and cross-platform reacceptance"
+  ]
+}

@@ -72,9 +72,10 @@ struct file_store::impl {
     bool notify_recursive = false, notify_overflow = false, notify_deleted = false;
     size_t notify_bytes = 0;
     json notify_events = json::array();
-    std::unique_ptr<native_cache_guard> cache = nullptr;
+    std::shared_ptr<native_cache_guard> cache = nullptr;
     std::string cache_cookie = "";
     int64_t cache_authority_until = 0, cache_break_until = 0;
+    unsigned cache_level = 0, cache_break_level = 0;
   };
   struct byte_lock {
     std::string handle, object;

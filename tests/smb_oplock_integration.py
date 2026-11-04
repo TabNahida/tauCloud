@@ -233,6 +233,7 @@ def main():
         c, s, t, q = connect()
         holder = cached(t, 'sharing-cache', share=0)
         denied(lambda: create(t, holder.file_name, disposition=1), 0xc0000043)
+        denied(lambda: create(t, holder.file_name, access=0x02000000, disposition=1), 0xc0000043)
         time.sleep(.4); assert q.empty(), 'sharing violation unnecessarily recalled the cache'
         holder.write(b'still cached'); holder.close()
         cached(t, 'readonly-open', access=0x120089, expected=0).close()

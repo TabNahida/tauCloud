@@ -334,18 +334,6 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     return info;
   }
   if (op == "smb_open") {
-    // An EXCLUSIVE oplock does not relax sharing. Reject an incompatible
-    // ordinary open before recalling dirty data that it cannot access anyway.
-    if (!body.value("maximum", false)) {
-      auto requested = smb_categories(body.at("access").get<uint32_t>());
-      auto share = body.at("sharing").get<unsigned>();
-      for (const auto &[other, held] : handles)
-        if (held.cache && held.space == space && held.path == path && requested) {
-          auto existing = smb_categories(held.access);
-          require((requested & ~held.sharing) == 0 && (existing & ~share) == 0,
-                  "sharing_violation");
-        }
-    }
     require(handles.size() < 128, "handle_limit");
     if (!path.empty())
       portable_path(path);
@@ -368,19 +356,27 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     std::optional<json> cached_info;
     native_file cached_file;
     std::string cache_owner;
-    if (!body.value("maximum", false) && !(access & ~0x00100180u) &&
-        (disposition == 1 || disposition == 3) && !(options & 0x1000)) {
-      for (const auto &[id, held] : handles)
-        if (held.cache && held.space == space && held.path == path && !held.directory) {
-          cached_info = held.file.info(true);
-          require(cached_info->at("object") == object(space, path).at("native"),
-                  "object_replaced");
+    auto requested_cache = body.value("oplock", 0u);
+    require(requested_cache == 0 || requested_cache == 1 || requested_cache == 8,
+            "invalid_request");
+    bool data_open = (requested_cache == 1 || requested_cache == 8) && (access & 1);
+    bool preserving_open = (disposition == 1 || disposition == 3) && !(options & 0x1000);
+    bool attribute_open = !body.value("maximum", false) && !(access & ~0x00100180u);
+    // All cached-path opens can inspect the pinned object's security metadata
+    // before deciding whether recall is necessary. In particular MAXIMUM_ALLOWED
+    // must resolve its actual rights and fail sharing before any cache break.
+    for (const auto &[id, held] : handles)
+      if (held.cache && held.space == space && held.path == path && !held.directory) {
+        cached_info = held.file.info(true);
+        require(cached_info->at("object") == object(space, path).at("native"),
+                "object_replaced");
+        if (preserving_open && (attribute_open ||
+            (data_open && held.cache_level == 1 && !held.cache_break_until))) {
           cached_file = held.file.retain();
           cache_owner = id;
-          break;
         }
-    }
-    cache_conflict(space, path, cache_owner);
+        break;
+      }
     smb_reap(s);
     auto existing = cached_info ? cached_info : dav_exists(s, path);
     require(!existing || disposition != 2, "already_exists");
@@ -482,6 +478,8 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     } else
       require((access & ~open_permissions) == 0, "forbidden");
     smb_sharing(space, path, access, sharing);
+    cache_conflict(space, path, cache_owner,
+                   (data_open || attribute_open) && preserving_open ? 1 : 0);
     bool truncate = existing && (disposition == 0 || disposition == 4 || disposition == 5);
     // Validate all initial metadata and quota before creating or truncating a file.
     if (!existing && body.contains("eas"))
@@ -508,7 +506,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
       s.directory.flush();
       index(space, path, file.info());
     } else if (!directory)
-      file = cached_info ? std::move(cached_file)
+      file = !cache_owner.empty() ? std::move(cached_file)
                          : s.directory.open(path, false, false, bool(access & 6));
     if (truncate) {
       auto before = file.info();
@@ -606,6 +604,14 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     if (op == "smb_cache_acquire" && smb_meta(s, h).at("delete_pending").get<bool>())
       return {{"granted", false}, {"cookie", ""}, {"breaking", false}, {"remaining_ms", 0}};
     return cache_dispatch(op, body, grant, h);
+  }
+  if (op == "smb_write" || op == "smb_lock") {
+    require(h.access & (op == "smb_write" ? 6u : 0x27u), "forbidden");
+    bool readers = std::any_of(handles.begin(), handles.end(), [&](const auto &entry) {
+      const auto &held = entry.second;
+      return held.cache && held.cache_level == 1 && held.space == space && held.path == path;
+    });
+    if (readers) cache_conflict(space, path);
   }
   // Recall before any namespace/metadata mutation. Repeating a deferred SMB
   // request is safe only when no mutation has happened before this boundary.

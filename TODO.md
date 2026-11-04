@@ -150,12 +150,17 @@ ACK ownership, flushes before release and fences expired transports independentl
 of stalled RPCs. Related asynchronous CREATE/READ/CLOSE and pre-mutation SET_INFO
 waits retain their AsyncIds and cancellation semantics. [Local wire checks](docs/evidence/pre-m8/smb-oplock-local.json)
 cover four dialects, native host IO, NFS/DAV reads, idle renewal, revocation and a
-paused identity service. Cross-platform and original Samba acceptance of this wire
-increment is pending. Attribute-only OPEN/OPEN_IF now retains the pinned native
+paused identity service. Independent EXCLUSIVE wire checks pass GCC/Clang/MSVC
+at `5a78b29`; its targeted matrix fails original Samba exclusive3 on both Linux
+compilers ([evidence](docs/evidence/pre-m8/smb-oplock-5a-remote.json)). The maximum-access
+sharing-before-recall correction now passes original exclusive1/3/4 locally;
+remote reacceptance is pending. Attribute-only OPEN/OPEN_IF now retains the pinned native
 object without recalling data caches; mutation still recalls first. Four-dialect
 local checks pass; the new original Samba exclusive4 selection and cross-platform
-acceptance are pending. Level II/BATCH, leases, namespace/handle caching and NFS
-delegations remain open; see
+acceptance are pending. The file domain now supports EXCLUSIVE-to-Level-II
+downgrade and shared native exclusion with independent reader authority,
+write/lock invalidation, close and expiry tests. Level II wire grants/notifications,
+BATCH, leases, namespace/handle caching and NFS delegations remain open; see
 [native cache coherence](docs/native-cache-coherence.md).
 
 The earlier ADR exclusions describe the existing implementation, not permission to exclude features from this expanded goal. Preserve the passing limited-profile evidence while adding independent evidence for the following gates. Optional protocol facilities must be explicitly negotiated/refused according to the standards; refusal alone is not feature implementation.

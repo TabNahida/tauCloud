@@ -54,8 +54,9 @@ test before its protocol tests on GCC, Clang and MSVC.
 ## File-domain authority
 
 `file_cache.inc` now owns the cache grant beneath SMB. Only an authenticated
-SMB caller with the matching actor, space, path and writable/readable open can
-acquire it. Directory and delete-pending opens cannot acquire this authority.
+SMB caller with the matching actor, space and path can acquire it. EXCLUSIVE
+requires a writable/readable open and current write authority. The internal
+Level II coordinator also admits read-only opens to an existing shared guard. Directory and delete-pending opens cannot acquire this authority.
 Each acquisition gets a new random cookie; polling, acknowledgement and
 voluntary release must identify that exact acquisition. Repeating acquisition
 does not reset an outstanding break. An ACK without a pending break is rejected.
@@ -163,8 +164,13 @@ an identity process paused while a polling RPC holds the dispatch gate. Windows
 native probes use CreateFileW with DELETE sharing, avoiding a CRT sharing
 violation unrelated to oplocks. The targeted Actions matrix now includes these
 checks plus original Samba exclusive1/exclusive3 sharing scenarios and the
-exclusive4 attribute-only scenario; remote
-acceptance of this new wire increment is pending.
+exclusive4 attribute-only scenario. At `5a78b29`, the independent wire checks
+pass all three platforms (24 Linux / 23 Windows), while the targeted Linux
+jobs fail original exclusive3: a MAXIMUM_ALLOWED open recalled before failing
+sharing. [Remote evidence](evidence/pre-m8/smb-oplock-5a-remote.json) preserves
+that failure. The corrected ordering resolves effective rights and sharing
+from pinned security metadata before recall; original exclusive1/3/4 now pass
+locally. Remote reacceptance remains pending.
 
 The attribute-open increment adds four independent dialect groups (28 total on
 Linux; 27 scheduled on Windows), including a second transport, share-none, query/close,
@@ -172,6 +178,32 @@ data-access rejection and deferred attribute mutation. File-domain tests also
 check an explicit deny ACE and read-only policy on the retained path. See
 [local acceptance](evidence/pre-m8/smb-oplock-attributes-local.json). Remote
 acceptance remains pending.
+
+## Shared read-cache authority (file domain)
+
+The file domain can now retain the native exclusion guard when EXCLUSIVE
+acknowledges a downgrade to Level II. Other authorized read-cache opens share
+that same guard, with distinct cookies and authority deadlines. Physical
+retention never removes logical sharing, DACL or per-handle access checks.
+Existing data opens also prevent an acquisition from claiming EXCLUSIVE merely
+because their descriptors refer to the same underlying native description.
+
+Writes and byte locks invalidate all affected read caches before any mutation.
+A stricter conflict cannot extend the original five-second recall deadline.
+Acknowledging or closing one reader releases only its participation. Native
+exclusion remains until the final reader acknowledges, closes or is fenced;
+expiring a reader also invalidates its open before any later write. Metadata-only
+opens retain the no-break behavior across multiple readers. EXCLUSIVE write
+cache renewal still requires current write authority.
+
+[Local coordinator evidence](evidence/pre-m8/smb-shared-cache-local.json) covers downgrade,
+shared and read-only acquisition, denied writes, full-group invalidation,
+last-reader release, individual expiry, retained-descriptor reacquisition and
+actual conflicting native opens. This is file-domain support: the SMB wire layer
+still grants only EXCLUSIVE and recalls to NONE. Level II wire notification,
+no-ACK completion and downgrade/escalation races are the next integration step.
+The guard remains native RW exclusion; standalone read-only acquisition and
+complete native/shared-reader transitions still need platform-specific work.
 
 ## Remaining integration
 
