@@ -3,9 +3,10 @@
 #include <taucloud/database.hpp>
 #include <taucloud/security.hpp>
 #include <iostream>
+#include <thread>
 using namespace tc;
 using namespace tc::smb_detail;
-int main() {
+int main(int argc, char **argv) {
   int checks = 0;
   auto ok = [&](bool v) {
     require(v, "test_failed");
@@ -22,6 +23,7 @@ int main() {
     }
   };
   auto base = fs::temp_directory_path() / ("tc5-unit-" + random_hex(6));
+  json worker_identity;
   try {
     auto mode_owner = security::principal("mode-owner"),
          mode_group = security::principal("mode-group", true);
@@ -130,6 +132,152 @@ int main() {
           .at("handle")
           .get<std::string>();
     };
+    {
+      auto h = open("cache-domain");
+      auto write = [&](const std::string &text) {
+        return call("write", "cache-domain", {{"handle", h}, {"offset", 0},
+            {"data", encode_bytes(text)}, {"request_id", random_hex(16)}});
+      };
+      write("old");
+      auto export_id = random_hex(16);
+      auto nfs = [&](const std::string &op, const std::string &handle,
+                     json body = json::object(), std::string request = "") {
+        auto g = grant(""); g.erase("signature");
+        g["protocol"] = "nfs"; g["share"] = "nfs";
+        g["nfs_uid"] = 1000; g["nfs_gid"] = 1000;
+        g["groups"] = json::array({"unix"});
+        g["export"] = {{"uuid", export_id}, {"uids", {{"1000", "alice"}}},
+                       {"gids", {{"1000", "unix"}}}};
+        g["signature"] = mac(grantkey, g.dump());
+        body["grant"] = g; body["op"] = op; body["handle"] = handle;
+        body["request_id"] = request.empty() ? random_hex(16) : request;
+        return store->dispatch("nfs_file", body, ctx("nfs"));
+      };
+      auto nfs_root = nfs("root", "").at("handle").get<std::string>();
+      auto nfs_file = nfs("lookup", nfs_root, {{"name", "cache-domain"}})
+                          .at("handle").get<std::string>();
+      auto acquired = call("cache_acquire", "cache-domain", {{"handle", h}});
+      ok(acquired.at("granted") && !acquired.at("breaking"));
+      auto cookie = acquired.at("cookie").get<std::string>();
+      ok(call("cache_acquire", "cache-domain", {{"handle", h}}).at("cookie") == cookie);
+      auto control = [&] { return json{{"handle", h}, {"cookie", cookie}}; };
+      rejected([&] { call("cache_ack", "cache-domain", control()); }, "invalid_device_state");
+      rejected([&] { call("cache_poll", "cache-domain", {{"handle", h}, {"cookie", "wrong"}}); },
+               "invalid_request");
+      auto unauthorized = control(); unauthorized["grant"] = grant("cache-domain");
+      rejected([&] { store->dispatch("smb_cache_poll", unauthorized, ctx("api")); }, "forbidden");
+      auto other_actor = grant("cache-domain"); other_actor.erase("signature");
+      other_actor["actor"] = "bob"; other_actor["signature"] = mac(grantkey, other_actor.dump());
+      unauthorized["grant"] = other_actor;
+      rejected([&] { store->dispatch("smb_cache_poll", unauthorized, ctx("smb")); }, "forbidden");
+      write("new"); call("flush", "cache-domain", {{"handle", h}});
+      ok(!call("cache_poll", "cache-domain", control()).at("breaking"));
+      auto sibling = open("cache-sibling");
+      auto sibling_cache = call("cache_acquire", "cache-sibling", {{"handle", sibling}});
+      ok(sibling_cache.at("granted"));
+      rejected([&] { open("cache-domain"); }, "cache_break_pending");
+      ok(!call("cache_poll", "cache-sibling", {{"handle", sibling},
+          {"cookie", sibling_cache.at("cookie")}}).at("breaking"));
+      call("cache_release", "cache-sibling", {{"handle", sibling},
+          {"cookie", sibling_cache.at("cookie")}});
+      call("disposition", "cache-sibling", {{"handle", sibling}, {"delete", true}});
+      call("close", "cache-sibling", {{"handle", sibling}});
+      auto breaking = call("cache_poll", "cache-domain", control());
+      ok(breaking.at("breaking") && breaking.at("remaining_ms").get<int64_t>() > 0);
+      auto limit = breaking.at("remaining_ms").get<int64_t>();
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      ok(call("cache_poll", "cache-domain", control()).at("remaining_ms").get<int64_t>() < limit);
+      write("ack");
+      ok(!call("cache_ack", "cache-domain", control()).at("granted"));
+      auto other = open("cache-domain", 0x120089, 7, 1);
+      ok(call("read", "cache-domain", {{"handle", other}, {"offset", 0}, {"count", 3}})
+             .at("data") == encode_bytes("ack"));
+      call("close", "cache-domain", {{"handle", other}});
+      auto previous = cookie;
+      cookie = call("cache_acquire", "cache-domain", {{"handle", h}}).at("cookie");
+      ok(cookie != previous && !cookie.empty());
+      rejected([&] { call("cache_ack", "cache-domain", {{"handle", h}, {"cookie", previous}}); },
+               "invalid_request");
+      auto core = [&](const std::string &op, json body) {
+        auto g = grant("cache-domain"); g.erase("signature");
+        g["protocol"] = "core"; g["signature"] = mac(grantkey, g.dump());
+        body["grant"] = g;
+        return store->dispatch(op, body, ctx("api"));
+      };
+      rejected([&] { core("open", {{"write", false}}); }, "cache_break_pending");
+      ok(call("cache_poll", "cache-domain", control()).at("breaking"));
+      call("cache_ack", "cache-domain", control());
+      auto core_open = core("open", {{"write", false}}).at("handle");
+      ok(core("read", {{"handle", core_open}, {"offset", 0}, {"count", 3}}).at("data") ==
+         encode_bytes("ack"));
+      core("close", {{"handle", core_open}});
+      cookie = call("cache_acquire", "cache-domain", {{"handle", h}}).at("cookie");
+      rejected([&] { nfs("read", nfs_file, {{"offset", 0}, {"count", 3}}); },
+               "cache_break_pending");
+      ok(call("cache_poll", "cache-domain", control()).at("breaking"));
+      call("cache_ack", "cache-domain", control());
+      ok(nfs("read", nfs_file, {{"offset", 0}, {"count", 3}}).at("data") == encode_bytes("ack"));
+      cookie = call("cache_acquire", "cache-domain", {{"handle", h}}).at("cookie");
+      auto nfs_write = json{{"offset", 0}, {"data", encode_bytes("nfs")}};
+      auto nfs_request = random_hex(16);
+      rejected([&] { nfs("write", nfs_file, nfs_write, nfs_request); }, "cache_break_pending");
+      call("cache_ack", "cache-domain", control());
+      ok(nfs("write", nfs_file, nfs_write, nfs_request).at("count") == 3);
+      ok(call("read", "cache-domain", {{"handle", h}, {"offset", 0}, {"count", 3}})
+             .at("data") == encode_bytes("nfs"));
+      write("ack");
+      cookie = call("cache_acquire", "cache-domain", {{"handle", h}}).at("cookie");
+      auto native = native_file::root(base / "files");
+      rejected([&] { native.open("alice/cache-domain"); }, "locked");
+      ok(call("cache_poll", "cache-domain", control()).at("breaking"));
+      call("cache_ack", "cache-domain", control());
+      ok(native.open("alice/cache-domain").read(0, 3) == "ack");
+      cookie = call("cache_acquire", "cache-domain", {{"handle", h}}).at("cookie");
+      // A fresh but short authority lease allows a real timeout without test
+      // clock injection. Maintenance runs independently of incoming RPC.
+      auto short_grant = grant("cache-domain"); short_grant.erase("signature");
+      short_grant["expires"] = now() + 500;
+      short_grant["signature"] = mac(grantkey, short_grant.dump());
+      auto poll = control(); poll["grant"] = short_grant;
+      store->dispatch("smb_cache_poll", poll, ctx("smb"));
+      std::this_thread::sleep_for(std::chrono::milliseconds(550));
+      store->maintain();
+      ok(native.open("alice/cache-domain").read(0, 3) == "ack");
+      rejected([&] { write("bad"); }, "stale_handle");
+      h = open("cache-domain");
+      cookie = call("cache_acquire", "cache-domain", {{"handle", h}}).at("cookie");
+      rejected([&] { open("cache-domain"); }, "cache_break_pending");
+      // Fresh authorization cannot extend a pending break indefinitely.
+      bool fenced = false;
+      for (int i = 0; i < 60 && !fenced; ++i) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        try { call("cache_poll", "cache-domain", control()); }
+        catch (const error &e) { ok(std::string_view(e.what()) == "stale_handle"); fenced = true; }
+      }
+      ok(fenced);
+      rejected([&] { write("bad"); }, "stale_handle");
+      h = open("cache-domain");
+      cookie = call("cache_acquire", "cache-domain", {{"handle", h}}).at("cookie");
+      call("cache_release", "cache-domain", control());
+      ok(write("end").at("written") == 3);
+      call("cache_acquire", "cache-domain", {{"handle", h}});
+      store->dispatch("revoke", {{"epoch", 2}}, ctx("identity"));
+      rejected([&] { write("bad"); }, "stale_handle");
+      ok(native.open("alice/cache-domain").read(0, 3) == "end");
+      h = open("cache-domain");
+      call("cache_acquire", "cache-domain", {{"handle", h}});
+      store->dispatch("smb_recover", json::object(), ctx("smb"));
+      rejected([&] { write("bad"); }, "stale_handle");
+      ok(native.open("alice/cache-domain").read(0, 3) == "end");
+      h = open("cache-domain");
+      ok(call("cache_acquire", "cache-domain", {{"handle", h}}).at("granted"));
+      call("close", "cache-domain", {{"handle", h}});
+      h = open("cache-domain");
+      call("disposition", "cache-domain", {{"handle", h}, {"delete", true}});
+      ok(!call("cache_acquire", "cache-domain", {{"handle", h}}).at("granted"));
+      call("close", "cache-domain", {{"handle", h}});
+      rejected([&] { open("cache-domain", 0x120089, 7, 1); }, "not_found");
+    }
     auto h = open("data", 0x13019f, 1);
     rejected([&] { open("data"); }, "sharing_violation");
     call("close", "data", {{"handle", h}});
@@ -379,11 +527,60 @@ int main() {
     rejected([&] { call("read", "stale", {{"handle", h}, {"offset", 0}, {"count", 1}}); },
              "stale_handle");
     store.reset();
+    // Exercise the actual file-worker maintenance loop: after acquisition,
+    // send no IPC at all until native access becomes possible again.
+    require(argc > 0, "test_binary_path");
+    auto file_binary = fs::absolute(argv[0]).parent_path() /
+        ("taucloud_file" + fs::path(argv[0]).extension().string());
+    auto worker_generation = random_hex(16);
+    worker_identity = spawn(file_binary, cfg, worker_generation);
+    bool ready = false;
+    auto ready_deadline = now() + 5000;
+    while (!ready && now() < ready_deadline) {
+      try { rpc(cfg, "supervisor", "file", "ping", {}, worker_generation, {}, "", 200); ready = true; }
+      catch (const error &) { std::this_thread::sleep_for(std::chrono::milliseconds(20)); }
+    }
+    require(ready, "cache_worker_not_ready"); ok(ready);
+    auto remote = [&](const std::string &op, json body) {
+      body["grant"] = grant("cache-worker");
+      return rpc(cfg, "smb", "file", "smb_" + op, body, worker_generation);
+    };
+    auto remote_handle = remote("open", {{"write", true}, {"access", 0x13019f},
+        {"sharing", 7}, {"disposition", 3}, {"options", 0x40}}).at("handle");
+    remote("write", {{"handle", remote_handle}, {"offset", 0},
+        {"data", encode_bytes("worker")}, {"request_id", random_hex(16)}});
+    ok(remote("cache_acquire", {{"handle", remote_handle}}).at("granted"));
+    auto native_root = native_file::root(base / "files");
+    bool blocked = false, released = false;
+    auto release_deadline = now() + 4000;
+    while (!released && now() < release_deadline) {
+      try {
+        auto reader = native_root.open("alice/cache-worker");
+        ok(reader.read(0, 6) == "worker"); released = true;
+      } catch (const error &e) {
+        require(std::string_view(e.what()) == "locked", "unexpected_native_cache_error");
+        blocked = true;
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+      }
+    }
+    ok(blocked && released);
+    rejected([&] { remote("write", {{"handle", remote_handle}, {"offset", 0},
+        {"data", encode_bytes("stale!")}, {"request_id", random_hex(16)}}); }, "stale_handle");
+    rpc(cfg, "supervisor", "file", "stop", {}, worker_generation);
+    auto stop_deadline = now() + 5000;
+    while (verified_alive(worker_identity) && now() < stop_deadline)
+      std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    ok(!verified_alive(worker_identity));
+    reap_children(); worker_identity = nullptr;
+    native_root = native_file();
     fs::remove_all(base);
     std::cout << json{{"status", "passed"}, {"checks", checks}}.dump() << '\n';
     return 0;
   } catch (const std::exception &e) {
     std::cerr << e.what() << '\n';
+    if (!worker_identity.is_null()) {
+      try { terminate_verified(worker_identity); reap_children(); } catch (...) {}
+    }
     std::error_code ec;
     fs::remove_all(base, ec);
     return 1;

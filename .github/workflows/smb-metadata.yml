@@ -42,6 +42,7 @@ on:
       - 'src/native_files.cpp'
       - 'src/native_notify.inc'
       - 'src/native_cache.inc'
+      - 'src/file_cache.inc'
       - 'tests/smb_notify_integration.py'
       - 'tests/smb_rename_integration.py'
       - 'tests/smb_signing_integration.py'

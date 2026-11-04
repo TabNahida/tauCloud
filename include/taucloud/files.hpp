@@ -92,6 +92,8 @@ class file_store {
 public:
   file_store(const config &, std::string role, std::string generation);
   ~file_store();
+  // Fence expired cache owners even when no protocol request arrives.
+  void maintain();
   json dispatch(const std::string &, const json &, const call_context &);
 };
 } // namespace tc

@@ -146,6 +146,13 @@ GCC/Clang ASan+UBSan/MSVC at `4fe2b79`; subsequent protocol regression and
 network break/ACK coordination remain open. This foundation does not enable SMB caching or NFS delegations; see
 [native cache coherence](docs/native-cache-coherence.md).
 
+The file-domain cache coordinator now adds acquisition cookies, authenticated
+polling, ACK/flush ordering, monotonic authority/break deadlines and autonomous
+open fencing. Local tests cover SMB/core/NFS conflicts and a real idle file
+worker; its new remote matrix is pending. SMB CREATE still does not grant
+network caching; unsolicited breaks, asynchronous retries and wire acceptance
+remain required.
+
 The earlier ADR exclusions describe the existing implementation, not permission to exclude features from this expanded goal. Preserve the passing limited-profile evidence while adding independent evidence for the following gates. Optional protocol facilities must be explicitly negotiated/refused according to the standards; refusal alone is not feature implementation.
 
 - [x] Implement AlSi CREATE/overwrite allocation with durable quota, initial EA prevalidation and failed-new-CREATE cleanup; targeted GCC/Clang ASan+UBSan/MSVC checks pass at `fc28c4c`, including the smaller sparse-overwrite correction.

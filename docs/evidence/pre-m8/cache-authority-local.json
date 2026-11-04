@@ -1,0 +1,95 @@
+{
+  "recorded_at": "2026-11-04T11:18:12.515959+00:00",
+  "base_source": "3870133",
+  "status": "partial",
+  "scope": "File-domain data-cache authority; no SMB CREATE cache grants or NFS delegations enabled. Wire break/ACK integration and full compatibility remain open.",
+  "sanitizers": "Linux Clang ASan/UBSan/LSan, including real taucloud_file subprocess",
+  "files_sha256": {
+    "src/file_cache.inc": "ae333c206bb44c57ed93638593e3b3ffbf22d3ca23977b472e416bbbd8090484",
+    "src/files.cpp": "50bfe9dea3fbb4a2ebba3af0520788e9483bff9c10db5a2c2badbf7c897cdeaf",
+    "src/file_smb.inc": "cc5f63bc1059c0053884cf0088e337940a334db74a8687b2c793972556361480",
+    "src/file_dav.inc": "98fea49f7c5b6d4c6a3e31522e276e7239b69d878f549f48b87804fd478b3d44",
+    "src/nfs_protocol.cpp": "96019298d1957de8ece1abc70ddfe244f348354026a973e7f2a05c7f2ea9d55e",
+    "src/services.cpp": "1eb881aa69afd85bfd6ab249e543db96cc95010f77ae8ddade38d0f38e275840",
+    "include/taucloud/files.hpp": "b4aa047a561fa8c191c089bbd0e62789d1b1c8cf1782b7b802e91ff23115ed78",
+    "tests/m5_core.cpp": "1f9593d7e1b6123f28cbaf482ad124fa4f93021d125de58d0ccc6090f4728364",
+    "xmake.lua": "e2564cc57b22629c80f53fbf799bb07f36e7d84b0c4d75bdec65cf7264f23c77",
+    ".github/workflows/smb-metadata.yml": "9858cba5905884f8b0f27f54a875b3d4a48bb19e979f1cfb8f5d9104233fc574"
+  },
+  "checks": [
+    "authenticated actor/space/path/open ownership and exact acquisition-cookie checks",
+    "duplicate acquisition retains cookie; stale cookies and unsolicited ACK rejected",
+    "independent files do not recall each other",
+    "SMB and core conflicts wait for holder writes/flush/ACK; later reads see final contents",
+    "NFS read/write handle resolution triggers native break; the same mutation request can succeed after ACK",
+    "external native opens cause recall without occupying the file-domain dispatcher",
+    "short authority expiry fences complete open; fresh polling cannot extend a five-second break",
+    "close, explicit release, revocation and SMB recovery clean up exclusion; delete-pending acquisition declined",
+    "actual file worker with no incoming IPC autonomously releases native exclusion, rejects old-handle writes, and stops cleanly"
+  ],
+  "local": {
+    "m2": {
+      "checks": 75,
+      "disk_full": "native-adapter fault injection",
+      "offset_bits": 64,
+      "status": "passed"
+    },
+    "m3": {
+      "checks": 28,
+      "status": "passed"
+    },
+    "m7": {
+      "checks": 98,
+      "status": "passed"
+    },
+    "m5": {
+      "checks": 12470,
+      "status": "passed"
+    },
+    "dav": {
+      "curl": {
+        "version": "curl 8.5.0 (x86_64-pc-linux-gnu) libcurl/8.5.0 OpenSSL/3.0.13 zlib/1.3 brotli/1.1.0 zstd/1.5.5 libidn2/2.3.7 libpsl/0.21.2 (+libidn2/2.3.7) libssh/0.10.6/openssl/zlib nghttp2/1.59.0 librtmp/2.3 OpenLDAP/2.6.10",
+        "status": "passed"
+      },
+      "transfer": {
+        "sampled_peak_rss": {
+          "file": 139853824,
+          "webdav": 155275264
+        },
+        "bytes": 1048576,
+        "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+        "worker_budget_mib": 512,
+        "hard_limit": "not_applied"
+      },
+      "status": "passed",
+      "checks": [
+        "M2 file schema migrates transactionally with backups; supervisor adds the new DAV role key",
+        "TLS Basic auth, UTF-8 names, recursive collection COPY/MOVE/DELETE and type-changing overwrite",
+        "independent curl TLS upload/download with certificate verification",
+        "auth/condition before 100-continue; ranges, HEAD, 304/412/416; interrupted PUT releases quota",
+        "chunk framing, UTF-8/NFC and encoded traversal checks, bounded depth, DTD/entity rejection, destination origin confinement",
+        "durable recursive COPY journal resumes from pre-publication crash cut",
+        "persistent properties and exclusive lock survive file-worker crash; owner/token enforcement across DAV and core; expiry",
+        "share exposure updates revoke active DAV writes and cancellation releases reservations",
+        "streaming upload/download SHA-256 roundtrip",
+        "offline backup refuses running services; restore into new state rotates TLS/IPC, revokes sessions and preserves metadata/files"
+      ]
+    }
+  },
+  "remote": "pending",
+  "worker_events": [
+    {
+      "code": "ok",
+      "event": "started",
+      "role": "file",
+      "time": 1793790967689
+    },
+    {
+      "code": "ok",
+      "event": "stopped",
+      "role": "file",
+      "time": 1793790969774
+    }
+  ],
+  "test_note": "The first real-worker probe incorrectly used the SMB role for ping and was denied by the existing IPC policy. The test now uses the supervisor role; no production access rule was changed."
+}

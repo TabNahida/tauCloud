@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <map>
 #include <set>
+#include <fstream>
 namespace tc {
 namespace {
 std::string lower(std::string value) { return path_fold(value); }
@@ -71,6 +72,9 @@ struct file_store::impl {
     bool notify_recursive = false, notify_overflow = false, notify_deleted = false;
     size_t notify_bytes = 0;
     json notify_events = json::array();
+    std::unique_ptr<native_cache_guard> cache = nullptr;
+    std::string cache_cookie = "";
+    int64_t cache_authority_until = 0, cache_break_until = 0;
   };
   struct byte_lock {
     std::string handle, object;
@@ -88,6 +92,7 @@ struct file_store::impl {
   std::vector<waiting_lock> smb_waiters;
   std::map<std::string, uint32_t> pending_metadata;
   std::set<std::string> smb_deferred_times;
+#include "file_cache.inc"
   void notify_metadata(const std::string &native, uint32_t mask) {
     pending_metadata[native] |= mask;
   }
@@ -556,6 +561,7 @@ struct file_store::impl {
 #include "file_nfs.inc"
   json dispatch(const std::string &op, const json &body, const call_context &ctx) {
     std::lock_guard guard(mutex);
+    maintain_caches();
     pending_metadata.clear();
     try {
       auto result = dispatch_request(op, body, ctx);
@@ -564,6 +570,7 @@ struct file_store::impl {
       pending_metadata.clear();
       return result;
     } catch (...) {
+      auto failure = std::current_exception();
       collect_notifications();
       // A failed transaction must not publish metadata events. Native changes
       // may already have committed, so tell affected watchers to rescan.
@@ -572,7 +579,15 @@ struct file_store::impl {
       for (auto &[id, h] : handles)
         if (h.notification && (h.notify_filter & mask)) h.notify_overflow = true;
       pending_metadata.clear();
-      throw;
+      // A native open can discover a conflict before a path-based preflight
+      // (for example an NFS handle resolved through an export alias). Preserve
+      // the distinction between a cache recall and a byte-range lock conflict.
+      try { std::rethrow_exception(failure); }
+      catch (const error &e) {
+        if (std::string_view(e.what()) == "locked" && native_cache_breaks())
+          throw error("cache_break_pending");
+        throw;
+      }
     }
   }
   json dispatch_request(const std::string &op, const json &body, const call_context &ctx) {
@@ -687,6 +702,7 @@ struct file_store::impl {
     auto space = grant.at("space").at("id").get<std::string>(),
          path = grant.at("path").get<std::string>(), actor = grant.at("actor").get<std::string>();
     lease(grant, ctx);
+    cache_conflict(space, path);
     for (auto j : jobs(space))
       if ((j.value("protocol", "") == "webdav" || j.value("protocol", "") == "ftp") &&
           j.at("status") == "staging" && j.value("active_until", int64_t(0)) < now())
@@ -1046,6 +1062,10 @@ struct file_store::impl {
 file_store::file_store(const config &c, std::string role, std::string generation)
     : impl_(std::make_unique<impl>(c, std::move(role), std::move(generation))) {}
 file_store::~file_store() = default;
+void file_store::maintain() {
+  std::lock_guard guard(impl_->mutex);
+  impl_->maintain_caches();
+}
 json file_store::dispatch(const std::string &op, const json &body, const call_context &ctx) {
   return impl_->dispatch(op, body, ctx);
 }

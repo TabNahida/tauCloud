@@ -63,6 +63,10 @@ static bool dav_covers(const json &lock, const std::string &path) {
   return base == path || (lock.at("depth") == "infinity" && beneath(path, base));
 }
 std::vector<std::string> dav_conditions(space_state &s, const std::string &path, const json &body) {
+  // Unconditional descriptor I/O must not reopen its own path: doing so would
+  // break a native cache guard and block the holder's dirty-data flush.
+  if (!body.contains("if_match") && !body.contains("if_none_match") &&
+      !body.contains("unmodified_since") && !body.contains("dav_if")) return {};
   auto space = s.data.at("space").at("id").get<std::string>();
   auto locks = dav_locks(space);
   auto current = dav_exists(s, path);

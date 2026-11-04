@@ -42,8 +42,10 @@ int worker(const std::string &role, const config &c, const std::string &generati
                     });
   write_json(c.state / (role + ".instance.json"), ping(role, generation));
   log(role, "started");
-  while (!stopping)
+  while (!stopping) {
+    if (files) files->maintain();
     std::this_thread::sleep_for(20ms);
+  }
   server.stop();
   log(role, "stopped");
   return 0;

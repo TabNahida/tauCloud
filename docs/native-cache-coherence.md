@@ -49,11 +49,44 @@ was still in progress when this result was recorded. The [local evidence](eviden
 the exact source hashes. The existing SMB metadata matrix executes this core
 test before its protocol tests on GCC, Clang and MSVC.
 
+## File-domain authority
+
+`file_cache.inc` now owns the cache grant beneath SMB. Only an authenticated
+SMB caller with the matching actor, space, path and writable/readable open can
+acquire it. Directory and delete-pending opens cannot acquire this authority.
+Each acquisition gets a new random cookie; polling, acknowledgement and
+voluntary release must identify that exact acquisition. Repeating acquisition
+does not reset an outstanding break. An ACK without a pending break is rejected.
+
+Conflicting SMB/core opens and native NFS handle resolution trigger recall.
+The existing holder can still write and flush through its descriptor while
+the contender waits. Unconditional DAV lock checks no longer reopen that same
+file merely to evaluate absent HTTP conditions. Native lease conflicts are
+distinguished from byte locks; NFS maps cache recall to DELAY/JUKEBOX.
+
+Authority expires at the signed grant's lifetime (at most 2.5 seconds), measured
+with a monotonic timer. A fresh authenticated poll renews that authority but
+cannot extend the separate five-second break deadline. The actual file worker
+runs maintenance independently of IPC. Timeout, native failure or revocation
+fences the entire open and removes its locks/waiters before another writer can
+proceed; it does not leave an old handle able to flush stale client data.
+Close, worker recovery and voluntary release also clean up native exclusion.
+Linux caching is declined when the kernel break interval is unavailable or
+below ten seconds; the setting is never modified.
+
+The [coordinator's local evidence](evidence/pre-m8/cache-authority-local.json)
+includes direct SMB/core/NFS conflicts, independent files, invalid callers and
+cookies, ACK/flush visibility, real expiry, five seconds of fresh polling that
+cannot prevent recall, revocation/recovery, and an actual file-worker process
+which receives no IPC while native access waits for autonomous expiry.
+This internal authority is not yet called by SMB CREATE, so network clients
+still receive no caching grant. Wire-level pending operations and break/ACK
+acceptance remain necessary before enabling that grant.
+
 ## Remaining integration
 
-The file-domain coordinator must recall caches before any conflicting
-cross-protocol operation and prevent stale handles from flushing after
-revocation. SMB still needs signed/encrypted unsolicited breaks, ACK
+The coordinator's namespace and complete cross-protocol behavior still need
+wire-level acceptance. SMB still needs signed/encrypted unsolicited breaks, ACK
 validation, asynchronous conflicting operations, cancellation and disconnect
 cleanup. NFS still needs delegation state, recalls and revocation. Linux's
 finite kernel break deadline and namespace changes need explicit treatment.

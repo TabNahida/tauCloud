@@ -44,7 +44,8 @@ uint32_t status(std::string_view code) {
   if (code == "not_supported" || code == "stable_handles_unavailable")
     return 10004;
   if (code == "overloaded" || code == "directory_limit" || code == "operation_limit" ||
-      code == "uncertain_write" || code == "locked" || code == "sharing_violation")
+      code == "uncertain_write" || code == "locked" || code == "sharing_violation" ||
+      code == "cache_break_pending")
     return 10008;
   if (code == "io_error" || code == "internal_error" || code == "database_error")
     return 5;

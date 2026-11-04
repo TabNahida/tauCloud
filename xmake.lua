@@ -100,7 +100,7 @@ if has_config("m1") then
         set_kind("binary")
         add_files("tests/m5_core.cpp", "src/native_files.cpp")
         add_defines("TAUCLOUD_TEST_IO")
-        add_deps("taucloud_core")
+        add_deps("taucloud_core", "taucloud_file")
         add_tests("default", {run_timeout = 60})
     target_end()
     target("taucloud_m4_tests")

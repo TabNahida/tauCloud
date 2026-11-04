@@ -334,6 +334,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     return info;
   }
   if (op == "smb_open") {
+    cache_conflict(space, path);
     smb_reap(s);
     require(handles.size() < 128, "handle_limit");
     if (!path.empty())
@@ -567,6 +568,11 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
   require(h.protocol == "smb" && h.space == space && h.actor == actor &&
               (cleanup || h.path == path),
           "forbidden");
+  if (op.starts_with("smb_cache_")) {
+    if (op == "smb_cache_acquire" && smb_meta(s, h).at("delete_pending").get<bool>())
+      return {{"granted", false}, {"cookie", ""}, {"breaking", false}, {"remaining_ms", 0}};
+    return cache_dispatch(op, body, grant, h);
+  }
   if (op == "smb_lock_cancel") {
     const auto token = body.at("waiter").get<std::string>();
     std::erase_if(smb_waiters,
@@ -574,6 +580,11 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     return {{"cancelled", true}};
   }
   if (cleanup) {
+    if (h.cache) {
+      h.file.flush();
+      h.cache.reset(); h.cache_cookie.clear();
+      h.cache_authority_until = h.cache_break_until = 0;
+    }
     smb_reap_times(s, id);
     auto meta = smb_meta(s, h);
     handles.erase(it);
