@@ -1,5 +1,7 @@
 #include <taucloud/smb.hpp>
 #include <taucloud/files.hpp>
+#include <taucloud/gss.hpp>
+#include <openssl/crypto.h>
 #include <taucloud/runtime/bounded_executor.hpp>
 #include <pace/tcp.hpp>
 #include <map>
@@ -105,7 +107,8 @@ uint32_t status(std::string_view code) {
     return 0xc000007f;
   if (code == "not_supported" || code == "directory_limit")
     return 0xc00000bb;
-  if (code == "unauthorized" || code == "rate_limited" || code == "ntlm_mic_required")
+  if (code == "unauthorized" || code == "rate_limited" || code == "ntlm_mic_required" ||
+      code == "gss_context" || code == "gss_credentials" || code == "gss_unavailable")
     return 0xc000006d;
   if (code == "forbidden" || code == "permission_denied" || code == "policy_revoked" ||
       code == "lease_expired" || code == "mixed_writers_disabled")
@@ -401,6 +404,8 @@ struct client {
   uint64_t previous_session = 0;
   std::set<uint64_t> credits_available{0};
   std::string exchange, token, username;
+  std::unique_ptr<gss_context> kerberos;
+  int64_t kerberos_deadline = 0;
   bytes key, encryption_key, decryption_key;
   negotiation selected;
   bytes transcript = bytes(64, '\0');
@@ -560,7 +565,7 @@ struct client {
     auto structure = get(p, 64, 2);
     if (cmd == 0) {
       check(!negotiated && get(p, 40, 8) == 0);
-      auto response = selected.accept(p, s.guid);
+      auto response = selected.accept(p, s.guid, !s.cfg.smb_gss_service.empty());
       check(!(get(p, 16, 4) & ~(selected.dialect == 0x311 ? 0x70ull : 0ull)));
       negotiated = true;
       co_return response;
@@ -571,31 +576,70 @@ struct client {
       auto security = slice(p, get(p, 76, 2), get(p, 78, 2), 88);
       json request = {{"token", encode_bytes(security)}};
       bytes response;
-      if (exchange.empty()) {
+      json result;
+      bool complete = false;
+      if (exchange.empty() && !kerberos) {
         check(get(p, 40, 8) == 0);
         previous_session = get(p, 80, 8);
         raw_ntlm = security.starts_with(std::string_view("NTLMSSP\0", 8));
-        auto r = co_await smb_rpc(s, "identity", "smb_negotiate", request);
-        exchange = r.at("exchange");
         session = get(decode_bytes(random_hex(8)), 0, 8) | 1;
-        response = decode_bytes(r.at("token").get<std::string>());
-        if (!raw_ntlm)
-          response = spnego(response);
-        code = 0xc0000016;
+        bool ntlm = raw_ntlm;
+        if (!ntlm) {
+          try { ntlm_token(security); ntlm = true; }
+          catch (const error &) {} // A Kerberos/SPNEGO token is not an NTLM token.
+        }
+        if (ntlm) {
+          auto r = co_await smb_rpc(s, "identity", "smb_negotiate", request);
+          exchange = r.at("exchange");
+          response = decode_bytes(r.at("token").get<std::string>());
+          if (!raw_ntlm) response = spnego(response);
+          code = 0xc0000016;
+        } else {
+          check(!s.cfg.smb_gss_service.empty(), 0xc000006d);
+          kerberos = std::make_unique<gss_context>(s.cfg.smb_gss_service, s.cfg.smb_gss_keytab, gss_context::purpose::smb);
+          kerberos_deadline = now() + 10000;
+        }
       } else {
         check(get(p, 40, 8) == session);
-        request["exchange"] = exchange;
-        exchange.clear();
-        auto r = co_await smb_rpc(s, "identity", "smb_authenticate", request);
-        token = r.at("token");
-        username = r.at("username");
+        if (!kerberos) {
+          request["exchange"] = exchange;
+          exchange.clear();
+          result = co_await smb_rpc(s, "identity", "smb_authenticate", request);
+          response = raw_ntlm ? bytes() : spnego({}, true);
+          complete = true;
+        }
+      }
+      if (kerberos) {
+        gss_context::result accepted;
+        bytes secret;
+        try {
+          check(now() < kerberos_deadline, 0xc000006d);
+          accepted = kerberos->accept(security);
+          check(accepted.major <= 1, 0xc000006d);
+          response = accepted.token;
+          if (accepted.major == 0) secret = kerberos->session_key();
+        } catch (...) { kerberos.reset(); throw; }
+        if (accepted.major == 0) {
+          kerberos.reset();
+          key = secret.substr(0, 16);
+          key.resize(16, '\0'); // MS-SMB2 SessionKey, for the negotiated AES-128 ciphers.
+          OPENSSL_cleanse(secret.data(), secret.size());
+          json verified = {{"principal", accepted.principal}, {"lifetime", accepted.lifetime}};
+          result = co_await smb_rpc(s, "identity", "smb_kerberos", verified);
+          result["session_key"] = encode_bytes(key);
+          complete = true;
+        } else code = 0xc0000016;
+      }
+      if (complete) {
+        token = result.at("token");
+        username = result.at("username");
         // A reconnect still proves credentials. Only then may it replace an
         // older session belonging to that same canonical identity.
         for (auto *other : s.clients)
           if (other != this && previous_session && other->session == previous_session &&
               other->username == username)
             other->close();
-        key = decode_bytes(r.at("session_key").get<std::string>());
+        key = decode_bytes(result.at("session_key").get<std::string>());
         if (selected.dialect >= 0x300) {
           auto session_key = key;
           if (selected.dialect == 0x311) {
@@ -610,7 +654,6 @@ struct client {
           std::fill(session_key.begin(), session_key.end(), 0);
         }
         authenticated = true;
-        response = raw_ntlm ? bytes() : spnego({}, true);
       }
       auto b = sized(8, 9);
       put(b, 4, 72, 2);
@@ -1534,6 +1577,7 @@ struct client {
           token.clear();
           username.clear();previous_session = 0;
           exchange.clear();
+          kerberos.reset();
           std::fill(key.begin(), key.end(), 0);
           std::fill(encryption_key.begin(), encryption_key.end(), 0);
           std::fill(decryption_key.begin(), decryption_key.end(), 0);
@@ -1589,6 +1633,7 @@ int smb(const config &c, const std::string &generation, std::atomic_bool &stoppi
     return worker("smb", c, generation, stopping);
   file_lock lock(c.state / "smb.lock");
   apply_resource_budget(c);
+  if (!c.smb_gss_service.empty()) gss_context credentials(c.smb_gss_service, c.smb_gss_keytab, gss_context::purpose::smb);
   for (const auto &role : file_roles()) {
     bool ready = false;
     for (int n = 0; n < 20 && !stopping; ++n) {

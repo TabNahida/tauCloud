@@ -93,6 +93,9 @@ def main():
                       '--pynfs', 'build/pynfs/nfs4.1',
                       '--output', str(output.with_suffix('.nfs-gss.json'))]
                      + (['--sanitizers'] if args.sanitizers else [])]
+        commands += [[sys.executable, 'tests/smb_gss_integration.py', '--bin', str(binary),
+                      '--output', str(output.with_suffix('.smb-gss.json'))]
+                     + (['--sanitizers'] if args.sanitizers else [])]
     commands += [[sys.executable, 'tests/smb_attributes_integration.py', '--bin', str(binary),
                   '--output', str(output.with_suffix('.smb-attributes.json'))]]
     commands += [[sys.executable, 'tests/smb_blocking_locks.py', '--bin', str(binary),

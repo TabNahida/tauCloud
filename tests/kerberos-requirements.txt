@@ -1,2 +1,3 @@
 # Independent MIT GSSAPI client for Linux's disposable KDC acceptance.
 gssapi==1.9.0
+krb5==0.10.0

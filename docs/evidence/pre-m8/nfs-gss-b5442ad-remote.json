@@ -1,0 +1,150 @@
+{
+  "source": "b5442ad3eb1d62e2553f64a44d97843048c90833",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41770409371",
+  "recorded_at": "2026-11-04T04:16:46.365935+00:00",
+  "status": "passed",
+  "scope": "Linux RPCSEC_GSS and cross-service security negotiation. Windows runs AUTH_SYS/shared-authority regression; Windows GSS acceptor remains unimplemented.",
+  "jobs": {
+    "gcc": {
+      "job": 126378545956,
+      "artifact": 13295166641,
+      "artifact_sha256": "ed646ef6dc62391ad58ae9ef43fad014a20fc69ae8ac3cfe5e123a8d3d660061",
+      "status": "passed",
+      "gss": {
+        "status": "passed",
+        "checks": [
+          "real MIT tickets: mutual authentication and NFSv3/v4.1 read/write in krb5, krb5i and krb5p; AUTH_SYS downgrade denied; MOUNT and SECINFO advertise Kerberos",
+          "header/body MIC and encrypted-body tampering rejected; 64-entry replay window drops duplicates/old requests and accepts out-of-order requests; MAXSEQ and body sequence enforced",
+          "v3 duplicate mutation with fresh GSS sequence replays its result and rechecks revoked authority; context survives TCP reconnect; authenticated DESTROY invalidates the handle",
+          "SECINFO negotiates across disallowed weaker/stronger tuples and AUTH_SYS; bare/repeated/saved PUTFH and LOOKUPP obey WRONGSEC placement; discovery consumes FH, replays safely and enforces traversal ACLs",
+          "unmapped principals and wrong acceptor tickets denied; per-export privacy requirement prevents downgrade; existing contexts lose access after principal mapping revocation",
+          "unmodified pinned pynfs COMP1, CSESS1, OPEN1, OPEN30 and VF1r pass using krb5, krb5i and krb5p",
+          "atomic service-key rotation accepts newly issued tickets while established contexts continue; live group-membership revocation denies existing contexts",
+          "expired tickets and pre-restart context handles are rejected; fresh mutual authentication preserves access to stable file handles",
+          "unmodified Linux kernel NFSv4.1 mounts and file roundtrips pass with krb5, krb5i and krb5p"
+        ],
+        "pynfs": {
+          "krb5": {
+            "errors": 0,
+            "failures": 0,
+            "name": "all",
+            "skipped": 261,
+            "tests": 266,
+            "time": 0.16887879371643066,
+            "timestamp": "2026-11-04 04:10:41.774807"
+          },
+          "krb5i": {
+            "errors": 0,
+            "failures": 0,
+            "name": "all",
+            "skipped": 261,
+            "tests": 266,
+            "time": 0.1750330924987793,
+            "timestamp": "2026-11-04 04:10:42.145465"
+          },
+          "krb5p": {
+            "errors": 0,
+            "failures": 0,
+            "name": "all",
+            "skipped": 261,
+            "tests": 266,
+            "time": 0.1801755428314209,
+            "timestamp": "2026-11-04 04:10:42.517613"
+          }
+        },
+        "native": {
+          "status": "passed",
+          "profiles": [
+            {
+              "service": "krb5",
+              "status": "passed",
+              "checks": [
+                "native kernel mount",
+                "256 KiB write/fsync/read",
+                "mapped owner",
+                "rename/overwrite/truncate",
+                "directory enumeration/unlink/rmdir"
+              ]
+            },
+            {
+              "service": "krb5i",
+              "status": "passed",
+              "checks": [
+                "native kernel mount",
+                "256 KiB write/fsync/read",
+                "mapped owner",
+                "rename/overwrite/truncate",
+                "directory enumeration/unlink/rmdir"
+              ]
+            },
+            {
+              "service": "krb5p",
+              "status": "passed",
+              "checks": [
+                "native kernel mount",
+                "256 KiB write/fsync/read",
+                "mapped owner",
+                "rename/overwrite/truncate",
+                "directory enumeration/unlink/rmdir"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "clang": {
+      "job": 126378545857,
+      "artifact": 13294957402,
+      "artifact_sha256": "67e0f2717252c7a22cf19570f31c381ba7e4e01eb531b780d8f77909cb6facc2",
+      "status": "passed",
+      "gss": {
+        "status": "passed",
+        "checks": [
+          "real MIT tickets: mutual authentication and NFSv3/v4.1 read/write in krb5, krb5i and krb5p; AUTH_SYS downgrade denied; MOUNT and SECINFO advertise Kerberos",
+          "header/body MIC and encrypted-body tampering rejected; 64-entry replay window drops duplicates/old requests and accepts out-of-order requests; MAXSEQ and body sequence enforced",
+          "v3 duplicate mutation with fresh GSS sequence replays its result and rechecks revoked authority; context survives TCP reconnect; authenticated DESTROY invalidates the handle",
+          "SECINFO negotiates across disallowed weaker/stronger tuples and AUTH_SYS; bare/repeated/saved PUTFH and LOOKUPP obey WRONGSEC placement; discovery consumes FH, replays safely and enforces traversal ACLs",
+          "unmapped principals and wrong acceptor tickets denied; per-export privacy requirement prevents downgrade; existing contexts lose access after principal mapping revocation",
+          "unmodified pinned pynfs COMP1, CSESS1, OPEN1, OPEN30 and VF1r pass using krb5, krb5i and krb5p",
+          "atomic service-key rotation accepts newly issued tickets while established contexts continue; live group-membership revocation denies existing contexts",
+          "expired tickets and pre-restart context handles are rejected; fresh mutual authentication preserves access to stable file handles"
+        ],
+        "pynfs": {
+          "krb5": {
+            "errors": 0,
+            "failures": 0,
+            "name": "all",
+            "skipped": 261,
+            "tests": 266,
+            "time": 1.0301909446716309,
+            "timestamp": "2026-11-04 04:09:49.769033"
+          },
+          "krb5i": {
+            "errors": 0,
+            "failures": 0,
+            "name": "all",
+            "skipped": 261,
+            "tests": 266,
+            "time": 1.102612018585205,
+            "timestamp": "2026-11-04 04:09:51.058190"
+          },
+          "krb5p": {
+            "errors": 0,
+            "failures": 0,
+            "name": "all",
+            "skipped": 261,
+            "tests": 266,
+            "time": 1.23396635055542,
+            "timestamp": "2026-11-04 04:09:52.454428"
+          }
+        }
+      }
+    },
+    "msvc": {
+      "job": 126378545604,
+      "artifact": 13294294290,
+      "artifact_sha256": "90ef7d07c08aefaf811e918279574e167c431738d8cab8f8eaeab7b3cb60cbf9",
+      "status": "passed"
+    }
+  }
+}

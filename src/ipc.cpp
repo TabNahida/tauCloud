@@ -16,7 +16,7 @@ static bool allowed(const std::string &caller, const std::string &target, const 
     return true; // Additional ownership check against the active request.
   if (target == "identity")
     return (caller == "nfs" && (op == "nfs_authorize" || op == "nfs_exports")) || (caller == "ctl" && op == "bootstrap") || (caller == "api" && op == "smb_enroll") ||
-           (caller == "smb" && (op == "smb_negotiate" || op == "smb_authenticate" ||
+           (caller == "smb" && (op == "smb_negotiate" || op == "smb_authenticate" || op == "smb_kerberos" ||
                                 op == "authorize" || op == "logout" || op == "policy_list")) ||
            ((caller == "api" || caller == "webdav" || caller == "ftp") &&
             (op == "login" || op == "validate" || op == "logout" || op == "policy_list" ||

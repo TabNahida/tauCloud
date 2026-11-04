@@ -1,4 +1,5 @@
 #include <taucloud/gss.hpp>
+#include <openssl/crypto.h>
 #ifdef __linux__
 #include <gssapi/gssapi.h>
 #include <gssapi/gssapi_ext.h>
@@ -15,20 +16,35 @@ struct name {
   gss_name_t value = GSS_C_NO_NAME;
   ~name() { OM_uint32 minor; if (value) gss_release_name(&minor, &value); }
 };
+struct buffers {
+  gss_buffer_set_t value = GSS_C_NO_BUFFER_SET;
+  ~buffers() {
+    if (!value) return;
+    for (size_t i = 0; i < value->count; ++i)
+      OPENSSL_cleanse(value->elements[i].value, value->elements[i].length);
+    OM_uint32 minor;
+    gss_release_buffer_set(&minor, &value);
+  }
+};
 gss_buffer_desc input(std::string_view s) { return {s.size(), const_cast<char *>(s.data())}; }
 }
 struct gss_context::impl {
   gss_cred_id_t credential = GSS_C_NO_CREDENTIAL;
   gss_ctx_id_t context = GSS_C_NO_CONTEXT;
   bool complete = false;
+  OM_uint32 required_flags = GSS_C_INTEG_FLAG | GSS_C_CONF_FLAG | GSS_C_MUTUAL_FLAG;
   ~impl() {
     OM_uint32 minor;
     if (context) gss_delete_sec_context(&minor, &context, GSS_C_NO_BUFFER);
     if (credential) gss_release_cred(&minor, &credential);
   }
 };
-gss_context::gss_context(const std::string &service, const std::string &keytab)
+gss_context::gss_context(const std::string &service, const std::string &keytab, purpose use)
     : impl_(std::make_unique<impl>()) {
+  bool spnego = use == purpose::smb;
+  // SMB encrypts with its own derived keys, not GSS wrap. Samba's SMB2
+  // initiator legitimately requests integrity/mutual auth without GSS privacy.
+  if (spnego) impl_->required_flags &= ~GSS_C_CONF_FLAG;
   name target;
   auto text = input(service);
   OM_uint32 minor;
@@ -36,12 +52,27 @@ gss_context::gss_context(const std::string &service, const std::string &keytab)
           "gss_credentials");
   gss_key_value_element_desc element{"keytab", keytab.c_str()};
   gss_key_value_set_desc store{1, &element};
-  gss_OID_set_desc mechanisms{1, gss_mech_krb5};
+  // SPNEGO needs its own credential entry; a Kerberos-only union credential
+  // does not let MIT's mechglue select the SPNEGO acceptor with this keytab.
+  unsigned char spnego_oid[] = {0x2b, 0x06, 0x01, 0x05, 0x05, 0x02};
+  gss_OID_desc selected[] = {*gss_mech_krb5, {sizeof(spnego_oid), spnego_oid}};
+  gss_OID_set_desc mechanisms{spnego ? 2u : 1u, selected};
   require(gss_acquire_cred_from(&minor, target.value, GSS_C_INDEFINITE, &mechanisms,
                               GSS_C_ACCEPT, &store, &impl_->credential, nullptr, nullptr) == GSS_S_COMPLETE,
           "gss_credentials");
 }
 gss_context::~gss_context() = default;
+std::string gss_context::session_key() {
+  require(impl_->complete, "gss_context");
+  buffers keys;
+  OM_uint32 minor;
+  require(gss_inquire_sec_context_by_oid(&minor, impl_->context, GSS_C_INQ_SSPI_SESSION_KEY,
+                                       &keys.value) == GSS_S_COMPLETE && keys.value &&
+              keys.value->count >= 1 && keys.value->elements[0].length > 0 &&
+              keys.value->elements[0].length <= 64, "gss_context");
+  auto &key = keys.value->elements[0];
+  return std::string(static_cast<const char *>(key.value), key.length);
+}
 gss_context::result gss_context::accept(std::string_view token) {
   require(!impl_->complete, "gss_context");
   auto in = input(token);
@@ -55,10 +86,11 @@ gss_context::result gss_context::accept(std::string_view token) {
   if (major != GSS_S_COMPLETE && major != GSS_S_CONTINUE_NEEDED) return r;
   r.token = out.str();
   if (major == GSS_S_COMPLETE) {
+    if ((flags & impl_->required_flags) != impl_->required_flags)
+      log("gss", "context_flags_rejected", std::to_string(flags));
     require(mechanism && mechanism->length == gss_mech_krb5->length &&
                 !std::memcmp(mechanism->elements, gss_mech_krb5->elements, mechanism->length) &&
-                (flags & (GSS_C_INTEG_FLAG | GSS_C_CONF_FLAG | GSS_C_MUTUAL_FLAG)) ==
-                    (GSS_C_INTEG_FLAG | GSS_C_CONF_FLAG | GSS_C_MUTUAL_FLAG) &&
+                (flags & impl_->required_flags) == impl_->required_flags &&
                 !(flags & GSS_C_ANON_FLAG) && lifetime > 0, "gss_context");
     buffer principal;
     require(gss_display_name(&minor, peer.value, &principal.value, nullptr) == GSS_S_COMPLETE,
@@ -112,8 +144,9 @@ std::string gss_context::unwrap(std::string_view token) {
 #else
 namespace tc {
 struct gss_context::impl {};
-gss_context::gss_context(const std::string &, const std::string &) { throw error("gss_unavailable"); }
+gss_context::gss_context(const std::string &, const std::string &, purpose) { throw error("gss_unavailable"); }
 gss_context::~gss_context() = default;
+std::string gss_context::session_key() { throw error("gss_unavailable"); }
 gss_context::result gss_context::accept(std::string_view) { throw error("gss_unavailable"); }
 std::string gss_context::sign(std::string_view) { throw error("gss_unavailable"); }
 bool gss_context::verify(std::string_view, std::string_view) { return false; }

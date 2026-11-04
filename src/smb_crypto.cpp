@@ -270,9 +270,10 @@ bytes spnego(std::string_view token, bool complete) {
     b += der(0xa1, oid) + der(0xa2, der(4, token));
   return der(0xa1, der(0x30, b));
 }
-bytes mechanisms() {
+bytes mechanisms(bool kerberos) {
+  auto available = kerberos ? bytes("\x06\x09\x2a\x86\x48\x86\xf7\x12\x01\x02\x02", 11) + oid : oid;
   return der(0x60, bytes("\x06\x06\x2b\x06\x01\x05\x05\x02", 8) +
-                       der(0xa0, der(0x30, der(0xa0, der(0x30, oid)))));
+                       der(0xa0, der(0x30, der(0xa0, der(0x30, available)))));
 }
 ntlm_exchange::ntlm_exchange(bytes type1) : negotiate(std::move(type1)), expires(now() + 10000) {
   require(negotiate.size() >= 32 && get(negotiate, 8, 4) == 1, "unauthorized");

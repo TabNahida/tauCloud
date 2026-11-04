@@ -38,6 +38,7 @@ struct config {
   bool ftp_plaintext = false;
   std::string nfs_address = "127.0.0.1";
   std::string nfs_gss_service, nfs_gss_keytab;
+  std::string smb_gss_service, smb_gss_keytab;
   uint16_t nfs_peer_rpcbind_port = 111;
   int connections = 32, ipc_queue = 16, restart_limit = 5;
   int memory_mb = 512;

@@ -1,0 +1,164 @@
+{
+  "recorded_at": "2026-11-04T04:26:25.577373+00:00",
+  "base_source": "ec96983d302f424a41863f620d8b5561b5881f97",
+  "status": "passed",
+  "scope": "Linux SMB Kerberos/SPNEGO, current principal mapping and key lifecycle. Unmodified Python and Samba clients; kernel CIFS, remote sanitizer and Windows GSS acceptance are not established by these local results.",
+  "files_sha256": {
+    "include/taucloud/core.hpp": "a849a9ed7d431f2a0e6316600686badf13f1dfd844326e7f7e093deab999a47b",
+    "include/taucloud/gss.hpp": "7e58f72d5750ae0befbdaadc8964102db9f16059d55f7e5b24ab3d3c5d269e47",
+    "include/taucloud/smb.hpp": "4fcee4983ebcb5483780714fdb9c3344d2b8201f6de3edbcece2a25b96c0e3de",
+    "src/api.cpp": "26c675dfa242071c1873d75959553077e64c1a687ff88c27bee294fd1e4df365",
+    "src/core.cpp": "ab46ced3a1beec6b3d5ca3ffd29b77f0e06540b14136657d8d8b766031436c96",
+    "src/gss.cpp": "7b73c80f4f3aee1552a45fb441512d9554d09ba0b73d779f3d770dad470a5d13",
+    "src/identity.cpp": "a6fb2e4c4b7a5600b82cc8dfe99b6efe7a0d9dfa5a8ae6db99f5e9c700d8f87a",
+    "src/ipc.cpp": "2c8cb7a1ac692f3f476fb2d72287e8635ab016328daedc2096fe4b1127ebd770",
+    "src/policy.cpp": "ee1e120414442fa7d9b38e9dfaedad1fdae1690f1be9d5522dfc460418aad986",
+    "src/smb.cpp": "3b3fd2c9e64e7110ed0d38fef8c77ddef54b8c7850c485d203fdec634d1f3ee7",
+    "src/smb3.cpp": "aa478b71b5e95d945a1dd9dce618e053c11a33275d0dc1f1d83cadc8e48253a1",
+    "src/smb_crypto.cpp": "441746a1f322616288b645cf9c948555df59fb995298cc9f9d2c9e6b3bb89376",
+    "tests/smb_gss_integration.py": "1f719dc08ea4cc6c5bf1e3e5a467120c0ebbf78204dda4f3b8e35e4d12925094",
+    "tests/linux_native_smb_gss.py": "f7d062434fc9cd85ef22c44a70bc295c731894013e74157376f1594b031fb9b8",
+    "tests/m5_core.cpp": "c2f4530df202c43c38cbf84aa78b678387233cd31cf85c76bf8be375dff33c7f"
+  },
+  "local": {
+    "final": {
+      "status": "passed",
+      "checks": [
+        "principal mappings require administrator authority and reject ambiguous duplicate principal bindings",
+        "real Kerberos and SPNEGO negotiate authenticate SMB2.1/3.0/3.0.2/3.1.1; independent client validates signing and AES encryption during write/read/flush/rename/truncate/delete",
+        "unmodified Samba smbclient requires Kerberos and verifies 1 MiB signed SMB2.1 and encrypted SMB3.1.1 roundtrips",
+        "unmapped principals, tickets for another acceptor and modified authenticators fail without NTLM or guest fallback",
+        "independent raw Kerberos verifies mutual AP-REP and final SMB2 HMAC; replaying the same AP-REQ on a fresh transport is rejected",
+        "live principal mapping revocation terminates existing file authority and new logins; explicit reenable admits fresh authentication",
+        "atomic cifs keytab rotation admits fresh tickets while existing signed/encrypted sessions remain valid",
+        "ticket lifetime bounds SMB authority; Kerberos is independent of NTLM enrollment and existing mandatory-MIC NTLM authentication still works"
+      ],
+      "active_profile": {
+        "protocol": "negotiate",
+        "dialect": "0x311",
+        "encrypted": true
+      },
+      "samba": [
+        {
+          "dialect": "SMB2_10",
+          "protection": "sign",
+          "returncode": 0,
+          "stdout": "",
+          "stderr": "putting file /tmp/tc3-q_tkkg8c/source as \\samba-kerberos (4129.0 kb/s) (average 4129.0 kb/s)\ngetting file \\samba-kerberos of size 1048576 as /tmp/tc3-q_tkkg8c/download (13128.2 KiloBytes/sec) (average 13128.2 KiloBytes/sec)\n"
+        },
+        {
+          "dialect": "SMB3_11",
+          "protection": "encrypt",
+          "returncode": 0,
+          "stdout": "",
+          "stderr": "putting file /tmp/tc3-q_tkkg8c/source as \\samba-kerberos (4249.0 kb/s) (average 4249.0 kb/s)\ngetting file \\samba-kerberos of size 1048576 as /tmp/tc3-q_tkkg8c/download (13128.2 KiloBytes/sec) (average 13128.2 KiloBytes/sec)\n"
+        }
+      ]
+    },
+    "ntlm": {
+      "status": "passed",
+      "checks": [
+        "verified repeated logins do not exhaust the failed-authentication budget",
+        "signed NTLMv2 MIC authentication, UTF-16 create/read/write/flush/query/directory/close",
+        "QFid CREATE context agrees with internal file IDs across opens and distinguishes objects on one volume",
+        "authenticated srvsvc NDR32 share enumeration filters inaccessible and non-SMB shares",
+        "SMB share lookup ignores case, preserves canonical grants and rejects ambiguous publication without non-SMB shadowing",
+        "share access conflicts, exclusive/shared byte locks, rename with live handles, truncate and last-close deletion",
+        "signed related compound CREATE/WRITE/READ/CLOSE and credit accounting",
+        "directory deletion is nonrecursive; traversal/ADS/non-NFC denied; unsupported empty security-information selection rejected",
+        "1 MiB streamed binary roundtrip with SHA-256",
+        "unknown-session LOGOFF preserves the valid session; client-clock NTLMv2 accepted; excessive skew, bad MIC/proof, unsigned/tampered signing and malformed packets rejected",
+        "SMB credential revocation invalidates live access; re-enrollment and SPNEGO reconnect succeed",
+        "SMB worker kill/restart reclaims handles and durable delete intent without restarting API, identity or files"
+      ],
+      "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+      "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+      "authentication_provider": "pyspnego NTLM",
+      "large_mib": 1,
+      "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+      "port": 59247,
+      "sanitizers": false
+    },
+    "smb3": {
+      "status": "passed",
+      "checks": [
+        "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+        "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+        "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+        "0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+        "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+        "0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+        "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+        "0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+        "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+        "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+        "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+        "leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent",
+        "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+        "unsupported signing/cipher/hash and malformed contexts fail without dialect fallback",
+        "independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+        "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+        "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+        "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+      ],
+      "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+      "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+      "authentication_provider": "pyspnego NTLM",
+      "large_mib": 1,
+      "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+      "port": 57675,
+      "sanitizers": false
+    },
+    "nfs-regression": {
+      "status": "passed",
+      "checks": [
+        "real MIT tickets: mutual authentication and NFSv3/v4.1 read/write in krb5, krb5i and krb5p; AUTH_SYS downgrade denied; MOUNT and SECINFO advertise Kerberos",
+        "header/body MIC and encrypted-body tampering rejected; 64-entry replay window drops duplicates/old requests and accepts out-of-order requests; MAXSEQ and body sequence enforced",
+        "v3 duplicate mutation with fresh GSS sequence replays its result and rechecks revoked authority; context survives TCP reconnect; authenticated DESTROY invalidates the handle",
+        "SECINFO negotiates across disallowed weaker/stronger tuples, AUTH_SYS and authorized anonymous discovery; bare/repeated/saved PUTFH and LOOKUPP obey WRONGSEC placement; discovery consumes FH, replays safely and enforces traversal ACLs",
+        "unmapped principals and wrong acceptor tickets denied; per-export privacy requirement prevents downgrade; existing contexts lose access after principal mapping revocation",
+        "unmodified pinned pynfs COMP1, CSESS1, OPEN1, OPEN30 and VF1r pass using krb5, krb5i and krb5p",
+        "atomic service-key rotation accepts newly issued tickets while established contexts continue; live group-membership revocation denies existing contexts",
+        "expired tickets and pre-restart context handles are rejected; fresh mutual authentication preserves access to stable file handles"
+      ],
+      "pynfs": {
+        "krb5": {
+          "errors": 0,
+          "failures": 0,
+          "name": "all",
+          "skipped": 261,
+          "tests": 266,
+          "time": 0.32397985458374023,
+          "timestamp": "2026-11-04 04:22:42.155697"
+        },
+        "krb5i": {
+          "errors": 0,
+          "failures": 0,
+          "name": "all",
+          "skipped": 261,
+          "tests": 266,
+          "time": 0.32083821296691895,
+          "timestamp": "2026-11-04 04:22:42.581288"
+        },
+        "krb5p": {
+          "errors": 0,
+          "failures": 0,
+          "name": "all",
+          "skipped": 261,
+          "tests": 266,
+          "time": 0.2978651523590088,
+          "timestamp": "2026-11-04 04:22:42.974467"
+        }
+      }
+    },
+    "core": {
+      "checks": 12409,
+      "status": "passed"
+    }
+  },
+  "interoperability_corrections": [
+    "MIT SPNEGO needs an explicit SPNEGO credential alongside Kerberos in the acceptor union credential; independent Python GSSAPI reproduces Kerberos-only union rejection.",
+    "Samba SMB2 requests mutual authentication and integrity without GSS confidentiality (returned flags 302); SMB keeps its own mandatory signing/encryption, while NFS still requires all three GSS flags.",
+    "Samba deliberately rejects localhost Kerberos targets; clients authenticate the exact files.taucloud.test FQDN while routing TCP to 127.0.0.1."
+  ]
+}

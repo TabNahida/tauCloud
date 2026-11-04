@@ -381,7 +381,8 @@ json policy_dispatch(sqlite3 *db, const config &c, const std::string &operation,
                         {"resource", q.text(4)}});
       return rows;
     }
-    require(kind == "storage-roots" || kind == "groups" || kind == "nfs-exports", "invalid_request");
+    require(kind == "storage-roots" || kind == "groups" || kind == "nfs-exports" ||
+                kind == "smb-principals", "invalid_request");
     return records(db, kind);
   }
   require(operation == "policy_write" && who.at("role") == "admin" && who.at("scope") == "admin",
@@ -443,6 +444,26 @@ json policy_dispatch(sqlite3 *db, const config &c, const std::string &operation,
       q.bind(4, role);
       q.row();
       result = {{"username", name}, {"role", role}};
+    }
+  } else if (kind == "smb-principals") {
+    identifier(id);
+    auto principal = data.at("principal").get<std::string>();
+    auto user = data.at("username").get<std::string>();
+    require(!principal.empty() && principal.size() <= 1024 &&
+                principal.find('\0') == std::string::npos && principal.find('@') != std::string::npos,
+            "invalid_principal");
+    require(exists_user(db, user), "not_found");
+    for (const auto &mapping : records(db, kind))
+      require(mapping.at("id") == id || mapping.at("principal") != principal, "already_exists");
+    std::vector<std::string> revoked{principal};
+    if (data.value("update", false)) revoked.push_back(record(db, kind, id).at("principal"));
+    result = {{"id", id}, {"principal", principal}, {"username", user},
+              {"enabled", data.value("enabled", true)}};
+    put(db, kind, id, result, data.value("update", false));
+    for (const auto &name : revoked) {
+      statement q(db, "DELETE FROM sessions WHERE kind='smb' AND csrf=?");
+      q.bind(1, "krb5:" + name);
+      q.row();
     }
   } else if (kind == "nfs-exports") {
     identifier(id);

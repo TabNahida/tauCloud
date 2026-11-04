@@ -4,6 +4,7 @@
 #include <taucloud/smb.hpp>
 #include <taucloud/files.hpp>
 #include <openssl/crypto.h>
+#include <algorithm>
 #include <map>
 namespace tc {
 struct identity_store::impl {
@@ -114,6 +115,22 @@ struct identity_store::impl {
     }
     tx.commit();
   }
+  json smb_session(const std::string &name, int64_t expires, const std::string &principal = "") {
+    statement prune(db, "DELETE FROM sessions WHERE expires<=?");
+    prune.bind(1, now());
+    prune.row();
+    statement count(db, "SELECT count(*) FROM sessions");
+    count.row();
+    require(count.integer(0) < 4096, "session_limit");
+    auto access = random_hex();
+    statement add(db, "INSERT INTO sessions VALUES(?,?,'smb','files',?,?)");
+    add.bind(1, digest(access));
+    add.bind(2, name);
+    add.bind(3, principal.empty() ? "" : "krb5:" + principal);
+    add.bind(4, expires);
+    add.row();
+    return {{"token", access}, {"username", name}, {"expires", expires}};
+  }
   json smb_dispatch(const std::string &op, const json &body, const call_context &ctx) {
     using namespace smb_detail;
     if (op == "smb_enroll") {
@@ -157,6 +174,28 @@ struct identity_store::impl {
       return {{"username", name}, {"enabled", enabled}, {"management_password_changed", false}};
     }
     require(ctx.caller == "smb", "forbidden");
+    if (op == "smb_kerberos") {
+      require(!cfg.smb_gss_service.empty(), "unauthorized");
+      auto principal = body.at("principal").get<std::string>();
+      require(!principal.empty() && principal.size() <= 1024 && principal.find('\0') == std::string::npos,
+              "unauthorized");
+      std::string name;
+      statement mappings(db, "SELECT body FROM records WHERE kind='smb-principals'");
+      while (mappings.row()) {
+        auto mapping = json::parse(mappings.text(0));
+        if (mapping.at("principal") == principal && mapping.at("enabled").get<bool>()) {
+          require(name.empty(), "unauthorized");
+          name = mapping.at("username");
+        }
+      }
+      statement user(db, "SELECT name FROM users WHERE name=? AND enabled=1");
+      user.bind(1, name);
+      require(!name.empty() && user.row(), "unauthorized");
+      auto lifetime = body.at("lifetime").get<uint32_t>();
+      require(lifetime > 0, "unauthorized");
+      ctx.check();
+      return smb_session(name, now() + int64_t(std::min(lifetime, 3600u)) * 1000, principal);
+    }
     std::erase_if(exchanges, [](const auto &item) { return item.second.expires <= now(); });
     if (op == "smb_negotiate") {
       require(exchanges.size() < 64, "overloaded");
@@ -195,22 +234,7 @@ struct identity_store::impl {
     OPENSSL_cleanse(hash.data(), hash.size());
     ctx.check();
     authenticated_attempt("smb:" + path_fold(name));
-    statement prune(db, "DELETE FROM sessions WHERE expires<=?");
-    prune.bind(1, now());
-    prune.row();
-    statement count(db, "SELECT count(*) FROM sessions");
-    count.row();
-    require(count.integer(0) < 4096, "session_limit");
-    auto access = random_hex();
-    auto expires = now() + 3600000;
-    statement add(db, "INSERT INTO sessions VALUES(?,?,'smb','files','',?)");
-    add.bind(1, digest(access));
-    add.bind(2, name);
-    add.bind(3, expires);
-    add.row();
-    result["token"] = access;
-    result["username"] = name;
-    result["expires"] = expires;
+    result.update(smb_session(name, now() + 3600000));
     return result;
   }
   json dispatch(const std::string &op, const json &body, const call_context &ctx) {

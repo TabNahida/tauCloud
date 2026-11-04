@@ -113,7 +113,7 @@ bytes decrypt(std::string_view key, unsigned cipher, uint64_t session, std::stri
   return crypt(key, cipher, packet.substr(20, nonce_size), packet.substr(20, 32), packet.substr(52),
                tag, false);
 }
-bytes negotiation::accept(std::string_view p, std::string_view guid) {
+bytes negotiation::accept(std::string_view p, std::string_view guid, bool kerberos) {
   require(p.size() >= 102 && get(p, 64, 2) == 36 && guid.size() == 16, "invalid_packet");
   auto count = get(p, 66, 2), security = get(p, 68, 2);
   require(count > 0 && count <= 64 && p.size() >= 100 + 2 * count && (security & 3) &&
@@ -192,7 +192,7 @@ bytes negotiation::accept(std::string_view p, std::string_view guid) {
     if (get(p, 72, 4) & 0x40)
       cipher = 1;
   }
-  auto security_blob = mechanisms();
+  auto security_blob = mechanisms(kerberos);
   bytes b(64, '\0');
   put(b, 0, 65, 2);
   put(b, 2, 3, 2);

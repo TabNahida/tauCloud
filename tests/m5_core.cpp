@@ -73,6 +73,25 @@ int main() {
       write_json(cfg.state / "config.json", j);
       rejected([&] { config::load(cfg.state); }, "invalid_config");
     }
+    auto keytab = (cfg.state / "cifs.keytab").string();
+    for (auto bad : {json{{"smb_gss_service", "cifs/localhost@REALM"}},
+                     json{{"smb_gss_keytab", keytab}},
+                     json{{"smb_gss_service", 1}, {"smb_gss_keytab", keytab}},
+                     json{{"smb_gss_service", "nfs/localhost@REALM"}, {"smb_gss_keytab", keytab}},
+                     json{{"smb_gss_service", "cifs/localhost@REALM"}, {"smb_gss_keytab", "relative.keytab"}}}) {
+      auto j = original; j.update(bad);
+      write_json(cfg.state / "config.json", j);
+      rejected([&] { config::load(cfg.state); }, "invalid_config");
+    }
+    auto configured = original;
+    configured["smb_gss_service"] = "cifs/localhost@REALM";
+    configured["smb_gss_keytab"] = keytab;
+    write_json(cfg.state / "config.json", configured);
+#ifdef __linux__
+    ok(config::load(cfg.state).smb_gss_service == "cifs/localhost@REALM");
+#else
+    rejected([&] { config::load(cfg.state); }, "gss_unavailable");
+#endif
     write_json(cfg.state / "config.json", original);
     fs::create_directories(base / "files");
     auto root = inspect_root(base / "files");

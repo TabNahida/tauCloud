@@ -19,7 +19,7 @@ struct negotiation {
   unsigned dialect = 0, cipher = 0;
   uint32_t capabilities = 0;
   bytes client_info;
-  bytes accept(std::string_view packet, std::string_view guid);
+  bytes accept(std::string_view packet, std::string_view guid, bool kerberos = false);
   bytes validate(std::string_view input, std::string_view guid) const;
 };
 bytes nt_hash(std::string_view password);
@@ -28,7 +28,7 @@ bytes unseal(std::string_view key, std::string_view encrypted, std::string_view 
 bytes vault_key(const config &);
 bytes ntlm_token(std::string_view token);
 bytes spnego(std::string_view token, bool complete = false);
-bytes mechanisms();
+bytes mechanisms(bool kerberos = false);
 struct ntlm_exchange {
   bytes negotiate, challenge;
   int64_t expires;
