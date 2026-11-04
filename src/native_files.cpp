@@ -1,4 +1,6 @@
 #include <taucloud/files.hpp>
+#include <taucloud/native_delegation_owner.hpp>
+#include <taucloud/nfs_delegation.hpp>
 #include <algorithm>
 #include <cstring>
 #include <limits>
@@ -19,6 +21,11 @@
 #include <sys/inotify.h>
 #include <unistd.h>
 #include <csignal>
+#include <poll.h>
+#include <spawn.h>
+#include <sys/socket.h>
+#include <sys/wait.h>
+#include <fstream>
 #endif
 namespace tc {
 #ifdef TAUCLOUD_TEST_IO
@@ -227,6 +234,7 @@ bool native_file::writable() const {
 }
 #include "native_notify.inc"
 #include "native_cache.inc"
+#include "native_delegation_owner.inc"
 std::string native_file::stable_identity() const {
 #ifdef _WIN32
   // NTFS file IDs contain the MFT sequence, and are verified on the pinned handle.

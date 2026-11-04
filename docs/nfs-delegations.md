@@ -186,7 +186,8 @@ hardlink creation, directory entry changes, cross-parent moves and rmdir. Each
 conflict must signal recall, remain blocked, and complete after explicit release.
 The suite also checks compatible readers, conflicting pre-existing opens,
 duplicate ownership, release/reacquisition and retained-descriptor RAII cleanup.
-The expanded local run passes 216 checks. The original directory-rename failure
+The initial expanded local run passes 216 checks; its pinned-kernel Actions
+run also passes ([remote evidence](evidence/pre-m8/native-delegation-kernel-c8-remote.json)). The original directory-rename failure
 and corrected acceptance are retained in
 [evidence](evidence/pre-m8/native-delegation-kernel-local.json).
 
@@ -196,3 +197,44 @@ exit counts as a positive guest pass. This validates a native building block,
 not production NFS delegation, crash retention, reclaim or SMB directory leases.
 The file worker still uses its existing private coordinator primitive and
 declines wire handout until the surviving-owner and recovery requirements pass.
+
+## Independent native guard owner
+
+`native_delegation_owner` now provides an independent Linux process that owns
+up to 256 native delegation records. A private AF_UNIX SOCK_SEQPACKET channel
+passes already-confined descriptors with SCM_RIGHTS. The owner accepts no path,
+network request or data IO. Its process starts through the registered helper
+entry point, closes unrelated descriptors and stdio, uses an empty environment,
+and has a separate session so ordinary worker/terminal shutdown does not kill it.
+The application must register the helper entry before creating an owner; otherwise
+creation fails without recursively executing an unaware program.
+
+Acquire, inspect, renew, recall and explicit release use bounded, validated
+messages. The worker must await an acknowledgment before publishing a grant or
+extending network state. Lost replies disconnect the channel and retain uncertain
+native ownership until expiry. Control-object destruction and worker death do not
+send RELEASE. The owner independently detects native breaks and expires guards
+using monotonic time. Renewal never extends the original recall deadline, expired
+records cannot revive, and old terminal records cannot clear a later local guard.
+The native break-time bound is checked before acquiring. A failed kernel query
+fences the control channel while retaining descriptors through their lifetime.
+
+The Linux 6.19 guest suite exercises both tmpfs and ext4 with the actual owner
+process. It checks explicit release, renewals through a complete recall interval,
+revocation, compatible reads, local duplicate exclusion, write-right refusal,
+unknown IDs, disconnect retention and automatic expiry. It also SIGKILLs a real
+worker after acquisition acknowledgment and proves an ordinary host writer
+remains excluded, then succeeds after the accepted lease expires. Descriptor
+handoff also preserves validated private-pin and unlinked-incarnation flags;
+both recovery-related object forms pass real native acquisition and release.
+The final local guest run passes 364 checks, with evidence in
+[native owner acceptance](evidence/pre-m8/native-delegation-owner-local.json).
+
+This is the native ownership component, **not yet the production NFS provider**.
+The file-domain coordinator still uses its previous primitive. Integrating owner
+IDs with signed authority, ensuring network renewals never outlive owner ACKs,
+recovering state across worker replacement, and durable delegation reclaim remain
+open. The private disconnected owner deliberately cannot be reattached by a new
+worker yet. Simultaneous owner/worker loss and full server restart still require
+recovery/fencing; this test does not prove those cases. Windows owner and native
+namespace protection also remain open. Wire handout stays gated.

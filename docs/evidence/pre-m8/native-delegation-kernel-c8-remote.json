@@ -1,0 +1,13 @@
+{
+  "source": "c8b8f56830f841328a7c166f746073b542cdb393",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41903454648",
+  "job_id": 126831696388,
+  "conclusion": "success",
+  "accepted_output": [
+    "2026-11-04T20:12:22.5077333Z PASS native delegation 106 checks",
+    "2026-11-04T20:12:27.4674448Z PASS native delegation 216 checks",
+    "2026-11-04T20:12:27.4674592Z TAUCLOUD_DELEGATION_VM_PASS",
+    "2026-11-04T20:12:27.4675063Z PASS isolated kernel acceptance (tmpfs + ext4)"
+  ],
+  "scope": "Pre-owner native delegation adapter: real host and isolated Linux 6.19 tmpfs/ext4; does not validate the new owner process or full NFS."
+}

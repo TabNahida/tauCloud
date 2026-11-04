@@ -1,0 +1,109 @@
+{
+  "recorded_at": "2026-11-04T20:31:54.977568+00:00",
+  "base_source": "c8b8f56830f841328a7c166f746073b542cdb393",
+  "status": "native-owner-components-passed-production-provider-not-integrated",
+  "source_sha256": {
+    "include/taucloud/native_delegation_owner.hpp": "1cfe8c5a55546f99120ad99ec1693395b21af7123a1150dd9cef2f8215ac613b",
+    "src/native_delegation_owner.inc": "41d2687d4f04b270b35c1f72957384cd72b616874214cc3b4284002406fc14b4",
+    "include/taucloud/files.hpp": "5b025447983d797a1b6e1775a6eb6e232f8df1d26bd4efe5260f123b085d86d6",
+    "src/native_files.cpp": "755e3bb89c5ab2f3046300364b58f3377da5501c3cf4f64c9218f39a18ac3dee",
+    "apps/main.cpp": "9cfa7ce41dd75c08660a5f92e93bc8e67728abb004776a9991b821946a71e995",
+    "tests/native_delegation_kernel.cpp": "3a1bd6dd7791f6b9e92ac0243f92b31bf9099d9799b5f38a725a9f20dd79d43c",
+    "tests/m2_core.cpp": "ccf66eb2ba83a6e4ee9663e0ac2a8ca8fe2a24f831878ef10edfdfd4ec790b2d",
+    "scripts/build_delegation_kernel.py": "b7769551f3861b785cce063910cafda5b3050d2f30402ebe8775c0dd24655bdd",
+    ".github/workflows/native-delegation.yml": "8f4a00f8b7f2306e54e11d8f9f6f1f0dfd4695a3a6e2144155efaf290d56dac2",
+    ".github/workflows/smb-metadata.yml": "37c111812b6aaaa8051439edd72e39a5aa00cb39d5f18de556b279dca0cae919"
+  },
+  "guest": {
+    "kernel": "6.19",
+    "archive_sha256": "303079a8250b8f381f82b03f90463d12ac98d4f6b149b761ea75af1323521357",
+    "image_sha256": "bbc5f6d30424b11bae74cce2c8667a7a589485b025e6166b7704448ead65d86a",
+    "config_sha256": "ff0ff74057bac91739369d0999034979e332d006da730d453a79453d1e990320",
+    "binary_sha256": "06007c2e550f65bac6d8bd8497f23b7a58231ccb7643cf3ab73f3a3b75a76986",
+    "filesystems": [
+      "tmpfs",
+      "ext4"
+    ],
+    "checks": 364,
+    "serial_sha256": "155e99b3274b7e20cee1a3d92516870a944b124b4b20715990e42e8a7f55c9af",
+    "results": [
+      "PASS \"/tmp/delegation\" READ/writer",
+      "PASS \"/tmp/delegation\" READ/truncate",
+      "PASS \"/tmp/delegation\" READ/rename",
+      "PASS \"/tmp/delegation\" READ/unlink",
+      "PASS \"/tmp/delegation\" READ/chmod",
+      "PASS \"/tmp/delegation\" READ/utimens",
+      "PASS \"/tmp/delegation\" READ/xattr",
+      "PASS \"/tmp/delegation\" READ/chown",
+      "PASS \"/tmp/delegation\" READ/link",
+      "PASS \"/tmp/delegation\" WRITE/reader",
+      "PASS \"/tmp/delegation\" WRITE/writer",
+      "PASS \"/tmp/delegation\" DIRECTORY/create",
+      "PASS \"/tmp/delegation\" DIRECTORY/unlink",
+      "PASS \"/tmp/delegation\" DIRECTORY/rename",
+      "PASS \"/tmp/delegation\" DIRECTORY/cross-parent-rename",
+      "PASS \"/tmp/delegation\" DIRECTORY/rmdir-after-move",
+      "PASS \"/tmp/delegation\" OWNER/renew-recall-revoke-return",
+      "PASS \"/tmp/delegation\" OWNER/detach-retention-expiry",
+      "PASS \"/tmp/delegation\" OWNER/SIGKILL-worker-retention-expiry",
+      "PASS \"/tmp/delegation\" OWNER/private-pin-and-unlinked-incarnation",
+      "PASS \"/disk/delegation\" READ/writer",
+      "PASS \"/disk/delegation\" READ/truncate",
+      "PASS \"/disk/delegation\" READ/rename",
+      "PASS \"/disk/delegation\" READ/unlink",
+      "PASS \"/disk/delegation\" READ/chmod",
+      "PASS \"/disk/delegation\" READ/utimens",
+      "PASS \"/disk/delegation\" READ/xattr",
+      "PASS \"/disk/delegation\" READ/chown",
+      "PASS \"/disk/delegation\" READ/link",
+      "PASS \"/disk/delegation\" WRITE/reader",
+      "PASS \"/disk/delegation\" WRITE/writer",
+      "PASS \"/disk/delegation\" DIRECTORY/create",
+      "PASS \"/disk/delegation\" DIRECTORY/unlink",
+      "PASS \"/disk/delegation\" DIRECTORY/rename",
+      "PASS \"/disk/delegation\" DIRECTORY/cross-parent-rename",
+      "PASS \"/disk/delegation\" DIRECTORY/rmdir-after-move",
+      "PASS \"/disk/delegation\" OWNER/renew-recall-revoke-return",
+      "PASS \"/disk/delegation\" OWNER/detach-retention-expiry",
+      "PASS \"/disk/delegation\" OWNER/SIGKILL-worker-retention-expiry",
+      "PASS \"/disk/delegation\" OWNER/private-pin-and-unlinked-incarnation",
+      "PASS native delegation 364 checks",
+      "TAUCLOUD_DELEGATION_VM_PASS"
+    ]
+  },
+  "sanitizer_regression": {
+    "host": {
+      "sha256": "14a14ed117c23bab94c4df5ab5275ba0a298d4a79ae3b5043bd459efe247f091",
+      "output": "UNSUPPORTED F_SETDELEG; no fallback claimed as delegation\nUNSUPPORTED owner F_SETDELEG; ordinary descriptor remains usable\nPASS native delegation 5 checks\n"
+    },
+    "m2": {
+      "sha256": "284edc41c069b5af5cdc5e95eb56dcee2414e1c481120a85a6ac56fe9592d8a0",
+      "output": "{\"checks\":80,\"disk_full\":\"native-adapter fault injection\",\"offset_bits\":64,\"status\":\"passed\"}\n"
+    },
+    "smb": {
+      "sha256": "24229f41ac78965e8e7c9d311d91f005adc7d77213bb1c10d3b76599f3ff30cf",
+      "output": "PASS shared native exclusion, own IO, compatible foreign opens, same-key CREATE during break and final-close lifetime\nPASS chained recalls retain native exclusion through both ACKs and exact final notification delivery\nPASS HANDLE recall permits cached close, while same-key sharing conflicts do not bypass access rules\nPASS classic Level II and lease grants retain independent authority over one native guard\nPASS delivered RH invalidation permits SMB/native data operations before ACK while sharing waits and expired authority still fences its open\nPASS rename preserves originating native exclusion and waits for foreign HANDLE ACK; disposition preserves READ until last close\nPASS expiry fences only that open; a fresh sibling keeps exclusion until acknowledgment\nPASS missing delivery fences the open after five seconds despite continuous authority renewal\nPASS NFS reads and writes recall SMB lease authority before accessing shared file data\nPASS R-only invalidation releases native exclusion only after the matching notification is sent\nPASS same-key membership grants no extra file rights, caller authority or revocation exemption\n{\"checks\":125,\"status\":\"passed\"}\n"
+    },
+    "nfs": {
+      "sha256": "146410592e980c1fc18e79b983e052e873bce3b9c4bb131bfa57d3a63ade69be",
+      "output": "PASS monotonic recall, expiry, return and non-resurrection boundaries\nPASS native write exclusion, own filehandle reads, capability binding and explicit return\nPASS expired access grants deny IO and renewal while retaining native protection\nPASS SMB conflict recalls before open and existing SMB opens prevent handout\nPASS DAV and FTP writes recall before opening; their live handles prevent handout\nPASS native exclusive protection adds no write authority and handout still checks the file ACL\nPASS fixed recall deadline revokes despite continuous client renewal\nPASS autonomous client expiry releases exclusion without protocol traffic\nPASS policy revocation denies data immediately and preserves protection until return\nPASS 176 NFS delegation native/lifecycle checks\n"
+    },
+    "protocol": {
+      "sha256": "fb38734ab4f2c4603e6efca003595db07f0a129cb0a1bfc8b08832cc93158214",
+      "output": "PASS production file authority declines wire handout without creating a hidden native guard\n{\"code\":\"10037\",\"event\":\"operation_45\",\"role\":\"nfs\",\"time\":1793824195797}\n{\"code\":\"10038\",\"event\":\"operation_38\",\"role\":\"nfs\",\"time\":1793824195800}\n{\"code\":\"10025\",\"event\":\"operation_8\",\"role\":\"nfs\",\"time\":1793824195804}\n{\"code\":\"10025\",\"event\":\"operation_8\",\"role\":\"nfs\",\"time\":1793824195808}\n{\"code\":\"10025\",\"event\":\"operation_8\",\"role\":\"nfs\",\"time\":1793824195811}\n{\"code\":\"10025\",\"event\":\"operation_8\",\"role\":\"nfs\",\"time\":1793824195854}\nPASS distinct delegation state, CLAIM_DELEG_CUR_FH, CLOSE/disconnect independence and client/principal/file/access checks\n{\"code\":\"10008\",\"event\":\"operation_18\",\"role\":\"nfs\",\"time\":1793824195872}\n{\"code\":\"10008\",\"event\":\"operation_18\",\"role\":\"nfs\",\"time\":1793824196182}\nPASS WANT replay, typed CB_RECALL, definitive DELAY retry and acknowledgment without premature release\n{\"code\":\"10008\",\"event\":\"operation_18\",\"role\":\"nfs\",\"time\":1793824196239}\nPASS wrong callback operation preserves the exact slot until confirmed disconnect and replays on a replacement backchannel\n{\"code\":\"10008\",\"event\":\"operation_18\",\"role\":\"nfs\",\"time\":1793824196269}\n{\"code\":\"10087\",\"event\":\"operation_25\",\"role\":\"nfs\",\"time\":1793824201814}\nPASS recall deadline survives continued renewals; TEST_STATEID/FREE_STATEID acknowledge revocation while OPEN remains valid\nPASS authority loss recalls without dropping native protection and still permits authenticated return\n{\"code\":\"10074\",\"event\":\"operation_57\",\"role\":\"nfs\",\"time\":1793824201861}\n{\"code\":\"10017\",\"event\":\"operation_42\",\"role\":\"nfs\",\"time\":1793824201861}\nPASS session destruction retains client-owned delegation; foreign owner replacement and premature client destruction are refused\nPASS 641 delegation protocol/native component checks; production handout remains gated\n"
+    }
+  },
+  "actual_failure_injection": [
+    "Private controller object destroyed while a delegation is held; native writer remains excluded then proceeds at expiry",
+    "Originating worker SIGKILLed after owner acknowledgment; independent owner retains native protection then expires without worker assistance",
+    "Continuous renewal through a complete recall interval cannot extend the recall deadline",
+    "Old terminal-state release cannot clear a later local guard on the same open description"
+  ],
+  "scope_limits": [
+    "Not integrated into file-domain NFS coordinator; production wire handout remains refused",
+    "No disconnected-owner reattachment or durable protocol reclaim yet",
+    "Simultaneous owner/worker death and full server restart fencing unproved",
+    "Windows native namespace protection and independent owner unimplemented",
+    "Positive guest cases use GCC release; local Clang sanitizer exercises unsupported-kernel owner IPC and shared regressions"
+  ]
+}

@@ -1,0 +1,114 @@
+{
+  "observed_at": "2026-11-04T20:31:54.977568+00:00",
+  "source": "c8b8f56830f841328a7c166f746073b542cdb393",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41903454323",
+  "status": "in_progress",
+  "conclusion": "",
+  "jobs": [
+    {
+      "id": 126831697914,
+      "name": "gcc metadata",
+      "status": "in_progress",
+      "conclusion": "",
+      "steps": [
+        {
+          "conclusion": "success",
+          "name": "Native cache exclusion, cancellation and allocation safety",
+          "number": 12,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "NFS delegation native exclusion, recall and authority lifetime",
+          "number": 14,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "NFS delegation protocol components (injected native provider, not production handout)",
+          "number": 15,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "NFS advertised lease, session expiry and recovery after configuration changes",
+          "number": 16,
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": 126831698213,
+      "name": "msvc metadata",
+      "status": "in_progress",
+      "conclusion": "",
+      "steps": [
+        {
+          "conclusion": "success",
+          "name": "Native cache exclusion, cancellation and allocation safety",
+          "number": 12,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "NFS delegation native exclusion, recall and authority lifetime",
+          "number": 14,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "NFS delegation protocol components (injected native provider, not production handout)",
+          "number": 15,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "NFS advertised lease, session expiry and recovery after configuration changes",
+          "number": 16,
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": 126831698235,
+      "name": "clang metadata",
+      "status": "in_progress",
+      "conclusion": "",
+      "steps": [
+        {
+          "conclusion": "success",
+          "name": "Native cache exclusion, cancellation and allocation safety",
+          "number": 12,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "NFS delegation native exclusion, recall and authority lifetime",
+          "number": 14,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "NFS delegation protocol components (injected native provider, not production handout)",
+          "number": 15,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "NFS advertised lease, session expiry and recovery after configuration changes",
+          "number": 16,
+          "status": "completed"
+        }
+      ]
+    }
+  ],
+  "previous_windows_failure": {
+    "source": "208381e38c15ae3144a3356bccf45722c1d85118",
+    "run": "https://github.com/TabNahida/tauCloud/actions/runs/41900622464",
+    "job": 126821725803,
+    "step": "Native cache exclusion, cancellation and allocation safety",
+    "message": "lease_expired after_checks=49",
+    "conclusion": "failure",
+    "assessment": "A later native-cache run passes without a functional fix. Keep the intermittent timeout unresolved. M2 now reports operation/path/elapsed_ms when this recurs; grant lifetimes were not extended and mutations are not retried."
+  }
+}

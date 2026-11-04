@@ -10,6 +10,9 @@ on:
       - 'include/taucloud/files.hpp'
       - 'src/native_files.cpp'
       - 'src/native_cache.inc'
+      - 'src/native_delegation_owner.inc'
+      - 'include/taucloud/native_delegation_owner.hpp'
+      - 'apps/main.cpp'
       - 'xmake.lua'
 permissions:
   contents: read

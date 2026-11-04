@@ -63,6 +63,8 @@ on:
       - 'src/native_files.cpp'
       - 'src/native_notify.inc'
       - 'src/native_cache.inc'
+      - 'src/native_delegation_owner.inc'
+      - 'include/taucloud/native_delegation_owner.hpp'
       - 'src/file_cache.inc'
       - 'tests/smb_notify_integration.py'
       - 'tests/smb_rename_integration.py'

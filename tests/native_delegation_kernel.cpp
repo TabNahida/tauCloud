@@ -1,11 +1,13 @@
 // Real native_file provider tests. Run normally for capability detection, or as
 // PID 1 in the isolated Linux 6.19 QEMU guest for mandatory positive acceptance.
 #include <taucloud/files.hpp>
+#include <taucloud/native_delegation_owner.hpp>
 #include <chrono>
 #include <iostream>
 #include <thread>
 #include <functional>
 #include <fcntl.h>
+#include <poll.h>
 #include <signal.h>
 #include <sys/mount.h>
 #include <sys/reboot.h>
@@ -143,7 +145,124 @@ static bool suite(const fs::path &base, bool mandatory) {
   }
   return true;
 }
+static void owner_suite(const fs::path &base, bool mandatory) {
+  auto root = native_file::root(base);
+  { auto f = root.open("owned", false, true, true); f.write(0, "retained"); }
+  auto file = root.open("owned");
+  native_delegation_owner owner;
+  check(!owner.acquire(file, 5000, 5000, true), "owner_added_write_rights");
+  auto id = owner.acquire(file, 5000, 5000);
+  if (!id) {
+    check(!mandatory, "required_owner_delegation_unavailable");
+    auto ordinary = file.cache_guard(false);
+    check(bool(ordinary), "owner_refusal_poisoned_descriptor");
+    std::cout << "UNSUPPORTED owner F_SETDELEG; ordinary descriptor remains usable\n";
+    return;
+  }
+  check(owner.inspect(id).at("state") == "active", "owner_not_active");
+  try { owner.inspect(id + 1000); throw error("unknown_owner_id_accepted"); }
+  catch (const error &e) { check(std::string_view(e.what()) == "stale_handle", "owner_wrong_unknown_id_error"); }
+  check(!file.cache_guard(false) && !owner.acquire(file, 5000, 5000), "owner_local_duplicate");
+  check(file.read(0, 8) == "retained", "owner_read_access");
+  { auto reader = root.open("owned"); check(reader.read(0, 8) == "retained", "owner_compatible_reader"); }
+  owner.recall(id);
+  auto remaining = owner.inspect(id).at("recall_remaining_ms").get<int64_t>();
+  auto until = std::chrono::steady_clock::now() + 7s;
+  json snapshot;
+  do {
+    std::this_thread::sleep_for(100ms);
+    snapshot = owner.inspect(id);
+    if (snapshot.at("state") == "revoked") break;
+    try { owner.renew(id, 5000); }
+    catch (const error &e) {
+      if (std::string_view(e.what()) != "stale_handle" || owner.inspect(id).at("state") != "revoked") throw;
+    }
+    check(snapshot.at("recall_remaining_ms").get<int64_t>() <= remaining, "owner_renew_extended_recall");
+    remaining = snapshot.at("recall_remaining_ms").get<int64_t>();
+  } while (std::chrono::steady_clock::now() < until);
+  check(snapshot.at("state") == "revoked", "owner_recall_not_revoked");
+  // Acknowledging an old tombstone cannot clear a newly acquired local guard.
+  auto local = file.cache_guard(false);
+  check(bool(local), "owner_expiry_not_released");
+  owner.release(id);
+  check(!file.cache_guard(false), "old_owner_release_cleared_new_guard");
+  local.reset();
+  id = owner.acquire(file, 5000, 5000);
+  check(id != 0, "owner_reacquire");
+  int writer = open((base / "owned").c_str(), O_WRONLY | O_NONBLOCK);
+  check(writer < 0 && errno == EWOULDBLOCK, "owner_did_not_block_writer");
+  until = std::chrono::steady_clock::now() + 2s;
+  while (owner.inspect(id).at("state") == "active" && std::chrono::steady_clock::now() < until)
+    std::this_thread::sleep_for(5ms);
+  check(owner.inspect(id).at("state") == "recalling", "owner_did_not_observe_native_recall");
+  owner.release(id);
+  writer = open((base / "owned").c_str(), O_WRONLY | O_NONBLOCK);
+  check(writer >= 0, "owner_explicit_return_failed"); close(writer);
+  std::cout << "PASS " << base << " OWNER/renew-recall-revoke-return\n";
+  // Detach, including ordinary C++ destruction, must retain the last accepted
+  // lease. There is no implicit RELEASE frame on control-channel closure.
+  {
+    native_delegation_owner detached;
+    check(detached.acquire(file, 5000, 1200) != 0, "owner_detach_acquire");
+  }
+  writer = open((base / "owned").c_str(), O_WRONLY | O_NONBLOCK);
+  check(writer < 0 && errno == EWOULDBLOCK, "owner_detach_released_early");
+  until = std::chrono::steady_clock::now() + 3s;
+  do {
+    std::this_thread::sleep_for(20ms);
+    writer = open((base / "owned").c_str(), O_WRONLY | O_NONBLOCK);
+  } while (writer < 0 && errno == EWOULDBLOCK && std::chrono::steady_clock::now() < until);
+  check(writer >= 0, "orphan_owner_did_not_expire"); close(writer);
+  check(!file.cache_guard(false), "detached_description_unfenced_without_ack");
+  file = native_file();
+  std::cout << "PASS " << base << " OWNER/detach-retention-expiry\n";
+  // A real worker is SIGKILLed after the owner ACK. The independent owner must
+  // keep exclusion, then release at the accepted deadline without that worker.
+  int ready[2]; check(pipe2(ready, O_CLOEXEC) == 0, "owner_crash_pipe");
+  auto worker = fork(); check(worker >= 0, "owner_crash_fork");
+  if (!worker) {
+    close(ready[0]);
+    try {
+      auto f = root.open("owned"); native_delegation_owner keeper;
+      if (!keeper.acquire(f, 5000, 1800)) _exit(2);
+      char marker = 'R'; if (write(ready[1], &marker, 1) != 1) _exit(3);
+      for (;;) pause();
+    } catch (...) { _exit(4); }
+  }
+  close(ready[1]);
+  pollfd notification{ready[0], POLLIN, 0}; char marker = 0;
+  bool acknowledged = poll(&notification, 1, 3000) > 0 && read(ready[0], &marker, 1) == 1 && marker == 'R';
+  close(ready[0]); kill(worker, SIGKILL); int status; waitpid(worker, &status, 0);
+  check(acknowledged && WIFSIGNALED(status) && WTERMSIG(status) == SIGKILL, "worker_guard_not_acknowledged");
+  writer = open((base / "owned").c_str(), O_WRONLY | O_NONBLOCK);
+  check(writer < 0 && errno == EWOULDBLOCK, "worker_crash_released_native_guard");
+  auto start = std::chrono::steady_clock::now();
+  do {
+    std::this_thread::sleep_for(20ms);
+    writer = open((base / "owned").c_str(), O_WRONLY | O_NONBLOCK);
+  } while (writer < 0 && errno == EWOULDBLOCK && std::chrono::steady_clock::now() - start < 4s);
+  check(writer >= 0 && std::chrono::steady_clock::now() - start > 500ms, "worker_crash_retention_deadline");
+  close(writer);
+  std::cout << "PASS " << base << " OWNER/SIGKILL-worker-retention-expiry\n";
+  // NFS recovery retains private pins and unlinked open incarnations. The
+  // descriptor handoff must preserve those already-validated native flags.
+  auto original = root.open("pin-source", false, true, true);
+  original.write(0, "pinned");
+  auto name = ".tc-nfs-" + random_hex(16);
+  auto pinned = original.pin(root, name);
+  original = native_file();
+  auto pin_id = owner.acquire(pinned, 5000, 5000, true);
+  check(pin_id != 0 && pinned.read(0, 6) == "pinned", "owner_private_pin_handoff");
+  owner.release(pin_id);
+  auto retained = pinned.retain(); pinned = native_file();
+  check(unlink((base / "pin-source").c_str()) == 0 && unlink((base / name).c_str()) == 0, "owner_unlink_fixture");
+  pin_id = owner.acquire(retained, 5000, 5000, true);
+  check(pin_id != 0 && retained.read(0, 6) == "pinned", "owner_unlinked_incarnation_handoff");
+  owner.release(pin_id);
+  std::cout << "PASS " << base << " OWNER/private-pin-and-unlinked-incarnation\n";
+}
 int main(int argc, char **argv) {
+  if (auto result = native_delegation_owner::entry(argc, argv); result >= 0) return result;
   bool guest = getpid() == 1;
   int code = 1;
   fs::path base;
@@ -154,10 +273,13 @@ int main(int argc, char **argv) {
       check(mount("tmpfs", "/tmp", "tmpfs", 0, nullptr) == 0, "mount_tmpfs");
       check(mount("/dev/vda", "/disk", "ext4", 0, nullptr) == 0, "mount_ext4");
       suite("/tmp/delegation", true);
+      owner_suite("/tmp/delegation", true);
       suite("/disk/delegation", true);
+      owner_suite("/disk/delegation", true);
     } else {
       base = fs::temp_directory_path() / ("tc-native-delegation-" + random_hex(6));
       suite(base, argc > 1 && std::string_view(argv[1]) == "--require");
+      owner_suite(base, argc > 1 && std::string_view(argv[1]) == "--require");
     }
     std::cout << "PASS native delegation " << checks << " checks\n";
     if (guest) std::cout << "TAUCLOUD_DELEGATION_VM_PASS\n";

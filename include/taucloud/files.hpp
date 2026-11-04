@@ -11,10 +11,12 @@ bool file_role(std::string_view role);
 const std::vector<std::string> &file_roles();
 class native_watch;
 class native_cache_guard;
+class native_delegation_owner;
 // Every traversal is relative to a pinned directory handle. No path-based fallback.
 class native_file {
   friend class native_watch;
   friend class native_cache_guard;
+  friend class native_delegation_owner;
   struct impl;
   std::unique_ptr<impl> impl_;
   native_file open_impl(const std::string &, bool, bool, bool, bool) const;

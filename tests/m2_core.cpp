@@ -178,7 +178,14 @@ int main() {
     };
     auto call = [&](std::string op, std::string path, json body = json::object()) {
       body["grant"] = grant(path);
-      return files->dispatch(op, body, context());
+      auto started = now();
+      try { return files->dispatch(op, body, context()); }
+      catch (const error &e) {
+        if (std::string_view(e.what()) == "lease_expired")
+          std::cerr << "lease_expired operation=" << op << " path=" << path
+                    << " elapsed_ms=" << now() - started << " after_checks=" << checks << '\n';
+        throw;
+      }
     };
     auto denied = grant("", true, now() - 1);
     rejects([&] { files->dispatch("quota", {{"grant", denied}}, context()); }, "lease_expired");

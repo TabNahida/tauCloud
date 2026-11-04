@@ -3,12 +3,14 @@
 #include <iostream>
 #include <taucloud/core.hpp>
 #include <taucloud/plugins.hpp>
+#include <taucloud/native_delegation_owner.hpp>
 #ifndef _WIN32
 #include <sys/stat.h>
 #endif
 static std::atomic_bool stopping = false;
 static void stop(int) { stopping = true; }
 int main(int argc, char **argv) {
+  if (auto result = tc::native_delegation_owner::entry(argc, argv); result >= 0) return result;
 #ifndef _WIN32
   umask(0077);
   std::signal(SIGPIPE, SIG_IGN);
