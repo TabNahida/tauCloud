@@ -2,6 +2,14 @@
 
 The client is unmodified Samba 4.19.5 from Ubuntu 24.04. Its SMB2 inventory contains 576 cases. The executable regression selection lives in `tests/samba-profile.json`; `tests/samba_torture.py` runs it when no selectors are supplied. A client exit code of zero without a success record is not accepted. Skipped cases and mixed pass/skip groups are not passes.
 
+The newer [complete oplock diagnostic](evidence/pre-m8/smb-overwrite-full-oplock.log)
+passes 8 of 42 cases without skips: exclusive1/2/3/4/5/9 and levelii500/501.
+The remaining 34 failures are retained. Exclusive6's parent-DELETE status
+expectation matches older Windows behavior, whereas the current implementation
+uses modern destination-directory sharing (product note 185 below). That
+difference does not establish its later oplock assertions or close the overall
+gate. BATCH, SMB leases and NFS delegation integration remain unfinished.
+
 The selected contract is the existing [ADR 0008](decisions/0008-smb-profile.md) with [M6 security extensions](m6.md): ordinary confined files/directories, 64 KiB operations, 1024-entry directory snapshots, persistent DOS attributes/EAs and queued blocking locks, persistent simple Windows DACLs, but no ADS, caching, durable opens or multichannel. The selection does not establish general Windows-server or Samba equivalence.
 
 | Area | Covered selection / reason for remaining exclusions |

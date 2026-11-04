@@ -397,12 +397,23 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     require(!existing || disposition != 2, "already_exists");
     uint32_t requested_attributes = body.value("attributes", uint32_t(0));
     auto normalized_attributes = smb_attribute_value(requested_attributes, directory);
+    bool truncate = existing && (disposition == 0 || disposition == 4 || disposition == 5);
+    // MS-FSA 2.1.5.1.2 adds these rights for an existing unnamed stream.
+    // Check them against both the DACL and sharing before recalling caches;
+    // a caller need not explicitly request WRITE_DATA for OVERWRITE[_IF].
+    uint32_t implicit_access = truncate ? (0x110u | (disposition == 0 ? 0x10000u : 2u)) : 0;
+    access |= implicit_access;
+    require(!truncate || (!directory && grant.at("write").get<bool>()), "forbidden");
     if (existing) {
       auto existing_file = path.empty() || cached_info ? native_file()
                                                        : s.directory.open(path, directory);
       auto info = cached_info ? *cached_info
                               : path.empty() ? s.directory.info() : existing_file.info();
       auto attributes = smb_attributes(info);
+      if (truncate) {
+        require(!(attributes & 1), "forbidden");
+        require((attributes & 6 & ~requested_attributes) == 0, "forbidden");
+      }
       if (options & 0x200) {
         auto values = smb_eas(info);
         for (auto &[name, ea] : values.items())
@@ -480,7 +491,8 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     // rights; the inherited DACL controls subsequent opens (MS-FSA 2.1.5.1.1).
     auto open_permissions = existing ? permitted : 0x1f01ffu;
     if (body.value("maximum", false)) {
-      require((body.value("explicit_access", uint32_t(0)) & ~open_permissions) == 0, "forbidden");
+      require(((body.value("explicit_access", uint32_t(0)) | implicit_access) & ~open_permissions) == 0,
+              "forbidden");
       access &= open_permissions;
       require(access != 0, "forbidden");
     } else
@@ -490,7 +502,6 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
                    (((data_open || attribute_open) && preserving_open) ||
                        (shared_read_open && preserving_data)) &&
                        !needs_write_handle ? 1 : 0);
-    bool truncate = existing && (disposition == 0 || disposition == 4 || disposition == 5);
     // Validate all initial metadata and quota before creating or truncating a file.
     if (!existing && body.contains("eas"))
       smb_merge_eas(json::object(), body.at("eas"));
@@ -498,8 +509,6 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     bool allocating = !directory && (!existing || truncate) && body.contains("allocation");
     if (allocating)
       quota(s, existing ? growth(s.directory.open(path, false).info(), allocation) : allocation);
-    require(!truncate || (!directory && (access & 2)), "forbidden");
-    require(disposition != 0 || (access & 0x10000), "forbidden");
     require(!(options & 0x1000) || (!path.empty() && (access & 0x10000)), "forbidden");
     if ((options & 0x1000) && existing)
       security_sticky(s, grant, path, cached_info ? &*cached_info : nullptr);
@@ -515,9 +524,24 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
       file.flush();
       s.directory.flush();
       index(space, path, file.info());
-    } else if (!directory)
-      file = !cache_owner.empty() ? std::move(cached_file)
-                         : s.directory.open(path, false, false, bool(access & 6));
+    } else if (!directory) {
+      if (!cache_owner.empty()) file = std::move(cached_file);
+      else {
+        // Once recall and authorization have completed, reuse the same native
+        // description where possible. Opening a second description ourselves
+        // would prevent native exclusion for the new shared Level II grant.
+        // Logical SMB rights/locks remain per open; the native incarnation and
+        // required write capability are checked before retaining it.
+        bool retained = false;
+        for (const auto &[other, held] : handles) {
+          if (held.protocol != "smb" || held.space != space || held.path != path || held.directory ||
+              ((truncate || (access & 6)) && !held.file.writable())) continue;
+          require(held.file.info().at("object") == object(space, path).at("native"), "object_replaced");
+          file = held.file.retain(); retained = true; break;
+        }
+        if (!retained) file = s.directory.open(path, false, false, truncate || bool(access & 6));
+      }
+    }
     if (truncate) {
       auto before = file.info();
       security_data_changed(s, before);

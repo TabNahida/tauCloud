@@ -91,7 +91,7 @@ void cache_renew(opened &h, const json &grant) {
   h.cache_authority_until = cache_clock() + remaining;
 }
 json cache_dispatch(const std::string &op, const json &body, const json &grant, opened &h) {
-  require(!h.directory && (h.access & 1), "forbidden");
+  require(!h.directory && h.access != 0, "forbidden");
   if (op == "smb_cache_acquire") {
     auto level = body.value("level", 8u);
     require(level == 1 || level == 8, "invalid_request");

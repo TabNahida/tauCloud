@@ -238,10 +238,38 @@ checks use the pinned native identity without triggering an incidental open.
 dialects, independent transports, actual native writers, read-only-share renewal,
 locks and downgrade races, cancellation, compound writes and both deletion modes.
 The full unmodified Samba oplock diagnostic is retained with every failure.
-The six selectors exclusive1/2/3/4 and levelii500/501 are included in remote
+The eight selectors exclusive1/2/3/4/5/9 and levelii500/501 are included in remote
 acceptance alongside the independent wire tests. Remote Level II acceptance is
 pending; those cache steps continue after unrelated test failures when the build
 succeeded, while the job retains its original failure status.
+
+## Overwrite and shared native descriptions
+
+Existing-file SUPERSEDE, OVERWRITE and OVERWRITE_IF add the unnamed stream's
+implicit access rights before DACL and sharing checks, as required by
+[MS-FSA 2.1.5.1.2](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fsa/41f3734a-5bba-4c3b-9d04-7baafc9b7bfe).
+They require WRITE_EA and WRITE_ATTRIBUTES plus DELETE for supersede or
+WRITE_DATA for overwrite. MAXIMUM_ALLOWED cannot silently drop these required
+rights. Read-only files and mismatched hidden/system attributes reject the
+operation before recall or truncation. This does not implement the outstanding
+backup/restore privilege bypasses.
+
+After authorization and recall, SMB opens can retain an existing native file
+description with the same object identity and sufficient physical write access.
+This avoids a self-created kernel conflict when granting Level II after an
+overwrite. Network access, sharing, locks and cache cookies remain per open.
+Level II itself does not grant READ_DATA: an attribute-only overwrite can receive
+the oplock while READ remains denied. The original handle's next WRITE recalls
+that new cache before touching the shared description.
+
+[Overwrite evidence](evidence/pre-m8/smb-overwrite-local.json) records independent
+four-dialect checks, rejection without recall/data loss, metadata/allocation
+regressions, and the complete unmodified oplock diagnostic (8 passed, 34 failed).
+Original exclusive5 and exclusive9 now pass. Exclusive6's expected parent-DELETE
+sharing violation follows the older Windows behavior described in
+[product note 185](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fsa/4e3695bd-7574-4f24-a223-b4679c065b63);
+the current rename algorithm permits that destination-directory open. Its raw
+failure remains visible, and later cache assertions in that case remain unproved.
 
 ## Remaining integration
 

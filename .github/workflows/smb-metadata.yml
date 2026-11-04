@@ -178,7 +178,7 @@ jobs:
         run: python tests/smb_level2_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/oplock-level2.json
       - name: Original Samba EXCLUSIVE and Level II transitions
         if: ${{ !cancelled() && steps.compile.outcome == 'success' && runner.os == 'Linux' }}
-        run: python tests/samba_torture.py ${{ matrix.test_options }} --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/samba-oplock-sharing.json smb2.oplock.exclusive1 smb2.oplock.exclusive2 smb2.oplock.exclusive3 smb2.oplock.exclusive4 smb2.oplock.levelii500 smb2.oplock.levelii501
+        run: python tests/samba_torture.py ${{ matrix.test_options }} --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/samba-oplock-sharing.json smb2.oplock.exclusive1 smb2.oplock.exclusive2 smb2.oplock.exclusive3 smb2.oplock.exclusive4 smb2.oplock.exclusive5 smb2.oplock.exclusive9 smb2.oplock.levelii500 smb2.oplock.levelii501
       - name: Related asynchronous SMB compounds and dependent cancellation
         run: python tests/smb_compound_async.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/compound-async.json
       - name: Unmodified Samba asynchronous locks

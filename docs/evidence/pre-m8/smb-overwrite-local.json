@@ -1,0 +1,209 @@
+{
+  "recorded_at": "2026-11-04T13:30:02.353104+00:00",
+  "base_source": "07a7fe579fb15228f8d71b0b648593a6d7dc7163",
+  "status": "targeted-local-passed-full-suite-failed-remote-pending",
+  "scope": "Existing unnamed-stream overwrite/supersede implicit access checks and native description sharing for Level II grants. Full SMB/NFS remains unfinished.",
+  "sanitizers": "Linux Clang ASan/UBSan/LSan",
+  "source_sha256": {
+    "src/file_smb.inc": "dcf5a04d7c6b16feae985002a17c541ae7c58b8a564cee99f97feb611b29ffd6",
+    "src/file_cache.inc": "c8a1b42a0dc2fa4f9b09712444855bc66f93755a6010a67c51864fc61b63d47a",
+    "src/smb.cpp": "ce8ed119d94d75a7fd8b79b7547b71c32b247763428a2b7715b77be127abe3fa",
+    "tests/m5_core.cpp": "0aa36a94f576081e6ccfa2a22717a30b76814abcdd2503fe5298892c6d6b596d",
+    "tests/smb_level2_integration.py": "7f2fdb712b4caa1f45311ebcffe83362f26f75d47bd2ada79d0d2eebaa6e2531",
+    ".github/workflows/smb-metadata.yml": "d811b3a2a94be7ee986a3091b94bb21ea2d2a06f1d6066249a462d72a9503166"
+  },
+  "reports": {
+    "smb-level2-overwrite-local": {
+      "sha256": "6d1477b1aa556fd55f29a79ee3af0f32bf74d7a25a4cd1b937d37fb50078412e",
+      "report": {
+        "status": "passed",
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "checks": [
+          "210: direct Level II grant; own WRITE completes asynchronously after notification without a client ACK or extra credits",
+          "210: related WRITE/READ/CLOSE remains ordered across the no-ACK read-cache invalidation",
+          "210: EXCLUSIVE downgrades to shared Level II across transports; read-only and uncached readers coexist, then WRITE invalidates every cached reader without ACK",
+          "210: byte-range LOCK waits for both no-ACK invalidations and only then excludes the other handle",
+          "210: a read-only share renews standalone Level II without write authority; a later writer recalls it and obtains a genuinely writable native handle",
+          "210: CANCEL abandons a waiting CREATE while the valid downgrade ACK retains read caching until the next write",
+          "210: native writer tightens an outstanding downgrade; valid II ACK is followed by NONE with no second ACK, and the native writer sees the flushed boundary",
+          "210: flushing a cached byte lock during downgrade forces a subsequent NONE break and prevents a conflicting Level II grant",
+          "210: SET_INFO and DELETE_ON_CLOSE preserve existing Level II data caches; last close removes the file and releases native exclusion",
+          "210: SUPERSEDE/OVERWRITE/OVERWRITE_IF grant implicit rights, flush before truncation, then grant Level II without granting READ_DATA; an old handle write invalidates it",
+          "300: direct Level II grant; own WRITE completes asynchronously after notification without a client ACK or extra credits",
+          "300: related WRITE/READ/CLOSE remains ordered across the no-ACK read-cache invalidation",
+          "300: EXCLUSIVE downgrades to shared Level II across transports; read-only and uncached readers coexist, then WRITE invalidates every cached reader without ACK",
+          "300: byte-range LOCK waits for both no-ACK invalidations and only then excludes the other handle",
+          "300: a read-only share renews standalone Level II without write authority; a later writer recalls it and obtains a genuinely writable native handle",
+          "300: CANCEL abandons a waiting CREATE while the valid downgrade ACK retains read caching until the next write",
+          "300: native writer tightens an outstanding downgrade; valid II ACK is followed by NONE with no second ACK, and the native writer sees the flushed boundary",
+          "300: flushing a cached byte lock during downgrade forces a subsequent NONE break and prevents a conflicting Level II grant",
+          "300: SET_INFO and DELETE_ON_CLOSE preserve existing Level II data caches; last close removes the file and releases native exclusion",
+          "300: SUPERSEDE/OVERWRITE/OVERWRITE_IF grant implicit rights, flush before truncation, then grant Level II without granting READ_DATA; an old handle write invalidates it",
+          "302: direct Level II grant; own WRITE completes asynchronously after notification without a client ACK or extra credits",
+          "302: related WRITE/READ/CLOSE remains ordered across the no-ACK read-cache invalidation",
+          "302: EXCLUSIVE downgrades to shared Level II across transports; read-only and uncached readers coexist, then WRITE invalidates every cached reader without ACK",
+          "302: byte-range LOCK waits for both no-ACK invalidations and only then excludes the other handle",
+          "302: a read-only share renews standalone Level II without write authority; a later writer recalls it and obtains a genuinely writable native handle",
+          "302: CANCEL abandons a waiting CREATE while the valid downgrade ACK retains read caching until the next write",
+          "302: native writer tightens an outstanding downgrade; valid II ACK is followed by NONE with no second ACK, and the native writer sees the flushed boundary",
+          "302: flushing a cached byte lock during downgrade forces a subsequent NONE break and prevents a conflicting Level II grant",
+          "302: SET_INFO and DELETE_ON_CLOSE preserve existing Level II data caches; last close removes the file and releases native exclusion",
+          "302: SUPERSEDE/OVERWRITE/OVERWRITE_IF grant implicit rights, flush before truncation, then grant Level II without granting READ_DATA; an old handle write invalidates it",
+          "311: direct Level II grant; own WRITE completes asynchronously after notification without a client ACK or extra credits",
+          "311: related WRITE/READ/CLOSE remains ordered across the no-ACK read-cache invalidation",
+          "311: EXCLUSIVE downgrades to shared Level II across transports; read-only and uncached readers coexist, then WRITE invalidates every cached reader without ACK",
+          "311: byte-range LOCK waits for both no-ACK invalidations and only then excludes the other handle",
+          "311: a read-only share renews standalone Level II without write authority; a later writer recalls it and obtains a genuinely writable native handle",
+          "311: CANCEL abandons a waiting CREATE while the valid downgrade ACK retains read caching until the next write",
+          "311: native writer tightens an outstanding downgrade; valid II ACK is followed by NONE with no second ACK, and the native writer sees the flushed boundary",
+          "311: flushing a cached byte lock during downgrade forces a subsequent NONE break and prevents a conflicting Level II grant",
+          "311: SET_INFO and DELETE_ON_CLOSE preserve existing Level II data caches; last close removes the file and releases native exclusion",
+          "311: SUPERSEDE/OVERWRITE/OVERWRITE_IF grant implicit rights, flush before truncation, then grant Level II without granting READ_DATA; an old handle write invalidates it"
+        ],
+        "recorded_at": "2026-11-04T13:24:50.853955+00:00"
+      }
+    },
+    "smb-overwrite-exclusive-local": {
+      "sha256": "d8007e6eb911f4e1ac2a5553e1ff835a94ccf74eb75d314cda7633100e0ba070",
+      "report": {
+        "status": "passed",
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "checks": [
+          "210: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "210: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "210: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "300: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "300: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "300: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "302: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "302: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "302: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "311: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "311: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "311: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "210: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "300: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "302: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "311: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "sharing violations do not recall dirty caches; readonly, directory, delete-on-close and conflicting native opens receive no unsupported cache grant",
+          "a lease-form ACK for a classic oplock is rejected and finishes the recall without leaving native exclusion stuck",
+          "two encrypted sessions on one transport renew independent cache authority and route breaks/ACKs with their own keys; a foreign-session ACK cannot release another open",
+          "native host reads/writes wait for SMB recall; dirty client data flushes before host access and the original handle observes subsequent native writes",
+          "SET_INFO recalls before mutation, permits cached flush while pending and applies EOF after ACK without replaying side effects",
+          "a new cached CREATE is announced before its own compound SET_INFO recall; asynchronous retries preserve the inherited FileId through the dependent READ",
+          "NFSv3 READ on an existing handle returns JUKEBOX during native recall; repeated retries leave SMB flush/ACK live and the next read returns current data",
+          "DAV GET returns a retryable response while a cache recall is pending and reads freshly flushed bytes after ACK",
+          "another transport cannot ACK the holder FileId; CLOSE flushes/releases authority and wakes the peer CREATE",
+          "unacknowledged recall fences the holder transport and open while the conflicting client completes after native exclusion releases",
+          "credential revocation closes the cache-bearing transport and releases native exclusion without requiring a client request",
+          "stalled identity RPC cannot hold the cache transport past its authority: independent watchdog closes it before IPC timeout and autonomous worker expiry releases native exclusion"
+        ],
+        "recorded_at": "2026-11-04T13:26:11.530311+00:00"
+      }
+    },
+    "smb-overwrite-attributes-local": {
+      "sha256": "86962dee9b9fce3e3d247cacf16c3f2f881e7b3e8f9850e64b88163fc2db70a8",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "CREATE/QUERY/SET persistent DOS attributes, zero/no-change and NORMAL semantics; readonly open/delete checks and granted-handle authority",
+          "four independent timestamps, native mtime, zero/no-change, per-handle explicit/-1 freeze and -2 re-enable; invalid times reject before attribute mutation",
+          "binary extended attributes on CREATE/QUERY/SET, case-insensitive updates, deletion, restart, NEED_EA and access rights; malformed chains reject atomically",
+          "attributes follow native object across rename/restart, directory invariants hold, replacement object does not inherit stale metadata",
+          "per-open mode CREATE/QUERY/SET and FileAllInformation agreement, write-through writes, independent handles, invalid synchronous/immutable modes and SMB2 ignored synchronous CREATE flags",
+          "EA cursor paging, restart, single-entry and explicit indexes, independent opens, bounded whole-entry overflow and undersized-buffer retries",
+          "selected-name EA queries preserve request order and scan cursor, ignore index/restart, match case-insensitively, return absent names, bound output and reject malformed chains without cursor changes",
+          "MxAc maximal access uses fresh policy and readonly restrictions, supports optional change-time comparison and chained QFid replies, rejects malformed/duplicate contexts before mutation",
+          "EA writes atomically update change time/archive while respecting frozen timestamps; exact 65531-byte aggregate limit and standard invalid-name/list statuses"
+        ]
+      }
+    },
+    "smb-overwrite-allocation-local": {
+      "sha256": "285527f362a3a8b1b45ffbc5d92063866ab797a902aa74ec21b1f4db70d1094e",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "schema v4 migration preserves a pre-v5 backup before adding durable reservations",
+          "native space allocation preserves EOF, charges quota once, rejects over-quota growth before mutation and enforces WRITE_DATA",
+          "durable logical quota survives restart while allocation reports native close-time trimming; EOF extension consumes reservations; shrink and deletion release quota",
+          "AlSi CREATE/overwrite preallocation preserves zero EOF, charges durable quota, ignores existing opens/directories, validates context shape and fails over-quota before namespace/data mutation"
+        ],
+        "native_allocation_after_reopen": [
+          [
+            4096,
+            14
+          ],
+          [
+            4096,
+            0
+          ]
+        ]
+      }
+    }
+  },
+  "core": {
+    "smb": {
+      "result": {
+        "checks": 12560,
+        "status": "passed"
+      },
+      "log_sha256": "95cc7db851c67eb84e0a582ba39201be3246a75bc805e8908c2fcf73c07fc3bd"
+    },
+    "nfs": {
+      "result": {
+        "checks": 98,
+        "status": "passed"
+      },
+      "log_sha256": "1ab6994c15b868b8106508b840801fe2e75bcd93ea4a7a95d900bff59fb22fe7"
+    }
+  },
+  "full_original_suite": {
+    "sha256": "d71edca8a157c2e71acf8dd218798529f57ec8b28799b9d082dc149807ec0826",
+    "status": "failed",
+    "counts": {
+      "success": 8,
+      "failure": 34,
+      "error": 0,
+      "skip": 0
+    },
+    "raw_log": "smb-overwrite-full-oplock.log",
+    "raw_log_sha256": "11380504b0dc5c37134779d76dab9a0adff592b2923bc4babb56e0d6a906fc86",
+    "successes": [
+      "exclusive1",
+      "exclusive2",
+      "exclusive3",
+      "exclusive4",
+      "exclusive5",
+      "exclusive9",
+      "levelii500",
+      "levelii501"
+    ],
+    "exclusions": 0
+  },
+  "earlier_attempt": {
+    "status": "failed",
+    "cause": "Retained-description identity comparison used DAV metadata object, which does not exist. Corrected to compare with indexed native identity after validated path metadata.",
+    "core_error": "[json.exception.out_of_range.403] key 'object' not found",
+    "original_exclusive5": "NT_STATUS_IO_DEVICE_ERROR",
+    "fixed_selectors": [
+      "exclusive5",
+      "exclusive9"
+    ]
+  },
+  "standards": [
+    {
+      "url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fsa/41f3734a-5bba-4c3b-9d04-7baafc9b7bfe",
+      "use": "Existing unnamed-stream implicit WRITE_EA/WRITE_ATTRIBUTES plus DELETE (supersede) or WRITE_DATA (overwrite), with access and sharing checks before mutation."
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fsa/4e3695bd-7574-4f24-a223-b4679c065b63",
+      "use": "Product note 185: exclusive6 parent-DELETE sharing-violation expectation matches Windows 11 / Server 2022 and earlier. Current destination directory sharing permits that open. Original failure retained; later cache assertions not proved."
+    }
+  ],
+  "remaining": [
+    "34 original oplock failures; BATCH, leases and remaining cache transitions",
+    "NFS delegation state, callback recall and revocation",
+    "Cross-platform acceptance of this overwrite change",
+    "Other Full SMB/NFS gates in TODO.md"
+  ]
+}

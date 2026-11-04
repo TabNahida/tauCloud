@@ -433,6 +433,60 @@ int main(int argc, char **argv) {
       call("disposition", "readonly-cache", {{"handle", writer}, {"delete", true}});
       call("close", "readonly-cache", {{"handle", writer}});
     }
+    {
+      const std::string path = "overwrite-authority";
+      auto owner = open(path, 0x1f01ff);
+      auto sd = security::defaults(security::principal("alice"), "");
+      auto original_sd = sd;
+      // An attribute-only request cannot evade the rights required by the
+      // disposition, including when MAXIMUM_ALLOWED would otherwise omit them.
+      sd["dacl"].insert(sd["dacl"].begin(), json{{"type", 1}, {"flags", 0},
+          {"mask", 0x112}, {"sid", security::principal("alice")}});
+      call("set_security", path, {{"handle", owner}, {"information", 4},
+          {"data", encode_bytes(security::encode(sd, 4))}});
+      call("write", path, {{"handle", owner}, {"offset", 0}, {"data", encode_bytes("kept")},
+          {"request_id", random_hex(16)}});
+      auto cache = call("cache_acquire", path, {{"handle", owner}});
+      ok(cache.at("granted"));
+      for (unsigned disposition : {0u, 4u, 5u}) {
+        rejected([&] { open(path, 0x100080, 7, disposition); }, "forbidden");
+        rejected([&] { call("open", path, {{"access", 0x1f01ff}, {"sharing", 7},
+            {"disposition", disposition}, {"options", 0x40}, {"maximum", true},
+            {"explicit_access", 0x100080}}); }, "forbidden");
+        ok(!call("cache_poll", path, {{"handle", owner}, {"cookie", cache.at("cookie")}})
+                .at("breaking"));
+        ok(call("read", path, {{"handle", owner}, {"offset", 0}, {"count", 4}}).at("data") ==
+            encode_bytes("kept"));
+      }
+      call("cache_release", path, {{"handle", owner}, {"cookie", cache.at("cookie")}});
+      call("set_security", path, {{"handle", owner}, {"information", 4},
+          {"data", encode_bytes(security::encode(original_sd, 4))}});
+      for (unsigned attributes : {1u, 2u, 4u}) {
+        call("attributes", path, {{"handle", owner}, {"attributes", attributes}});
+        cache = call("cache_acquire", path, {{"handle", owner}});
+        for (unsigned disposition : {0u, 4u, 5u}) {
+          rejected([&] { open(path, 0x100080, 7, disposition); }, "forbidden");
+          ok(!call("cache_poll", path, {{"handle", owner}, {"cookie", cache.at("cookie")}})
+                  .at("breaking"));
+          ok(call("read", path, {{"handle", owner}, {"offset", 0}, {"count", 4}}).at("data") ==
+              encode_bytes("kept"));
+        }
+        call("cache_release", path, {{"handle", owner}, {"cookie", cache.at("cookie")}});
+      }
+      call("attributes", path, {{"handle", owner}, {"attributes", 0x80}});
+      call("close", path, {{"handle", owner}});
+      for (unsigned disposition : {0u, 4u, 5u}) {
+        owner = open(path, 0x1f01ff, 1, 1);
+        cache = call("cache_acquire", path, {{"handle", owner}});
+        rejected([&] { open(path, 0x100080, 7, disposition); }, "sharing_violation");
+        ok(!call("cache_poll", path, {{"handle", owner}, {"cookie", cache.at("cookie")}})
+                .at("breaking"));
+        call("close", path, {{"handle", owner}});
+      }
+      owner = open(path);
+      call("disposition", path, {{"handle", owner}, {"delete", true}});
+      call("close", path, {{"handle", owner}});
+    }
     auto h = open("data", 0x13019f, 1);
     rejected([&] { open("data"); }, "sharing_violation");
     call("close", "data", {{"handle", h}});

@@ -16,7 +16,7 @@ from smbprotocol.session import Session
 from smbprotocol.tree import TreeConnect
 from smbprotocol.open import Open
 from smbprotocol.file_info import FileDispositionInformation
-from m5_integration import Fixture, create, denied, setinfo, lock
+from m5_integration import Fixture, create, denied, setinfo, lock, query
 from smb_blocking_locks import pending, send_lock, completed
 from smb_oplock_integration import capture_breaks, Ack, native_write
 
@@ -181,6 +181,29 @@ def main():
                 time.sleep(.3); assert q.empty() and pq.empty()
                 second.close(); assert not (f.root/'smbdata'/seed.file_name).exists()
             passed(f'{dialect:x}: SET_INFO and DELETE_ON_CLOSE preserve existing Level II data caches; last close removes the file and releases native exclusion')
+            for disposition in (0, 4, 5):
+                first = cached(t, f'level2-overwrite-{disposition}-{dialect:x}')
+                first.write(b'old dirty data')
+                second = Open(pt, first.file_name)
+                packet, receive = second.create(2, 0x100180, 0x80, 7, disposition, 0x40,
+                                                oplock_level=1, send=False)
+                request = pc.send(packet, ps.session_id, pt.tree_connect_id)
+                pending(request); recalled(q, s, first, 0)
+                first.write(b'last flush'); first.flush(); ack(c, s, t, first, 0)
+                receive(request); assert second.oplock_level == 1
+                rights = struct.unpack_from('<I', query(second, 8))[0]
+                assert rights == (0x100180 | 0x110 | (0x10000 if disposition == 0 else 2)), hex(rights)
+                assert second.end_of_file == 0
+                denied(lambda: second.read(0, 1), 0xc0000022)
+                if disposition == 0:
+                    denied(lambda: second.write(b'bad'), 0xc0000022)
+                # The original handle may write after its break. That mutation
+                # must first invalidate the newly granted, write-only II cache.
+                request, receive = begin_write(first, b'fresh')
+                recalled(pq, ps, second, 0); finish_write(request, receive, 5)
+                assert first.read(0, 5) == b'fresh'
+                first.close(); second.close()
+            passed(f'{dialect:x}: SUPERSEDE/OVERWRITE/OVERWRITE_IF grant implicit rights, flush before truncation, then grant Level II without granting READ_DATA; an old handle write invalidates it')
             c.disconnect(); pc.disconnect()
         report['status'] = 'passed'
     except Exception:

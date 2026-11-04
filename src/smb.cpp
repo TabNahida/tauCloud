@@ -1103,7 +1103,7 @@ struct client : session_state, std::enable_shared_from_this<client> {
         b += response_contexts;
       }
       if ((requested_oplock == 1 || requested_oplock == 8) &&
-          !meta.at("directory").get<bool>() && (access & 1) &&
+          !meta.at("directory").get<bool>() && access != 0 &&
           (requested_oplock == 1 || (access & 3) == 3) &&
           !(options & 0x1000)) {
         std::exception_ptr failure;

@@ -164,7 +164,11 @@ write/lock invalidation, close and expiry tests. Level II wire grants, no-ACK
 invalidation, read-only-share renewal, compound writes, delete-pending and
 downgrade escalation now pass local checks; remote acceptance is pending
 ([evidence](docs/evidence/pre-m8/smb-level2-local.json)). The full original oplock
-suite still fails. BATCH, leases, remaining cache transitions, namespace/handle
+suite still fails. Existing-file overwrite/supersede now add and check implicit
+rights before recall, retain native descriptions for subsequent shared grants,
+and pass original exclusive5/9 locally. The full suite is now 8 passed / 34 failed,
+with every failure retained; cross-platform overwrite acceptance is pending
+([evidence](docs/evidence/pre-m8/smb-overwrite-local.json)). BATCH, leases, remaining cache transitions, namespace/handle
 caching and NFS delegations remain open; see
 [native cache coherence](docs/native-cache-coherence.md).
 
