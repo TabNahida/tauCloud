@@ -495,9 +495,32 @@ retention, duplicate/foreign token rejection, capacity recovery, cancellation,
 recall despite an incomplete request and SIGKILL of a worker after a reservation
 ACK. Its independent owner retains protection for the bounded post-death lease.
 
-This is the owner primitive needed for request receipt and reply lifetime. It
-is not yet wired through file-domain capabilities and the network admission/
-transport path. Those connections must avoid waiting behind the same blocked
-file worker, cover all client delegations and acknowledge protection before
-network state is extended. Production handout, replacement recovery and reclaim
-remain incomplete.
+The private file-domain capability now routes `reserve`, `complete` and `cancel`
+to this owner. Each operation checks the signed original grant, delegation
+cookie, client, actor, root, export, filehandle and path scope. It conveys no
+file-data authority and remains usable for coherence cleanup after grant expiry
+or policy revocation. A legacy local primitive explicitly refuses reservations.
+
+A caller supplies positive, monotonically increasing 64-bit reservation IDs per
+delegation. Retrying an outstanding ID returns the existing reservation without
+renewing or consuming capacity, even after a higher ID has arrived. A bounded
+high-water mark rejects completed/replayed older IDs; completed IDs cannot renew
+again. At most 32 IDs are outstanding. New reservations after nominal expiry are
+refused even when another request still holds protection. The local lifetime is
+pinned before IPC and exposes success only after the native ACK. Completion
+imports the ACK before removing local protection; cancellation never renews.
+Explicit DELEGRETURN or confirmed native termination clears outstanding IDs.
+
+[File-domain evidence](evidence/pre-m8/nfs-domain-reservations-local.json) covers
+536 host lifecycle checks, 1074 protocol component checks and 761 real Linux
+6.19 tmpfs/ext4 checks, including
+binding/replay/capacity rejection, expired cleanup grants, revoked data access,
+post-completion retention, cancellation and a file-worker SIGKILL beyond nominal
+expiry. [Fixed-source remote evidence](evidence/pre-m8/nfs-reservations-d7-remote.json)
+also confirms the earlier owner primitive on Linux 6.19 and native Windows NFSv3
+roundtrips; it does not include the subsequent file-domain integration.
+
+The network admission/transport connection remains incomplete. Its independent
+route must avoid waiting behind the same blocked file worker, cover all client
+delegations and acknowledge protection before network state is extended.
+Production handout, replacement recovery and reclaim remain incomplete.

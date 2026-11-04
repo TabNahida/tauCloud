@@ -439,9 +439,10 @@ static void file_domain_suite(const fs::path &base) {
   space = store->dispatch("provision", {{"root", root}, {"space", space}}, ctx("identity"));
   auto signing = read_json(cfg.state / "ipc-keys.json").at("identity").get<std::string>();
   auto export_id = random_hex(16), client = random_hex(16);
+  int64_t epoch = 2;
   auto grant = [&] {
     json g = {{"actor", "alice"}, {"root", root}, {"space", space}, {"path", ""},
-        {"write", true}, {"share", "nfs"}, {"epoch", 2}, {"expires", now() + 2000},
+        {"write", true}, {"share", "nfs"}, {"epoch", epoch}, {"expires", now() + 2000},
         {"protocol", "nfs"}, {"nfs_uid", 1000}, {"nfs_gid", 1000}, {"groups", {"unix"}},
         {"export", {{"uuid", export_id}, {"uids", {{"1000", "alice"}}}, {"gids", {{"1000", "unix"}}}}}};
     g["signature"] = mac(signing, g.dump()); return g;
@@ -503,6 +504,98 @@ static void file_domain_suite(const fs::path &base) {
   check(store->dispatch("nfs_delegation", cleanup, ctx()).at("state") == "returned", "domain_cleanup_return_failed");
   call("forget", cookie);
   std::cout << "PASS " << base << " FILE-DOMAIN/expired-authority-coherence-retention\n";
+  auto reservation = [&](std::string op, uint64_t token) {
+    auto request = control(op, cookie); request["reservation"] = token;
+    return store->dispatch("nfs_delegation", request, ctx());
+  };
+  auto rejected = [&](json request, std::string_view expected) {
+    bool refused = false;
+    try { store->dispatch("nfs_delegation", request, ctx()); }
+    catch (const error &e) { refused = std::string_view(e.what()) == expected; }
+    check(refused, "domain_reservation_wrong_error");
+  };
+  auto rejected_token = [&](std::string op, uint64_t token, std::string_view expected) {
+    auto request = control(op, cookie); request["reservation"] = token; rejected(request, expected);
+  };
+  d = call("acquire", "", 1000); check(d.at("granted"), "domain_reservation_acquire"); cookie = d.at("cookie");
+  auto expiry = d.at("lease_expires_ms");
+  check(reservation("reserve", 10).at("reservations") == 1, "domain_first_reservation");
+  check(reservation("reserve", 20).at("reservations") == 2, "domain_second_reservation");
+  d = reservation("reserve", 10);
+  check(d.at("reservations") == 2 && d.at("lease_expires_ms") == expiry, "domain_retry_renewed_or_duplicated");
+  for (auto invalid : {json(0), json(-1), json(1.5), json("1")}) {
+    auto request = control("reserve", cookie); request["reservation"] = invalid;
+    rejected(request, "invalid_request");
+  }
+  for (auto field : {"client", "handle", "actor", "root", "export"}) {
+    auto request = control("reserve", cookie); request["reservation"] = 30;
+    std::string name(field);
+    if (name == "client") request[name] = random_hex(16);
+    else if (name == "handle") request[name] = dir;
+    else {
+      if (name == "actor") request["grant"][name] = "bob";
+      if (name == "root") request["grant"][name]["id"] = "another-root";
+      if (name == "export") request["grant"][name]["uuid"] = random_hex(16);
+      request["grant"].erase("signature");
+      request["grant"]["signature"] = mac(signing, request.at("grant").dump());
+    }
+    rejected(request, "forbidden");
+  }
+  std::this_thread::sleep_for(1200ms);
+  d = call("poll", cookie);
+  check(d.at("granted") && d.at("reservations") == 2 && d.at("lease_remaining_ms") == 0,
+      "domain_pending_request_expired");
+  check(d.at("protected_until_ms").get<int64_t>() == INT64_MAX, "domain_pending_protection_not_reported");
+  rejected_token("reserve", 30, "stale_handle");
+  // The signed cleanup capability remains usable after data grant expiry.
+  cleanup = control("complete", cookie); cleanup["reservation"] = 10;
+  cleanup["grant"]["expires"] = now() - 1; cleanup["grant"].erase("signature");
+  cleanup["grant"]["signature"] = mac(signing, cleanup.at("grant").dump());
+  auto completed_at = monotonic_ms();
+  d = store->dispatch("nfs_delegation", cleanup, ctx());
+  check(d.at("granted") && d.at("reservations") == 1 &&
+      d.at("lease_expires_ms").get<int64_t>() >= completed_at + 5000, "domain_completion_missing_full_lease");
+  expiry = d.at("lease_expires_ms");
+  rejected_token("complete", 10, "stale_handle");
+  rejected_token("reserve", 10, "stale_handle");
+  rejected_token("cancel", 99, "stale_handle");
+  d = reservation("cancel", 20);
+  check(d.at("reservations") == 0 && d.at("lease_expires_ms") == expiry, "domain_cancel_renewed");
+  check(call("return", cookie).at("state") == "returned", "domain_reserved_return"); call("forget", cookie);
+
+  d = call("acquire", "", 5000); check(d.at("granted"), "domain_capacity_acquire"); cookie = d.at("cookie");
+  for (uint64_t i = 1; i <= 32; ++i)
+    check(reservation("reserve", i).at("reservations") == i, "domain_capacity_count");
+  rejected_token("reserve", 33, "operation_limit");
+  check(reservation("cancel", 1).at("reservations") == 31, "domain_capacity_cancel");
+  check(reservation("reserve", 33).at("reservations") == 32, "domain_capacity_reuse");
+  d = call("return", cookie);
+  check(d.at("state") == "returned" && d.at("reservations") == 0, "domain_return_leaked_reservations");
+  rejected_token("complete", 2, "stale_handle"); call("forget", cookie);
+
+  d = call("acquire", "", 300); check(d.at("granted"), "domain_cancel_acquire"); cookie = d.at("cookie");
+  reservation("reserve", 1); std::this_thread::sleep_for(500ms);
+  d = reservation("cancel", 1);
+  check(!d.at("granted") && d.at("state") == "expired" && d.at("reservations") == 0,
+      "domain_last_cancel_not_expired");
+  writer = open((base / "root/space/cached").c_str(), O_WRONLY | O_NONBLOCK);
+  check(writer >= 0, "domain_cancel_kept_native_guard"); close(writer); call("forget", cookie);
+
+  d = call("acquire", "", 1000); check(d.at("granted"), "domain_revocation_acquire"); cookie = d.at("cookie");
+  reservation("reserve", 1);
+  cleanup = control("complete", cookie); cleanup["reservation"] = 1;
+  store->dispatch("revoke", {{"epoch", ++epoch}}, ctx("identity"));
+  auto denied = cleanup; denied["op"] = "read"; denied["offset"] = 0; denied["count"] = 4;
+  bool denied_io = false;
+  try { store->dispatch("nfs_file", denied, ctx()); }
+  catch (const error &e) { denied_io = std::string_view(e.what()) == "policy_revoked"; }
+  check(denied_io, "domain_revoked_cleanup_authorized_data");
+  auto deadline = call("poll", cookie).at("recall_deadline_ms");
+  d = store->dispatch("nfs_delegation", cleanup, ctx());
+  check(d.at("granted") && d.at("state") == "recalling" && d.at("reservations") == 0 &&
+      d.at("recall_deadline_ms") == deadline, "domain_revoked_completion_changed_recall");
+  call("return", cookie); call("forget", cookie);
+  std::cout << "PASS " << base << " FILE-DOMAIN/reservation-binding-retry-completion-capacity-revocation\n";
   d = call("acquire", "", 1500); check(d.at("granted"), "domain_reacquire_failed"); cookie = d.at("cookie");
   store.reset();
   writer = open((base / "root/space/cached").c_str(), O_WRONLY | O_NONBLOCK);
@@ -524,7 +617,10 @@ static void file_domain_suite(const fs::path &base) {
       store = std::make_unique<file_store>(cfg, "file", random_hex(16));
       dir = nfs("root", "").at("handle").get<std::string>();
       fh = nfs("lookup", dir, {{"name", "cached"}}).at("handle").get<std::string>();
-      auto acquired = call("acquire");
+      auto acquired = call("acquire", "", 300);
+      cookie = acquired.at("cookie");
+      if (reservation("reserve", 1).at("reservations") != 1) _exit(5);
+      std::this_thread::sleep_for(500ms);
       if (!acquired.at("granted") || acquired.at("provider") != "independent-owner") _exit(2);
       char marker = 'R'; if (write(ready[1], &marker, 1) != 1) _exit(3);
       for (;;) pause();
@@ -539,8 +635,8 @@ static void file_domain_suite(const fs::path &base) {
   check(writer < 0 && errno == EWOULDBLOCK, "domain_worker_crash_lost_protection");
   auto started = std::chrono::steady_clock::now();
   do { std::this_thread::sleep_for(20ms); writer = open((base / "root/space/cached").c_str(), O_WRONLY | O_NONBLOCK); }
-  while (writer < 0 && errno == EWOULDBLOCK && std::chrono::steady_clock::now() - started < 5s);
-  check(writer >= 0 && std::chrono::steady_clock::now() - started > 500ms, "domain_worker_crash_expiry"); close(writer);
+  while (writer < 0 && errno == EWOULDBLOCK && std::chrono::steady_clock::now() - started < 7s);
+  check(writer >= 0 && std::chrono::steady_clock::now() - started > 4s, "domain_worker_crash_expiry"); close(writer);
   store.reset();
   std::cout << "PASS " << base << " FILE-DOMAIN/owner-renew-recall-return-replacement-SIGKILL\n";
 }

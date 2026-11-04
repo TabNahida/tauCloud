@@ -143,6 +143,12 @@ int main(int argc, char **argv) {
     auto d = call("acquire"); check(d.at("granted") && d.at("state") == "active");
     check(d.at("protected_until_ms") == d.at("lease_expires_ms") && d.at("recall_deadline_ms") == 0);
     auto cookie = d.at("cookie");
+    if (d.at("provider") == "local-primitive") {
+      auto unsupported = control("reserve", cookie); unsupported["reservation"] = 1;
+      rejects([&] { store->dispatch("nfs_delegation", unsupported, ctx()); }, "not_supported");
+      auto unchanged = call("poll", cookie);
+      check(unchanged.at("reservations") == 0 && unchanged.at("lease_expires_ms") == d.at("lease_expires_ms"));
+    }
     auto retried = call("acquire");
     check(retried.at("cookie") == cookie && retried.at("lease_remaining_ms") <= d.at("lease_remaining_ms"));
     auto contender = control("acquire"); contender["client"] = random_hex(16);

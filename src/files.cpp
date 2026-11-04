@@ -113,6 +113,8 @@ struct file_store::impl {
     nfs_detail::delegation_lifetime lifetime;
     uint64_t owner_id = 0;
     bool owner_backed = false, owner_failed = false, owner_recalled = false;
+    uint64_t last_reservation = 0;
+    std::map<uint64_t, uint64_t> reservations = {};
   };
   std::unique_ptr<native_delegation_owner> nfs_owner;
   std::map<std::string, nfs_delegation_guard> nfs_delegations;
