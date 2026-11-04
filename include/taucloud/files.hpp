@@ -18,6 +18,7 @@ class native_file {
   struct impl;
   std::unique_ptr<impl> impl_;
   native_file open_impl(const std::string &, bool, bool, bool, bool) const;
+  std::unique_ptr<native_cache_guard> cache_guard_impl(bool, bool, bool = true) const;
 
 public:
   native_file();
@@ -32,6 +33,10 @@ public:
   // guarantee cannot be established; callers must then decline caching.
   // This alone does not coordinate namespace/handle caching or SMB leases.
   std::unique_ptr<native_cache_guard> cache_guard(bool write_cache) const;
+  // Linux 6.19+ delegation: data and namespace/attribute conflict retention.
+  // No ordinary-lease fallback. Does not survive the last descriptor's close
+  // or certify NFS recovery. Unsupported kernels/platforms return null.
+  std::unique_ptr<native_cache_guard> delegation_guard(bool write_cache) const;
   // Private namespace links preserve an open incarnation across process death.
   // Ordinary opens continue to reject all hard links.
   native_file pin(const native_file &directory, const std::string &name) const;

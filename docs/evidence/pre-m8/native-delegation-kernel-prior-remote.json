@@ -1,0 +1,94 @@
+{
+  "observed_at": "2026-11-04T20:06:15.834565+00:00",
+  "source": "208381e38c15ae3144a3356bccf45722c1d85118",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41900622464",
+  "run_status": "in_progress",
+  "run_conclusion": "",
+  "jobs": [
+    {
+      "id": 126821725083,
+      "name": "gcc metadata",
+      "status": "in_progress",
+      "conclusion": "",
+      "steps": [
+        {
+          "conclusion": "success",
+          "name": "NFS delegation native exclusion, recall and authority lifetime",
+          "number": 14,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "NFS delegation protocol components (injected native provider, not production handout)",
+          "number": 15,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "NFS advertised lease, session expiry and recovery after configuration changes",
+          "number": 16,
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": 126821725803,
+      "name": "msvc metadata",
+      "status": "in_progress",
+      "conclusion": "",
+      "steps": [
+        {
+          "conclusion": "failure",
+          "name": "Native cache exclusion, cancellation and allocation safety",
+          "number": 12,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "NFS delegation native exclusion, recall and authority lifetime",
+          "number": 14,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "NFS delegation protocol components (injected native provider, not production handout)",
+          "number": 15,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "NFS advertised lease, session expiry and recovery after configuration changes",
+          "number": 16,
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": 126821725890,
+      "name": "clang metadata",
+      "status": "in_progress",
+      "conclusion": "",
+      "steps": [
+        {
+          "conclusion": "success",
+          "name": "NFS delegation native exclusion, recall and authority lifetime",
+          "number": 14,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "NFS delegation protocol components (injected native provider, not production handout)",
+          "number": 15,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "NFS advertised lease, session expiry and recovery after configuration changes",
+          "number": 16,
+          "status": "completed"
+        }
+      ]
+    }
+  ],
+  "note": "NFS delegation components and the SQLite cleanup repair pass on all three platforms. The MSVC native-cache failure is separate and remains unresolved; jobs still running are not counted as overall passes."
+}

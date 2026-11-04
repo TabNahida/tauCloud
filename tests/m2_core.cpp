@@ -34,6 +34,11 @@ int main() {
       auto directory = native_file::root(root_path);
       auto file = directory.open("cache-exclusion", false, true, true);
       file.write(0, "old"); file.flush();
+#ifdef _WIN32
+      // RW remains available for ordinary data caching, but it must not be
+      // represented as a Linux-style namespace-protecting delegation.
+      check(!file.delegation_guard(true));
+#endif
       // The future is destroyed after the guard, so a failed assertion still
       // releases the lease before waiting for a blocked external open.
       std::future<std::string> external;

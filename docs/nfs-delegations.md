@@ -11,10 +11,10 @@ passes below are not end-to-end delegation or complete RFC conformance.
 Linux [F_SETLEASE](https://man7.org/linux/man-pages/man2/F_SETLEASE.2const.html)
 documents open/truncate exclusion. The newer
 [F_SETDELEG](https://man7.org/linux/man-pages/man2/F_GETDELEG.2const.html), introduced
-in Linux 6.19, also describes namespace and directory delegation support. It is
-a candidate for the native provider, not an already validated replacement.
-The development kernel is 6.18.40.1; newer-kernel Actions/VM acceptance, metadata
-coverage and surviving-owner recovery still need implementation and evidence.
+in Linux 6.19, is now implemented by the native adapter and exercised in an
+isolated Linux 6.19 guest. The development host remains on 6.18.40.1 and correctly
+declines that API. Surviving-owner recovery and production file-authority
+integration are still required before wire handout.
 
 OPEN preserves the client's delegation preference independently of ordinary
 READ/WRITE access. A request without new flags retains the legacy NONE reply.
@@ -57,8 +57,10 @@ now verifies the explicit refusal. Both full logs and every failure remain in
 
 - Provide native protection for host metadata/namespace operations as well as
   data opens. Linux F_SETLEASE alone is insufficient for the former. The
-  protocol OPEN/lock checks and file-domain conflicts are now connected, but
-  that does not prove coherence for arbitrary host mutations.
+  Linux F_SETDELEG adapter now passes actual data, attribute and namespace
+  conflicts on tmpfs/ext4, including parent protection for directory rename.
+  Integrate it with the surviving guard owner and file-domain conflict scopes;
+  Windows still needs equivalent native namespace protection.
 - Complete durable delegation reclaim, including server/client restart and
   file-domain failure. Recorded delegation ownership alone is not recovery.
 - Validate authenticated CB_RECALL against independent Kerberos/SSV clients,
@@ -157,3 +159,40 @@ CLOSE/disconnect lifetime, callback error/retry/return, revocation flags and
 policy cleanup. The fixture explicitly does not simulate crash-safe exclusion
 or claim successful delegation recovery. Actions runs this component suite on
 GCC, Clang sanitizers and MSVC alongside the unchanged full pynfs diagnostic.
+
+## Linux kernel delegation provider
+
+`native_file::delegation_guard` uses the stable F_SETDELEG/F_GETDELEG UAPI even
+when libc headers predate Linux 6.19. Unsupported acquisition returns no guard;
+it never substitutes F_SETLEASE. READ permits compatible readers; WRITE needs
+a writable descriptor and refuses conflicting opens. The guard shares the
+exact native file incarnation, serializes ownership against ordinary cache
+guards, detects requested breaks and supports explicit or RAII release.
+
+The initial native directory test exposed a real gap: Linux 6.19
+`vfs_rename`/`vfs_rmdir` break the containing directory's delegation, without
+breaking the moved/removed directory's own delegation. The adapter therefore
+retains both the directory and its immediate parent, verifies that parent
+identity after acquisition, and declines a raced or unavailable acquisition.
+Reacquisition after a cross-parent move follows `..` on the retained descriptor,
+not an old pathname. The extra parent guard also recalls on sibling mutations;
+future file-domain integration must account for this wider conflict scope.
+
+`tests/native_delegation_kernel.cpp` exercises the real adapter in a separate
+Linux 6.19 QEMU guest, with no network or host filesystem shares. Both tmpfs and
+a disposable ext4 disk must pass. Forked processes perform ordinary host
+syscalls: reads/writes, truncate, rename, unlink, chmod/chown, timestamps, xattrs,
+hardlink creation, directory entry changes, cross-parent moves and rmdir. Each
+conflict must signal recall, remain blocked, and complete after explicit release.
+The suite also checks compatible readers, conflicting pre-existing opens,
+duplicate ownership, release/reacquisition and retained-descriptor RAII cleanup.
+The expanded local run passes 216 checks. The original directory-rename failure
+and corrected acceptance are retained in
+[evidence](evidence/pre-m8/native-delegation-kernel-local.json).
+
+`native-delegation.yml` builds a SHA256-pinned official kernel and runs the same
+mandatory guest acceptance on Actions; neither an unsupported host nor a QEMU
+exit counts as a positive guest pass. This validates a native building block,
+not production NFS delegation, crash retention, reclaim or SMB directory leases.
+The file worker still uses its existing private coordinator primitive and
+declines wire handout until the surviving-owner and recovery requirements pass.

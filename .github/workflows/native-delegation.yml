@@ -1,0 +1,56 @@
+name: Native delegation Linux 6.19
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/native-delegation.yml'
+      - 'scripts/build_delegation_kernel.py'
+      - 'scripts/run_native_delegation_vm.py'
+      - 'tests/native_delegation_kernel.cpp'
+      - 'include/taucloud/files.hpp'
+      - 'src/native_files.cpp'
+      - 'src/native_cache.inc'
+      - 'xmake.lua'
+permissions:
+  contents: read
+jobs:
+  kernel:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: '3.1.1'
+      - name: Dependencies for isolated kernel acceptance
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential flex bison libelf-dev libssl-dev libkrb5-dev qemu-system-x86 e2fsprogs
+      - run: python3 scripts/fetch_pace.py
+      - run: python3 scripts/fetch_pace.py --dependency recipes
+      - name: Build actual native_file adapter and test
+        run: |
+          xmake f -y -c -p linux -a x86_64 -m release --m0=n --m1=y --toolchain=gcc --sanitizers=n
+          xmake -y -j 4 taucloud_native_delegation_kernel_tests
+      - name: Pin and build Linux 6.19 without changing the runner kernel
+        run: python3 scripts/build_delegation_kernel.py --work .deps/delegation-kernel --jobs 4 > kernel-build.log 2>&1
+      - name: Host capability refusal or native acceptance
+        run: build/linux/x86_64/release/taucloud_native_delegation_kernel_tests | tee native-delegation-host.log
+      - name: Required tmpfs and ext4 native exclusion in QEMU
+        run: |
+          python3 scripts/run_native_delegation_vm.py \
+            --kernel .deps/delegation-kernel/out/arch/x86/boot/bzImage \
+            --binary build/linux/x86_64/release/taucloud_native_delegation_kernel_tests \
+            --output native-delegation-vm
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-delegation-linux-6.19
+          include-hidden-files: true
+          path: |
+            kernel-build.log
+            native-delegation-host.log
+            native-delegation-vm/serial.log
+            native-delegation-vm/command.txt
+            native-delegation-vm/dependencies.txt
+            .deps/delegation-kernel/out/.config

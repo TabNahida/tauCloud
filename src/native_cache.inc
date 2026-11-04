@@ -1,9 +1,12 @@
 // Kernel data-cache exclusion, independent of any network protocol. Linux
 // leases and Windows RW oplocks delay conflicting native data access. Linux
-// leases do not protect namespace/handle caching and have a kernel break timeout.
+// leases do not protect namespace/handle caching. The separate Linux 6.19
+// delegation interface includes namespace/attribute conflicts. Both Linux
+// primitives have a kernel break timeout and require protocol coordination.
 struct native_cache_guard::impl {
   std::shared_ptr<resource> file;
-  bool write = false, active = false;
+  std::unique_ptr<native_cache_guard> parent;
+  bool write = false, active = false, delegation = false;
 #ifdef _WIN32
   native_operation notification;
   REQUEST_OPLOCK_INPUT_BUFFER request{};
@@ -36,8 +39,35 @@ native_cache_guard::~native_cache_guard() {
   }
 }
 std::unique_ptr<native_cache_guard> native_file::cache_guard(bool write_cache) const {
-  if (info().at("directory")) return nullptr;
+  return cache_guard_impl(write_cache, false);
+}
+std::unique_ptr<native_cache_guard> native_file::delegation_guard(bool write_cache) const {
+  return cache_guard_impl(write_cache, true);
+}
+#ifdef __linux__
+// Stable Linux UAPI, including builds with pre-6.19 libc headers. Do not include
+// linux/fcntl.h alongside libc's fcntl.h (their flock definitions conflict).
+// https://github.com/torvalds/linux/blob/v6.19/include/uapi/linux/fcntl.h
+struct kernel_delegation { uint32_t flags = 0; uint16_t type = 0, pad = 0; };
+static_assert(sizeof(kernel_delegation) == 8);
+static int delegation_level(int fd, int type, bool query = false) {
+  kernel_delegation request{0, static_cast<uint16_t>(type), 0};
+  int rc;
+  do { rc = fcntl(fd, F_SETLEASE + (query ? 15 : 16), &request); }
+  while (rc < 0 && errno == EINTR);
+  return rc < 0 ? -1 : query ? request.type : 0;
+}
+#endif
+std::unique_ptr<native_cache_guard> native_file::cache_guard_impl(bool write_cache, bool delegation,
+                                                               bool protect_directory_name) const {
+  bool directory = info().at("directory");
+  if (directory && (!delegation || write_cache)) return nullptr;
+  if (delegation && write_cache && !writable()) return nullptr;
 #ifdef _WIN32
+  (void)protect_directory_name;
+  // RW does not provide the namespace guarantee of a Linux delegation.
+  // Windows RWH/broker ownership needs its own native acceptance first.
+  if (delegation) return nullptr;
   // Native R/RH breaks on writes are advisory: they do not wait for an ACK.
   // Only RW currently satisfies this primitive's data-exclusion guarantee.
   // RW describes the kernel exclusion, not the caller's data-access rights.
@@ -67,6 +97,7 @@ std::unique_ptr<native_cache_guard> native_file::cache_guard(bool write_cache) c
   auto &guard = *result->impl_;
   guard.file = file;
   guard.write = write_cache;
+  guard.delegation = delegation;
 #ifdef _WIN32
   if (!file->overlapped) {
     // ReOpenFile retains the native incarnation, including after rename; it
@@ -92,7 +123,8 @@ std::unique_ptr<native_cache_guard> native_file::cache_guard(bool write_cache) c
   }
 #else
   int rc;
-  do { rc = fcntl(file->handle, F_SETLEASE, write_cache ? F_WRLCK : F_RDLCK); }
+  do { rc = delegation ? delegation_level(file->handle, write_cache ? F_WRLCK : F_RDLCK)
+                      : fcntl(file->handle, F_SETLEASE, write_cache ? F_WRLCK : F_RDLCK); }
   while (rc < 0 && errno == EINTR);
   if (rc < 0) {
     file->cache_owned = false;
@@ -100,9 +132,35 @@ std::unique_ptr<native_cache_guard> native_file::cache_guard(bool write_cache) c
   }
 #endif
   guard.active = true;
+#ifdef __linux__
+  if (delegation && directory && protect_directory_name) {
+    // Linux vfs_rename/vfs_rmdir break the containing directory's delegation,
+    // not the moved/removed directory's own delegation. Retain both. This is
+    // deliberately broader than a name-specific lock (siblings also recall).
+    native_file parent;
+    parent.impl_->file->handle = ::openat(file->handle, "..", O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_NONBLOCK);
+    if (parent.impl_->file->handle < 0) return nullptr;
+    struct stat self{}, before{}, after{};
+    if (fstat(file->handle, &self) || fstat(parent.impl_->file->handle, &before)) return nullptr;
+    if (self.st_dev != before.st_dev || self.st_ino != before.st_ino) {
+      // Only the immediate parent's entries need protection. Its own name is
+      // irrelevant to this directory's incarnation and would recurse to '/'.
+      guard.parent = parent.cache_guard_impl(false, true, false);
+      if (!guard.parent) return nullptr;
+      // A cross-parent rename during acquisition must not publish a guard on
+      // the old parent. Once this identity matches, its delegation excludes
+      // further moves until recall/release. No pathname fallback is used.
+      if (fstatat(file->handle, "..", &after, AT_SYMLINK_NOFOLLOW) ||
+          before.st_dev != after.st_dev || before.st_ino != after.st_ino ||
+          guard.parent->breaking()) return nullptr;
+    }
+  }
+  if (delegation && result->breaking()) return nullptr;
+#endif
   return result;
 }
 bool native_cache_guard::breaking() const {
+  if (impl_->parent && impl_->parent->breaking()) return true;
 #ifdef _WIN32
   if (impl_->active) {
     DWORD size = 0;
@@ -113,7 +171,9 @@ bool native_cache_guard::breaking() const {
 #else
   if (impl_->active) {
     int level;
-    do { level = fcntl(impl_->file->handle, F_GETLEASE); } while (level < 0 && errno == EINTR);
+    do { level = impl_->delegation ? delegation_level(impl_->file->handle, 0, true)
+                                  : fcntl(impl_->file->handle, F_GETLEASE); }
+    while (level < 0 && errno == EINTR);
     if (level < 0) native_error();
     return level != (impl_->write ? F_WRLCK : F_RDLCK);
   }
@@ -122,6 +182,7 @@ bool native_cache_guard::breaking() const {
 }
 void native_cache_guard::release() {
   if (!impl_->active) return;
+  if (impl_->parent) impl_->parent->release();
 #ifdef _WIN32
   DWORD size = 0;
   auto file = impl_->file->handle;
@@ -150,7 +211,9 @@ void native_cache_guard::release() {
   }
 #else
   int rc;
-  do { rc = fcntl(impl_->file->handle, F_SETLEASE, F_UNLCK); } while (rc < 0 && errno == EINTR);
+  do { rc = impl_->delegation ? delegation_level(impl_->file->handle, F_UNLCK)
+                            : fcntl(impl_->file->handle, F_SETLEASE, F_UNLCK); }
+  while (rc < 0 && errno == EINTR);
   if (rc < 0) native_error();
 #endif
   impl_->active = false;
