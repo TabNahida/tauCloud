@@ -1351,8 +1351,9 @@ struct client : session_state, std::enable_shared_from_this<client> {
         check(length == (control == 0x900bc ? 48 : 0));
         auto input = slice(p, get(p, 88, 4), length, 120);
         check(h.access & 0x102, 0xc0000022);
+        json arguments = {{"extended", encode_bytes(input)}};
         co_await operation(h, control == 0x900a0 ? "delete_object_id" : "set_object_id_extended", true,
-                           {{"extended", encode_bytes(input)}});
+                           arguments);
         auto b = sized(48, 49);
         put(b, 4, control, 4);
         b.replace(8, 16, fid_for(h));

@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "checks": [
+    "210: extended info preserves identity across file/directory metadata-only opens; malformed/unauthorized mutations leave metadata intact; DELETE is idempotent and preserves data",
+    "210: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+    "300: extended info preserves identity across file/directory metadata-only opens; malformed/unauthorized mutations leave metadata intact; DELETE is idempotent and preserves data",
+    "300: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+    "302: extended info preserves identity across file/directory metadata-only opens; malformed/unauthorized mutations leave metadata intact; DELETE is idempotent and preserves data",
+    "302: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+    "311: extended info preserves identity across file/directory metadata-only opens; malformed/unauthorized mutations leave metadata intact; DELETE is idempotent and preserves data",
+    "311: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+    "identifiers survive all-service restart and out-of-band native rename",
+    "delete completes, same-name recreation has a new native incarnation and identifiers follow native filesystem behavior",
+    "read-only share can retrieve existing IDs but cannot create metadata",
+    "revoking share write authority denies mutations through an already-open WRITE_ATTRIBUTES handle without changing its identifier"
+  ],
+  "recorded_at": "2026-11-04T22:47:15.453187+00:00",
+  "native_recreation": {
+    "has_identifier": true,
+    "retained_identifier": true
+  },
+  "source_commit": "2de5888cccf9f084e3d81fde96cc78be701a2d7b",
+  "run_url": "https://github.com/TabNahida/tauCloud/actions/runs/41927282484",
+  "job_id": 126914859042,
+  "artifact_sha256": "2a29d0a313b8d656d2a274d3fa4a517289ac509f81678f9d77560fe51f6cba70"
+}

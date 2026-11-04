@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "checks": [
+    "210: extended info preserves identity across file/directory metadata-only opens; malformed/unauthorized mutations leave metadata intact; DELETE is idempotent and preserves data",
+    "210: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+    "300: extended info preserves identity across file/directory metadata-only opens; malformed/unauthorized mutations leave metadata intact; DELETE is idempotent and preserves data",
+    "300: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+    "302: extended info preserves identity across file/directory metadata-only opens; malformed/unauthorized mutations leave metadata intact; DELETE is idempotent and preserves data",
+    "302: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+    "311: extended info preserves identity across file/directory metadata-only opens; malformed/unauthorized mutations leave metadata intact; DELETE is idempotent and preserves data",
+    "311: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+    "copying Linux data and xattrs cannot clone the source object identifier",
+    "identifiers survive all-service restart and out-of-band native rename",
+    "delete completes, same-name recreation has a new native incarnation and identifiers follow native filesystem behavior",
+    "read-only share can retrieve existing IDs but cannot create metadata",
+    "revoking share write authority denies mutations through an already-open WRITE_ATTRIBUTES handle without changing its identifier"
+  ],
+  "recorded_at": "2026-11-04T22:50:26.928778+00:00",
+  "source_base": "2de5888cccf9f084e3d81fde96cc78be701a2d7b",
+  "change": "Use named JSON arguments across object-ID mutation coroutine await to avoid GCC 13 internal compiler error",
+  "notes": [
+    "GCC release build and all 13 object-ID groups pass.",
+    "The local build also includes in-progress native NFS owner reservation changes, which are not used by this SMB fixture.",
+    "Fixed-source Windows acceptance for the original mutation implementation passes at 2de5888."
+  ]
+}

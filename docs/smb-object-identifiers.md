@@ -84,9 +84,20 @@ remain protected by the file-domain recall gate.
 Independent clients cover four dialects, file/directory mutation, opaque data,
 invalid sizes, write-attributes-only access without data rights, idempotent
 deletion, retained file contents, restart, live write-authority revocation and
-actual cache recalls. Native Windows mutation acceptance remains pending.
+actual cache recalls. [Windows native mutation acceptance](evidence/pre-m8/smb-object-id-mutations-2de-windows.json)
+passes all 12 groups at `2de5888`, including direct NTFS comparison and
+directory deletion/extended updates. The Linux-only xattr-copy group is excluded.
 SET_OBJECT_ID still needs restoration authority and volume-wide uniqueness;
 volume IDs, USN journal and link-tracking service remain incomplete.
 
 [Local mutation evidence](evidence/pre-m8/smb-object-id-mutations-local.json) records
 13 object-ID groups, 40 oplock groups and 83 native-file checks.
+
+GCC 13 initially rejected the new mutation coroutine with an internal compiler
+error (`build_special_member_call`). Passing a named JSON object across the
+await point avoids that compiler failure while preserving the same request
+contents. The failure occurred before native CIFS testing in Linux Actions;
+it is not a successful native-client result.
+
+The [GCC release regression](evidence/pre-m8/smb-object-id-gcc-local.json) passes
+all 13 object-ID groups after that source adjustment.
