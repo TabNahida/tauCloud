@@ -264,7 +264,9 @@ std::optional<std::string> native_file::object_identifier(bool create) const {
                        create ? FSCTL_CREATE_OR_GET_OBJECT_ID : FSCTL_GET_OBJECT_ID,
                        nullptr, 0, &value, sizeof(value), &size, nullptr)) {
     auto code = GetLastError();
-    if (!create && code == ERROR_OBJECT_NOT_FOUND) return std::nullopt;
+    // NTFS STATUS_OBJECTID_NOT_FOUND maps to Win32 ERROR_FILE_NOT_FOUND,
+    // although the already-open native file itself still exists.
+    if (!create && code == ERROR_FILE_NOT_FOUND) return std::nullopt;
     if (code == ERROR_INVALID_FUNCTION || code == ERROR_NOT_SUPPORTED)
       throw error("invalid_device_request");
     native_error();

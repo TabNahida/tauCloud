@@ -10,6 +10,7 @@ on:
       - 'src/native_cache.inc'
       - 'src/native_files.cpp'
       - 'tests/windows_native_smb.py'
+      - 'tests/smb_object_id.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -31,8 +32,10 @@ jobs:
       - run: xmake -y -j 8
       - name: Native redirector encrypted IO and security descriptors
         run: python tests/windows_native_smb.py --bin build/windows/x64/release --output build/acceptance/windows-native-security.json
+      - name: Native NTFS object identifier storage through SMB
+        run: python tests/smb_object_id.py --bin build/windows/x64/release --output build/acceptance/windows-object-id.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: windows-native-smb-diagnostics
-          path: build/acceptance/windows-native-security.json
+          path: build/acceptance/*.json
