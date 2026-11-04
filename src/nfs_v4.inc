@@ -1123,18 +1123,27 @@ std::string v4(const identity &who, reader &r) {
           body.u32(1).boolean(false); // GDD4_UNAVAIL, will_signal=false.
         } else if (op == 33 || op == 52) {
           meta4(who, current);
+          auto target = current;
           if (op == 52) {
             check(a.at("style").get<uint32_t>() <= 1);
             if (a.at("style") == 1) {
               check(current != pseudo, 2);
-              file(who, current, "parent");
+              target = file(who, current, "parent").at("handle");
             }
           }
           else if (current == pseudo)
-            file(who, "", "root", json::object(), "", a.at("name"));
+            target = file(who, "", "root", json::object(), "", a.at("name")).at("handle");
           else
-            file(who, current, "lookup", {{"name", a.at("name")}});
-          body.u32(1).u32(1);
+            target = file(who, current, "lookup", {{"name", a.at("name")}}).at("handle");
+          auto flavors = target == pseudo ?
+              (cfg.nfs_gss_service.empty() ? json::array({"sys"}) : json::array({"sys", "krb5", "krb5i", "krb5p"})) :
+              security_flavors(who, target);
+          body.u32(uint32_t(flavors.size()));
+          for (const auto &flavor : flavors) {
+            if (flavor == "sys") body.u32(1);
+            else body.u32(6).opaque(decode_bytes("2a864886f712010202")).u32(0)
+                .u32(flavor == "krb5" ? 1 : flavor == "krb5i" ? 2 : 3);
+          }
           current.clear();
         } else if (op == 18) {
           auto access = a.at("access").get<uint32_t>(), deny = a.at("deny").get<uint32_t>();

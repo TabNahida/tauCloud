@@ -3643,7 +3643,7 @@
     }
   },
   "backend_workflow": {
-    "conclusion": "",
+    "conclusion": "success",
     "headSha": "28e785246ccef040e7b16cf8735f7710cdc88e84",
     "jobs": [
       {
@@ -4118,12 +4118,12 @@
         "url": "https://github.com/TabNahida/tauCloud/actions/runs/41762876560/job/126354385005"
       },
       {
-        "completedAt": "0001-01-01T00:00:00Z",
-        "conclusion": "",
+        "completedAt": "2026-11-04T03:19:45Z",
+        "conclusion": "success",
         "databaseId": 126363264225,
         "name": "macos-clients",
         "startedAt": "2026-11-04T03:12:30Z",
-        "status": "in_progress",
+        "status": "completed",
         "steps": [
           {
             "conclusion": "success",
@@ -4144,34 +4144,40 @@
             "status": "completed"
           },
           {
-            "conclusion": "",
+            "conclusion": "success",
             "name": "Run brew install qemu",
             "number": 4,
-            "status": "in_progress"
+            "status": "completed"
           },
           {
-            "conclusion": "",
+            "conclusion": "success",
             "name": "macOS native SMB and NFSv3 against isolated Linux guest",
             "number": 5,
-            "status": "pending"
+            "status": "completed"
           },
           {
-            "conclusion": "",
+            "conclusion": "success",
             "name": "Run actions/upload-artifact@v4",
             "number": 6,
-            "status": "pending"
+            "status": "completed"
           },
           {
-            "conclusion": "",
+            "conclusion": "success",
             "name": "Post Run actions/checkout@v4",
             "number": 12,
-            "status": "pending"
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 13,
+            "status": "completed"
           }
         ],
         "url": "https://github.com/TabNahida/tauCloud/actions/runs/41762876560/job/126363264225"
       }
     ],
-    "status": "in_progress",
+    "status": "completed",
     "url": "https://github.com/TabNahida/tauCloud/actions/runs/41762876560"
   }
 }

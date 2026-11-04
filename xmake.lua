@@ -61,6 +61,7 @@ if has_config("m1") then
             os.vrunv(is_host("windows") and "python" or "python3", {"scripts/fetch_pace.py", "--dependency", "recipes", "--verify"})
         end)
         if is_plat("windows") then add_syslinks("advapi32", "crypt32", "psapi", "iphlpapi", {public = true}) end
+        if is_plat("linux") then add_syslinks("gssapi_krb5", {public = true}) end
     target_end()
     target("taucloud_m1_tests")
         set_kind("binary")

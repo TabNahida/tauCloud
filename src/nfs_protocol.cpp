@@ -1,6 +1,7 @@
 #include <taucloud/nfs.hpp>
 #include <taucloud/files.hpp>
 #include <taucloud/database.hpp>
+#include <taucloud/gss.hpp>
 #include <algorithm>
 #include <map>
 #include <set>
@@ -15,6 +16,7 @@ void check(bool b, uint32_t status = 22) {
     throw failure{status};
 }
 uint32_t status(std::string_view code) {
+  if (code == "wrong_security") return 10016;
   if (code == "invalid_owner")
     return 10039;
   if (code == "not_found")
@@ -165,6 +167,17 @@ struct server::impl {
       recording_authority->namespace_view = digest(view.at("exports").dump());
     return view;
   }
+  json security_flavors(const identity &who, const std::string &handle, const std::string &name = "") {
+    json request = {{"peer", "127.0.0.1"}, {"credential", who.credential}, {"write", false}};
+    if (!name.empty()) request["export"] = name;
+    else {
+      auto raw = decode_bytes(handle);
+      check(raw.size() == 50 && raw[0] == 1, 70);
+      request["uuid"] = encode_bytes(raw.substr(2, 16));
+    }
+    auto e = authorize(request).at("export");
+    return e.value("security", json::array({"sys"}));
+  }
   void replay_authorized(const identity &who, const replay_authority &authority) {
     // Revalidate the reply's actual exports, including anonymous reads and
     // operations whose OPEN has since closed. Never execute a mutation twice.
@@ -181,6 +194,8 @@ struct server::impl {
   }
   impl(const config &c, domain_call f, callback_call cb)
       : cfg(c), call(std::move(f)), callback(std::move(cb)), db(c.state / "nfs.db") {
+    // Fail startup if an explicitly configured acceptor cannot load its keys.
+    if (!c.nfs_gss_service.empty()) gss_context credentials(c.nfs_gss_service, c.nfs_gss_keytab);
     sql(db, "CREATE TABLE IF NOT EXISTS replay(id TEXT PRIMARY KEY,hash TEXT NOT NULL,result TEXT "
             "NOT NULL);"
             "CREATE TABLE IF NOT EXISTS recovery(id TEXT PRIMARY KEY,body TEXT NOT NULL);");
@@ -217,14 +232,19 @@ struct server::impl {
       }
     }
     if (args.contains("uid")) {
-      check(args.at("uid") == who.credential.at("uid"), 1);
-      if (who.credential.at("uid") == 0) args["uid"] = 65534;
+      bool kerberos = who.credential.value("auth", "") == "rpcsec-gss";
+      check(args.at("uid") == (kerberos ? grant.at("nfs_uid") : who.credential.at("uid")), 1);
+      if (!kerberos && who.credential.at("uid") == 0) args["uid"] = 65534;
     }
     if (args.contains("gid")) {
-      bool permitted = args.at("gid") == who.credential.at("gid");
-      for (const auto &g : who.credential.at("groups")) permitted |= args.at("gid") == g;
+      bool kerberos = who.credential.value("auth", "") == "rpcsec-gss";
+      bool permitted = args.at("gid") == (kerberos ? grant.at("nfs_gid") : who.credential.at("gid"));
+      if (kerberos) {
+        auto group = grant.at("export").at("gids").value(std::to_string(args.at("gid").get<uint32_t>()), "");
+        for (const auto &g : grant.at("groups")) permitted |= g == group;
+      } else for (const auto &g : who.credential.at("groups")) permitted |= args.at("gid") == g;
       check(permitted, 1);
-      if (who.credential.at("uid") == 0) args["gid"] = 65534;
+      if (!kerberos && who.credential.at("uid") == 0) args["gid"] = 65534;
     }
     if (op == "read" || op == "write" || op == "resize" || op == "setattr") {
       expire();
@@ -499,7 +519,7 @@ struct server::impl {
   std::string v3_error(uint32_t proc, uint32_t code) {
     if (code == 10039) // NFS4ERR_BADOWNER has no NFSv3 equivalent.
       code = 22;
-    if (code == 10012 || code == 10015) code = 13;
+    if (code == 10012 || code == 10015 || code == 10016) code = 13;
     if (code == 10018) code = 10008;
     writer w;
     w.u32(code);
@@ -514,9 +534,7 @@ struct server::impl {
   }
 #include "nfs_v4.inc"
 #include "nfs_nlm.inc"
-  std::string dispatch(std::string_view packet, std::string connection_id) {
-    std::lock_guard guard(mutex);
-    connection = std::move(connection_id);
+  std::string dispatch_plain(std::string_view packet, const identity *authenticated = nullptr) {
     reader r(packet);
     uint32_t xid = r.u32();
     writer reply;
@@ -530,12 +548,13 @@ struct server::impl {
       auto credential = r.opaque(400);
       auto vf = r.u32();
       auto vb = r.opaque(400);
-      if (vf != 0 || !vb.empty() ||
+      if (!authenticated && (vf != 0 || !vb.empty() ||
           (flavor != 1 && !(flavor == 0 && (proc == 0 || prog == 100000 || prog == 100024 ||
-              (prog == 100005 && (proc == 2 || proc == 5))))))
+              (prog == 100005 && (proc == 2 || proc == 5)))))))
         return reply.u32(1).u32(1).u32(5).data;
       identity who;
-      if (flavor == 1) {
+      if (authenticated) who = *authenticated;
+      else if (flavor == 1) {
         reader a(credential);
         a.u32();
         a.opaque(255);
@@ -575,7 +594,8 @@ struct server::impl {
           return reply.u32(0).fixed(v4(who, r)).data;
         // V3 duplicate requests have a bounded durable cache. A hash conflict is
         // never interpreted as a replay and a pending mutation is never reissued.
-        auto hash = digest(std::string(packet.substr(4)));
+        auto hash = authenticated ? digest(std::to_string(proc) + ":" + std::string(packet.substr(r.pos))) :
+                                    digest(std::string(packet.substr(4)));
         bool mut = proc == 2 || proc == 7 || proc == 8 || proc == 9 || proc == 12 || proc == 13 ||
                    proc == 14;
         if (mut) {
@@ -583,6 +603,20 @@ struct server::impl {
           q.bind(1, request);
           if (q.row()) {
             check(q.text(0) == hash, 10008);
+            if (authenticated) {
+              // GSS retries change only their RPC security sequence. Cached
+              // mutation results still require the principal's current export
+              // authority; a ticket must not preserve a revoked mapping.
+              reader args(r.data.substr(r.pos));
+              auto handle = args.opaque(64);
+              check(handle.size() == 50 && handle[0] == 1, 70);
+              try {
+                authorize({{"peer", "127.0.0.1"}, {"credential", who.credential},
+                           {"uuid", encode_bytes(handle.substr(2, 16))}, {"write", true}});
+              } catch (const error &e) {
+                return reply.u32(0).fixed(v3_error(proc, status(e.what()))).data;
+              }
+            }
             auto out = q.text(1);
             return reply.u32(0).fixed(out.empty() ? v3_error(proc, 10008) : decode_bytes(out)).data;
           }
@@ -629,9 +663,13 @@ struct server::impl {
             if (!mounts.contains({who.key, path}) && mounts.size() >= 1024)
               return reply.u32(0).u32(10006).data; // MNT3ERR_SERVERFAULT
             mounts.emplace(who.key, path);
-            out.u32(0).opaque(decode_bytes(m.at("handle").get<std::string>())).u32(1).u32(1);
+            auto flavors = security_flavors(who, "", path.substr(1));
+            out.u32(0).opaque(decode_bytes(m.at("handle").get<std::string>())).u32(uint32_t(flavors.size()));
+            for (const auto &flavor : flavors)
+              out.u32(flavor == "sys" ? 1 : flavor == "krb5" ? 390003 : flavor == "krb5i" ? 390004 : 390005);
           } catch (const error &e) {
-            out.u32(status(e.what()));
+            auto code = status(e.what());
+            out.u32(code == 10016 ? 13 : code);
           }
           return reply.u32(0).fixed(out.data).data;
         }
@@ -737,6 +775,7 @@ struct server::impl {
       return w.u32(xid).u32(1).u32(0).u32(0).u32(0).u32(5).data;
     }
   }
+#include "nfs_gss.inc"
 };
 server::server(const config &c, domain_call f, callback_call cb)
     : impl_(std::make_unique<impl>(c, std::move(f), std::move(cb))) {}
@@ -752,5 +791,6 @@ void server::maintenance() {
   std::lock_guard guard(impl_->mutex);
   impl_->expire();
   impl_->nlm_maintenance();
+  impl_->gss_expire();
 }
 } // namespace tc::nfs_detail

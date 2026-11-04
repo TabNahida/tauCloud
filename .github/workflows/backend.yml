@@ -22,9 +22,10 @@ jobs:
           xmake-version: '3.1.1'
       - run: python3 scripts/fetch_pace.py
       - run: python3 scripts/fetch_pace.py --dependency recipes
-      - run: sudo apt-get update && sudo apt-get install -y libssl-dev libexpat1-dev
+      - run: sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libssl-dev libexpat1-dev libkrb5-dev krb5-kdc krb5-admin-server krb5-user
       - run: python3 scripts/fetch_litmus.py
       - run: python3 -m pip install --break-system-packages -r tests/smb-requirements.txt -r tests/nfs-requirements.txt
+      - run: python3 -m pip install --break-system-packages -r tests/kerberos-requirements.txt
       - run: python3 scripts/run_m7.py --compiler ${{ matrix.compiler }} ${{ matrix.compiler == 'clang' && '--mode debug --sanitizers' || '' }} --litmus build/litmus/installed/bin/litmus
       - name: Independent native clients
         if: always() && matrix.compiler == 'gcc'

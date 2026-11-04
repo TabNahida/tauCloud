@@ -79,6 +79,7 @@ pace::task<void> serve(nfs_runtime &s, pace::tcp::stream socket) {
       }
       auto response = co_await process(s, std::move(record.data), connection);
       active = true;
+      if (response.empty()) continue; // RPCSEC_GSS replay window: silent discard.
       require(response.size() <= nfs_detail::max_record, "response_limit");
       nfs_detail::writer header;
       header.u32(0x80000000u | uint32_t(response.size()));

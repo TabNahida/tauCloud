@@ -1,0 +1,3427 @@
+{
+  "source": "1920af2db6ea77787bb2711306ce1b30ddbaf5da",
+  "recorded_at": "2026-11-04T03:36:48.263066+00:00",
+  "status": "passed",
+  "scope": "Special modes and shared security. Full SMB/NFS remains incomplete.",
+  "workflow": {
+    "conclusion": "success",
+    "headSha": "1920af2db6ea77787bb2711306ce1b30ddbaf5da",
+    "jobs": [
+      {
+        "completedAt": "2026-11-04T03:23:48Z",
+        "conclusion": "success",
+        "databaseId": 126363311756,
+        "name": "gcc metadata",
+        "startedAt": "2026-11-04T03:12:36Z",
+        "status": "completed",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake-io/github-action-setup-xmake@v1",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_pace.py",
+            "number": 4,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_pace.py --dependency recipes",
+            "number": 5,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run sudo apt-get update && sudo apt-get install -y libssl-dev libexpat1-dev samba-testsuite",
+            "number": 6,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python -m pip install -r tests/smb-requirements.txt -r tests/nfs-requirements.txt",
+            "number": 7,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_nfs_client.py",
+            "number": 8,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake f -y -c -p linux -a x86_64 -m release --m0=n --m1=y --toolchain=gcc --sanitizers=n",
+            "number": 9,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake -y -j 8",
+            "number": 10,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Native allocation failure safety",
+            "number": 11,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB authority and failed CREATE cleanup",
+            "number": 12,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Persistent ACLs and cross-protocol permission checks",
+            "number": 13,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Native Windows security descriptor operations",
+            "number": 14,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Unmodified Samba ACL conformance",
+            "number": 15,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "DOS metadata, timestamps, EAs and modes",
+            "number": 16,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Asynchronous SMB blocking locks and cancellation",
+            "number": 17,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Unmodified Samba asynchronous locks",
+            "number": 18,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Native allocation and durable quota",
+            "number": 19,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFS attributes and native allocation",
+            "number": 20,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFSv4 ACLs, mode and cross-protocol access",
+            "number": 21,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFS special modes and shared namespace permissions",
+            "number": 22,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB3 dialects and encrypted allocation",
+            "number": 23,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/upload-artifact@v4",
+            "number": 24,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run xmake-io/github-action-setup-xmake@v1",
+            "number": 47,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 48,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 49,
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/TabNahida/tauCloud/actions/runs/41765661931/job/126363311756"
+      },
+      {
+        "completedAt": "2026-11-04T03:24:07Z",
+        "conclusion": "success",
+        "databaseId": 126363311899,
+        "name": "msvc metadata",
+        "startedAt": "2026-11-04T03:12:35Z",
+        "status": "completed",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake-io/github-action-setup-xmake@v1",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_pace.py",
+            "number": 4,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_pace.py --dependency recipes",
+            "number": 5,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Run sudo apt-get update && sudo apt-get install -y libssl-dev libexpat1-dev samba-testsuite",
+            "number": 6,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python -m pip install -r tests/smb-requirements.txt -r tests/nfs-requirements.txt",
+            "number": 7,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_nfs_client.py",
+            "number": 8,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake f -y -c -p windows -a x64 -m release --m0=n --m1=y --toolchain=msvc --sanitizers=n",
+            "number": 9,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake -y -j 8",
+            "number": 10,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Native allocation failure safety",
+            "number": 11,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB authority and failed CREATE cleanup",
+            "number": 12,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Persistent ACLs and cross-protocol permission checks",
+            "number": 13,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Native Windows security descriptor operations",
+            "number": 14,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Unmodified Samba ACL conformance",
+            "number": 15,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "DOS metadata, timestamps, EAs and modes",
+            "number": 16,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Asynchronous SMB blocking locks and cancellation",
+            "number": 17,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Unmodified Samba asynchronous locks",
+            "number": 18,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Native allocation and durable quota",
+            "number": 19,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFS attributes and native allocation",
+            "number": 20,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFSv4 ACLs, mode and cross-protocol access",
+            "number": 21,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFS special modes and shared namespace permissions",
+            "number": 22,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB3 dialects and encrypted allocation",
+            "number": 23,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/upload-artifact@v4",
+            "number": 24,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run xmake-io/github-action-setup-xmake@v1",
+            "number": 47,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 48,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 49,
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/TabNahida/tauCloud/actions/runs/41765661931/job/126363311899"
+      },
+      {
+        "completedAt": "2026-11-04T03:20:12Z",
+        "conclusion": "success",
+        "databaseId": 126363311961,
+        "name": "clang metadata",
+        "startedAt": "2026-11-04T03:12:35Z",
+        "status": "completed",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake-io/github-action-setup-xmake@v1",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_pace.py",
+            "number": 4,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_pace.py --dependency recipes",
+            "number": 5,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run sudo apt-get update && sudo apt-get install -y libssl-dev libexpat1-dev samba-testsuite",
+            "number": 6,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python -m pip install -r tests/smb-requirements.txt -r tests/nfs-requirements.txt",
+            "number": 7,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run python scripts/fetch_nfs_client.py",
+            "number": 8,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake f -y -c -p linux -a x86_64 -m debug --m0=n --m1=y --toolchain=clang --sanitizers=y",
+            "number": 9,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run xmake -y -j 8",
+            "number": 10,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Native allocation failure safety",
+            "number": 11,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB authority and failed CREATE cleanup",
+            "number": 12,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Persistent ACLs and cross-protocol permission checks",
+            "number": 13,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Native Windows security descriptor operations",
+            "number": 14,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Unmodified Samba ACL conformance",
+            "number": 15,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "DOS metadata, timestamps, EAs and modes",
+            "number": 16,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Asynchronous SMB blocking locks and cancellation",
+            "number": 17,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Unmodified Samba asynchronous locks",
+            "number": 18,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Native allocation and durable quota",
+            "number": 19,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFS attributes and native allocation",
+            "number": 20,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFSv4 ACLs, mode and cross-protocol access",
+            "number": 21,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "NFS special modes and shared namespace permissions",
+            "number": 22,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "SMB3 dialects and encrypted allocation",
+            "number": 23,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/upload-artifact@v4",
+            "number": 24,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run xmake-io/github-action-setup-xmake@v1",
+            "number": 47,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 48,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 49,
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/TabNahida/tauCloud/actions/runs/41765661931/job/126363311961"
+      }
+    ],
+    "status": "completed",
+    "url": "https://github.com/TabNahida/tauCloud/actions/runs/41765661931"
+  },
+  "artifacts": [
+    {
+      "compiler": "gcc",
+      "id": 13292658451,
+      "sha256": "1ff1f9c225e9642787cd58005508cdb33f23aac8a6488cea940dc6e027a2b012",
+      "reports": {
+        "allocation.json": {
+          "status": "passed",
+          "checks": [
+            "schema v4 migration preserves a pre-v5 backup before adding durable reservations",
+            "native space allocation preserves EOF, charges quota once, rejects over-quota growth before mutation and enforces WRITE_DATA",
+            "durable logical quota survives restart while allocation reports native close-time trimming; EOF extension consumes reservations; shrink and deletion release quota",
+            "AlSi CREATE/overwrite preallocation preserves zero EOF, charges durable quota, ignores existing opens/directories, validates context shape and fails over-quota before namespace/data mutation"
+          ],
+          "native_allocation_after_reopen": [
+            [
+              4096,
+              14
+            ],
+            [
+              4096,
+              0
+            ]
+          ]
+        },
+        "blocking-locks.json": {
+          "status": "passed",
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+          "recorded_at": "2026-11-04T03:18:17.053166+00:00",
+          "checks": [
+            "210: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+            "210: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+            "210: cross-connection FIFO for conflicts and queued writer fairness",
+            "210: CLOSE cancels waiting requests and releases held ranges to another connection",
+            "300: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+            "300: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+            "300: cross-connection FIFO for conflicts and queued writer fairness",
+            "300: CLOSE cancels waiting requests and releases held ranges to another connection",
+            "302: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+            "302: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+            "302: cross-connection FIFO for conflicts and queued writer fairness",
+            "302: CLOSE cancels waiting requests and releases held ranges to another connection",
+            "311: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+            "311: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+            "311: cross-connection FIFO for conflicts and queued writer fairness",
+            "311: CLOSE cancels waiting requests and releases held ranges to another connection",
+            "compound LOCK/ECHO and LOCK/CLOSE preserve interim/final ordering and connection progress",
+            "TREE_DISCONNECT cancels pending locks before removing the tree",
+            "session teardown cancels pending locks before discarding signing and encryption keys",
+            "peer disconnect removes a pending waiter before granting the next connection",
+            "holder disconnect releases locks and wakes the surviving client",
+            "32 concurrent CANCEL/unlock races produce one final result and no leaked lock or duplicate response",
+            "16 concurrent CLOSE/unlock races produce one final result and release every acquired range",
+            "bounded pending requests return INSUFFICIENT_RESOURCES and all cancelled capacity is reusable",
+            "credential revocation drains all session locks before its final reply, without transport teardown",
+            "a frame started before idle expiry retains its independent five-second body deadline",
+            "pending lock survives 65 seconds without client traffic; normal idle expiry resumes after its final response"
+          ]
+        },
+        "metadata.json": {
+          "status": "passed",
+          "checks": [
+            "CREATE/QUERY/SET persistent DOS attributes, zero/no-change and NORMAL semantics; readonly open/delete checks and granted-handle authority",
+            "four independent timestamps, native mtime, zero/no-change, per-handle explicit/-1 freeze and -2 re-enable; invalid times reject before attribute mutation",
+            "binary extended attributes on CREATE/QUERY/SET, case-insensitive updates, deletion, restart, NEED_EA and access rights; malformed chains reject atomically",
+            "attributes follow native object across rename/restart, directory invariants hold, replacement object does not inherit stale metadata",
+            "per-open mode CREATE/QUERY/SET and FileAllInformation agreement, write-through writes, independent handles, invalid synchronous/immutable modes and SMB2 ignored synchronous CREATE flags",
+            "EA cursor paging, restart, single-entry and explicit indexes, independent opens, bounded whole-entry overflow and undersized-buffer retries",
+            "selected-name EA queries preserve request order and scan cursor, ignore index/restart, match case-insensitively, return absent names, bound output and reject malformed chains without cursor changes",
+            "MxAc maximal access uses fresh policy and readonly restrictions, supports optional change-time comparison and chained QFid replies, rejects malformed/duplicate contexts before mutation",
+            "EA writes atomically update change time/archive while respecting frozen timestamps; exact 65531-byte aggregate limit and standard invalid-name/list statuses"
+          ]
+        },
+        "nfs-acl.json": {
+          "status": "passed",
+          "checks": [
+            "NFSv3 mode is enforced, owner/group are mapped, nonowner chmod denied; NFSv4 advertises real ACL support",
+            "group mode checks use only verified AUTH_SYS groups; omitted groups and root-squashed groups cannot grant access",
+            "ACL+mode applies mode then ACL; named-user ACE roundtrips, READ_ACL is enforced and chmod masks named grants",
+            "invalid ACL principal and flags fail before truncation; empty ACL denies data and owner can recover WRITE_ACL",
+            "special/named groups and primary-group changes enforce the mapped trustee; opaque SMB SIDs roundtrip; execute-only NFS READ/OPEN/ACCESS works; invalid CREATE ACL leaves no object",
+            "directory ACL inheritance preserves OWNER@ and clears the acl-only inherited flag; ACL attributes larger than 4 KiB roundtrip",
+            "NFS chmod and ACL changes govern new SMB opens of the same object",
+            "shared ACLs, symbolic principals and derived mode survive complete service restart"
+          ]
+        },
+        "nfs-attributes.json": {
+          "status": "passed",
+          "checks": [
+            "v3 CREATE preserves mode, mapped ownership and explicit atime/mtime on native handles",
+            "v3 ctime differs from preserved mtime and advances for mode-only metadata changes across export aliases",
+            "v4 SETATTR updates aliases consistently; GETATTR rejects write-only time attributes",
+            "durable change counters detect equal-size writes with restored mtime, share alias state and return real namespace change_info; reads do not advance them",
+            "v3 used and v4 space_used match independent native allocation for empty, small, sparse/extended and truncated files, separately from logical size",
+            "paged v4 READDIR skips reserved cookies 1/2 and resumes without duplicate or missing entries",
+            "mode/ownership and exact timestamps survive server restart through stable alias handles"
+          ],
+          "sanitizers": false
+        },
+        "nfs-mode.json": {
+          "status": "passed",
+          "checks": [
+            "v3 special mode creation and v4 masked updates preserve unmasked bits; high-only masks preserve exact ACL bytes; combined masked mode applies before ACL",
+            "undefined mode bits, conflicting mode attributes and masked mode in CREATE/OPEN/GETATTR/VERIFY reject without creation",
+            "NFS data writes, truncation and ownership setters clear file set-ID bits",
+            "setgid directories transmit primary group and directory setgid to nonmember creators; explicit setgid requires verified group membership",
+            "sticky directories reject foreign unlink, rename and replacement while permitting the object owner",
+            "encrypted SMB writes clear NFS set-ID bits; SMB disposition and rename cannot bypass NFS sticky directories",
+            "staged DAV replacement clears set-ID; removing sticky restores unlink; special modes persist through complete restart"
+          ]
+        },
+        "samba-acls.json": {
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+          "recorded_at": "2026-11-04T03:17:40.802114+00:00",
+          "tests": [
+            {
+              "selector": "smb2.acls.CREATOR",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.CREATOR.log"
+            },
+            {
+              "selector": "smb2.acls.GENERIC",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.GENERIC.log"
+            },
+            {
+              "selector": "smb2.acls.OWNER",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.OWNER.log"
+            },
+            {
+              "selector": "smb2.acls.INHERITANCE",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.INHERITANCE.log"
+            },
+            {
+              "selector": "smb2.acls.INHERITFLAGS",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.INHERITFLAGS.log"
+            },
+            {
+              "selector": "smb2.acls.DYNAMIC",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.DYNAMIC.log"
+            },
+            {
+              "selector": "smb2.acls.ACCESSBASED",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.ACCESSBASED.log"
+            },
+            {
+              "selector": "smb2.acls.OWNER-RIGHTS",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.OWNER-RIGHTS.log"
+            },
+            {
+              "selector": "smb2.acls.OWNER-RIGHTS-DENY",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.OWNER-RIGHTS-DENY.log"
+            },
+            {
+              "selector": "smb2.acls.OWNER-RIGHTS-DENY1",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.OWNER-RIGHTS-DENY1.log"
+            },
+            {
+              "selector": "smb2.acls.DENY1",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.DENY1.log"
+            },
+            {
+              "selector": "smb2.acls.MXAC-NOT-GRANTED",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.MXAC-NOT-GRANTED.log"
+            },
+            {
+              "selector": "smb2.acls.OVERWRITE_READ_ONLY_FILE",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.OVERWRITE_READ_ONLY_FILE.log"
+            }
+          ],
+          "server_log": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793762260818}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793762260826}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793762260927}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793762261029}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793762261131}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793762261233}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793762261332}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793762261434}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793762261536}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793762261637}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793762261739}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793762261844}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793762261943}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793762262045}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793762262147}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793762262353}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"api\",\"time\":1793762268768}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"nfs\",\"time\":1793762268849}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"smb\",\"time\":1793762268890}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"ftp\",\"time\":1793762268931}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"webdav\",\"time\":1793762268972}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"helper\",\"time\":1793762269012}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"storage_admin\",\"time\":1793762269053}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"updater\",\"time\":1793762269094}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"monitor\",\"time\":1793762269134}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"protocol\",\"time\":1793762269175}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_3\",\"time\":1793762269216}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_2\",\"time\":1793762269256}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_1\",\"time\":1793762269297}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file\",\"time\":1793762269338}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"identity\",\"time\":1793762269378}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"supervisor\",\"time\":1793762269400}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793762269458}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793762269466}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793762269570}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793762269671}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793762269773}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793762269875}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793762269973}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793762270075}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793762270177}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793762270279}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793762270381}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793762270486}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793762270585}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793762270695}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793762270788}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793762270995}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762272917}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762272917}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762272945}\n{\"code\":\"2\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762272945}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762272949}\n{\"code\":\"1\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762272949}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762272952}\n{\"code\":\"1073741824\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762272952}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762272956}\n{\"code\":\"2147483648\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762272956}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762272970}\n{\"code\":\"2\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762272970}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762272986}\n{\"code\":\"1073741824\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762272986}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762273011}\n{\"code\":\"2\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762273011}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762273026}\n{\"code\":\"1073741824\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762273026}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762273050}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762273050}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793762273075}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762273079}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762273079}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762273178}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762273178}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762273502}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762273502}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793762273502}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762273506}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762273506}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762273522}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762273522}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762273526}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762273526}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762273643}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762273643}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762273671}\n{\"code\":\"1\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762273671}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762273687}\n{\"code\":\"4\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762273687}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762273690}\n{\"code\":\"8\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762273691}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762273694}\n{\"code\":\"16\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762273694}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762273698}\n{\"code\":\"32\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762273698}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762273701}\n{\"code\":\"64\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762273701}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762273717}\n{\"code\":\"256\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762273717}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762273720}\n{\"code\":\"512\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762273720}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762273723}\n{\"code\":\"1024\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762273723}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762273727}\n{\"code\":\"2048\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762273727}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762273730}\n{\"code\":\"4096\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762273730}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762273733}\n{\"code\":\"8192\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762273733}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762273737}\n{\"code\":\"16384\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762273737}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762273740}\n{\"code\":\"32768\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762273740}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762273759}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762273760}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762273857}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762273857}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762274774}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762274774}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762274778}\n{\"code\":\"2032095\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762274778}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762274781}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762274782}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762274806}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762274806}\n{\"code\":\"3221225768\",\"event\":\"command_17\",\"role\":\"smb\",\"time\":1793762274836}\n{\"code\":\"4\",\"event\":\"failed_security_information\",\"role\":\"smb\",\"time\":1793762274836}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793762274837}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762274840}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762274840}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762274974}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762274974}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762278225}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762278225}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762278241}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762278241}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762278245}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762278245}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762278395}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762278395}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762278439}\n{\"code\":\"34\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762278440}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762278455}\n{\"code\":\"34\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762278455}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762278486}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762278486}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762278618}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762278618}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762278621}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762278621}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762278625}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762278625}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793762278746}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762278758}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762278758}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762278873}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762278873}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762278877}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762278877}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762278919}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762278919}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793762278944}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762278947}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762278947}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762279039}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762279039}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762279043}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762279043}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762279085}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762279085}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793762279110}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762279114}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762279114}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762279202}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762279202}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762279205}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762279205}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762279248}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762279248}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793762279274}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762279278}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762279278}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762279366}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762279366}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762279370}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762279370}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762279412}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762279412}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793762279438}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762279441}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762279442}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762279531}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762279531}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762279534}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762279534}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762279567}\n{\"code\":\"33554434\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762279567}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762279570}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762279570}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793762279595}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762279599}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762279599}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762279695}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762279695}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762279736}\n{\"code\":\"1\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762279736}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793762279736}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762279740}\n{\"code\":\"1\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762279740}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793762279740}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762279744}\n{\"code\":\"1\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762279744}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793762279744}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793762279756}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762279769}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762279769}\n",
+          "status": "passed"
+        },
+        "samba-async.json": {
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+          "recorded_at": "2026-11-04T03:21:38.993554+00:00",
+          "tests": [
+            {
+              "selector": "smb2.lock.async",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-async-smb2.lock.async.log"
+            },
+            {
+              "selector": "smb2.lock.cancel",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-async-smb2.lock.cancel.log"
+            },
+            {
+              "selector": "smb2.lock.cancel-tdis",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-async-smb2.lock.cancel-tdis.log"
+            },
+            {
+              "selector": "smb2.lock.cancel-logoff",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-async-smb2.lock.cancel-logoff.log"
+            }
+          ],
+          "server_log": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793762499009}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793762499017}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793762499119}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793762499220}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793762499322}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793762499426}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793762499523}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793762499625}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793762499726}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793762499828}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793762499930}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793762500035}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793762500134}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793762500236}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793762500338}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793762500544}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"api\",\"time\":1793762506946}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"nfs\",\"time\":1793762507027}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"smb\",\"time\":1793762507067}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"ftp\",\"time\":1793762507108}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"webdav\",\"time\":1793762507149}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"helper\",\"time\":1793762507189}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"storage_admin\",\"time\":1793762507230}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"updater\",\"time\":1793762507271}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"monitor\",\"time\":1793762507311}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"protocol\",\"time\":1793762507352}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_3\",\"time\":1793762507393}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_2\",\"time\":1793762507433}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_1\",\"time\":1793762507474}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file\",\"time\":1793762507515}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"identity\",\"time\":1793762507556}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"supervisor\",\"time\":1793762507577}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793762507635}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793762507642}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793762507746}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793762507848}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793762507950}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793762508052}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793762508150}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793762508252}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793762508354}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793762508456}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793762508558}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793762508663}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793762508762}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793762508872}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793762508966}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793762509172}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762511145}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762511145}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793762511171}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762511175}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762511175}\n{\"code\":\"range_not_locked\",\"event\":\"command_10\",\"role\":\"smb\",\"time\":1793762511335}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793762511357}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762511365}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762511365}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793762511390}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762511393}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762511393}\n{\"code\":\"3221225673\",\"event\":\"command_10\",\"role\":\"smb\",\"time\":1793762511548}\n{\"code\":\"3221225673\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793762511548}\n{\"code\":\"3221225673\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793762511548}\n{\"code\":\"3221225673\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762511549}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762511549}\n{\"code\":\"3221225673\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762511549}\n{\"code\":\"1\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762511549}\n{\"code\":\"3221225987\",\"event\":\"command_10\",\"role\":\"smb\",\"time\":1793762511654}\n{\"code\":\"3221225987\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793762511654}\n{\"code\":\"3221225987\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793762511654}\n{\"code\":\"3221225987\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762511654}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762511654}\n{\"code\":\"3221225987\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762511654}\n{\"code\":\"1\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762511654}\n",
+          "status": "passed"
+        },
+        "security.json": {
+          "status": "passed",
+          "checks": [
+            "schema 5 migration backs up each file authority before adding persistent security descriptors",
+            "self-relative owner/group/DACL query, requested sections, required buffer size and READ_CONTROL/WRITE_DAC/SACL boundaries",
+            "ordered deny/allow access checks, MAXIMUM_ALLOWED and explicit-right intersection; existing handles retain granted rights",
+            "SMB denial enforced by NFSv3 READ/ACCESS, NFSv4 ACCESS, core API and WebDAV readonly aliases",
+            "ACE order, empty versus NULL DACL, implicit owner rights and OWNER RIGHTS SID",
+            "malformed offsets, overlaps, truncation and unsupported ACEs rejected atomically; ownership cannot be assigned to another user",
+            "file/directory inheritance with CREATOR OWNER substitution and multi-generation propagation; ACL follows rename",
+            "SecD CREATE persists protected initial ACL, validates ownership and rejects duplicate/malformed contexts before mutation",
+            "group ACE enforcement and membership revocation use freshly signed identity grants",
+            "schema 6 durability across process restart; replacement object receives fresh owner and ACL",
+            "NFS writer publication still enforces file DACL; WRITE and chmod cannot bypass SMB restrictions",
+            "DAV writer cannot bypass ACL; staged PUT retains restrictions, recursive COPY checks descendants and inherits destination ACL through private staging parents",
+            "DAV LOCK on unmapped URL checks parent create rights and persists inherited DACL"
+          ]
+        },
+        "smb3.json": {
+          "status": "passed",
+          "checks": [
+            "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+            "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+            "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+            "0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+            "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+            "leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent",
+            "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+            "unsupported signing/cipher/hash and malformed contexts fail without dialect fallback",
+            "independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+            "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+            "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+            "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+          ],
+          "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+          "authentication_provider": "pyspnego NTLM",
+          "large_mib": 1,
+          "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+          "port": 45005,
+          "sanitizers": false
+        }
+      }
+    },
+    {
+      "compiler": "clang",
+      "id": 13292672612,
+      "sha256": "542e6bd0d7120ec9a07215d66baffd3c6421c69fa6970c9263322986279ea2a5",
+      "reports": {
+        "allocation.json": {
+          "status": "passed",
+          "checks": [
+            "schema v4 migration preserves a pre-v5 backup before adding durable reservations",
+            "native space allocation preserves EOF, charges quota once, rejects over-quota growth before mutation and enforces WRITE_DATA",
+            "durable logical quota survives restart while allocation reports native close-time trimming; EOF extension consumes reservations; shrink and deletion release quota",
+            "AlSi CREATE/overwrite preallocation preserves zero EOF, charges durable quota, ignores existing opens/directories, validates context shape and fails over-quota before namespace/data mutation"
+          ],
+          "native_allocation_after_reopen": [
+            [
+              4096,
+              14
+            ],
+            [
+              4096,
+              0
+            ]
+          ]
+        },
+        "metadata.json": {
+          "status": "passed",
+          "checks": [
+            "CREATE/QUERY/SET persistent DOS attributes, zero/no-change and NORMAL semantics; readonly open/delete checks and granted-handle authority",
+            "four independent timestamps, native mtime, zero/no-change, per-handle explicit/-1 freeze and -2 re-enable; invalid times reject before attribute mutation",
+            "binary extended attributes on CREATE/QUERY/SET, case-insensitive updates, deletion, restart, NEED_EA and access rights; malformed chains reject atomically",
+            "attributes follow native object across rename/restart, directory invariants hold, replacement object does not inherit stale metadata",
+            "per-open mode CREATE/QUERY/SET and FileAllInformation agreement, write-through writes, independent handles, invalid synchronous/immutable modes and SMB2 ignored synchronous CREATE flags",
+            "EA cursor paging, restart, single-entry and explicit indexes, independent opens, bounded whole-entry overflow and undersized-buffer retries",
+            "selected-name EA queries preserve request order and scan cursor, ignore index/restart, match case-insensitively, return absent names, bound output and reject malformed chains without cursor changes",
+            "MxAc maximal access uses fresh policy and readonly restrictions, supports optional change-time comparison and chained QFid replies, rejects malformed/duplicate contexts before mutation",
+            "EA writes atomically update change time/archive while respecting frozen timestamps; exact 65531-byte aggregate limit and standard invalid-name/list statuses"
+          ]
+        },
+        "blocking-locks.json": {
+          "status": "passed",
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+          "recorded_at": "2026-11-04T03:18:00.977630+00:00",
+          "checks": [
+            "210: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+            "210: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+            "210: cross-connection FIFO for conflicts and queued writer fairness",
+            "210: CLOSE cancels waiting requests and releases held ranges to another connection",
+            "300: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+            "300: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+            "300: cross-connection FIFO for conflicts and queued writer fairness",
+            "300: CLOSE cancels waiting requests and releases held ranges to another connection",
+            "302: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+            "302: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+            "302: cross-connection FIFO for conflicts and queued writer fairness",
+            "302: CLOSE cancels waiting requests and releases held ranges to another connection",
+            "311: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+            "311: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+            "311: cross-connection FIFO for conflicts and queued writer fairness",
+            "311: CLOSE cancels waiting requests and releases held ranges to another connection",
+            "compound LOCK/ECHO and LOCK/CLOSE preserve interim/final ordering and connection progress",
+            "TREE_DISCONNECT cancels pending locks before removing the tree",
+            "session teardown cancels pending locks before discarding signing and encryption keys",
+            "peer disconnect removes a pending waiter before granting the next connection",
+            "holder disconnect releases locks and wakes the surviving client",
+            "32 concurrent CANCEL/unlock races produce one final result and no leaked lock or duplicate response",
+            "16 concurrent CLOSE/unlock races produce one final result and release every acquired range",
+            "bounded pending requests return INSUFFICIENT_RESOURCES and all cancelled capacity is reusable",
+            "credential revocation drains all session locks before its final reply, without transport teardown"
+          ]
+        },
+        "nfs-acl.json": {
+          "status": "passed",
+          "checks": [
+            "NFSv3 mode is enforced, owner/group are mapped, nonowner chmod denied; NFSv4 advertises real ACL support",
+            "group mode checks use only verified AUTH_SYS groups; omitted groups and root-squashed groups cannot grant access",
+            "ACL+mode applies mode then ACL; named-user ACE roundtrips, READ_ACL is enforced and chmod masks named grants",
+            "invalid ACL principal and flags fail before truncation; empty ACL denies data and owner can recover WRITE_ACL",
+            "special/named groups and primary-group changes enforce the mapped trustee; opaque SMB SIDs roundtrip; execute-only NFS READ/OPEN/ACCESS works; invalid CREATE ACL leaves no object",
+            "directory ACL inheritance preserves OWNER@ and clears the acl-only inherited flag; ACL attributes larger than 4 KiB roundtrip",
+            "NFS chmod and ACL changes govern new SMB opens of the same object",
+            "shared ACLs, symbolic principals and derived mode survive complete service restart"
+          ]
+        },
+        "nfs-attributes.json": {
+          "status": "passed",
+          "checks": [
+            "v3 CREATE preserves mode, mapped ownership and explicit atime/mtime on native handles",
+            "v3 ctime differs from preserved mtime and advances for mode-only metadata changes across export aliases",
+            "v4 SETATTR updates aliases consistently; GETATTR rejects write-only time attributes",
+            "durable change counters detect equal-size writes with restored mtime, share alias state and return real namespace change_info; reads do not advance them",
+            "v3 used and v4 space_used match independent native allocation for empty, small, sparse/extended and truncated files, separately from logical size",
+            "paged v4 READDIR skips reserved cookies 1/2 and resumes without duplicate or missing entries",
+            "mode/ownership and exact timestamps survive server restart through stable alias handles"
+          ],
+          "sanitizers": true
+        },
+        "nfs-mode.json": {
+          "status": "passed",
+          "checks": [
+            "v3 special mode creation and v4 masked updates preserve unmasked bits; high-only masks preserve exact ACL bytes; combined masked mode applies before ACL",
+            "undefined mode bits, conflicting mode attributes and masked mode in CREATE/OPEN/GETATTR/VERIFY reject without creation",
+            "NFS data writes, truncation and ownership setters clear file set-ID bits",
+            "setgid directories transmit primary group and directory setgid to nonmember creators; explicit setgid requires verified group membership",
+            "sticky directories reject foreign unlink, rename and replacement while permitting the object owner",
+            "encrypted SMB writes clear NFS set-ID bits; SMB disposition and rename cannot bypass NFS sticky directories",
+            "staged DAV replacement clears set-ID; removing sticky restores unlink; special modes persist through complete restart"
+          ]
+        },
+        "samba-acls.json": {
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+          "recorded_at": "2026-11-04T03:17:10.119320+00:00",
+          "tests": [
+            {
+              "selector": "smb2.acls.CREATOR",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.CREATOR.log"
+            },
+            {
+              "selector": "smb2.acls.GENERIC",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.GENERIC.log"
+            },
+            {
+              "selector": "smb2.acls.OWNER",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.OWNER.log"
+            },
+            {
+              "selector": "smb2.acls.INHERITANCE",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.INHERITANCE.log"
+            },
+            {
+              "selector": "smb2.acls.INHERITFLAGS",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.INHERITFLAGS.log"
+            },
+            {
+              "selector": "smb2.acls.DYNAMIC",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.DYNAMIC.log"
+            },
+            {
+              "selector": "smb2.acls.ACCESSBASED",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.ACCESSBASED.log"
+            },
+            {
+              "selector": "smb2.acls.OWNER-RIGHTS",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.OWNER-RIGHTS.log"
+            },
+            {
+              "selector": "smb2.acls.OWNER-RIGHTS-DENY",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.OWNER-RIGHTS-DENY.log"
+            },
+            {
+              "selector": "smb2.acls.OWNER-RIGHTS-DENY1",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.OWNER-RIGHTS-DENY1.log"
+            },
+            {
+              "selector": "smb2.acls.DENY1",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.DENY1.log"
+            },
+            {
+              "selector": "smb2.acls.MXAC-NOT-GRANTED",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.MXAC-NOT-GRANTED.log"
+            },
+            {
+              "selector": "smb2.acls.OVERWRITE_READ_ONLY_FILE",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.OVERWRITE_READ_ONLY_FILE.log"
+            }
+          ],
+          "server_log": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793762230188}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793762230221}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793762230322}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793762230430}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793762230612}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793762231013}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793762231100}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793762231203}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793762231304}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793762231408}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793762231512}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793762231629}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793762231723}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793762231824}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793762231927}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793762232150}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"api\",\"time\":1793762235161}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"nfs\",\"time\":1793762235247}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"smb\",\"time\":1793762235290}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"ftp\",\"time\":1793762235333}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"webdav\",\"time\":1793762235377}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"helper\",\"time\":1793762235420}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"storage_admin\",\"time\":1793762235463}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"updater\",\"time\":1793762235506}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"monitor\",\"time\":1793762235550}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"protocol\",\"time\":1793762235593}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_3\",\"time\":1793762235637}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_2\",\"time\":1793762235680}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_1\",\"time\":1793762235723}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file\",\"time\":1793762235767}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"identity\",\"time\":1793762235811}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"supervisor\",\"time\":1793762235834}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793762235919}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793762235948}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793762236056}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793762236391}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793762236795}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793762236918}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793762237014}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793762237115}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793762237220}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793762237324}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793762237431}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793762237547}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793762237636}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793762237778}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793762237845}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793762238062}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762239314}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762239315}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762239438}\n{\"code\":\"2\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762239439}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762239456}\n{\"code\":\"1\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762239456}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762239471}\n{\"code\":\"1073741824\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762239472}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762239487}\n{\"code\":\"2147483648\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762239488}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762239543}\n{\"code\":\"2\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762239543}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762239608}\n{\"code\":\"1073741824\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762239608}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762239719}\n{\"code\":\"2\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762239720}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762239784}\n{\"code\":\"1073741824\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762239784}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762239879}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762239879}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793762239993}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762240005}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762240006}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762240221}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762240221}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762241552}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762241552}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793762241553}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762241566}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762241566}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762241632}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762241632}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762241645}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762241645}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762241929}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762241929}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762242047}\n{\"code\":\"1\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762242047}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762242110}\n{\"code\":\"4\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762242110}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762242126}\n{\"code\":\"8\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762242126}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762242141}\n{\"code\":\"16\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762242141}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762242156}\n{\"code\":\"32\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762242156}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762242171}\n{\"code\":\"64\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762242171}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762242233}\n{\"code\":\"256\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762242234}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762242247}\n{\"code\":\"512\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762242248}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762242262}\n{\"code\":\"1024\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762242263}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762242277}\n{\"code\":\"2048\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762242277}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762242290}\n{\"code\":\"4096\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762242290}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762242302}\n{\"code\":\"8192\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762242302}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762242315}\n{\"code\":\"16384\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762242315}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762242327}\n{\"code\":\"32768\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762242327}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762242413}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762242413}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762242644}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762242644}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762246360}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762246360}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762246377}\n{\"code\":\"2032095\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762246378}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762246394}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762246394}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762246489}\n{\"code\":\"2032127\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762246489}\n{\"code\":\"3221225768\",\"event\":\"command_17\",\"role\":\"smb\",\"time\":1793762246617}\n{\"code\":\"4\",\"event\":\"failed_security_information\",\"role\":\"smb\",\"time\":1793762246617}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793762246618}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762246631}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762246631}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762246872}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762246872}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762259481}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762259481}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762259547}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762259547}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762259560}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762259560}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762259861}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762259861}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762260049}\n{\"code\":\"34\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762260049}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762260115}\n{\"code\":\"34\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762260115}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762260245}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762260246}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762260501}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762260501}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762260513}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762260513}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762260526}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762260526}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793762261016}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762261069}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762261069}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762261291}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762261291}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762261304}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762261304}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762261481}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762261481}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793762261585}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762261596}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762261597}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762261758}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762261759}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762261772}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762261772}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762261941}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762261941}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793762262046}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762262059}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762262059}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762262230}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762262231}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762262243}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762262243}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762262408}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762262408}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793762262518}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762262531}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762262532}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762262686}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762262686}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762262701}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762262701}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762262867}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762262867}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793762262980}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762262992}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762262992}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762263153}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762263153}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762263164}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762263164}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762263302}\n{\"code\":\"33554434\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762263302}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762263315}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762263315}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793762263420}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762263432}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762263432}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762263616}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762263616}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762263789}\n{\"code\":\"1\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762263790}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793762263790}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762263805}\n{\"code\":\"1\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762263806}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793762263806}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762263821}\n{\"code\":\"1\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762263821}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793762263822}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793762263872}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762263923}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762263923}\n",
+          "status": "passed"
+        },
+        "samba-async.json": {
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+          "recorded_at": "2026-11-04T03:18:18.833710+00:00",
+          "tests": [
+            {
+              "selector": "smb2.lock.async",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-async-smb2.lock.async.log"
+            },
+            {
+              "selector": "smb2.lock.cancel",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-async-smb2.lock.cancel.log"
+            },
+            {
+              "selector": "smb2.lock.cancel-tdis",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-async-smb2.lock.cancel-tdis.log"
+            },
+            {
+              "selector": "smb2.lock.cancel-logoff",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-async-smb2.lock.cancel-logoff.log"
+            }
+          ],
+          "server_log": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793762298902}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793762298933}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793762299037}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793762299149}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793762299249}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793762299352}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793762299448}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793762299552}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793762299656}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793762299764}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793762299867}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793762299976}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793762300074}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793762300178}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793762300283}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793762300498}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"api\",\"time\":1793762303515}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"nfs\",\"time\":1793762303601}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"smb\",\"time\":1793762303644}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"ftp\",\"time\":1793762303688}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"webdav\",\"time\":1793762303732}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"helper\",\"time\":1793762303774}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"storage_admin\",\"time\":1793762303818}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"updater\",\"time\":1793762303861}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"monitor\",\"time\":1793762303904}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"protocol\",\"time\":1793762303947}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_3\",\"time\":1793762303991}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_2\",\"time\":1793762304034}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_1\",\"time\":1793762304077}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file\",\"time\":1793762304120}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"identity\",\"time\":1793762304164}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"supervisor\",\"time\":1793762304187}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793762304258}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793762304288}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793762304403}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793762304508}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793762304613}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793762304714}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793762304812}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793762304914}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793762305019}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793762305125}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793762305231}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793762305344}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793762305438}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793762305574}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793762305646}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793762305864}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762307299}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762307299}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793762307405}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762307418}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762307418}\n{\"code\":\"range_not_locked\",\"event\":\"command_10\",\"role\":\"smb\",\"time\":1793762307775}\n{\"code\":\"3221225768\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793762307850}\n{\"code\":\"is_directory\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762307878}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762307879}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793762307979}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762307996}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762307996}\n{\"code\":\"3221225673\",\"event\":\"command_10\",\"role\":\"smb\",\"time\":1793762308332}\n{\"code\":\"3221225673\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793762308332}\n{\"code\":\"3221225673\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793762308333}\n{\"code\":\"3221225673\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762308333}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762308333}\n{\"code\":\"3221225673\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762308334}\n{\"code\":\"1\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762308334}\n{\"code\":\"3221225987\",\"event\":\"command_10\",\"role\":\"smb\",\"time\":1793762308556}\n{\"code\":\"3221225987\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793762308556}\n{\"code\":\"3221225987\",\"event\":\"command_6\",\"role\":\"smb\",\"time\":1793762308557}\n{\"code\":\"3221225987\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762308557}\n{\"code\":\"65536\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762308557}\n{\"code\":\"3221225987\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762308557}\n{\"code\":\"1\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762308558}\n",
+          "status": "passed"
+        },
+        "security.json": {
+          "status": "passed",
+          "checks": [
+            "schema 5 migration backs up each file authority before adding persistent security descriptors",
+            "self-relative owner/group/DACL query, requested sections, required buffer size and READ_CONTROL/WRITE_DAC/SACL boundaries",
+            "ordered deny/allow access checks, MAXIMUM_ALLOWED and explicit-right intersection; existing handles retain granted rights",
+            "SMB denial enforced by NFSv3 READ/ACCESS, NFSv4 ACCESS, core API and WebDAV readonly aliases",
+            "ACE order, empty versus NULL DACL, implicit owner rights and OWNER RIGHTS SID",
+            "malformed offsets, overlaps, truncation and unsupported ACEs rejected atomically; ownership cannot be assigned to another user",
+            "file/directory inheritance with CREATOR OWNER substitution and multi-generation propagation; ACL follows rename",
+            "SecD CREATE persists protected initial ACL, validates ownership and rejects duplicate/malformed contexts before mutation",
+            "group ACE enforcement and membership revocation use freshly signed identity grants",
+            "schema 6 durability across process restart; replacement object receives fresh owner and ACL",
+            "NFS writer publication still enforces file DACL; WRITE and chmod cannot bypass SMB restrictions",
+            "DAV writer cannot bypass ACL; staged PUT retains restrictions, recursive COPY checks descendants and inherits destination ACL through private staging parents",
+            "DAV LOCK on unmapped URL checks parent create rights and persists inherited DACL"
+          ]
+        },
+        "smb3.json": {
+          "status": "passed",
+          "checks": [
+            "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+            "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+            "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+            "0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+            "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+            "leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent",
+            "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+            "unsupported signing/cipher/hash and malformed contexts fail without dialect fallback",
+            "independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+            "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+            "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+            "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+          ],
+          "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+          "authentication_provider": "pyspnego NTLM",
+          "large_mib": 1,
+          "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+          "port": 41203,
+          "sanitizers": true
+        }
+      }
+    },
+    {
+      "compiler": "msvc",
+      "id": 13292887319,
+      "sha256": "9153dabc91fdfa974dee202e9a0e93c2a3c73fc1b7a0852952f74ade9f4f1f1e",
+      "reports": {
+        "allocation.json": {
+          "status": "passed",
+          "checks": [
+            "schema v4 migration preserves a pre-v5 backup before adding durable reservations",
+            "native space allocation preserves EOF, charges quota once, rejects over-quota growth before mutation and enforces WRITE_DATA",
+            "durable logical quota survives restart while allocation reports native close-time trimming; EOF extension consumes reservations; shrink and deletion release quota",
+            "AlSi CREATE/overwrite preallocation preserves zero EOF, charges durable quota, ignores existing opens/directories, validates context shape and fails over-quota before namespace/data mutation"
+          ],
+          "native_allocation_after_reopen": [
+            [
+              4096,
+              14
+            ],
+            [
+              0,
+              0
+            ]
+          ]
+        },
+        "metadata.json": {
+          "status": "passed",
+          "checks": [
+            "CREATE/QUERY/SET persistent DOS attributes, zero/no-change and NORMAL semantics; readonly open/delete checks and granted-handle authority",
+            "four independent timestamps, native mtime, zero/no-change, per-handle explicit/-1 freeze and -2 re-enable; invalid times reject before attribute mutation",
+            "binary extended attributes on CREATE/QUERY/SET, case-insensitive updates, deletion, restart, NEED_EA and access rights; malformed chains reject atomically",
+            "attributes follow native object across rename/restart, directory invariants hold, replacement object does not inherit stale metadata",
+            "per-open mode CREATE/QUERY/SET and FileAllInformation agreement, write-through writes, independent handles, invalid synchronous/immutable modes and SMB2 ignored synchronous CREATE flags",
+            "EA cursor paging, restart, single-entry and explicit indexes, independent opens, bounded whole-entry overflow and undersized-buffer retries",
+            "selected-name EA queries preserve request order and scan cursor, ignore index/restart, match case-insensitively, return absent names, bound output and reject malformed chains without cursor changes",
+            "MxAc maximal access uses fresh policy and readonly restrictions, supports optional change-time comparison and chained QFid replies, rejects malformed/duplicate contexts before mutation",
+            "EA writes atomically update change time/archive while respecting frozen timestamps; exact 65531-byte aggregate limit and standard invalid-name/list statuses"
+          ]
+        },
+        "blocking-locks.json": {
+          "status": "passed",
+          "host": "Windows-2025Server-10.0.26100-SP0",
+          "recorded_at": "2026-11-04T03:21:47.527370+00:00",
+          "checks": [
+            "210: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+            "210: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+            "210: cross-connection FIFO for conflicts and queued writer fairness",
+            "210: CLOSE cancels waiting requests and releases held ranges to another connection",
+            "300: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+            "300: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+            "300: cross-connection FIFO for conflicts and queued writer fairness",
+            "300: CLOSE cancels waiting requests and releases held ranges to another connection",
+            "302: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+            "302: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+            "302: cross-connection FIFO for conflicts and queued writer fairness",
+            "302: CLOSE cancels waiting requests and releases held ranges to another connection",
+            "311: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+            "311: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+            "311: cross-connection FIFO for conflicts and queued writer fairness",
+            "311: CLOSE cancels waiting requests and releases held ranges to another connection",
+            "compound LOCK/ECHO and LOCK/CLOSE preserve interim/final ordering and connection progress",
+            "TREE_DISCONNECT cancels pending locks before removing the tree",
+            "session teardown cancels pending locks before discarding signing and encryption keys",
+            "peer disconnect removes a pending waiter before granting the next connection",
+            "holder disconnect releases locks and wakes the surviving client",
+            "32 concurrent CANCEL/unlock races produce one final result and no leaked lock or duplicate response",
+            "16 concurrent CLOSE/unlock races produce one final result and release every acquired range",
+            "bounded pending requests return INSUFFICIENT_RESOURCES and all cancelled capacity is reusable",
+            "credential revocation drains all session locks before its final reply, without transport teardown"
+          ]
+        },
+        "nfs-acl.json": {
+          "status": "passed",
+          "checks": [
+            "NFSv3 mode is enforced, owner/group are mapped, nonowner chmod denied; NFSv4 advertises real ACL support",
+            "group mode checks use only verified AUTH_SYS groups; omitted groups and root-squashed groups cannot grant access",
+            "ACL+mode applies mode then ACL; named-user ACE roundtrips, READ_ACL is enforced and chmod masks named grants",
+            "invalid ACL principal and flags fail before truncation; empty ACL denies data and owner can recover WRITE_ACL",
+            "special/named groups and primary-group changes enforce the mapped trustee; opaque SMB SIDs roundtrip; execute-only NFS READ/OPEN/ACCESS works; invalid CREATE ACL leaves no object",
+            "directory ACL inheritance preserves OWNER@ and clears the acl-only inherited flag; ACL attributes larger than 4 KiB roundtrip",
+            "NFS chmod and ACL changes govern new SMB opens of the same object",
+            "shared ACLs, symbolic principals and derived mode survive complete service restart"
+          ]
+        },
+        "nfs-attributes.json": {
+          "status": "passed",
+          "checks": [
+            "v3 CREATE preserves mode, mapped ownership and explicit atime/mtime on native handles",
+            "v3 ctime differs from preserved mtime and advances for mode-only metadata changes across export aliases",
+            "v4 SETATTR updates aliases consistently; GETATTR rejects write-only time attributes",
+            "durable change counters detect equal-size writes with restored mtime, share alias state and return real namespace change_info; reads do not advance them",
+            "v3 used and v4 space_used match independent native allocation for empty, small, sparse/extended and truncated files, separately from logical size",
+            "paged v4 READDIR skips reserved cookies 1/2 and resumes without duplicate or missing entries",
+            "mode/ownership and exact timestamps survive server restart through stable alias handles"
+          ],
+          "sanitizers": false
+        },
+        "nfs-mode.json": {
+          "status": "passed",
+          "checks": [
+            "v3 special mode creation and v4 masked updates preserve unmasked bits; high-only masks preserve exact ACL bytes; combined masked mode applies before ACL",
+            "undefined mode bits, conflicting mode attributes and masked mode in CREATE/OPEN/GETATTR/VERIFY reject without creation",
+            "NFS data writes, truncation and ownership setters clear file set-ID bits",
+            "setgid directories transmit primary group and directory setgid to nonmember creators; explicit setgid requires verified group membership",
+            "sticky directories reject foreign unlink, rename and replacement while permitting the object owner",
+            "encrypted SMB writes clear NFS set-ID bits; SMB disposition and rename cannot bypass NFS sticky directories",
+            "staged DAV replacement clears set-ID; removing sticky restores unlink; special modes persist through complete restart"
+          ]
+        },
+        "security.json": {
+          "status": "passed",
+          "checks": [
+            "schema 5 migration backs up each file authority before adding persistent security descriptors",
+            "self-relative owner/group/DACL query, requested sections, required buffer size and READ_CONTROL/WRITE_DAC/SACL boundaries",
+            "ordered deny/allow access checks, MAXIMUM_ALLOWED and explicit-right intersection; existing handles retain granted rights",
+            "SMB denial enforced by NFSv3 READ/ACCESS, NFSv4 ACCESS, core API and WebDAV readonly aliases",
+            "ACE order, empty versus NULL DACL, implicit owner rights and OWNER RIGHTS SID",
+            "malformed offsets, overlaps, truncation and unsupported ACEs rejected atomically; ownership cannot be assigned to another user",
+            "file/directory inheritance with CREATOR OWNER substitution and multi-generation propagation; ACL follows rename",
+            "SecD CREATE persists protected initial ACL, validates ownership and rejects duplicate/malformed contexts before mutation",
+            "group ACE enforcement and membership revocation use freshly signed identity grants",
+            "schema 6 durability across process restart; replacement object receives fresh owner and ACL",
+            "NFS writer publication still enforces file DACL; WRITE and chmod cannot bypass SMB restrictions",
+            "DAV writer cannot bypass ACL; staged PUT retains restrictions, recursive COPY checks descendants and inherits destination ACL through private staging parents",
+            "DAV LOCK on unmapped URL checks parent create rights and persists inherited DACL"
+          ]
+        },
+        "smb3.json": {
+          "status": "passed",
+          "checks": [
+            "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+            "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+            "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+            "0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+            "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+            "leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent",
+            "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+            "unsupported signing/cipher/hash and malformed contexts fail without dialect fallback",
+            "independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+            "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+            "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+            "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+          ],
+          "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+          "host": "Windows-2025Server-10.0.26100-SP0",
+          "authentication_provider": "Windows SSPI (sspilib)",
+          "large_mib": 1,
+          "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+          "port": 65164,
+          "sanitizers": false
+        },
+        "windows-native-security.json": {
+          "status": "passed",
+          "host": "Windows-2025Server-10.0.26100-SP0",
+          "returncode": 0,
+          "stdout": "{\n  \"connection\": {\n    \"ServerName\": \"127.0.0.1\",\n    \"ShareName\": \"smb\",\n    \"Dialect\": \"3.1.1\",\n    \"Encrypted\": true,\n    \"Signed\": false\n  },\n  \"payload_sha256\": \"631B84027D6B9E52B539C4E8373622D23032DFADC64D60AF87339C9037E4F769\",\n  \"client\": \"Windows native SMB redirector\",\n  \"status\": \"passed\",\n  \"security\": \"native Get-Acl/Set-Acl, SID roundtrip, deny write and preserve read\"\n}\n",
+          "stderr": "",
+          "connection": {
+            "ServerName": "127.0.0.1",
+            "ShareName": "smb",
+            "Dialect": "3.1.1",
+            "Encrypted": true,
+            "Signed": false
+          },
+          "payload_sha256": "631B84027D6B9E52B539C4E8373622D23032DFADC64D60AF87339C9037E4F769",
+          "client": "Windows native SMB redirector",
+          "security": "native Get-Acl/Set-Acl, SID roundtrip, deny write and preserve read",
+          "smb_headers": [
+            {
+              "direction": "request",
+              "size": 69,
+              "magic": "ff534d42",
+              "time": 619.562
+            },
+            {
+              "direction": "response",
+              "size": 158,
+              "magic": "fe534d42",
+              "time": 619.562,
+              "command": 0,
+              "flags": 1,
+              "message_id": 0,
+              "credit_charge": 0,
+              "credits": 1,
+              "status": "0x0",
+              "dialect": "0x2ff"
+            },
+            {
+              "direction": "request",
+              "size": 284,
+              "magic": "fe534d42",
+              "time": 619.562,
+              "command": 0,
+              "flags": 0,
+              "message_id": 1,
+              "credit_charge": 0,
+              "credits": 0,
+              "dialects": [
+                "0x202",
+                "0x210",
+                "0x300",
+                "0x302",
+                "0x311"
+              ]
+            },
+            {
+              "direction": "response",
+              "size": 236,
+              "magic": "fe534d42",
+              "time": 619.562,
+              "command": 0,
+              "flags": 1,
+              "message_id": 1,
+              "credit_charge": 1,
+              "credits": 1,
+              "status": "0x0",
+              "dialect": "0x311"
+            },
+            {
+              "direction": "request",
+              "size": 162,
+              "magic": "fe534d42",
+              "time": 619.562,
+              "command": 1,
+              "flags": 16,
+              "message_id": 2,
+              "credit_charge": 1,
+              "credits": 33,
+              "ntlm_type": 1,
+              "ntlm_flags": "0xe2088297"
+            },
+            {
+              "direction": "response",
+              "size": 243,
+              "magic": "fe534d42",
+              "time": 619.578,
+              "command": 1,
+              "flags": 1,
+              "message_id": 2,
+              "credit_charge": 1,
+              "credits": 33,
+              "status": "0xc0000016",
+              "ntlm_type": 2,
+              "ntlm_flags": "0xe28a8215"
+            },
+            {
+              "direction": "request",
+              "size": 557,
+              "magic": "fe534d42",
+              "time": 619.578,
+              "command": 1,
+              "flags": 16,
+              "message_id": 3,
+              "credit_charge": 1,
+              "credits": 1,
+              "ntlm_type": 3,
+              "ntlm_flags": "0xe2888215",
+              "ntlm_mic_present": true,
+              "ntlm_response_bytes": 248,
+              "ntlm_target_echo": {
+                "1": true,
+                "2": true,
+                "7": true
+              },
+              "ntlm_av_mic_flag": true,
+              "ntlm_channel_bindings_zero": true,
+              "ntlm_clock_delta_ms": 0,
+              "fixture_domain": "TAUCLOUD",
+              "fixture_user": "alice"
+            },
+            {
+              "direction": "response",
+              "size": 81,
+              "magic": "fe534d42",
+              "time": 619.578,
+              "command": 1,
+              "flags": 9,
+              "message_id": 3,
+              "credit_charge": 1,
+              "credits": 1,
+              "status": "0x0"
+            },
+            {
+              "direction": "request",
+              "size": 104,
+              "magic": "fe534d42",
+              "time": 619.578,
+              "command": 3,
+              "flags": 24,
+              "message_id": 4,
+              "credit_charge": 1,
+              "credits": 1,
+              "fixture_share_path": "\\\\127.0.0.1\\IPC$"
+            },
+            {
+              "direction": "response",
+              "size": 80,
+              "magic": "fe534d42",
+              "time": 619.593,
+              "command": 3,
+              "flags": 9,
+              "message_id": 4,
+              "credit_charge": 1,
+              "credits": 1,
+              "status": "0x0"
+            },
+            {
+              "direction": "request",
+              "size": 102,
+              "magic": "fe534d42",
+              "time": 619.593,
+              "command": 3,
+              "flags": 24,
+              "message_id": 5,
+              "credit_charge": 1,
+              "credits": 1,
+              "fixture_share_path": "\\\\127.0.0.1\\smb"
+            },
+            {
+              "direction": "response",
+              "size": 80,
+              "magic": "fe534d42",
+              "time": 619.609,
+              "command": 3,
+              "flags": 9,
+              "message_id": 5,
+              "credit_charge": 1,
+              "credits": 1,
+              "status": "0x0"
+            },
+            {
+              "direction": "request",
+              "size": 228,
+              "magic": "fd534d42",
+              "time": 619.609
+            },
+            {
+              "direction": "response",
+              "size": 125,
+              "magic": "fd534d42",
+              "time": 619.609
+            },
+            {
+              "direction": "request",
+              "size": 204,
+              "magic": "fd534d42",
+              "time": 619.609
+            },
+            {
+              "direction": "response",
+              "size": 260,
+              "magic": "fd534d42",
+              "time": 619.625
+            },
+            {
+              "direction": "request",
+              "size": 204,
+              "magic": "fd534d42",
+              "time": 619.625
+            },
+            {
+              "direction": "response",
+              "size": 260,
+              "magic": "fd534d42",
+              "time": 619.64
+            },
+            {
+              "direction": "request",
+              "size": 254,
+              "magic": "fd534d42",
+              "time": 619.64
+            },
+            {
+              "direction": "response",
+              "size": 205,
+              "magic": "fd534d42",
+              "time": 619.687
+            },
+            {
+              "direction": "request",
+              "size": 254,
+              "magic": "fd534d42",
+              "time": 619.687
+            },
+            {
+              "direction": "response",
+              "size": 421,
+              "magic": "fd534d42",
+              "time": 619.734
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 619.734
+            },
+            {
+              "direction": "response",
+              "size": 128,
+              "magic": "fd534d42",
+              "time": 619.734
+            },
+            {
+              "direction": "request",
+              "size": 173,
+              "magic": "fd534d42",
+              "time": 619.734
+            },
+            {
+              "direction": "response",
+              "size": 204,
+              "magic": "fd534d42",
+              "time": 619.75
+            },
+            {
+              "direction": "request",
+              "size": 140,
+              "magic": "fd534d42",
+              "time": 619.75
+            },
+            {
+              "direction": "response",
+              "size": 176,
+              "magic": "fd534d42",
+              "time": 619.765
+            },
+            {
+              "direction": "request",
+              "size": 140,
+              "magic": "fd534d42",
+              "time": 619.765
+            },
+            {
+              "direction": "response",
+              "size": 176,
+              "magic": "fd534d42",
+              "time": 619.781
+            },
+            {
+              "direction": "request",
+              "size": 284,
+              "magic": "fd534d42",
+              "time": 619.781
+            },
+            {
+              "direction": "response",
+              "size": 260,
+              "magic": "fd534d42",
+              "time": 619.812
+            },
+            {
+              "direction": "request",
+              "size": 140,
+              "magic": "fd534d42",
+              "time": 619.812
+            },
+            {
+              "direction": "response",
+              "size": 176,
+              "magic": "fd534d42",
+              "time": 619.812
+            },
+            {
+              "direction": "request",
+              "size": 228,
+              "magic": "fd534d42",
+              "time": 622.406
+            },
+            {
+              "direction": "response",
+              "size": 260,
+              "magic": "fd534d42",
+              "time": 622.406
+            },
+            {
+              "direction": "request",
+              "size": 254,
+              "magic": "fd534d42",
+              "time": 622.406
+            },
+            {
+              "direction": "response",
+              "size": 421,
+              "magic": "fd534d42",
+              "time": 622.453
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 622.453
+            },
+            {
+              "direction": "response",
+              "size": 160,
+              "magic": "fd534d42",
+              "time": 622.453
+            },
+            {
+              "direction": "request",
+              "size": 140,
+              "magic": "fd534d42",
+              "time": 622.453
+            },
+            {
+              "direction": "response",
+              "size": 176,
+              "magic": "fd534d42",
+              "time": 622.468
+            },
+            {
+              "direction": "request",
+              "size": 300,
+              "magic": "fd534d42",
+              "time": 622.468
+            },
+            {
+              "direction": "response",
+              "size": 260,
+              "magic": "fd534d42",
+              "time": 622.484
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 622.484
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 622.484
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 622.484
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 622.5
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 622.5
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 622.515
+            },
+            {
+              "direction": "request",
+              "size": 65700,
+              "magic": "fd534d42",
+              "time": 622.531
+            },
+            {
+              "direction": "request",
+              "size": 65700,
+              "magic": "fd534d42",
+              "time": 622.531
+            },
+            {
+              "direction": "request",
+              "size": 65700,
+              "magic": "fd534d42",
+              "time": 622.531
+            },
+            {
+              "direction": "request",
+              "size": 65700,
+              "magic": "fd534d42",
+              "time": 622.562
+            },
+            {
+              "direction": "response",
+              "size": 132,
+              "magic": "fd534d42",
+              "time": 622.578
+            },
+            {
+              "direction": "response",
+              "size": 132,
+              "magic": "fd534d42",
+              "time": 622.578
+            },
+            {
+              "direction": "request",
+              "size": 65700,
+              "magic": "fd534d42",
+              "time": 622.578
+            },
+            {
+              "direction": "request",
+              "size": 65700,
+              "magic": "fd534d42",
+              "time": 622.593
+            },
+            {
+              "direction": "response",
+              "size": 132,
+              "magic": "fd534d42",
+              "time": 622.609
+            },
+            {
+              "direction": "response",
+              "size": 132,
+              "magic": "fd534d42",
+              "time": 622.609
+            },
+            {
+              "direction": "request",
+              "size": 65700,
+              "magic": "fd534d42",
+              "time": 622.609
+            },
+            {
+              "direction": "request",
+              "size": 65700,
+              "magic": "fd534d42",
+              "time": 622.625
+            },
+            {
+              "direction": "response",
+              "size": 132,
+              "magic": "fd534d42",
+              "time": 622.64
+            },
+            {
+              "direction": "response",
+              "size": 132,
+              "magic": "fd534d42",
+              "time": 622.64
+            },
+            {
+              "direction": "request",
+              "size": 65700,
+              "magic": "fd534d42",
+              "time": 622.64
+            },
+            {
+              "direction": "request",
+              "size": 65700,
+              "magic": "fd534d42",
+              "time": 622.656
+            },
+            {
+              "direction": "response",
+              "size": 132,
+              "magic": "fd534d42",
+              "time": 622.671
+            },
+            {
+              "direction": "response",
+              "size": 132,
+              "magic": "fd534d42",
+              "time": 622.671
+            },
+            {
+              "direction": "request",
+              "size": 65700,
+              "magic": "fd534d42",
+              "time": 622.671
+            },
+            {
+              "direction": "request",
+              "size": 65700,
+              "magic": "fd534d42",
+              "time": 622.687
+            },
+            {
+              "direction": "response",
+              "size": 132,
+              "magic": "fd534d42",
+              "time": 622.703
+            },
+            {
+              "direction": "response",
+              "size": 132,
+              "magic": "fd534d42",
+              "time": 622.703
+            },
+            {
+              "direction": "request",
+              "size": 65700,
+              "magic": "fd534d42",
+              "time": 622.703
+            },
+            {
+              "direction": "request",
+              "size": 65700,
+              "magic": "fd534d42",
+              "time": 622.718
+            },
+            {
+              "direction": "response",
+              "size": 132,
+              "magic": "fd534d42",
+              "time": 622.734
+            },
+            {
+              "direction": "response",
+              "size": 132,
+              "magic": "fd534d42",
+              "time": 622.734
+            },
+            {
+              "direction": "request",
+              "size": 65700,
+              "magic": "fd534d42",
+              "time": 622.734
+            },
+            {
+              "direction": "request",
+              "size": 65700,
+              "magic": "fd534d42",
+              "time": 622.75
+            },
+            {
+              "direction": "response",
+              "size": 132,
+              "magic": "fd534d42",
+              "time": 622.765
+            },
+            {
+              "direction": "response",
+              "size": 132,
+              "magic": "fd534d42",
+              "time": 622.765
+            },
+            {
+              "direction": "response",
+              "size": 132,
+              "magic": "fd534d42",
+              "time": 622.812
+            },
+            {
+              "direction": "response",
+              "size": 132,
+              "magic": "fd534d42",
+              "time": 622.828
+            },
+            {
+              "direction": "request",
+              "size": 140,
+              "magic": "fd534d42",
+              "time": 622.828
+            },
+            {
+              "direction": "response",
+              "size": 120,
+              "magic": "fd534d42",
+              "time": 622.875
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 622.875
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 622.875
+            },
+            {
+              "direction": "request",
+              "size": 140,
+              "magic": "fd534d42",
+              "time": 622.875
+            },
+            {
+              "direction": "response",
+              "size": 176,
+              "magic": "fd534d42",
+              "time": 622.89
+            },
+            {
+              "direction": "request",
+              "size": 300,
+              "magic": "fd534d42",
+              "time": 622.906
+            },
+            {
+              "direction": "response",
+              "size": 260,
+              "magic": "fd534d42",
+              "time": 622.906
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 622.906
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 622.921
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 622.921
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 622.937
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 622.937
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 622.953
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 622.953
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 622.968
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 622.968
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 622.984
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 622.984
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 623.0
+            },
+            {
+              "direction": "request",
+              "size": 165,
+              "magic": "fd534d42",
+              "time": 623.0
+            },
+            {
+              "direction": "request",
+              "size": 165,
+              "magic": "fd534d42",
+              "time": 623.0
+            },
+            {
+              "direction": "request",
+              "size": 165,
+              "magic": "fd534d42",
+              "time": 623.0
+            },
+            {
+              "direction": "request",
+              "size": 165,
+              "magic": "fd534d42",
+              "time": 623.0
+            },
+            {
+              "direction": "request",
+              "size": 165,
+              "magic": "fd534d42",
+              "time": 623.0
+            },
+            {
+              "direction": "request",
+              "size": 165,
+              "magic": "fd534d42",
+              "time": 623.0
+            },
+            {
+              "direction": "request",
+              "size": 165,
+              "magic": "fd534d42",
+              "time": 623.0
+            },
+            {
+              "direction": "request",
+              "size": 165,
+              "magic": "fd534d42",
+              "time": 623.0
+            },
+            {
+              "direction": "request",
+              "size": 165,
+              "magic": "fd534d42",
+              "time": 623.0
+            },
+            {
+              "direction": "request",
+              "size": 165,
+              "magic": "fd534d42",
+              "time": 623.0
+            },
+            {
+              "direction": "request",
+              "size": 165,
+              "magic": "fd534d42",
+              "time": 623.0
+            },
+            {
+              "direction": "request",
+              "size": 165,
+              "magic": "fd534d42",
+              "time": 623.0
+            },
+            {
+              "direction": "request",
+              "size": 165,
+              "magic": "fd534d42",
+              "time": 623.0
+            },
+            {
+              "direction": "request",
+              "size": 165,
+              "magic": "fd534d42",
+              "time": 623.0
+            },
+            {
+              "direction": "request",
+              "size": 165,
+              "magic": "fd534d42",
+              "time": 623.0
+            },
+            {
+              "direction": "request",
+              "size": 165,
+              "magic": "fd534d42",
+              "time": 623.0
+            },
+            {
+              "direction": "response",
+              "size": 65668,
+              "magic": "fd534d42",
+              "time": 623.015
+            },
+            {
+              "direction": "response",
+              "size": 65668,
+              "magic": "fd534d42",
+              "time": 623.031
+            },
+            {
+              "direction": "response",
+              "size": 65668,
+              "magic": "fd534d42",
+              "time": 623.046
+            },
+            {
+              "direction": "response",
+              "size": 65668,
+              "magic": "fd534d42",
+              "time": 623.046
+            },
+            {
+              "direction": "response",
+              "size": 65668,
+              "magic": "fd534d42",
+              "time": 623.062
+            },
+            {
+              "direction": "response",
+              "size": 65668,
+              "magic": "fd534d42",
+              "time": 623.062
+            },
+            {
+              "direction": "response",
+              "size": 65668,
+              "magic": "fd534d42",
+              "time": 623.078
+            },
+            {
+              "direction": "response",
+              "size": 65668,
+              "magic": "fd534d42",
+              "time": 623.078
+            },
+            {
+              "direction": "response",
+              "size": 65668,
+              "magic": "fd534d42",
+              "time": 623.078
+            },
+            {
+              "direction": "response",
+              "size": 65668,
+              "magic": "fd534d42",
+              "time": 623.093
+            },
+            {
+              "direction": "response",
+              "size": 65668,
+              "magic": "fd534d42",
+              "time": 623.109
+            },
+            {
+              "direction": "response",
+              "size": 65668,
+              "magic": "fd534d42",
+              "time": 623.109
+            },
+            {
+              "direction": "response",
+              "size": 65668,
+              "magic": "fd534d42",
+              "time": 623.125
+            },
+            {
+              "direction": "response",
+              "size": 65668,
+              "magic": "fd534d42",
+              "time": 623.125
+            },
+            {
+              "direction": "response",
+              "size": 65668,
+              "magic": "fd534d42",
+              "time": 623.14
+            },
+            {
+              "direction": "response",
+              "size": 65668,
+              "magic": "fd534d42",
+              "time": 623.156
+            },
+            {
+              "direction": "request",
+              "size": 140,
+              "magic": "fd534d42",
+              "time": 623.156
+            },
+            {
+              "direction": "response",
+              "size": 176,
+              "magic": "fd534d42",
+              "time": 623.156
+            },
+            {
+              "direction": "request",
+              "size": 300,
+              "magic": "fd534d42",
+              "time": 623.171
+            },
+            {
+              "direction": "response",
+              "size": 260,
+              "magic": "fd534d42",
+              "time": 623.187
+            },
+            {
+              "direction": "request",
+              "size": 216,
+              "magic": "fd534d42",
+              "time": 623.187
+            },
+            {
+              "direction": "response",
+              "size": 118,
+              "magic": "fd534d42",
+              "time": 623.218
+            },
+            {
+              "direction": "request",
+              "size": 140,
+              "magic": "fd534d42",
+              "time": 623.218
+            },
+            {
+              "direction": "response",
+              "size": 176,
+              "magic": "fd534d42",
+              "time": 623.234
+            },
+            {
+              "direction": "request",
+              "size": 300,
+              "magic": "fd534d42",
+              "time": 623.234
+            },
+            {
+              "direction": "response",
+              "size": 260,
+              "magic": "fd534d42",
+              "time": 623.25
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 623.25
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 623.265
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 623.265
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 623.265
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 623.265
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 623.281
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 623.281
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 623.281
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 623.281
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 623.296
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 623.296
+            },
+            {
+              "direction": "response",
+              "size": 118,
+              "magic": "fd534d42",
+              "time": 623.312
+            },
+            {
+              "direction": "request",
+              "size": 140,
+              "magic": "fd534d42",
+              "time": 623.312
+            },
+            {
+              "direction": "response",
+              "size": 120,
+              "magic": "fd534d42",
+              "time": 623.312
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 623.312
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 623.312
+            },
+            {
+              "direction": "request",
+              "size": 140,
+              "magic": "fd534d42",
+              "time": 623.312
+            },
+            {
+              "direction": "response",
+              "size": 176,
+              "magic": "fd534d42",
+              "time": 623.328
+            },
+            {
+              "direction": "request",
+              "size": 300,
+              "magic": "fd534d42",
+              "time": 623.328
+            },
+            {
+              "direction": "response",
+              "size": 260,
+              "magic": "fd534d42",
+              "time": 623.343
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 623.343
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 623.343
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 623.343
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 623.359
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 623.359
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 623.375
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 623.375
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 623.39
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 623.39
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 623.406
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 623.406
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 623.421
+            },
+            {
+              "direction": "request",
+              "size": 165,
+              "magic": "fd534d42",
+              "time": 623.421
+            },
+            {
+              "direction": "request",
+              "size": 165,
+              "magic": "fd534d42",
+              "time": 623.421
+            },
+            {
+              "direction": "response",
+              "size": 65668,
+              "magic": "fd534d42",
+              "time": 623.453
+            },
+            {
+              "direction": "response",
+              "size": 133,
+              "magic": "fd534d42",
+              "time": 623.453
+            },
+            {
+              "direction": "request",
+              "size": 140,
+              "magic": "fd534d42",
+              "time": 623.453
+            },
+            {
+              "direction": "response",
+              "size": 176,
+              "magic": "fd534d42",
+              "time": 623.453
+            },
+            {
+              "direction": "request",
+              "size": 284,
+              "magic": "fd534d42",
+              "time": 623.453
+            },
+            {
+              "direction": "response",
+              "size": 260,
+              "magic": "fd534d42",
+              "time": 623.468
+            },
+            {
+              "direction": "request",
+              "size": 254,
+              "magic": "fd534d42",
+              "time": 623.468
+            },
+            {
+              "direction": "response",
+              "size": 541,
+              "magic": "fd534d42",
+              "time": 623.5
+            },
+            {
+              "direction": "request",
+              "size": 140,
+              "magic": "fd534d42",
+              "time": 623.5
+            },
+            {
+              "direction": "response",
+              "size": 176,
+              "magic": "fd534d42",
+              "time": 623.515
+            },
+            {
+              "direction": "request",
+              "size": 269,
+              "magic": "fd534d42",
+              "time": 623.531
+            },
+            {
+              "direction": "response",
+              "size": 248,
+              "magic": "fd534d42",
+              "time": 623.531
+            },
+            {
+              "direction": "request",
+              "size": 244,
+              "magic": "fd534d42",
+              "time": 623.546
+            },
+            {
+              "direction": "response",
+              "size": 260,
+              "magic": "fd534d42",
+              "time": 623.546
+            },
+            {
+              "direction": "request",
+              "size": 140,
+              "magic": "fd534d42",
+              "time": 623.546
+            },
+            {
+              "direction": "response",
+              "size": 176,
+              "magic": "fd534d42",
+              "time": 623.562
+            },
+            {
+              "direction": "request",
+              "size": 300,
+              "magic": "fd534d42",
+              "time": 623.562
+            },
+            {
+              "direction": "response",
+              "size": 260,
+              "magic": "fd534d42",
+              "time": 623.578
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 623.578
+            },
+            {
+              "direction": "response",
+              "size": 228,
+              "magic": "fd534d42",
+              "time": 623.593
+            },
+            {
+              "direction": "request",
+              "size": 284,
+              "magic": "fd534d42",
+              "time": 623.593
+            },
+            {
+              "direction": "response",
+              "size": 260,
+              "magic": "fd534d42",
+              "time": 623.609
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 623.609
+            },
+            {
+              "direction": "response",
+              "size": 228,
+              "magic": "fd534d42",
+              "time": 623.64
+            },
+            {
+              "direction": "request",
+              "size": 140,
+              "magic": "fd534d42",
+              "time": 623.64
+            },
+            {
+              "direction": "response",
+              "size": 176,
+              "magic": "fd534d42",
+              "time": 623.656
+            },
+            {
+              "direction": "request",
+              "size": 140,
+              "magic": "fd534d42",
+              "time": 623.656
+            },
+            {
+              "direction": "response",
+              "size": 176,
+              "magic": "fd534d42",
+              "time": 623.671
+            },
+            {
+              "direction": "request",
+              "size": 300,
+              "magic": "fd534d42",
+              "time": 623.703
+            },
+            {
+              "direction": "response",
+              "size": 125,
+              "magic": "fd534d42",
+              "time": 623.703
+            },
+            {
+              "direction": "request",
+              "size": 300,
+              "magic": "fd534d42",
+              "time": 623.703
+            },
+            {
+              "direction": "response",
+              "size": 125,
+              "magic": "fd534d42",
+              "time": 623.703
+            },
+            {
+              "direction": "request",
+              "size": 300,
+              "magic": "fd534d42",
+              "time": 623.703
+            },
+            {
+              "direction": "response",
+              "size": 260,
+              "magic": "fd534d42",
+              "time": 623.718
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 623.718
+            },
+            {
+              "direction": "response",
+              "size": 228,
+              "magic": "fd534d42",
+              "time": 623.75
+            },
+            {
+              "direction": "request",
+              "size": 284,
+              "magic": "fd534d42",
+              "time": 623.75
+            },
+            {
+              "direction": "response",
+              "size": 260,
+              "magic": "fd534d42",
+              "time": 623.765
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 623.765
+            },
+            {
+              "direction": "response",
+              "size": 228,
+              "magic": "fd534d42",
+              "time": 623.796
+            },
+            {
+              "direction": "request",
+              "size": 140,
+              "magic": "fd534d42",
+              "time": 623.796
+            },
+            {
+              "direction": "response",
+              "size": 176,
+              "magic": "fd534d42",
+              "time": 623.812
+            },
+            {
+              "direction": "request",
+              "size": 140,
+              "magic": "fd534d42",
+              "time": 623.812
+            },
+            {
+              "direction": "response",
+              "size": 176,
+              "magic": "fd534d42",
+              "time": 623.828
+            },
+            {
+              "direction": "request",
+              "size": 300,
+              "magic": "fd534d42",
+              "time": 623.843
+            },
+            {
+              "direction": "response",
+              "size": 260,
+              "magic": "fd534d42",
+              "time": 623.843
+            },
+            {
+              "direction": "request",
+              "size": 284,
+              "magic": "fd534d42",
+              "time": 623.843
+            },
+            {
+              "direction": "response",
+              "size": 260,
+              "magic": "fd534d42",
+              "time": 623.859
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 623.859
+            },
+            {
+              "direction": "response",
+              "size": 172,
+              "magic": "fd534d42",
+              "time": 623.875
+            },
+            {
+              "direction": "request",
+              "size": 140,
+              "magic": "fd534d42",
+              "time": 623.875
+            },
+            {
+              "direction": "response",
+              "size": 176,
+              "magic": "fd534d42",
+              "time": 623.875
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 623.875
+            },
+            {
+              "direction": "response",
+              "size": 228,
+              "magic": "fd534d42",
+              "time": 623.906
+            },
+            {
+              "direction": "request",
+              "size": 308,
+              "magic": "fd534d42",
+              "time": 623.906
+            },
+            {
+              "direction": "response",
+              "size": 118,
+              "magic": "fd534d42",
+              "time": 623.921
+            },
+            {
+              "direction": "request",
+              "size": 140,
+              "magic": "fd534d42",
+              "time": 623.921
+            },
+            {
+              "direction": "response",
+              "size": 176,
+              "magic": "fd534d42",
+              "time": 623.937
+            },
+            {
+              "direction": "request",
+              "size": 244,
+              "magic": "fd534d42",
+              "time": 623.937
+            },
+            {
+              "direction": "response",
+              "size": 260,
+              "magic": "fd534d42",
+              "time": 623.953
+            },
+            {
+              "direction": "request",
+              "size": 140,
+              "magic": "fd534d42",
+              "time": 623.953
+            },
+            {
+              "direction": "response",
+              "size": 176,
+              "magic": "fd534d42",
+              "time": 623.968
+            },
+            {
+              "direction": "request",
+              "size": 300,
+              "magic": "fd534d42",
+              "time": 623.968
+            },
+            {
+              "direction": "response",
+              "size": 260,
+              "magic": "fd534d42",
+              "time": 623.984
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 623.984
+            },
+            {
+              "direction": "response",
+              "size": 284,
+              "magic": "fd534d42",
+              "time": 624.0
+            },
+            {
+              "direction": "request",
+              "size": 140,
+              "magic": "fd534d42",
+              "time": 624.0
+            },
+            {
+              "direction": "response",
+              "size": 176,
+              "magic": "fd534d42",
+              "time": 624.031
+            },
+            {
+              "direction": "request",
+              "size": 300,
+              "magic": "fd534d42",
+              "time": 624.031
+            },
+            {
+              "direction": "response",
+              "size": 125,
+              "magic": "fd534d42",
+              "time": 624.046
+            },
+            {
+              "direction": "request",
+              "size": 300,
+              "magic": "fd534d42",
+              "time": 624.062
+            },
+            {
+              "direction": "response",
+              "size": 260,
+              "magic": "fd534d42",
+              "time": 624.062
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 624.062
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 624.093
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 624.093
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 624.093
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 624.093
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 624.109
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 624.109
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 624.109
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 624.109
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 624.125
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 624.125
+            },
+            {
+              "direction": "response",
+              "size": 180,
+              "magic": "fd534d42",
+              "time": 624.125
+            },
+            {
+              "direction": "request",
+              "size": 165,
+              "magic": "fd534d42",
+              "time": 624.125
+            },
+            {
+              "direction": "request",
+              "size": 165,
+              "magic": "fd534d42",
+              "time": 624.125
+            },
+            {
+              "direction": "response",
+              "size": 65668,
+              "magic": "fd534d42",
+              "time": 624.14
+            },
+            {
+              "direction": "response",
+              "size": 133,
+              "magic": "fd534d42",
+              "time": 624.14
+            },
+            {
+              "direction": "request",
+              "size": 140,
+              "magic": "fd534d42",
+              "time": 624.14
+            },
+            {
+              "direction": "response",
+              "size": 176,
+              "magic": "fd534d42",
+              "time": 624.156
+            },
+            {
+              "direction": "request",
+              "size": 300,
+              "magic": "fd534d42",
+              "time": 624.156
+            },
+            {
+              "direction": "response",
+              "size": 125,
+              "magic": "fd534d42",
+              "time": 624.171
+            },
+            {
+              "direction": "request",
+              "size": 300,
+              "magic": "fd534d42",
+              "time": 624.171
+            },
+            {
+              "direction": "response",
+              "size": 125,
+              "magic": "fd534d42",
+              "time": 624.187
+            },
+            {
+              "direction": "request",
+              "size": 300,
+              "magic": "fd534d42",
+              "time": 624.187
+            },
+            {
+              "direction": "response",
+              "size": 260,
+              "magic": "fd534d42",
+              "time": 624.187
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 624.187
+            },
+            {
+              "direction": "response",
+              "size": 284,
+              "magic": "fd534d42",
+              "time": 624.187
+            },
+            {
+              "direction": "request",
+              "size": 140,
+              "magic": "fd534d42",
+              "time": 624.187
+            },
+            {
+              "direction": "response",
+              "size": 176,
+              "magic": "fd534d42",
+              "time": 624.203
+            },
+            {
+              "direction": "request",
+              "size": 300,
+              "magic": "fd534d42",
+              "time": 624.203
+            },
+            {
+              "direction": "response",
+              "size": 260,
+              "magic": "fd534d42",
+              "time": 624.218
+            },
+            {
+              "direction": "request",
+              "size": 284,
+              "magic": "fd534d42",
+              "time": 624.218
+            },
+            {
+              "direction": "response",
+              "size": 260,
+              "magic": "fd534d42",
+              "time": 624.234
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 624.234
+            },
+            {
+              "direction": "response",
+              "size": 172,
+              "magic": "fd534d42",
+              "time": 624.25
+            },
+            {
+              "direction": "request",
+              "size": 140,
+              "magic": "fd534d42",
+              "time": 624.25
+            },
+            {
+              "direction": "response",
+              "size": 176,
+              "magic": "fd534d42",
+              "time": 624.265
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 624.265
+            },
+            {
+              "direction": "response",
+              "size": 284,
+              "magic": "fd534d42",
+              "time": 624.296
+            },
+            {
+              "direction": "request",
+              "size": 252,
+              "magic": "fd534d42",
+              "time": 624.296
+            },
+            {
+              "direction": "response",
+              "size": 118,
+              "magic": "fd534d42",
+              "time": 624.296
+            },
+            {
+              "direction": "request",
+              "size": 140,
+              "magic": "fd534d42",
+              "time": 624.296
+            },
+            {
+              "direction": "response",
+              "size": 176,
+              "magic": "fd534d42",
+              "time": 624.312
+            },
+            {
+              "direction": "request",
+              "size": 300,
+              "magic": "fd534d42",
+              "time": 624.312
+            },
+            {
+              "direction": "response",
+              "size": 260,
+              "magic": "fd534d42",
+              "time": 624.312
+            },
+            {
+              "direction": "request",
+              "size": 149,
+              "magic": "fd534d42",
+              "time": 624.312
+            },
+            {
+              "direction": "response",
+              "size": 118,
+              "magic": "fd534d42",
+              "time": 624.328
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 624.328
+            },
+            {
+              "direction": "response",
+              "size": 176,
+              "magic": "fd534d42",
+              "time": 624.343
+            },
+            {
+              "direction": "request",
+              "size": 140,
+              "magic": "fd534d42",
+              "time": 624.343
+            },
+            {
+              "direction": "response",
+              "size": 176,
+              "magic": "fd534d42",
+              "time": 624.359
+            },
+            {
+              "direction": "request",
+              "size": 284,
+              "magic": "fd534d42",
+              "time": 624.359
+            },
+            {
+              "direction": "response",
+              "size": 260,
+              "magic": "fd534d42",
+              "time": 624.359
+            },
+            {
+              "direction": "request",
+              "size": 149,
+              "magic": "fd534d42",
+              "time": 624.359
+            },
+            {
+              "direction": "response",
+              "size": 118,
+              "magic": "fd534d42",
+              "time": 624.375
+            },
+            {
+              "direction": "request",
+              "size": 156,
+              "magic": "fd534d42",
+              "time": 624.375
+            },
+            {
+              "direction": "response",
+              "size": 160,
+              "magic": "fd534d42",
+              "time": 624.39
+            },
+            {
+              "direction": "request",
+              "size": 140,
+              "magic": "fd534d42",
+              "time": 624.39
+            },
+            {
+              "direction": "response",
+              "size": 176,
+              "magic": "fd534d42",
+              "time": 624.406
+            }
+          ],
+          "server_log": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793762473820}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"supervisor\",\"time\":1793762478245}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793762478374}\n",
+          "worker_logs": {
+            "api.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793762475766}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"api\",\"time\":1793762477192}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793762480330}\n",
+            "file.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793762474015}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file\",\"time\":1793762478126}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793762478594}\n",
+            "file_1.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793762474142}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_1\",\"time\":1793762478078}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793762478724}\n",
+            "file_2.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793762474271}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_2\",\"time\":1793762477999}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793762478844}\n",
+            "file_3.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793762474398}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_3\",\"time\":1793762477936}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793762478976}\n",
+            "ftp.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793762475256}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"ftp\",\"time\":1793762477461}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793762479817}\n",
+            "helper.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793762475002}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"helper\",\"time\":1793762477609}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793762479560}\n",
+            "identity.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793762473906}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"identity\",\"time\":1793762478221}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793762478448}\n",
+            "monitor.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793762474648}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"monitor\",\"time\":1793762477809}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793762479181}\n",
+            "nfs.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793762475513}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"nfs\",\"time\":1793762477302}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793762480067}\n",
+            "protocol.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793762474494}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"protocol\",\"time\":1793762477872}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793762479056}\n",
+            "smb.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793762475387}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"smb\",\"time\":1793762477366}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793762480002}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762483173}\n{\"code\":\"128\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762483174}\n{\"code\":\"3221225659\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793762483227}\n{\"code\":\"3221225659\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793762483241}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793762483291}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793762486002}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793762487063}\n{\"code\":\"privilege_not_held\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762487260}\n{\"code\":\"17694848\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762487260}\n{\"code\":\"privilege_not_held\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762487265}\n{\"code\":\"17694848\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762487265}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762487599}\n{\"code\":\"1180054\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762487600}\n{\"code\":\"privilege_not_held\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762487724}\n{\"code\":\"17694848\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762487725}\n{\"code\":\"privilege_not_held\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793762487740}\n{\"code\":\"17694848\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793762487741}\n",
+            "storage_admin.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793762474878}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"storage_admin\",\"time\":1793762477651}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793762479435}\n",
+            "supervisor.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793762473820}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"supervisor\",\"time\":1793762478245}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793762478374}\n",
+            "updater.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793762474752}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"updater\",\"time\":1793762477746}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793762479307}\n",
+            "webdav.jsonl": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793762475135}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"webdav\",\"time\":1793762477556}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793762479693}\n"
+          }
+        }
+      }
+    }
+  ]
+}

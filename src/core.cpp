@@ -199,6 +199,7 @@ config config::load(const fs::path &path) {
     require(key == "schema" || key == "listen" || key == "port" || key == "connections" ||
                 key == "ipc_queue" || key == "restart_limit" || key == "memory_mb" ||
                 key == "nfs_port" || key == "nfs_address" || key == "nfs_peer_rpcbind_port" ||
+                key == "nfs_gss_service" || key == "nfs_gss_keytab" ||
                 key == "smb_port" || key == "dav_port" || key == "ftp_port" ||
                 key == "ftp_plaintext" || key == "ftp_passive_first" || key == "ftp_passive_last",
             "invalid_config");
@@ -243,6 +244,18 @@ config config::load(const fs::path &path) {
   auto peer_rpcbind = j.value("nfs_peer_rpcbind_port", int64_t(111));
   require(peer_rpcbind == 111 || (peer_rpcbind >= 1024 && peer_rpcbind <= 65535), "invalid_config");
   c.nfs_peer_rpcbind_port = uint16_t(peer_rpcbind);
+  c.nfs_gss_service = j.value("nfs_gss_service", std::string());
+  c.nfs_gss_keytab = j.value("nfs_gss_keytab", std::string());
+  require(c.nfs_gss_service.empty() == c.nfs_gss_keytab.empty(), "invalid_config");
+  if (!c.nfs_gss_service.empty()) {
+    require(c.nfs_gss_service.starts_with("nfs/") && c.nfs_gss_service.find('@') != std::string::npos &&
+                c.nfs_gss_service.size() <= 1024 && c.nfs_gss_service.find('\0') == std::string::npos &&
+                fs::path(c.nfs_gss_keytab).is_absolute() && c.nfs_gss_keytab.size() <= 4096 &&
+                c.nfs_gss_keytab.find('\0') == std::string::npos, "invalid_config");
+#ifndef __linux__
+    throw error("gss_unavailable");
+#endif
+  }
   c.smb_port = static_cast<uint16_t>(smb);
   c.ftp_port = static_cast<uint16_t>(ftp);
   c.ftp_passive_first = static_cast<uint16_t>(first);

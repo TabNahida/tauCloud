@@ -1,6 +1,7 @@
 #include <taucloud/policy.hpp>
 #include <taucloud/files.hpp>
 #include <algorithm>
+#include <set>
 namespace tc {
 namespace {
 void identifier(const std::string &id) {
@@ -91,7 +92,23 @@ int64_t epoch(sqlite3 *db) {
   return q.integer(0);
 }
 std::string nfs_user(sqlite3 *db, const json &e, const json &cred) {
-  require(e.at("enabled").get<bool>() && e.at("trust") == "loopback-auth-sys", "forbidden");
+  require(e.at("enabled").get<bool>(), "forbidden");
+  if (cred.value("auth", "") == "rpcsec-gss") {
+    require(e.at("trust") == "rpcsec-gss", "forbidden");
+    auto service = cred.at("service").get<uint32_t>();
+    require(service >= 1 && service <= 3, "forbidden");
+    const char *names[] = {"", "krb5", "krb5i", "krb5p"};
+    const auto &allowed = e.at("security");
+    require(std::find(allowed.begin(), allowed.end(), names[service]) != allowed.end(), "wrong_security");
+    auto principal = cred.at("principal").get<std::string>();
+    require(e.at("principals").contains(principal), "forbidden");
+    const auto &mapping = e.at("principals").at(principal);
+    auto user = e.at("uids").value(std::to_string(mapping.at("uid").get<uint32_t>()), "");
+    auto group = e.at("gids").value(std::to_string(mapping.at("gid").get<uint32_t>()), "");
+    require(!user.empty() && !group.empty() && exists_user(db, user) && member(db, user, group), "forbidden");
+    return user;
+  }
+  require(e.at("trust") == "loopback-auth-sys", "wrong_security");
   auto uid = cred.at("uid").get<uint32_t>(), gid = cred.at("gid").get<uint32_t>();
   require(cred.at("groups").is_array() && cred.at("groups").size() <= 16, "forbidden");
   std::string user;
@@ -170,7 +187,8 @@ json policy_dispatch(sqlite3 *db, const config &c, const std::string &operation,
           visible.push_back({{"id", e.at("id")}, {"uuid", e.at("uuid")}});
       } catch (const error &e) {
         // Hide inaccessible/unpublished exports, but do not hide storage faults.
-        require(std::string_view(e.what()) == "forbidden" || std::string_view(e.what()) == "not_found", e.what());
+        require(std::string_view(e.what()) == "forbidden" || std::string_view(e.what()) == "not_found" ||
+                    std::string_view(e.what()) == "wrong_security", e.what());
       }
     }
     return {{"exports", visible}, {"epoch", epoch(db)}};
@@ -260,20 +278,34 @@ json policy_dispatch(sqlite3 *db, const config &c, const std::string &operation,
     if (!nfs_export.is_null()) {
       grant["export"] = nfs_export;
       const auto &credential = body.at("credential");
-      bool squashed = credential.at("uid") == 0;
-      grant["nfs_uid"] = squashed ? json(65534) : credential.at("uid");
-      grant["nfs_gid"] = squashed ? json(65534) : credential.at("gid");
-      grant["groups"] = json::array();
-      if (!squashed) {
-        auto add = [&](const json &id) {
-          auto name = nfs_export.at("gids").at(std::to_string(id.get<uint32_t>()));
-          if (std::find(grant["groups"].begin(), grant["groups"].end(), name) ==
-              grant["groups"].end())
-            grant["groups"].push_back(name);
-        };
-        add(credential.at("gid"));
-        for (const auto &id : credential.at("groups"))
-          add(id);
+      if (credential.value("auth", "") == "rpcsec-gss") {
+        const auto &mapping = nfs_export.at("principals").at(credential.at("principal").get<std::string>());
+        grant["nfs_uid"] = mapping.at("uid");
+        grant["nfs_gid"] = mapping.at("gid");
+        // All groups come from current service membership, never from ticket
+        // authorization-data or client-supplied numeric AUTH_SYS credentials.
+        json mapped = json::array();
+        for (const auto &group : grant.at("groups"))
+          if (std::any_of(nfs_export.at("gids").begin(), nfs_export.at("gids").end(),
+                          [&](const json &name) { return name == group; }))
+            mapped.push_back(group);
+        grant["groups"] = std::move(mapped);
+      } else {
+        bool squashed = credential.at("uid") == 0;
+        grant["nfs_uid"] = squashed ? json(65534) : credential.at("uid");
+        grant["nfs_gid"] = squashed ? json(65534) : credential.at("gid");
+        grant["groups"] = json::array();
+        if (!squashed) {
+          auto add = [&](const json &id) {
+            auto name = nfs_export.at("gids").at(std::to_string(id.get<uint32_t>()));
+            if (std::find(grant["groups"].begin(), grant["groups"].end(), name) ==
+                grant["groups"].end())
+              grant["groups"].push_back(name);
+          };
+          add(credential.at("gid"));
+          for (const auto &id : credential.at("groups"))
+            add(id);
+        }
       }
     }
     auto key = read_json(c.state / "ipc-keys.json").at("identity").get<std::string>();
@@ -396,7 +428,8 @@ json policy_dispatch(sqlite3 *db, const config &c, const std::string &operation,
     identifier(id);
     auto share = record(db, "shares", id);
     require(share.at("exposures").contains("nfs"), "protocol_unavailable");
-    require(data.at("trust") == "loopback-auth-sys", "invalid_request");
+    auto trust = data.at("trust").get<std::string>();
+    require(trust == "loopback-auth-sys" || trust == "rpcsec-gss", "invalid_request");
     auto anon = data.at("anonymous").get<std::string>();
     require(exists_user(db, anon), "not_found");
     auto uids = data.at("uids"), gids = data.at("gids");
@@ -414,9 +447,34 @@ json policy_dispatch(sqlite3 *db, const config &c, const std::string &operation,
       }
     auto uuid = random_hex(16);
     if (data.value("update", false)) uuid = record(db, kind, id).at("uuid");
-    result = {{"id", id}, {"uuid", uuid}, {"trust", "loopback-auth-sys"},
+    result = {{"id", id}, {"uuid", uuid}, {"trust", trust},
               {"root_squash", true}, {"anonymous", anon}, {"uids", uids}, {"gids", gids},
               {"enabled", data.value("enabled", true)}};
+    if (trust == "rpcsec-gss") {
+      auto principals = data.at("principals");
+      auto security = data.value("security", json::array({"krb5p"}));
+      require(principals.is_object() && !principals.empty() && principals.size() <= 128 &&
+                  security.is_array() && !security.empty() && security.size() <= 3, "invalid_request");
+      std::set<std::string> services;
+      for (const auto &value : security) {
+        require(value.is_string(), "invalid_request");
+        auto s = value.get<std::string>();
+        require((s == "krb5" || s == "krb5i" || s == "krb5p") && services.insert(s).second, "invalid_request");
+      }
+      for (const auto &[principal, mapping] : principals.items()) {
+        require(!principal.empty() && principal.size() <= 1024 && principal.find('@') != std::string::npos &&
+                    principal.find('\0') == std::string::npos && mapping.is_object() && mapping.size() == 2,
+                "invalid_request");
+        for (const auto *key : {"uid", "gid"})
+          require(mapping.at(key).is_number_integer() && mapping.at(key) >= 0 &&
+                      mapping.at(key) <= UINT32_MAX, "invalid_request");
+        auto uid = std::to_string(mapping.at("uid").get<uint32_t>());
+        auto gid = std::to_string(mapping.at("gid").get<uint32_t>());
+        require(uids.contains(uid) && gids.contains(gid) && member(db, uids.at(uid), gids.at(gid)), "invalid_request");
+      }
+      result["principals"] = std::move(principals);
+      result["security"] = std::move(security);
+    }
     put(db, kind, id, result, data.value("update", false));
   } else if (kind == "groups") {
     id = data.at("name");
