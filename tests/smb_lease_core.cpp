@@ -66,6 +66,7 @@ int main() {
     v2.recall(0);
     auto read_break = *v2.pending();
     check(!read_break.acknowledgment && !v2.breaking() && v2.unsettled() && v2.state() == 1);
+    check(get(v2.response(), 16, 4) == 0); // CREATE reports the invalidated read lease.
     check(!v2.promote(7, 7) && v2.acknowledge(0) == 0xc0000001);
     v2.sent(read_break.serial, 200, 5000);
     check(v2.state() == 0 && !v2.unsettled() && !v2.timed_out(INT64_MAX));

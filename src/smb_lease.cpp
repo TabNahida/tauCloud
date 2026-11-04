@@ -84,7 +84,10 @@ void lease_state::fence() {
 bytes lease_state::response() const {
   bytes result(version_ == 2 ? 52 : 32, '\0');
   result.replace(0, 16, key_);
-  put(result, 16, state_, 4);
+  // The no-ACK notification already invalidates the client's read lease.
+  // Native exclusion is retained until delivery, but a racing CREATE must
+  // not re-advertise R at this new epoch after the NONE notification.
+  put(result, 16, pending_ && !pending_->acknowledgment ? pending_->target : state_, 4);
   put(result, 20, (breaking_ ? 2u : 0u) | (parent_.empty() ? 0u : 4u), 4);
   if (version_ == 2) {
     if (!parent_.empty()) result.replace(32, 16, parent_);

@@ -1,5 +1,6 @@
 #include <taucloud/files.hpp>
 #include <taucloud/security.hpp>
+#include <taucloud/smb_lease.hpp>
 #include <taucloud/http_stream.hpp>
 #include <taucloud/database.hpp>
 #include <algorithm>
@@ -57,6 +58,14 @@ struct file_store::impl {
     native_file root;
     native_file directory;
   };
+  struct lease_cache {
+    std::string client, native, cookie = random_hex(16);
+    smb_detail::lease_state state;
+    std::shared_ptr<native_cache_guard> guard;
+    int64_t break_until = 0;
+    lease_cache(std::string owner, const smb_detail::lease_request &request)
+        : client(std::move(owner)), state(request) {}
+  };
   struct opened {
     native_file file;
     std::string actor, space, path;
@@ -77,6 +86,7 @@ struct file_store::impl {
     int64_t cache_authority_until = 0, cache_break_until = 0;
     unsigned cache_level = 0, cache_break_level = 0;
     bool cache_downgrade_pending = false;
+    std::shared_ptr<lease_cache> lease_cache_state = nullptr;
   };
   struct byte_lock {
     std::string handle, object;

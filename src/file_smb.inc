@@ -4,7 +4,7 @@ static unsigned smb_categories(uint32_t access) {
          ((access & 0x10000u) ? 4u : 0u);
 }
 void smb_sharing(const std::string &space, const std::string &path, uint32_t access,
-                 unsigned share) {
+                 unsigned share, const std::shared_ptr<lease_cache> &lease_owner = {}) {
   statement pending_delete(db, "SELECT 1 FROM smb_pending WHERE space=? AND path=?");
   pending_delete.bind(1, space);
   pending_delete.bind(2, path);
@@ -17,6 +17,17 @@ void smb_sharing(const std::string &space, const std::string &path, uint32_t acc
     ancestor.bind(2, parent);
     require(!ancestor.row(), "delete_pending");
   }
+  bool lease_conflict = false;
+  for (auto &[id, h] : handles) {
+    if (h.space != space || h.path != path || !h.lease_cache_state ||
+        h.lease_cache_state == lease_owner || !(h.lease_cache_state->state.state() & 2)) continue;
+    auto existing = smb_categories(h.access), incoming = smb_categories(access);
+    if (existing && incoming && ((incoming & ~h.sharing) || (existing & ~share))) {
+      cache_break(h, 0, 1);
+      lease_conflict = true;
+    }
+  }
+  require(!lease_conflict, "cache_break_pending");
   for (auto &[id, h] : handles)
     if (h.space == space && h.path == path) {
       auto existing = h.protocol == "smb" ? smb_categories(h.access) : (h.writable ? 3u : 1u);
@@ -392,7 +403,22 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     auto requested_cache = body.value("oplock", 0u);
     require(requested_cache == 0 || requested_cache == 1 || requested_cache == 8 || requested_cache == 9,
             "invalid_request");
-    bool data_open = (requested_cache == 1 || requested_cache == 8 || requested_cache == 9) && (access & 1);
+    std::shared_ptr<lease_cache> requested_lease;
+    if (body.contains("lease")) {
+      const auto &value = body.at("lease");
+      auto client = decode_bytes(value.at("client").get<std::string>());
+      require(client.size() == 16 && requested_cache == 0, "invalid_request");
+      auto request = smb_detail::lease_request::decode(decode_bytes(value.at("context").get<std::string>()));
+      for (const auto &[id, held] : handles) {
+        auto group = held.lease_cache_state;
+        if (!group || group->client != client || group->state.key() != request.key) continue;
+        require(held.space == space && held.path == path, "invalid_request");
+        requested_lease = group;
+        break;
+      }
+      if (!requested_lease) requested_lease = std::make_shared<lease_cache>(client, request);
+    }
+    bool data_open = (requested_lease || requested_cache == 1 || requested_cache == 8 || requested_cache == 9) && (access & 1);
     bool preserving_data = disposition == 1 || disposition == 3;
     bool preserving_open = preserving_data && !(options & 0x1000);
     bool attribute_open = !body.value("maximum", false) && !(access & ~0x00100180u);
@@ -407,8 +433,12 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
         require(cached_info->at("object") == object(space, path).at("native"),
                 "object_replaced");
         needs_write_handle = (access & 6) && !held.file.writable();
-        shared_read_open = held.cache_level == 1 && !held.cache_break_until && !needs_write_handle;
-        if ((preserving_open && attribute_open) || (preserving_data && shared_read_open)) {
+        shared_read_open = !needs_write_handle && (held.lease_cache_state
+            ? !(held.lease_cache_state->state.state() & 4) && !held.lease_cache_state->state.unsettled()
+            : held.cache_level == 1 && !held.cache_break_until);
+        bool same_lease = requested_lease && requested_lease == held.lease_cache_state;
+        if ((same_lease && !needs_write_handle) || (preserving_open && attribute_open) ||
+            (preserving_data && shared_read_open)) {
           cached_file = held.file.retain();
           cache_owner = id;
         }
@@ -416,6 +446,8 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
       }
     smb_reap(s);
     auto existing = cached_info ? cached_info : dav_exists(s, path);
+    if (requested_lease && !requested_lease->native.empty())
+      require(existing && object(space, path).at("native") == requested_lease->native, "object_replaced");
     require(!existing || disposition != 2, "already_exists");
     bool directory = existing ? existing->at("directory").get<bool>() : bool(options & 1);
     require(!(options & 1) || directory, "not_directory");
@@ -433,7 +465,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     if (existing && !(attribute_open && preserving_data)) {
       bool batch = std::any_of(handles.begin(), handles.end(), [&](const auto &entry) {
         const auto &held = entry.second;
-        return held.cache && held.cache_level == 9 && held.space == space && held.path == path;
+        return held.cache && !held.lease_cache_state && held.cache_level == 9 && held.space == space && held.path == path;
       });
       if (batch) cache_conflict(space, path, "", preserving_data ? 1 : 0);
     }
@@ -537,11 +569,15 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
       require(access != 0, "forbidden");
     } else
       require((access & ~open_permissions) == 0, "forbidden");
-    smb_sharing(space, path, access, sharing);
+    smb_sharing(space, path, access, sharing, requested_lease);
+    auto exempt_lease = requested_lease;
+    if (preserving_open && attribute_open && !cache_owner.empty() && handles.at(cache_owner).lease_cache_state)
+      exempt_lease = handles.at(cache_owner).lease_cache_state;
     cache_conflict(space, path, cache_owner,
                    (((data_open || attribute_open) && preserving_open) ||
                        (shared_read_open && preserving_data)) &&
-                       !needs_write_handle ? 1 : 0);
+                       !needs_write_handle ? 1 : 0, exempt_lease,
+                   preserving_data && !needs_write_handle ? 3 : 0);
     // Validate all initial metadata and quota before creating or truncating a file.
     if (!existing && body.contains("eas"))
       smb_merge_eas(json::object(), body.at("eas"));
@@ -579,7 +615,18 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
           require(held.file.info().at("object") == object(space, path).at("native"), "object_replaced");
           file = held.file.retain(); retained = true; break;
         }
-        if (!retained) file = s.directory.open(path, false, false, truncate || bool(access & 6));
+        if (!retained) {
+          // A read-only logical lease open may later gain a writable sibling.
+          // Pin an RW native description when possible, while keeping all
+          // granted SMB rights and every mutation check strictly per open.
+          if (requested_lease && !truncate && !(access & 6)) {
+            try { file = s.directory.open(path, false, false, true); }
+            catch (const error &e) {
+              if (std::string_view(e.what()) != "forbidden") throw;
+              file = s.directory.open(path, false, false, false);
+            }
+          } else file = s.directory.open(path, false, false, truncate || bool(access & 6));
+        }
       }
     }
     if (truncate) {
@@ -646,6 +693,13 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     h.access = access;
     h.sharing = sharing;
     h.directory = directory;
+    if (requested_lease && !directory) {
+      auto native = h.file.info().at("object").get<std::string>();
+      require(requested_lease->native.empty() || requested_lease->native == native, "object_replaced");
+      requested_lease->native = native;
+      h.lease_cache_state = requested_lease;
+      cache_renew(h, grant);
+    }
     auto meta = smb_meta(s, h);
     if (options & 0x1000) {
       statement intent(db, "INSERT INTO smb_close_delete VALUES(?,?,?,?,?,?)");
@@ -654,6 +708,10 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
       intent.bind(6, std::string()); intent.row();
     }
     handles.emplace(id, std::move(h));
+    if (requested_lease && !directory) {
+      sync_lease_cache(requested_lease);
+      meta["cache"] = cache_snapshot(handles.at(id));
+    }
     meta["maximal_access"] = permitted;
     meta["handle"] = id;
     meta["action"] = !existing ? 2 : truncate ? (disposition == 0 ? 0 : 3) : 1;
@@ -676,16 +734,18 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
           "forbidden");
   if (op.starts_with("smb_cache_")) {
     if (op == "smb_cache_acquire" && smb_meta(s, h).at("delete_pending").get<bool>())
-      return {{"granted", false}, {"cookie", ""}, {"breaking", false}, {"remaining_ms", 0}};
+      return h.lease_cache_state ? cache_snapshot(h)
+          : json{{"granted", false}, {"cookie", ""}, {"breaking", false}, {"remaining_ms", 0}};
     return cache_dispatch(op, body, grant, h);
   }
   if (op == "smb_write" || op == "smb_lock") {
     require(h.access & (op == "smb_write" ? 6u : 0x27u), "forbidden");
     bool readers = std::any_of(handles.begin(), handles.end(), [&](const auto &entry) {
       const auto &held = entry.second;
-      return held.cache && held.cache_level == 1 && held.space == space && held.path == path;
+      return held.cache && held.space == space && held.path == path &&
+          (held.lease_cache_state ? held.lease_cache_state != h.lease_cache_state : held.cache_level == 1);
     });
-    if (readers) cache_conflict(space, path);
+    if (readers) cache_conflict(space, path, "", 0, h.lease_cache_state);
   }
   if (op == "smb_resize" || op == "smb_allocation")
     require(h.access & 2, "forbidden");
@@ -701,7 +761,9 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     // including itself. Native I/O uses h.file, the guarded open description.
     auto cache_owner = (op == "smb_resize" || op == "smb_allocation") && h.cache &&
                                (h.cache_level == 8 || h.cache_level == 9) ? id : "";
-    cache_conflict(space, path, cache_owner, op == "smb_disposition" ? 1 : 0);
+    cache_conflict(space, path, cache_owner, op == "smb_disposition" ? 1 : 0,
+        (op == "smb_resize" || op == "smb_allocation") ? h.lease_cache_state : nullptr,
+        op == "smb_disposition" ? 3 : 0);
     if (op == "smb_rename") {
       auto target = verify(body.at("target"), true);
       require(target.at("space").at("id") == space && target.at("actor") == actor &&

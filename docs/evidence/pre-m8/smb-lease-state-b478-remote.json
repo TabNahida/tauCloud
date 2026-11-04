@@ -1,0 +1,50 @@
+{
+  "source": "b478face5e27454c9aa6485f590748ae5d9f2486",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41866036736",
+  "status": "lease-core-step-passed-all-three-platforms-whole-jobs-still-running",
+  "scope": "Shared lease state, registry and wire vectors only; no network/native lease acceptance at this source.",
+  "jobs": [
+    {
+      "id": 126700350595,
+      "name": "gcc metadata",
+      "status": "in_progress",
+      "conclusion": null,
+      "steps": [
+        {
+          "name": "SMB shared lease state, wire vectors and break transitions",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14
+        }
+      ]
+    },
+    {
+      "id": 126700350766,
+      "name": "clang metadata",
+      "status": "in_progress",
+      "conclusion": null,
+      "steps": [
+        {
+          "name": "SMB shared lease state, wire vectors and break transitions",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14
+        }
+      ]
+    },
+    {
+      "id": 126700351100,
+      "name": "msvc metadata",
+      "status": "in_progress",
+      "conclusion": null,
+      "steps": [
+        {
+          "name": "SMB shared lease state, wire vectors and break transitions",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14
+        }
+      ]
+    }
+  ]
+}

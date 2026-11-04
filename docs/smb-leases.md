@@ -2,8 +2,8 @@
 
 The shared protocol state and wire encoders are implemented in
 `include/taucloud/smb_lease.hpp` and `src/smb_lease.cpp`. They are compiled into
-the core library, but are **not yet connected to SMB CREATE, the file-domain
-cache coordinator or network break delivery**. File leasing is not advertised
+the core library and connected to the file-domain native-cache coordinator,
+but are **not yet connected to network SMB CREATE or break delivery**. File leasing is not advertised
 by negotiation. This is an implementation prerequisite, not lease acceptance
 or complete SMB compatibility.
 
@@ -41,12 +41,42 @@ initial/target/acknowledgment combinations, authority monotonicity, delayed
 delivery, chained breaks, epoch wraparound, client/key isolation, resource
 bounds and final-close cleanup. It passes 3,213 checks locally under Clang
 ASan/UBSan/LSan ([evidence](evidence/pre-m8/smb-lease-state-local.json)). The
-GCC/Clang/MSVC workflow has a separate core step; remote results are pending.
+GCC/Clang/MSVC core steps pass at `b478fac` ([remote evidence](evidence/pre-m8/smb-lease-state-b478-remote.json)); the whole jobs were still running when recorded.
 
-Remaining integration includes native exclusion shared by lease identity,
-same-key opens during breaks, per-open policy renewal and fencing, CREATE
+The file domain now accepts a trusted SMB worker's client GUID/lease context,
+and shares one state and native exclusion across that key's opens. Each open
+keeps its own signed authority deadline, granted rights and actor. Ordinary
+operations and revocation retain their existing checks. Expiring or closing
+one member does not drop a fresh sibling's native exclusion. Same-key opens
+can join during a pending break; compatible foreign opens recall WRITE while
+retaining READ/HANDLE. An incompatible sharing reservation recalls HANDLE so
+the holder can close a cached handle. Foreign writes/locks and native or NFS
+access recall before accessing conflicting data. Classic Level II and leases
+can share physical exclusion while retaining separate acknowledgment state.
+
+The backend returns the exact CREATE context and pending notification bytes.
+`smb_cache_sent` confirms delivery by serial; an R-only invalidation keeps its
+native guard until this confirmation. A racing CREATE response already reports
+NONE, so it cannot re-advertise invalidated read caching at the new epoch.
+`smb_cache_ack` validates on a copy, flushes writable members before committing
+the transition, and retains exclusion for any subsequent tightened break.
+Successful opens associate a stable native identity before acquiring cache
+rights; a reused key cannot silently move to another file or namespace.
+
+`taucloud_smb_lease_native_tests` exercises actual native exclusion, shared
+opens, legacy-cache coexistence, permission isolation, expiry, NFS read/write
+coherence and delivery boundaries. The current local result is 58 checks in
+seven scenarios, alongside the updated 3,214 state checks; see
+[file-domain evidence](evidence/pre-m8/smb-lease-domain-local.json).
+Windows native acceptance is scheduled in Actions and is not yet established.
+
+Remaining integration includes CREATE
 contexts/capabilities, notifications and ACK routing across sessions and
-connections, directory/parent leases, and original Samba/native client tests.
+connections, frontend per-open renewal/watchdogs (including NONE-to-cached
+upgrades), global key/name reservation across concurrent CREATEs and file
+domains, directory/parent leases, delete/recreate lifecycle, and original
+Samba/native client tests. The frontend registry is not yet wired to these
+operations; its metadata alone cannot grant native caching authority.
 Durable handles and multichannel session binding remain separate open gates.
 
 The implementation follows Microsoft's [lease object-store rules](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/d8df943d-6ad7-4b30-9f58-96ae90fc6204),

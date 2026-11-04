@@ -10,6 +10,7 @@ on:
       - 'include/taucloud/smb_lease.hpp'
       - 'src/smb_lease.cpp'
       - 'tests/smb_lease_core.cpp'
+      - 'tests/smb_lease_native.cpp'
       - 'src/identity.cpp'
       - 'src/ipc.cpp'
       - 'src/api.cpp'
@@ -142,6 +143,9 @@ jobs:
       - name: SMB shared lease state, wire vectors and break transitions
         if: ${{ !cancelled() && steps.compile.outcome == 'success' }}
         run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_smb_lease_tests${{ matrix.suffix }}
+      - name: SMB shared lease native exclusion and file-domain authority
+        if: ${{ !cancelled() && steps.compile.outcome == 'success' }}
+        run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_smb_lease_native_tests${{ matrix.suffix }}
       - name: SMB authority and failed CREATE cleanup
         run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_m5_tests${{ matrix.suffix }}
       - name: SMB per-open delete-on-close and durable recovery

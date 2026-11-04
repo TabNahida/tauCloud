@@ -1,0 +1,201 @@
+{
+  "recorded_at": "2026-11-04T16:42:39.146774+00:00",
+  "base_source": "b478face5e27454c9aa6485f590748ae5d9f2486",
+  "status": "local-passed-remote-pending-network-leasing-unfinished",
+  "scope": "Native shared lease coordination in the file-domain trusted SMB API. No wire leasing capability is advertised. This does not close full SMB/NFS gates.",
+  "sanitizers": "Linux Clang ASan/UBSan/LSan",
+  "source_sha256": {
+    "src/files.cpp": "07fa05fbaede83b7004718403be446887b265684fca23f4b83430101ac8ee483",
+    "src/file_cache.inc": "7da05090031da5e96a5a28e9bd5c2786395be876190efc213b4d2c4d991febd3",
+    "src/file_smb.inc": "f1436047837b5a31ca829269a78c333fece4b4e73599f43a7647892bcd3b44bd",
+    "src/smb_lease.cpp": "ff9586d7f0fb6f68235ad2caaea7dcc5d96f31edcc1e97a603690474ddd776de",
+    "include/taucloud/smb_lease.hpp": "0a607626e8b4969926043cb8f8684708750cd58f4322c5a881a5267247f612fd",
+    "tests/smb_lease_core.cpp": "6ee2c9d21d26e6ad682ff96b294d2bb9280137ed183fde88473133efd55a7910",
+    "tests/smb_lease_native.cpp": "031178218d195b679a21c6a637eddef9bffede6a15e069d4d0b5163fd80c12e1",
+    "xmake.lua": "40ef9dbfa834c66ccbfcc0164f59e945258d4822c9c772fe1e1e51cabc55523c",
+    ".github/workflows/smb-metadata.yml": "7af7c6d0af1ad2965084b3f01435bb015f6d743bdd5002a01f301b55f72bc397"
+  },
+  "reports": {
+    "oplocks": {
+      "sha256": "7e1bec11b12956205509df1a70e2318def6acda647eeea6a28832211748a2504",
+      "report": {
+        "status": "passed",
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "checks": [
+          "210: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "210: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "210: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "300: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "300: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "300: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "302: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "302: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "302: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "311: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "311: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "311: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "210: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "300: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "302: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "311: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "sharing violations do not recall dirty caches; readonly, directory, delete-on-close and conflicting native opens receive no unsupported cache grant",
+          "a lease-form ACK for a classic oplock is rejected and finishes the recall without leaving native exclusion stuck",
+          "two encrypted sessions on one transport renew independent cache authority and route breaks/ACKs with their own keys; a foreign-session ACK cannot release another open",
+          "native host reads/writes wait for SMB recall; dirty client data flushes before host access and the original handle observes subsequent native writes",
+          "own EXCLUSIVE SET_INFO EOF completes synchronously and preserves its cache without a self-recall",
+          "related cached CREATE/SET_INFO/READ preserves the inherited FileId and completes without an unnecessary self-recall",
+          "NFSv3 READ on an existing handle returns JUKEBOX during native recall; repeated retries leave SMB flush/ACK live and the next read returns current data",
+          "DAV GET returns a retryable response while a cache recall is pending and reads freshly flushed bytes after ACK",
+          "another transport cannot ACK the holder FileId; CLOSE flushes/releases authority and wakes the peer CREATE",
+          "unacknowledged recall fences the holder transport and open while the conflicting client completes after native exclusion releases",
+          "credential revocation closes the cache-bearing transport and releases native exclusion without requiring a client request",
+          "stalled identity RPC cannot hold the cache transport past its authority: independent watchdog closes it before IPC timeout and autonomous worker expiry releases native exclusion"
+        ],
+        "recorded_at": "2026-11-04T16:41:18.860414+00:00"
+      }
+    },
+    "level2": {
+      "sha256": "9275ac0ab21794f4432e0a4b128c48f06760cb9115f7189149bec550b3af641a",
+      "report": {
+        "status": "passed",
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "checks": [
+          "210: direct Level II grant; own WRITE completes asynchronously after notification without a client ACK or extra credits",
+          "210: related WRITE/READ/CLOSE remains ordered across the no-ACK read-cache invalidation",
+          "210: EXCLUSIVE downgrades to shared Level II across transports; read-only and uncached readers coexist, then WRITE invalidates every cached reader without ACK",
+          "210: byte-range LOCK waits for both no-ACK invalidations and only then excludes the other handle",
+          "210: a read-only share renews standalone Level II without write authority; a later writer recalls it and obtains a genuinely writable native handle",
+          "210: CANCEL abandons a waiting CREATE while the valid downgrade ACK retains read caching until the next write",
+          "210: native writer tightens an outstanding downgrade; valid II ACK is followed by NONE with no second ACK, and the native writer sees the flushed boundary",
+          "210: flushing a cached byte lock during downgrade forces a subsequent NONE break and prevents a conflicting Level II grant",
+          "210: SET_INFO and DELETE_ON_CLOSE preserve existing Level II data caches; last close removes the file and releases native exclusion",
+          "210: SUPERSEDE/OVERWRITE/OVERWRITE_IF grant implicit rights, flush before truncation, then grant Level II without granting READ_DATA; an old handle write invalidates it",
+          "300: direct Level II grant; own WRITE completes asynchronously after notification without a client ACK or extra credits",
+          "300: related WRITE/READ/CLOSE remains ordered across the no-ACK read-cache invalidation",
+          "300: EXCLUSIVE downgrades to shared Level II across transports; read-only and uncached readers coexist, then WRITE invalidates every cached reader without ACK",
+          "300: byte-range LOCK waits for both no-ACK invalidations and only then excludes the other handle",
+          "300: a read-only share renews standalone Level II without write authority; a later writer recalls it and obtains a genuinely writable native handle",
+          "300: CANCEL abandons a waiting CREATE while the valid downgrade ACK retains read caching until the next write",
+          "300: native writer tightens an outstanding downgrade; valid II ACK is followed by NONE with no second ACK, and the native writer sees the flushed boundary",
+          "300: flushing a cached byte lock during downgrade forces a subsequent NONE break and prevents a conflicting Level II grant",
+          "300: SET_INFO and DELETE_ON_CLOSE preserve existing Level II data caches; last close removes the file and releases native exclusion",
+          "300: SUPERSEDE/OVERWRITE/OVERWRITE_IF grant implicit rights, flush before truncation, then grant Level II without granting READ_DATA; an old handle write invalidates it",
+          "302: direct Level II grant; own WRITE completes asynchronously after notification without a client ACK or extra credits",
+          "302: related WRITE/READ/CLOSE remains ordered across the no-ACK read-cache invalidation",
+          "302: EXCLUSIVE downgrades to shared Level II across transports; read-only and uncached readers coexist, then WRITE invalidates every cached reader without ACK",
+          "302: byte-range LOCK waits for both no-ACK invalidations and only then excludes the other handle",
+          "302: a read-only share renews standalone Level II without write authority; a later writer recalls it and obtains a genuinely writable native handle",
+          "302: CANCEL abandons a waiting CREATE while the valid downgrade ACK retains read caching until the next write",
+          "302: native writer tightens an outstanding downgrade; valid II ACK is followed by NONE with no second ACK, and the native writer sees the flushed boundary",
+          "302: flushing a cached byte lock during downgrade forces a subsequent NONE break and prevents a conflicting Level II grant",
+          "302: SET_INFO and DELETE_ON_CLOSE preserve existing Level II data caches; last close removes the file and releases native exclusion",
+          "302: SUPERSEDE/OVERWRITE/OVERWRITE_IF grant implicit rights, flush before truncation, then grant Level II without granting READ_DATA; an old handle write invalidates it",
+          "311: direct Level II grant; own WRITE completes asynchronously after notification without a client ACK or extra credits",
+          "311: related WRITE/READ/CLOSE remains ordered across the no-ACK read-cache invalidation",
+          "311: EXCLUSIVE downgrades to shared Level II across transports; read-only and uncached readers coexist, then WRITE invalidates every cached reader without ACK",
+          "311: byte-range LOCK waits for both no-ACK invalidations and only then excludes the other handle",
+          "311: a read-only share renews standalone Level II without write authority; a later writer recalls it and obtains a genuinely writable native handle",
+          "311: CANCEL abandons a waiting CREATE while the valid downgrade ACK retains read caching until the next write",
+          "311: native writer tightens an outstanding downgrade; valid II ACK is followed by NONE with no second ACK, and the native writer sees the flushed boundary",
+          "311: flushing a cached byte lock during downgrade forces a subsequent NONE break and prevents a conflicting Level II grant",
+          "311: SET_INFO and DELETE_ON_CLOSE preserve existing Level II data caches; last close removes the file and releases native exclusion",
+          "311: SUPERSEDE/OVERWRITE/OVERWRITE_IF grant implicit rights, flush before truncation, then grant Level II without granting READ_DATA; an old handle write invalidates it"
+        ],
+        "recorded_at": "2026-11-04T16:41:18.870953+00:00"
+      }
+    },
+    "batch": {
+      "sha256": "b179e98515f8d3f469d19fa30ea203cd37157fbb5bd4b6a6df9ec2d3a2ebe8a3",
+      "report": {
+        "status": "passed",
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "checks": [
+          "210: BATCH survives self I/O, locks, metadata opens and idle renewal; incompatible CREATE recalls before sharing denial, then II WRITE invalidates without ACK",
+          "210: CLOSE in response to recall releases the cached server handle and permits a new BATCH grant with flushed data",
+          "210: compatible BATCH opens downgrade to shared Level II and invalidate both holders before a peer WRITE",
+          "210: overwrite recalls BATCH to NONE and truncates only after the final flush/ACK",
+          "210: cancelling the waiting CREATE leaves no phantom open and a subsequent cached close releases all sharing state",
+          "210: a real native writer waits for BATCH recall and dirty-data flush before acquiring the file",
+          "210: attribute-only creation gets BATCH without data rights; another attribute open gets NONE, then a data open downgrades both caches",
+          "210: read-only-share BATCH renews without write authority and acknowledges native recall without flushing a read-only Windows handle",
+          "210: DELETE_ON_CLOSE receives BATCH; the recalled cached close deletes the file and a waiting OPEN observes absence",
+          "300: BATCH survives self I/O, locks, metadata opens and idle renewal; incompatible CREATE recalls before sharing denial, then II WRITE invalidates without ACK",
+          "300: CLOSE in response to recall releases the cached server handle and permits a new BATCH grant with flushed data",
+          "300: compatible BATCH opens downgrade to shared Level II and invalidate both holders before a peer WRITE",
+          "300: overwrite recalls BATCH to NONE and truncates only after the final flush/ACK",
+          "300: cancelling the waiting CREATE leaves no phantom open and a subsequent cached close releases all sharing state",
+          "300: a real native writer waits for BATCH recall and dirty-data flush before acquiring the file",
+          "300: attribute-only creation gets BATCH without data rights; another attribute open gets NONE, then a data open downgrades both caches",
+          "300: read-only-share BATCH renews without write authority and acknowledges native recall without flushing a read-only Windows handle",
+          "300: DELETE_ON_CLOSE receives BATCH; the recalled cached close deletes the file and a waiting OPEN observes absence",
+          "302: BATCH survives self I/O, locks, metadata opens and idle renewal; incompatible CREATE recalls before sharing denial, then II WRITE invalidates without ACK",
+          "302: CLOSE in response to recall releases the cached server handle and permits a new BATCH grant with flushed data",
+          "302: compatible BATCH opens downgrade to shared Level II and invalidate both holders before a peer WRITE",
+          "302: overwrite recalls BATCH to NONE and truncates only after the final flush/ACK",
+          "302: cancelling the waiting CREATE leaves no phantom open and a subsequent cached close releases all sharing state",
+          "302: a real native writer waits for BATCH recall and dirty-data flush before acquiring the file",
+          "302: attribute-only creation gets BATCH without data rights; another attribute open gets NONE, then a data open downgrades both caches",
+          "302: read-only-share BATCH renews without write authority and acknowledges native recall without flushing a read-only Windows handle",
+          "302: DELETE_ON_CLOSE receives BATCH; the recalled cached close deletes the file and a waiting OPEN observes absence",
+          "311: BATCH survives self I/O, locks, metadata opens and idle renewal; incompatible CREATE recalls before sharing denial, then II WRITE invalidates without ACK",
+          "311: CLOSE in response to recall releases the cached server handle and permits a new BATCH grant with flushed data",
+          "311: compatible BATCH opens downgrade to shared Level II and invalidate both holders before a peer WRITE",
+          "311: overwrite recalls BATCH to NONE and truncates only after the final flush/ACK",
+          "311: cancelling the waiting CREATE leaves no phantom open and a subsequent cached close releases all sharing state",
+          "311: a real native writer waits for BATCH recall and dirty-data flush before acquiring the file",
+          "311: attribute-only creation gets BATCH without data rights; another attribute open gets NONE, then a data open downgrades both caches",
+          "311: read-only-share BATCH renews without write authority and acknowledges native recall without flushing a read-only Windows handle",
+          "311: DELETE_ON_CLOSE receives BATCH; the recalled cached close deletes the file and a waiting OPEN observes absence",
+          "unacknowledged BATCH recall fences the old transport/open and allows a separate contender to complete; same-transport timeout recovery remains an open gate"
+        ],
+        "recorded_at": "2026-11-04T16:41:18.870909+00:00"
+      }
+    },
+    "state": {
+      "sha256": "95c9e26e3976a587392da41783005af3954db6662f17d4bb8ef5e2ae8b047944",
+      "report": {
+        "checks": 3214,
+        "status": "passed"
+      }
+    },
+    "native": {
+      "sha256": "2f30c7c48763e53912b8ae8f5c8ccf3514c89b805b0b566c3589fdc6a3e7259d",
+      "report": {
+        "checks": 58,
+        "status": "passed"
+      },
+      "scenarios": [
+        "shared native exclusion, own IO, compatible foreign opens, same-key CREATE during break and final-close lifetime",
+        "HANDLE recall permits cached close, while same-key sharing conflicts do not bypass access rules",
+        "classic Level II and lease grants retain independent authority over one native guard",
+        "expiry fences only that open; a fresh sibling keeps exclusion until acknowledgment",
+        "NFS reads and writes recall SMB lease authority before accessing shared file data",
+        "R-only invalidation releases native exclusion only after the matching notification is sent",
+        "same-key membership grants no extra file rights, caller authority or revocation exemption"
+      ]
+    },
+    "smb_core": {
+      "sha256": "183e4e9b4354ec471875cea9d04d7a9de5c5d833d1b58e4b9dd583538ac334b3",
+      "report": {
+        "checks": 12583,
+        "status": "passed"
+      },
+      "scenarios": []
+    }
+  },
+  "binary_sha256": {
+    "taucloud_file": "669bf98568c17de9379af10fb40966377c1898c1d0eaff4df3a4b9c54470e79c",
+    "taucloud_smb": "7bb0d9f44945afac9b0218f1fcdeb57b70a680866c281ae7fd732c82f56d3a6b",
+    "taucloud_m5_tests": "d2ad069b6158f88afb322a56565a4a90ab6a520ed784ad5fd9c16cdd4ba49fb9",
+    "taucloud_smb_lease_tests": "3aa10ee8bb3601dc73fd6b721951ef11afc24f2e8bd29677c5981ee108333d75",
+    "taucloud_smb_lease_native_tests": "5d710a42be4d67cd39894978cf7d2d4444af9159c57af6e4b7fd7b4e680dbe4a"
+  },
+  "remaining": [
+    "Network CREATE negotiation and capabilities",
+    "Transport notifications, ACK routing, per-open renewal and fencing",
+    "Global reservations for concurrent cross-domain key/name validation",
+    "Directory/parent leases and delete/recreate lifecycle",
+    "Original Samba and native wire-client lease acceptance",
+    "Durable handles and multichannel binding"
+  ]
+}

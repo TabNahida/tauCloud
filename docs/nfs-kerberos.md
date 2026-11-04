@@ -130,9 +130,9 @@ key windows, exact replay, cross-client isolation, additive/retired handles,
 CB_NULL/CB_SEQUENCE and revoked-user cleanup. `tests/m7_core.cpp` also runs
 fixed independently generated vectors and bytewise tampering checks on every
 platform. [Local evidence](evidence/pre-m8/nfs-ssv-local.json) records the exact
-source hashes and results. GCC passes all 25 SSV wire groups, and GCC/Clang/MSVC core vectors pass
+source hashes and results. GCC and Clang pass all 25 SSV wire groups, and GCC/Clang/MSVC core vectors pass
 at `546919a` ([remote evidence](evidence/pre-m8/nfs-ssv-546-remote.json)).
-Clang wire acceptance is pending; the Windows job retains an unrelated
+Both Linux jobs pass; the Windows job retains an unrelated
 M2 `lease_expired` failure; Windows GSS bootstrap remains unavailable. Native
 client SSV/recovery and delegation-related conformance remain open, and this
 increment does not complete Full SMB/NFS.
