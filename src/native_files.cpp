@@ -483,10 +483,11 @@ native_file native_file::pin(const native_file &directory, const std::string &na
   directory.flush();
   return result;
 }
-std::vector<json> native_file::list() const {
+std::vector<json> native_file::list(bool preserve_access) const {
   require(info().at("directory"), "invalid_path");
   std::vector<json> result;
 #ifdef _WIN32
+  (void)preserve_access;
   std::vector<char> buffer(65536);
   bool first = true;
   for (;;) {
@@ -515,7 +516,12 @@ std::vector<json> native_file::list() const {
     }
   }
 #else
-  int fd = openat(impl_->file->handle, ".", O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+  constexpr auto flags = O_RDONLY | O_DIRECTORY | O_CLOEXEC;
+  int fd = openat(impl_->file->handle, ".", flags | (preserve_access ? O_NOATIME : 0));
+  // O_NOATIME requires ownership or CAP_FOWNER. An externally owned but
+  // readable directory must remain accessible under the ordinary rules.
+  if (fd < 0 && preserve_access && errno == EPERM)
+    fd = openat(impl_->file->handle, ".", flags);
   if (fd < 0)
     native_error();
   DIR *stream = fdopendir(fd);

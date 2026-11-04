@@ -44,7 +44,7 @@ struct native_watch::impl {
     if (directories.contains(wd)) --pinned;
     directories.insert_or_assign(wd, watched{std::move(directory), path, {}});
     try {
-      for (const auto &entry : directories.at(wd).directory.list()) {
+      for (const auto &entry : directories.at(wd).directory.list(true)) {
         auto name = entry.at("name").get<std::string>();
         if (name.starts_with(".tc-")) continue;
         portable_path(name);
@@ -260,7 +260,7 @@ json native_watch::poll() {
             auto child = w.root.open(relative, true);
             // inotify is not recursive: changes before installation must cause
             // a rescan instead of silently disappearing from a watched tree.
-            if (!child.list().empty()) w.overflow = true;
+            if (!child.list(true).empty()) w.overflow = true;
             w.add(std::move(child), relative);
           } catch (...) { w.coverage_lost = true; }
         }

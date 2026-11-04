@@ -1,0 +1,438 @@
+{
+  "source": "d48e9a2f564c0ee3a1b47d2acf0ba6c9c0c41957",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41796135942",
+  "recorded_at": "2026-11-04T08:22:56.401131+00:00",
+  "status": "passed",
+  "scope": "Targeted delete-on-close and recursive/bounded notification acceptance; not full SMB/NFS or backend acceptance.",
+  "platforms": {
+    "gcc": {
+      "artifact_id": 13307000480,
+      "artifact_sha256": "3127617d834b6b240d4e98dc0ae9b1638cee14d6997e2bc81aabee389ef0757e",
+      "reports": {
+        "samba-notify.json": {
+          "sha256": "d2b01d53dd23eee7a394da00d619c83d993c062189a7939d1bdd15f8a19b6d29",
+          "result": {
+            "status": "passed",
+            "tests": [
+              {
+                "selector": "smb2.notify.dir",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.tcon",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.tdis1",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.close",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.logoff",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.file",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.handle-permissions",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rmdir1",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rmdir2",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rmdir3",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rmdir4",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.invalid-reauth",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rec",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              }
+            ]
+          }
+        },
+        "smb-delete-close.json": {
+          "sha256": "fce4fded4382b973256396618069c9001db000ad030782406fde5994dd730ea2",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "schema 6 upgrades to 7 with backups in every file worker",
+              "four signed/encrypted dialects: per-open mode, last-close unlink, nonempty directory preservation, explicit disposition, notifications and rename",
+              "killed SMB worker recovers durable intents, deletes files/empty directories and preserves nonempty directories without restarting other services",
+              "offline metadata backup accepts schema 7, refuses unresolved close intents and succeeds after recovery"
+            ]
+          }
+        },
+        "smb-notify.json": {
+          "sha256": "01a9e033e8edc4b8c84dd34931226d5b3ff16efee2c7e46ac33f7157980081c5",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup",
+              "per-open first filter/watch-tree settings, FIFO completion and events buffered between requests",
+              "native host writes trigger recursive watches while nonrecursive watches ignore descendants",
+              "rapid service-created recursive subtrees retain every ordered directory/file event between requests without requiring a rescan",
+              "recursive file/directory cross-parent moves report REMOVED/ADDED, same-parent renames report OLD/NEW and moved subtrees retain native coverage",
+              "events buffered across service operations remain byte-bounded, overflow without a partial batch and resume from fresh changes",
+              "recursive watches stop observing moved-out subtrees and do not disclose queued outside names",
+              "SIZE filter ignores equal-length writes and reports actual growth",
+              "LAST_WRITE observes new-file writes even when native CREATE and WRITE are drained together",
+              "first per-open zero/short capacity persists, reopening restores capacity; NOTIFY_ENUM_DIR has no partial records; invalid-only filters stay pending and cancel cleanly",
+              "directory/list-access validation and persistent shared security descriptor changes generate SECURITY notifications",
+              "portable DOS attributes, creation-time and EA changes participate in native notification streams",
+              "initial CREATE metadata produces only ADDED; subsequent changes still produce MODIFIED",
+              "recursive descriptor exhaustion stays visibly overflowed across requests and releases all watches on close",
+              "delete-pending directories complete outstanding watches without waiting for last-handle deletion",
+              "TREE_DISCONNECT and LOGOFF finish pending notifications with NOTIFY_CLEANUP before releasing keys",
+              "policy revocation denies the pending poll, invalidates its old handle and permits a fresh exclusive read open without retained watch/sharing authority"
+            ]
+          }
+        }
+      }
+    },
+    "clang": {
+      "artifact_id": 13307055910,
+      "artifact_sha256": "ee855be41c2d02079df52d4788dd54aea6bce58ab644cbf8b14de589c666c380",
+      "reports": {
+        "samba-notify.json": {
+          "sha256": "22b37d1aa32880fa91941105a483dd7b8c260f37297d502ad33f99cdf894f904",
+          "result": {
+            "status": "passed",
+            "tests": [
+              {
+                "selector": "smb2.notify.dir",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.tcon",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.tdis1",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.close",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.logoff",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.file",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.handle-permissions",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rmdir1",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rmdir2",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rmdir3",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rmdir4",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.invalid-reauth",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rec",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              }
+            ]
+          }
+        },
+        "smb-delete-close.json": {
+          "sha256": "fce4fded4382b973256396618069c9001db000ad030782406fde5994dd730ea2",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "schema 6 upgrades to 7 with backups in every file worker",
+              "four signed/encrypted dialects: per-open mode, last-close unlink, nonempty directory preservation, explicit disposition, notifications and rename",
+              "killed SMB worker recovers durable intents, deletes files/empty directories and preserves nonempty directories without restarting other services",
+              "offline metadata backup accepts schema 7, refuses unresolved close intents and succeeds after recovery"
+            ]
+          }
+        },
+        "smb-notify.json": {
+          "sha256": "01a9e033e8edc4b8c84dd34931226d5b3ff16efee2c7e46ac33f7157980081c5",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup",
+              "per-open first filter/watch-tree settings, FIFO completion and events buffered between requests",
+              "native host writes trigger recursive watches while nonrecursive watches ignore descendants",
+              "rapid service-created recursive subtrees retain every ordered directory/file event between requests without requiring a rescan",
+              "recursive file/directory cross-parent moves report REMOVED/ADDED, same-parent renames report OLD/NEW and moved subtrees retain native coverage",
+              "events buffered across service operations remain byte-bounded, overflow without a partial batch and resume from fresh changes",
+              "recursive watches stop observing moved-out subtrees and do not disclose queued outside names",
+              "SIZE filter ignores equal-length writes and reports actual growth",
+              "LAST_WRITE observes new-file writes even when native CREATE and WRITE are drained together",
+              "first per-open zero/short capacity persists, reopening restores capacity; NOTIFY_ENUM_DIR has no partial records; invalid-only filters stay pending and cancel cleanly",
+              "directory/list-access validation and persistent shared security descriptor changes generate SECURITY notifications",
+              "portable DOS attributes, creation-time and EA changes participate in native notification streams",
+              "initial CREATE metadata produces only ADDED; subsequent changes still produce MODIFIED",
+              "recursive descriptor exhaustion stays visibly overflowed across requests and releases all watches on close",
+              "delete-pending directories complete outstanding watches without waiting for last-handle deletion",
+              "TREE_DISCONNECT and LOGOFF finish pending notifications with NOTIFY_CLEANUP before releasing keys",
+              "policy revocation denies the pending poll, invalidates its old handle and permits a fresh exclusive read open without retained watch/sharing authority"
+            ]
+          }
+        }
+      }
+    },
+    "msvc": {
+      "artifact_id": 13306151926,
+      "artifact_sha256": "c292ce7670b946ef67a79bd85fd1dc5ea99c54f64373ff664fa50abfdc58dd7c",
+      "reports": {
+        "smb-delete-close.json": {
+          "sha256": "9ce4a28447e5471a1f774f1a30d15f5ae2e74bfc1d95e5a421a8d22c65a3b083",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "schema 6 upgrades to 7 with backups in every file worker",
+              "four signed/encrypted dialects: per-open mode, last-close unlink, nonempty directory preservation, explicit disposition, notifications and rename",
+              "killed SMB worker recovers durable intents, deletes files/empty directories and preserves nonempty directories without restarting other services",
+              "offline metadata backup accepts schema 7, refuses unresolved close intents and succeeds after recovery"
+            ]
+          }
+        },
+        "smb-notify.json": {
+          "sha256": "bc343cd90c3b229c37dea7aebd72f041d4ffd4557d9b9c2c1250ac35aaa27fe6",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup",
+              "per-open first filter/watch-tree settings, FIFO completion and events buffered between requests",
+              "native host writes trigger recursive watches while nonrecursive watches ignore descendants",
+              "rapid service-created recursive subtrees retain every ordered directory/file event between requests without requiring a rescan",
+              "recursive file/directory cross-parent moves report REMOVED/ADDED, same-parent renames report OLD/NEW and moved subtrees retain native coverage",
+              "events buffered across service operations remain byte-bounded, overflow without a partial batch and resume from fresh changes",
+              "SIZE filter ignores equal-length writes and reports actual growth",
+              "LAST_WRITE observes new-file writes even when native CREATE and WRITE are drained together",
+              "first per-open zero/short capacity persists, reopening restores capacity; NOTIFY_ENUM_DIR has no partial records; invalid-only filters stay pending and cancel cleanly",
+              "directory/list-access validation and persistent shared security descriptor changes generate SECURITY notifications",
+              "portable DOS attributes, creation-time and EA changes participate in native notification streams",
+              "initial CREATE metadata produces only ADDED; subsequent changes still produce MODIFIED",
+              "delete-pending directories complete outstanding watches without waiting for last-handle deletion",
+              "TREE_DISCONNECT and LOGOFF finish pending notifications with NOTIFY_CLEANUP before releasing keys",
+              "policy revocation denies the pending poll, invalidates its old handle and permits a fresh exclusive read open without retained watch/sharing authority"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

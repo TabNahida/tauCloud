@@ -119,6 +119,26 @@ def run():
         passed('per-open first filter/watch-tree settings, FIFO completion and events buffered between requests')
 
         root = f.root / 'smbdata'
+        if os.name != 'nt':
+            d = create(t, 'scan-access', options=1, access=0x120089)
+            create(t, 'scan-access/sub', options=1).close()
+            directory_path = root/'scan-access/sub'
+            os.utime(directory_path, ns=(1600000000000000000, 1600000000000000000))
+            before = directory_path.stat().st_atime_ns
+            req = notify(d, 0x20, True)
+            create(t, 'scan-access/unrelated').close()
+            time.sleep(.1)
+            assert directory_path.stat().st_atime_ns == before, 'internal reconciliation changed directory atime'
+            assert req.response['status'].get_value() == 0x103
+            with os.scandir(directory_path) as entries: list(entries)
+            assert events(c, req) == [(3, 'sub')]
+            req = notify(d, 0x20, True)
+            h = create(t, 'scan-access/sub', options=1, disposition=1)
+            info = FileDispositionInformation(); info['delete_pending'] = True; setinfo(h, info); h.close()
+            time.sleep(.1); assert req.response['status'].get_value() == 0x103
+            req.cancel(); denied(lambda: c.receive(req, timeout=10), 0xc0000120)
+            d.close()
+            passed('internal reconciliation, recursive watch installation and empty-directory checks preserve access time while real host directory reads remain observable')
         for recursive in (False, True):
             name = 'tree-' + str(recursive)
             d = create(t, name, options=1, access=0x120089); sub = create(t, name + '/sub', options=1); sub.close()

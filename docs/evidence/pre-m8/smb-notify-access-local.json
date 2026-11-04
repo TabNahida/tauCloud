@@ -1,0 +1,107 @@
+{
+  "recorded_at": "2026-11-04T08:25:58.732526+00:00",
+  "base_source": "7fd15ced723e6cae58c5ca3ae1d2234f5eac79cc",
+  "status": "partial",
+  "scope": "Preserve directory atime during internal enumeration on Linux when ownership permits; real client/host directory reads retain native behavior.",
+  "sanitizers": "Clang ASan/UBSan including LeakSanitizer",
+  "files_sha256": {
+    "include/taucloud/files.hpp": "fec6cf00c466478a1106ccdd1af4a616fc61044501e7e512d3697c8e97e02454",
+    "src/native_files.cpp": "e55fd98df0acb1046470138e2c765b48cd30f91968513a341019c9bb1a060bf8",
+    "src/files.cpp": "41d554bf9ea166d022402764b8fe180f228e9d57b7433dd5c640b8b4d9cdabc1",
+    "src/file_smb.inc": "8fcb0200de5c0859c4b74a4a85b3d38ef1f0141f160108ac0b7055b7be196323",
+    "src/file_nfs.inc": "9c18a6d9ad22d026837fc9cf431cdf5f4e87458cb0e6940b53d62a91e5bbf32f",
+    "src/file_dav.inc": "d809c0f69fcc0897a8d3ea7ec987ab80cc2a17cca0146139ccd9a8ba7d9cc9e0",
+    "src/native_notify.inc": "c28f13f0dac586d27072f3604e21b6be55e74eb11a5d995a3d3930196f0391df",
+    "tests/smb_notify_integration.py": "41d4d1cc2f0a4d1b9d434019ac17d9179ae829a78495c4122443740c110b6b3f",
+    "tests/samba-profile.json": "53ca5ecf785be64cae5a670fd3e3cf0059b719a414623b2399cd4bbb41a5af44",
+    ".github/workflows/smb-metadata.yml": "e8d764ea09414e6ecfbd8aa293711b7336e887f4260817902eee53e2f37047e8"
+  },
+  "local": {
+    "before": {
+      "status": "failed",
+      "checks": [
+        "SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup",
+        "per-open first filter/watch-tree settings, FIFO completion and events buffered between requests"
+      ],
+      "error": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/tests/smb_notify_integration.py\", line 128, in run\n    req = notify(d, 0x20, True)\n          ^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/tests/smb_notify_integration.py\", line 30, in notify\n    if interim: pending(result)\n                ^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/tests/smb_blocking_locks.py\", line 30, in pending\n    assert response['status'].get_value() == 0x103, response\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: SMB2HeaderResponse:\n    protocol_id = FE 53 4D 42\n    structure_size = 64\n    credit_charge = 1\n    status = (0) STATUS_SUCCESS\n    command = (15) SMB2_CHANGE_NOTIFY\n    credit_response = 1\n    flags = (1) SMB2_FLAGS_SERVER_TO_REDIR\n    next_command = 0\n    message_id = 45\n    reserved = 0\n    tree_id = 1\n    session_id = 15890672217052098615\n    signature = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n    data = 09 00 48 00 12 00 00 00 00 00 00 00 03 00 00 00 06 00 00 00 73 00 75 00 62 00\n\n    Raw Hex:\n        FE 53 4D 42 40 00 01 00\n        00 00 00 00 0F 00 01 00\n        01 00 00 00 00 00 00 00\n        2D 00 00 00 00 00 00 00\n        00 00 00 00 01 00 00 00\n        37 30 8F 63 30 02 87 DC\n        00 00 00 00 00 00 00 00\n        00 00 00 00 00 00 00 00\n        09 00 48 00 12 00 00 00\n        00 00 00 00 03 00 00 00\n        06 00 00 00 73 00 75 00\n        62 00\n"
+    },
+    "notifications": {
+      "status": "passed",
+      "checks": [
+        "SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup",
+        "per-open first filter/watch-tree settings, FIFO completion and events buffered between requests",
+        "internal reconciliation, recursive watch installation and empty-directory checks preserve access time while real host directory reads remain observable",
+        "native host writes trigger recursive watches while nonrecursive watches ignore descendants",
+        "rapid service-created recursive subtrees retain every ordered directory/file event between requests without requiring a rescan",
+        "recursive file/directory cross-parent moves report REMOVED/ADDED, same-parent renames report OLD/NEW and moved subtrees retain native coverage",
+        "events buffered across service operations remain byte-bounded, overflow without a partial batch and resume from fresh changes",
+        "recursive watches stop observing moved-out subtrees and do not disclose queued outside names",
+        "SIZE filter ignores equal-length writes and reports actual growth",
+        "LAST_WRITE observes new-file writes even when native CREATE and WRITE are drained together",
+        "first per-open zero/short capacity persists, reopening restores capacity; NOTIFY_ENUM_DIR has no partial records; invalid-only filters stay pending and cancel cleanly",
+        "directory/list-access validation and persistent shared security descriptor changes generate SECURITY notifications",
+        "portable DOS attributes, creation-time and EA changes participate in native notification streams",
+        "initial CREATE metadata produces only ADDED; subsequent changes still produce MODIFIED",
+        "recursive descriptor exhaustion stays visibly overflowed across requests and releases all watches on close",
+        "delete-pending directories complete outstanding watches without waiting for last-handle deletion",
+        "TREE_DISCONNECT and LOGOFF finish pending notifications with NOTIFY_CLEANUP before releasing keys",
+        "policy revocation denies the pending poll, invalidates its old handle and permits a fresh exclusive read open without retained watch/sharing authority"
+      ]
+    },
+    "rename_regression": {
+      "status": "passed",
+      "checks": [
+        "four signed/encrypted dialects set archive immediately, preserve creation/access/write times and defer change time plus one attribute notification to close",
+        "explicit change time stays frozen across repeated rename and close while a real archive change is notified once at the final name",
+        "explicit time after rename cancels its deferred update; -2 re-enables it without inventing archive changes",
+        "another close flushes file-wide pending notifications while only the originating open completes its deferred timestamp",
+        "directory rename updates change time at close without applying a data-file archive bit",
+        "SMB process loss recovers durable rename metadata; offline backup refuses unresolved markers and succeeds after file-service restart recovery",
+        "recovery discards stale rename markers without transferring metadata to a replacement native incarnation"
+      ]
+    },
+    "samba": {
+      "status": "failed",
+      "tests": [
+        {
+          "selector": "smb2.notify.mask",
+          "status": "passed",
+          "counts": {
+            "success": 1,
+            "failure": 0,
+            "error": 0,
+            "skip": 0
+          },
+          "returncode": 0,
+          "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793780596\ntime: 2026-11-04 08:23:16.777158\ntest: mask\ntime: 2026-11-04 08:23:16.777250\nTESTING CHANGE NOTIFY COMPLETION FILTERS\nTesting mkdir\nTesting create file\nTesting unlink\nTesting rmdir\nTesting rename file\nTesting rename dir\nTesting set path attribute\nTesting set path write time\nTesting set file create time\nTesting set file access time\nTesting set file change time\nTesting write\ntime: 2026-11-04 08:25:27.643330\nsuccess: mask\n"
+        },
+        {
+          "selector": "smb2.notify.valid-req",
+          "status": "failed",
+          "counts": {
+            "success": 0,
+            "failure": 1,
+            "error": 0,
+            "skip": 0
+          },
+          "returncode": 1,
+          "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793780727\ntime: 2026-11-04 08:25:27.760786\ntest: valid-req\ntime: 2026-11-04 08:25:27.760883\nTESTING VALIDITY OF CHANGE NOTIFY REQUEST\ntime: 2026-11-04 08:25:27.892133\nfailure: valid-req [\n(source4/torture/smb2/notify.c:122) wrong value for n.out.num_changes  0x2 should be 0x1\n]\n"
+        }
+      ]
+    },
+    "native_core": {
+      "status": "passed",
+      "checks": 38
+    },
+    "nfs_core": {
+      "status": "passed",
+      "checks": 98
+    }
+  },
+  "limitations": [
+    "O_NOATIME requires native ownership or CAP_FOWNER; EPERM falls back to an ordinary read to preserve access to externally owned directories.",
+    "Filesystems that ignore O_NOATIME may still change atime during internal scans.",
+    "Original notify.valid-req still fails and full notification/Full SMB/NFS conformance remains open."
+  ],
+  "remote_acceptance": "pending for this increment"
+}

@@ -49,7 +49,7 @@ void smb_reap(space_state &s) {
       if (path.empty()) continue;
       auto current = stat_path(s.directory, path, intent.at("directory"));
       if (!current || current->at("object") != intent.at("native")) continue;
-      if (!intent.at("directory").get<bool>() || s.directory.open(path, true).list().empty())
+      if (!intent.at("directory").get<bool>() || s.directory.open(path, true).list(true).empty())
         matched = path;
       break;
     }
@@ -874,7 +874,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
           require(x.protocol == "smb" && (x.sharing & 4), "sharing_violation");
       if (h.directory) {
         auto dir = s.directory.open(path, true);
-        require(dir.list().empty(), "directory_not_empty");
+        require(dir.list(true).empty(), "directory_not_empty");
       }
       dav_guard(s, path, actor, body);
       statement mark(db, "INSERT OR REPLACE INTO smb_pending VALUES(?,?,?,?)");

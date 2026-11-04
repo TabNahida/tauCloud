@@ -161,7 +161,7 @@ json dav_tree(space_state &s, const std::string &path, bool recursive = true) {
 void dav_remove_native(space_state &s, const std::string &path, bool directory) {
   if (directory) {
     auto dir = s.directory.open(path, true);
-    auto entries = dir.list();
+    auto entries = dir.list(true);
     dir = native_file();
     for (auto entry : entries)
       dav_remove_native(s, path + "/" + entry.at("name").get<std::string>(), entry.at("directory"));
@@ -213,7 +213,7 @@ void dav_recover(space_state &s, json j) {
     parent_dir = s.directory.open(parent, true);
     p = &parent_dir;
   }
-  for (auto entry : p->list())
+  for (auto entry : p->list(true))
     if (entry.at("name") == leaf)
       target = native_stat(to, entry.at("directory"));
   parent_dir = native_file();

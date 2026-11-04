@@ -34,7 +34,7 @@ void case_check(native_file &root, const std::string &path) {
   for (;;) {
     auto end = path.find('/', start);
     auto name = path.substr(start, end - start);
-    for (auto item : current->list())
+    for (auto item : current->list(true))
       require(lower(item.at("name").get<std::string>()) != lower(name) || item.at("name") == name,
               "case_collision");
     if (end == std::string::npos)
@@ -360,7 +360,7 @@ struct file_store::impl {
         child = s.directory.open(path, true);
         dir = &child;
       }
-      for (auto entry : dir->list()) {
+      for (auto entry : dir->list(true)) {
         auto name = entry.at("name").get<std::string>();
         if (path.empty() && name.starts_with(".tc-nfs-")) {
           require(std::any_of(nfs_retained.begin(), nfs_retained.end(), [&](const auto &item) {
@@ -699,7 +699,7 @@ struct file_store::impl {
     if (op == "ftp_rmdir") {
       require(ctx.caller == "ftp" && !path.empty(), "forbidden");
       auto dir = s.directory.open(path, true);
-      require(dir.list().empty(), "directory_not_empty");
+      require(dir.list(true).empty(), "directory_not_empty");
       dir = native_file();
       return dav_dispatch("dav_delete", body, grant, s, ctx);
     }

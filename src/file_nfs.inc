@@ -456,7 +456,7 @@ nfs_object nfs_resolve(space_state &s, const json &g, const std::string &encoded
       scan(s, ctx);
       return {p, std::move(d)};
     }
-    for (const auto &entry : d.list()) {
+    for (const auto &entry : d.list(true)) {
       require(++visited <= 4096, "directory_limit");
       auto name = entry.at("name").get<std::string>();
       if (name.starts_with(".tc-"))
@@ -788,7 +788,7 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
       retain = body.value("retain", false) && !destination->at("directory").get<bool>();
       require(!retain || nfs_retained.size() < 128, "handle_limit");
       auto f = nfs_open(s, to, destination->at("directory"), retain);
-      if (destination->at("directory")) require(f.list().empty(), "directory_not_empty");
+      if (destination->at("directory")) require(f.list(true).empty(), "directory_not_empty");
       replaced = f.stable_identity();
       if (retain) pin_source = std::move(f);
       unlocked(space, to);

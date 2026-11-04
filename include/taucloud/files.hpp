@@ -36,7 +36,9 @@ public:
   json info(bool change_stamp = false) const;
   // Filesystems without native incarnation evidence are ineligible for persistent NFS handles.
   std::string stable_identity() const;
-  std::vector<json> list() const;
+  // Internal enumeration avoids Linux atime updates where ownership permits.
+  // Client-requested directory reads retain their native access behavior.
+  std::vector<json> list(bool preserve_access = false) const;
   std::string read(uint64_t offset, size_t count) const;
   size_t write(uint64_t offset, std::string_view bytes);
   void truncate(uint64_t size);
