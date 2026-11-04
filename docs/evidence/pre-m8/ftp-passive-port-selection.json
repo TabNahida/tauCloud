@@ -110,5 +110,17 @@
       }
     },
     "scope": "Windows FTP and full Windows backend job pass; the separate macOS-client job was still running when recorded."
+  },
+  "replacement_backend_final": {
+    "source": "e08d2c0ded92da122c7a01f0a5e13d47e99ea816",
+    "run": "https://github.com/TabNahida/tauCloud/actions/runs/41816459731",
+    "conclusion": "success",
+    "jobs": {
+      "linux_gcc": "success",
+      "linux_clang": "success",
+      "windows": "success",
+      "macos_clients": "success"
+    },
+    "observed_at": "2026-11-04T11:43:12.479562+00:00"
   }
 }

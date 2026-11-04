@@ -186,7 +186,29 @@
           "status": "passed",
           "check_groups": 23
         }
-      }
+      },
+      "log_sha256": "7d96a062daf5691378c7d038e6d76e66ed9ffbc68a5f71c895766534ba3019ed",
+      "core_results": [
+        {
+          "checks": 75,
+          "disk_full": "native-adapter fault injection",
+          "offset_bits": 64,
+          "status": "passed"
+        },
+        {
+          "checks": 12470,
+          "status": "passed"
+        },
+        {
+          "checks": 98,
+          "status": "passed"
+        },
+        {
+          "checks": 1137,
+          "milestone": "M6",
+          "status": "passed"
+        }
+      ]
     },
     "msvc": {
       "conclusion": "success",
@@ -314,7 +336,29 @@
           "status": "passed",
           "check_groups": 0
         }
-      }
+      },
+      "log_sha256": "cd23281dd4b1e8296b431727a54570c1a4d6cce684268ce89327e249fc1de38e",
+      "core_results": [
+        {
+          "checks": 68,
+          "disk_full": "native-adapter fault injection",
+          "offset_bits": 64,
+          "status": "passed"
+        },
+        {
+          "checks": 12470,
+          "status": "passed"
+        },
+        {
+          "checks": 98,
+          "status": "passed"
+        },
+        {
+          "checks": 1137,
+          "milestone": "M6",
+          "status": "passed"
+        }
+      ]
     }
   },
   "clang": "in_progress",
@@ -330,5 +374,17 @@
     "native_smb": "passed",
     "native_nfs_v3": "passed",
     "filezilla": "passed"
-  }
+  },
+  "m8_regression": {
+    "run": "https://github.com/TabNahida/tauCloud/actions/runs/41819912975",
+    "gcc": "success",
+    "clang": "success",
+    "msvc": "failure",
+    "job": 126540134891,
+    "log_sha256": "446b9291f74141776ed8f517800e99b0bee6260d49e4088d2e52557fffe3acb5",
+    "failure": "Fake Docker disconnect expected engine_disconnected but received deadline_exceeded",
+    "state": "unresolved; full M8 success at this source is not claimed"
+  },
+  "continuation_source": "e7f0fd70958aab9040e3036c096a7dcf56801602",
+  "continuation_run": "https://github.com/TabNahida/tauCloud/actions/runs/41823047564"
 }
