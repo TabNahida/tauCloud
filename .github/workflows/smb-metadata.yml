@@ -14,6 +14,8 @@ on:
       - 'tests/smb_reauthentication.py'
       - 'tests/linux_native_smb_gss.py'
       - 'src/smb_async.inc'
+      - 'src/smb_sessions.inc'
+      - 'tests/smb_multisession.py'
       - 'tests/smb_blocking_locks.py'
       - 'tests/samba-profile.json'
       - 'src/file_smb.inc'
@@ -120,6 +122,8 @@ jobs:
         run: python tests/nfs_notify_lock_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/nfs-notify-lock.json
       - name: SMB session renewal and failure cleanup
         run: python tests/smb_reauthentication.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/smb-reauth.json
+      - name: SMB multiplexed sessions, replacement and isolation
+        run: python tests/smb_multisession.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/smb-multisession.json
       - name: Persistent ACLs and cross-protocol permission checks
         run: python tests/smb_security_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/security.json
       - name: SMB3.1.1 negotiated signing and GMAC nonce domains
@@ -128,7 +132,7 @@ jobs:
         run: python tests/smb_notify_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/smb-notify.json
       - name: Unmodified Samba notification lifecycle
         if: runner.os == 'Linux'
-        run: python tests/samba_torture.py ${{ matrix.test_options }} --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/samba-notify.json smb2.notify.dir smb2.notify.tcon smb2.notify.tdis1 smb2.notify.close smb2.notify.logoff smb2.notify.file smb2.notify.handle-permissions smb2.notify.rmdir1 smb2.notify.rmdir2 smb2.notify.rmdir3 smb2.notify.rmdir4 smb2.notify.invalid-reauth smb2.notify.rec smb2.notify.mask-change smb2.notify.mask smb2.notify.valid-req smb2.notify.tdis smb2.notify.basedir smb2.notify.double smb2.notify.tcp smb2.notify.overflow
+        run: python tests/samba_torture.py ${{ matrix.test_options }} --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/samba-notify.json smb2.notify.dir smb2.notify.tcon smb2.notify.tdis1 smb2.notify.close smb2.notify.logoff smb2.notify.file smb2.notify.handle-permissions smb2.notify.rmdir1 smb2.notify.rmdir2 smb2.notify.rmdir3 smb2.notify.rmdir4 smb2.notify.invalid-reauth smb2.notify.rec smb2.notify.mask-change smb2.notify.mask smb2.notify.valid-req smb2.notify.tdis smb2.notify.basedir smb2.notify.double smb2.notify.tcp smb2.notify.overflow smb2.notify.session-reconnect
       - name: Current MS-FSA destination-directory sharing
         run: python tests/smb_rename_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/smb-rename.json
       - name: Scoped SMB ownership authority and revocation

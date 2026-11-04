@@ -147,13 +147,16 @@ pace::task<void> poll_notification(uint64_t id) {
     catch (const error &e) { waiting = false; code = status(e.what()); }
   if (!waiting) co_await finish_notify(id, code, std::move(data));
 }
-pace::task<void> pump_notifications() {
+pace::task<void> pump_notifications(uint64_t sid) {
+  auto *context = find_session(sid);
+  if (!context) co_return;
   std::vector<uint64_t> ids;
-  for (const auto &[id, pending] : pending_notifications) ids.push_back(id);
+  for (const auto &[id, pending] : context->pending_notifications) ids.push_back(id);
   for (auto id : ids) {
     while (dispatching && socket.is_open()) co_await s.io->sleep_for(1ms);
     if (!socket.is_open()) break;
     dispatch_guard guard(dispatching);
+    if (!select_session(sid)) continue;
     co_await poll_notification(id);
   }
 }
@@ -163,22 +166,25 @@ pace::task<void> pump_locks() {
       co_await s.io->sleep_for(20ms);
       // A pending operation may outlive the read timer. Restart normal idle
       // expiry after its final reply instead of leaving an immortal connection.
-      if (!dispatching && authenticated && pending_locks.empty() && pending_notifications.empty() &&
-          now() - last_activity >= 60000) {
+      if (dispatching) continue;
+      prune_sessions();
+      if (has_authenticated() && !has_pending() && now() - last_activity >= 60000) {
         close();
         break;
       }
-      if (dispatching || (pending_locks.empty() && pending_notifications.empty()))
+      if (!has_pending())
         continue;
-      std::vector<uint64_t> ids;
-      for (const auto &[id, pending] : pending_locks)
-        ids.push_back(id);
-      for (auto id : ids) {
+      std::vector<std::pair<uint64_t, uint64_t>> ids;
+      for (auto sid : session_ids())
+        for (const auto &[id, pending] : find_session(sid)->pending_locks)
+          ids.emplace_back(sid, id);
+      for (auto [sid, id] : ids) {
         while (dispatching && socket.is_open())
           co_await s.io->sleep_for(1ms);
         if (!socket.is_open())
           break;
         dispatch_guard guard(dispatching);
+        if (!select_session(sid)) continue;
         auto it = pending_locks.find(id);
         if (it == pending_locks.end())
           continue;
@@ -199,7 +205,7 @@ pace::task<void> pump_locks() {
         if (!waiting)
           co_await finish_lock(id, code);
       }
-      co_await pump_notifications();
+      for (auto sid : session_ids()) co_await pump_notifications(sid);
     }
   } catch (...) {
     close();

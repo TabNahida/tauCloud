@@ -111,7 +111,8 @@
     "smb2.notify.basedir",
     "smb2.notify.double",
     "smb2.notify.tcp",
-    "smb2.notify.overflow"
+    "smb2.notify.overflow",
+    "smb2.notify.session-reconnect"
   ],
   "standard_differences": [
     {

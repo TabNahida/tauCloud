@@ -61,6 +61,9 @@ def main():
                   '--output', str(output.with_suffix('.smb-blocking-locks.json'))]]
     commands += [[sys.executable, 'tests/smb_allocation_integration.py', '--bin', str(binary),
                   '--output', str(output.with_suffix('.smb-allocation.json'))]]
+    commands += [[sys.executable, 'tests/smb_multisession.py', '--bin', str(binary),
+                  '--output', str(output.with_suffix('.smb-multisession.json'))]
+                 + (['--sanitizers'] if args.sanitizers else [])]
     commands += [[sys.executable, 'tests/smb_rename_metadata.py', '--bin', str(binary),
                   '--output', str(output.with_suffix('.smb-rename-metadata.json'))]
                  + (['--sanitizers'] if args.sanitizers else [])]

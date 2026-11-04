@@ -1,0 +1,315 @@
+{
+  "recorded_at": "2026-11-04T09:16:05.928346+00:00",
+  "base_source": "a5087f939e36cea15d2faab36fc11f38dbff8685",
+  "status": "partial",
+  "scope": "Independent sessions per transport, authenticated same-user replacement, per-session asynchronous cleanup and bounded abandoned authentication.",
+  "sanitizers": "Clang ASan/UBSan including LeakSanitizer",
+  "files_sha256": {
+    "src/smb.cpp": "f35061cff707549cc338c54aeceb15f98c430d5a8c1516418e1f6bc2d5a894de",
+    "src/smb_async.inc": "d129e60af778eaf9eaa590b99cbc875547f1665ebc7854d78a4e36a4f5ae25c7",
+    "src/smb_sessions.inc": "f4393c2163361ea29334d79563205093714984588548e8870ab72a834bdf3e9d",
+    "tests/smb_multisession.py": "079ba91fd859f9a7d48ae77e595a376452110be91386b57a3c556ccaba6144e8",
+    "tests/samba-profile.json": "83bd9181f49e4cddefeccd1c13b2ebe0d46239f9407eeacb1be6098ee4e2c038",
+    ".github/workflows/smb-metadata.yml": "20ccba6f7d732526a1a676beb02fa33280f60b0d0818f5e148341fc73b384392"
+  },
+  "local": {
+    "multisession": {
+      "status": "passed",
+      "checks": [
+        "four dialects multiplex independent signing/encryption, scoped tree/file IDs, shared locks and rename across inactive opens; LOGOFF preserves the other session and its pending watch",
+        "interleaved SMB3.1.1 authentication exchanges retain separate preauthentication transcripts and independently verified encryption keys",
+        "failed new authentication preserves established sessions; valid different-user authentication cannot replace a guessed PreviousSessionId",
+        "same-transport replacement authenticates first, completes old watches under old keys and releases old exclusive opens while another session survives",
+        "cross-transport replacement drains only the matching old session and keeps its transport and unrelated sessions usable",
+        "four simultaneous reciprocal replacement races complete without holding transport gates in a cycle, and both new encrypted sessions remain usable",
+        "abrupt transport loss releases every session and all exclusive opens, including the inactive context",
+        "known-session requests signed or encrypted with a different session key are rejected at the transport boundary",
+        "sixteen-session transport bound rejects excess authentication without damaging peers; LOGOFF and expired abandoned handshakes release capacity"
+      ]
+    },
+    "base_smb": {
+      "status": "passed",
+      "checks": [
+        "verified repeated logins do not exhaust the failed-authentication budget",
+        "signed NTLMv2 MIC authentication, UTF-16 create/read/write/flush/query/directory/close",
+        "QFid CREATE context agrees with internal file IDs across opens and distinguishes objects on one volume",
+        "authenticated srvsvc NDR32 share enumeration filters inaccessible and non-SMB shares",
+        "SMB share lookup ignores case, preserves canonical grants and rejects ambiguous publication without non-SMB shadowing",
+        "share access conflicts, exclusive/shared byte locks, rename with live handles, truncate and last-close deletion",
+        "signed related compound CREATE/WRITE/READ/CLOSE and credit accounting",
+        "directory deletion is nonrecursive; traversal/ADS/non-NFC denied; unsupported empty security-information selection rejected",
+        "1 MiB streamed binary roundtrip with SHA-256",
+        "unknown-session LOGOFF preserves the valid session; client-clock NTLMv2 accepted; excessive skew, bad MIC/proof, unsigned/tampered signing and malformed packets rejected",
+        "SMB credential revocation invalidates live access; re-enrollment and SPNEGO reconnect succeed",
+        "SMB worker kill/restart reclaims handles and durable delete intent without restarting API, identity or files"
+      ],
+      "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+      "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+      "authentication_provider": "pyspnego NTLM",
+      "large_mib": 1,
+      "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+      "port": 60439,
+      "sanitizers": true
+    },
+    "signing": {
+      "status": "passed",
+      "checks": [
+        "HMAC-SHA256/CMAC/GMAC-only offers authenticate, verify signed I/O and preserve the key and open across same-session renewal",
+        "each negotiated algorithm signs synchronous/asynchronous notifications and supports CANCEL before/after STATUS_PENDING",
+        "independent raw signatures verify SESSION_SETUP/ECHO responses for all algorithms and duplicate request MIDs disconnect",
+        "GMAC rejects response/CANCEL nonce substitution, CMAC substitution and payload/tag tampering before dispatch"
+      ]
+    },
+    "notifications": {
+      "status": "passed",
+      "checks": [
+        "SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup",
+        "four dialects complete pending creation before the next write and preserve that write for the next synchronous buffered notification",
+        "per-open first filter/watch-tree settings, FIFO completion and events buffered between requests",
+        "internal reconciliation, recursive watch installation and empty-directory checks preserve access time while real host directory reads remain observable",
+        "native host writes trigger recursive watches while nonrecursive watches ignore descendants",
+        "rapid service-created recursive subtrees retain every ordered directory/file event between requests without requiring a rescan",
+        "recursive file/directory cross-parent moves report REMOVED/ADDED, same-parent renames report OLD/NEW and moved subtrees retain native coverage",
+        "events buffered across service operations remain byte-bounded, overflow without a partial batch and resume from fresh changes",
+        "recursive watches stop observing moved-out subtrees and do not disclose queued outside names",
+        "SIZE filter ignores equal-length writes and reports actual growth",
+        "LAST_WRITE observes new-file writes even when native CREATE and WRITE are drained together",
+        "first per-open zero/short capacity persists, reopening restores capacity; NOTIFY_ENUM_DIR has no partial records; invalid-only filters stay pending and cancel cleanly",
+        "directory/list-access validation and persistent shared security descriptor changes generate SECURITY notifications",
+        "portable DOS attributes, creation-time and EA changes participate in native notification streams",
+        "initial CREATE metadata produces only ADDED; subsequent changes still produce MODIFIED",
+        "recursive descriptor exhaustion stays visibly overflowed across requests and releases all watches on close",
+        "delete-pending directories complete outstanding watches without waiting for last-handle deletion",
+        "TREE_DISCONNECT and LOGOFF finish pending notifications with NOTIFY_CLEANUP before releasing keys",
+        "policy revocation denies the pending poll, invalidates its old handle and permits a fresh exclusive read open without retained watch/sharing authority"
+      ]
+    },
+    "blocking_locks": {
+      "status": "passed",
+      "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+      "recorded_at": "2026-11-04T08:52:02.422955+00:00",
+      "checks": [
+        "210: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+        "210: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+        "210: cross-connection FIFO for conflicts and queued writer fairness",
+        "210: CLOSE cancels waiting requests and releases held ranges to another connection",
+        "300: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+        "300: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+        "300: cross-connection FIFO for conflicts and queued writer fairness",
+        "300: CLOSE cancels waiting requests and releases held ranges to another connection",
+        "302: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+        "302: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+        "302: cross-connection FIFO for conflicts and queued writer fairness",
+        "302: CLOSE cancels waiting requests and releases held ranges to another connection",
+        "311: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+        "311: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+        "311: cross-connection FIFO for conflicts and queued writer fairness",
+        "311: CLOSE cancels waiting requests and releases held ranges to another connection",
+        "compound LOCK/ECHO and LOCK/CLOSE preserve interim/final ordering and connection progress",
+        "TREE_DISCONNECT cancels pending locks before removing the tree",
+        "session teardown cancels pending locks before discarding signing and encryption keys",
+        "peer disconnect removes a pending waiter before granting the next connection",
+        "holder disconnect releases locks and wakes the surviving client",
+        "32 concurrent CANCEL/unlock races produce one final result and no leaked lock or duplicate response",
+        "16 concurrent CLOSE/unlock races produce one final result and release every acquired range",
+        "bounded pending requests return INSUFFICIENT_RESOURCES and all cancelled capacity is reusable",
+        "credential revocation drains all session locks before its final reply, without transport teardown"
+      ]
+    },
+    "kerberos": {
+      "status": "passed",
+      "checks": [
+        "principal mappings require administrator authority and reject ambiguous duplicate principal bindings",
+        "real Kerberos and SPNEGO negotiate authenticate SMB2.1/3.0/3.0.2/3.1.1; independent client validates signing and AES encryption during write/read/flush/rename/truncate/delete",
+        "AES-256-CCM/GCM derive from the complete 32-byte Kerberos key with independent signed setup, encrypted I/O and renewal checks for Kerberos/SPNEGO",
+        "unmapped principals, tickets for another acceptor and modified authenticators fail without NTLM or guest fallback",
+        "independent raw Kerberos verifies mutual AP-REP and final SMB2 HMAC; replaying the same AP-REQ on a fresh transport is rejected",
+        "Kerberos without GSS mutual authentication still verifies SMB2 SESSION_SETUP signing and signed file I/O; replay remains rejected",
+        "fresh Kerberos and SPNEGO renew all SMB2/3 dialects with unchanged signing/cipher keys and live file handles",
+        "renewal cannot switch to another Kerberos principal mapped to the same account or revive a revoked mapping token; failures release exclusive opens",
+        "live principal mapping revocation terminates existing file authority and new logins; explicit reenable admits fresh authentication",
+        "atomic cifs keytab rotation admits fresh tickets while existing signed/encrypted sessions remain valid",
+        "ticket lifetime bounds SMB authority; Kerberos is independent of NTLM enrollment and existing mandatory-MIC NTLM authentication still works"
+      ],
+      "active_profile": {
+        "protocol": "negotiate",
+        "dialect": "0x311",
+        "encrypted": true
+      }
+    },
+    "renewal": {
+      "status": "passed",
+      "checks": [
+        "SMB2.1/3.0/3.0.2/3.1.1 repeated signed/encrypted NTLM renewal preserves session ID, keys, opens and byte-range locks",
+        "expired authority reports NETWORK_SESSION_EXPIRED and renews the same open after an intervening management login",
+        "wrong proof and different-user renewal fail, release exclusive handles and complete signed/encrypted watches with NOTIFY_CLEANUP",
+        "fresh valid credentials cannot renew a revoked token or resurrect its exclusive open",
+        "LOGOFF during an incomplete renewal resets authentication state and permits a fresh encrypted session on the same transport",
+        "SESSION_SETUP for an unknown session does not abort another session's in-progress renewal or borrow its signing key"
+      ]
+    },
+    "selected_samba": {
+      "status": "passed",
+      "tests": [
+        {
+          "selector": "smb2.notify.session-reconnect",
+          "status": "passed",
+          "counts": {
+            "success": 1,
+            "failure": 0,
+            "error": 0,
+            "skip": 0
+          },
+          "returncode": 0
+        },
+        {
+          "selector": "smb2.session.two_logoff",
+          "status": "passed",
+          "counts": {
+            "success": 1,
+            "failure": 0,
+            "error": 0,
+            "skip": 0
+          },
+          "returncode": 0
+        },
+        {
+          "selector": "smb2.session.ntlmssp_bug14932",
+          "status": "passed",
+          "counts": {
+            "success": 1,
+            "failure": 0,
+            "error": 0,
+            "skip": 0
+          },
+          "returncode": 0
+        }
+      ]
+    },
+    "full_notification_samba": {
+      "status": "failed",
+      "tests": [
+        {
+          "selector": "smb2.notify",
+          "status": "failed",
+          "counts": {
+            "success": 22,
+            "failure": 1,
+            "error": 0,
+            "skip": 0
+          },
+          "returncode": 1,
+          "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793783554\ntime: 2026-11-04 09:12:34.347225\nprogress: 23\ntest: valid-req\ntime: 2026-11-04 09:12:34.347316\nTESTING VALIDITY OF CHANGE NOTIFY REQUEST\ntime: 2026-11-04 09:12:34.936564\nsuccess: valid-req\ntest: tcon\ntime: 2026-11-04 09:12:34.936577\nTESTING SIMPLE CHANGE NOTIFY\nTesting notify mkdir\nTesting notify rmdir\nSIMPLE CHANGE NOTIFY OK\nTESTING WITH SECONDARY TCON\ntid1=1 tid2=2\nTesting notify mkdir\nTesting notify rmdir\nCHANGE NOTIFY WITH TCON OK\nDisconnecting secondary tree\nTesting notify mkdir\nTesting notify rmdir\nCHANGE NOTIFY WITH TDIS OK\ntime: 2026-11-04 09:12:35.537423\nsuccess: tcon\ntest: dir\ntime: 2026-11-04 09:12:35.537438\nTESTING CHANGE NOTIFY ON DIRECTORIES\nTesting notify cancel\nTesting notify mkdir\nTesting notify rmdir\nTesting notify mkdir - rmdir - mkdir - rmdir\nTesting buffered notify on create of 10 files\nTesting notify on unlink for the first file\nand now from the 1st notify\n(3rd notify) this notify will only see the 1st unlink\nTesting if a close() on the dir handle triggers the notify reply\ntime: 2026-11-04 09:12:40.029323\nsuccess: dir\ntest: mask\ntime: 2026-11-04 09:12:40.029335\nTESTING CHANGE NOTIFY COMPLETION FILTERS\nTesting mkdir\nTesting create file\nTesting unlink\nTesting rmdir\nTesting rename file\nTesting rename dir\nTesting set path attribute\nTesting set path write time\nTesting set file create time\nTesting set file access time\nTesting set file change time\nTesting write\ntime: 2026-11-04 09:14:51.480445\nsuccess: mask\ntest: tdis\ntime: 2026-11-04 09:14:51.480459\nTESTING CHANGE NOTIFY+CANCEL FOLLOWED BY TREE-DISCONNECT\ntime: 2026-11-04 09:14:51.576332\nsuccess: tdis\ntest: tdis1\ntime: 2026-11-04 09:14:51.576346\nTESTING CHANGE NOTIFY ASYNC FOLLOWED BY TREE-DISCONNECT\ntime: 2026-11-04 09:14:51.684379\nsuccess: tdis1\ntest: mask-change\ntime: 2026-11-04 09:14:51.684390\nTESTING CHANGE NOTIFY WITH MASK CHANGE\ntime: 2026-11-04 09:14:52.420119\nsuccess: mask-change\ntest: close\ntime: 2026-11-04 09:14:52.420132\nTESTING CHANGE NOTIFY FOLLOWED BY ULOGOFF\ntime: 2026-11-04 09:14:52.600408\nsuccess: close\ntest: logoff\ntime: 2026-11-04 09:14:52.600431\nTESTING CHANGE NOTIFY FOLLOWED BY ULOGOFF\ntime: 2026-11-04 09:14:52.715755\nsuccess: logoff\ntest: session-reconnect\ntime: 2026-11-04 09:14:52.715767\nTESTING CHANGE NOTIFY FOLLOWED BY SESSION RECONNECT\ntime: 2026-11-04 09:14:52.856479\nsuccess: session-reconnect\ntest: invalid-reauth\ntime: 2026-11-04 09:14:52.856492\nTESTING CHANGE NOTIFY FOLLOWED BY invalid REAUTH\ntime: 2026-11-04 09:14:53.102453\nsuccess: invalid-reauth\ntest: tree\ntime: 2026-11-04 09:14:53.102466\nTESTING NOTIFY FOR DIFFERENT DEPTHS\ntime: 2026-11-04 09:14:54.331206\nfailure: tree [\n(source4/torture/smb2/notify.c:2002) Incorrect status NT_STATUS_OBJECT_NAME_INVALID - should be NT_STATUS_OK\n]\ntest: basedir\ntime: 2026-11-04 09:14:54.331222\nTESTING CHANGE NOTIFY BASEDIR EVENTS\ntime: 2026-11-04 09:14:54.922585\nsuccess: basedir\ntest: double\ntime: 2026-11-04 09:14:54.922598\nTESTING CHANGE NOTIFY TWICE ON ONE DIRECTORY\ntime: 2026-11-04 09:14:55.127723\nsuccess: double\ntest: file\ntime: 2026-11-04 09:14:55.127735\nTESTING CHANGE NOTIFY ON FILES\nTesting if notifies on file handles are invalid (should be)\ntime: 2026-11-04 09:14:55.279601\nsuccess: file\ntest: tcp\ntime: 2026-11-04 09:14:55.279614\nTESTING CHANGE NOTIFY FOLLOWED BY TCP DISCONNECT\ntime: 2026-11-04 09:14:55.604148\nsuccess: tcp\ntest: rec\ntime: 2026-11-04 09:14:55.604160\nTESTING CHANGE NOTIFY WITH RECURSION\ntime: 2026-11-04 09:14:56.405557\nsuccess: rec\ntest: overflow\ntime: 2026-11-04 09:14:56.405570\nTESTING CHANGE NOTIFY EVENT OVERFLOW\nTesting overflowed buffer notify on create of 100 files\ntime: 2026-11-04 09:15:09.892836\nsuccess: overflow\ntest: rmdir1\ntime: 2026-11-04 09:15:09.892854\nTESTING NOTIFY CANCEL FOR DELETED DIR\ntime: 2026-11-04 09:15:10.064283\nsuccess: rmdir1\ntest: rmdir2\ntime: 2026-11-04 09:15:10.064297\nTESTING NOTIFY CANCEL FOR DELETED DIR\ntime: 2026-11-04 09:15:10.224595\nsuccess: rmdir2\ntest: rmdir3\ntime: 2026-11-04 09:15:10.224609\nTESTING NOTIFY CANCEL FOR DELETED DIR\ntime: 2026-11-04 09:15:10.398848\nsuccess: rmdir3\ntest: rmdir4\ntime: 2026-11-04 09:15:10.398866\nTESTING NOTIFY CANCEL FOR DELETED DIR\ntime: 2026-11-04 09:15:10.571976\nsuccess: rmdir4\ntest: handle-permissions\ntime: 2026-11-04 09:15:10.571987\nTESTING CHANGE NOTIFY ON A HANDLE WITHOUT PERMISSIONS\ntime: 2026-11-04 09:15:10.738733\nsuccess: handle-permissions\n"
+        }
+      ]
+    },
+    "broader_session_samba": {
+      "status": "failed",
+      "tests": [
+        {
+          "selector": "smb2.session.reconnect1",
+          "status": "failed",
+          "counts": {
+            "success": 0,
+            "failure": 1,
+            "error": 0,
+            "skip": 0
+          },
+          "returncode": 1,
+          "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793782514\ntime: 2026-11-04 08:55:14.697329\ntest: reconnect1\ntime: 2026-11-04 08:55:14.697494\ntime: 2026-11-04 08:55:14.777319\nfailure: reconnect1 [\nsource4/torture/smb2/session.c:117: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect\n]\n"
+        },
+        {
+          "selector": "smb2.session.reconnect2",
+          "status": "failed",
+          "counts": {
+            "success": 0,
+            "failure": 1,
+            "error": 0,
+            "skip": 0
+          },
+          "returncode": 1,
+          "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793782514\ntime: 2026-11-04 08:55:14.870269\ntest: reconnect2\ntime: 2026-11-04 08:55:14.870452\ntime: 2026-11-04 08:55:14.938651\nfailure: reconnect2 [\nsource4/torture/smb2/session.c:210: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect\n]\n"
+        },
+        {
+          "selector": "smb2.session.reauth1",
+          "status": "failed",
+          "counts": {
+            "success": 0,
+            "failure": 1,
+            "error": 0,
+            "skip": 0
+          },
+          "returncode": 1,
+          "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793782515\ntime: 2026-11-04 08:55:15.043011\ntest: reauth1\ntime: 2026-11-04 08:55:15.043238\ntime: 2026-11-04 08:55:15.100315\nfailure: reauth1 [\nsource4/torture/smb2/session.c:273: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect\n]\n"
+        },
+        {
+          "selector": "smb2.session.reauth2",
+          "status": "failed",
+          "counts": {
+            "success": 0,
+            "failure": 1,
+            "error": 0,
+            "skip": 0
+          },
+          "returncode": 1,
+          "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793782515\ntime: 2026-11-04 08:55:15.213511\ntest: reauth2\ntime: 2026-11-04 08:55:15.213720\ntime: 2026-11-04 08:55:15.270017\nfailure: reauth2 [\nsource4/torture/smb2/session.c:349: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect\n]\n"
+        },
+        {
+          "selector": "smb2.session.reauth3",
+          "status": "failed",
+          "counts": {
+            "success": 0,
+            "failure": 1,
+            "error": 0,
+            "skip": 0
+          },
+          "returncode": 1,
+          "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793782515\ntime: 2026-11-04 08:55:15.425331\ntest: reauth3\ntime: 2026-11-04 08:55:15.425493\ntime: 2026-11-04 08:55:15.490073\nfailure: reauth3 [\nsource4/torture/smb2/session.c:440: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect\n]\n"
+        },
+        {
+          "selector": "smb2.session.reauth4",
+          "status": "failed",
+          "counts": {
+            "success": 0,
+            "failure": 1,
+            "error": 0,
+            "skip": 0
+          },
+          "returncode": 1,
+          "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793782515\ntime: 2026-11-04 08:55:15.637038\ntest: reauth4\ntime: 2026-11-04 08:55:15.637196\ntime: 2026-11-04 08:55:15.694153\nfailure: reauth4 [\nsource4/torture/smb2/session.c:553: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect\n]\n"
+        },
+        {
+          "selector": "smb2.session.reauth5",
+          "status": "failed",
+          "counts": {
+            "success": 0,
+            "failure": 1,
+            "error": 0,
+            "skip": 0
+          },
+          "returncode": 1,
+          "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793782515\ntime: 2026-11-04 08:55:15.808545\ntest: reauth5\ntime: 2026-11-04 08:55:15.808818\ntime: 2026-11-04 08:55:15.907254\nfailure: reauth5 [\nsource4/torture/smb2/session.c:696: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect\n]\n"
+        },
+        {
+          "selector": "smb2.session.reauth6",
+          "status": "failed",
+          "counts": {
+            "success": 0,
+            "failure": 1,
+            "error": 0,
+            "skip": 0
+          },
+          "returncode": 1,
+          "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793782516\ntime: 2026-11-04 08:55:16.031374\ntest: reauth6\ntime: 2026-11-04 08:55:16.031531\ntime: 2026-11-04 08:55:16.095716\nfailure: reauth6 [\nsource4/torture/smb2/session.c:1016: io1.out.oplock_level was 0 (0x0), expected 9 (0x9): oplock_level incorrect\n]\n"
+        }
+      ]
+    }
+  },
+  "remote_acceptance": "pending for this increment",
+  "limitations": [
+    "Full notification suite: 22 successes and one tree/path failure.",
+    "Eight broader reconnect/reauth diagnostics fail before their renewal checks at an unimplemented BATCH-oplock assertion.",
+    "No multichannel binding, durable-open or full SMB/NFS conformance claim."
+  ],
+  "previous_session_id": "Independent checks change PreviousSessionId between challenge and proof: (old,0) preserves old; (0,old) replaces old only after successful same-user proof."
+}

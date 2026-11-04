@@ -1,0 +1,396 @@
+{
+  "source": "7fd15ced723e6cae58c5ca3ae1d2234f5eac79cc",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41798658882",
+  "recorded_at": "2026-11-04T08:50:19.998650+00:00",
+  "status": "passed",
+  "scope": "Rename archive/deferred timestamps and crash recovery on three platforms; not full SMB/NFS.",
+  "platforms": {
+    "gcc": {
+      "artifact_id": 13306364077,
+      "artifact_sha256": "d77584b4cd0957a73a1a5676d01cb6c02f91f8b6e61166f6bca3c18b6b987af7",
+      "reports": {
+        "samba-notify.json": {
+          "sha256": "c78dff74de8a5016f4b4827c45b295eee3ca848f2b4d1fb47061c1c4f96c1094",
+          "result": {
+            "status": "passed",
+            "tests": [
+              {
+                "selector": "smb2.notify.dir",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.tcon",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.tdis1",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.close",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.logoff",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.file",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.handle-permissions",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rmdir1",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rmdir2",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rmdir3",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rmdir4",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.invalid-reauth",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rec",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.mask-change",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              }
+            ]
+          }
+        },
+        "smb-rename-metadata.json": {
+          "sha256": "528d01d10582ceccc57fc9dc73e5c89412546332fe46deb5a2c3f9b1427ea33f",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "four signed/encrypted dialects set archive immediately, preserve creation/access/write times and defer change time plus one attribute notification to close",
+              "explicit change time stays frozen across repeated rename and close while a real archive change is notified once at the final name",
+              "explicit time after rename cancels its deferred update; -2 re-enables it without inventing archive changes",
+              "another close flushes file-wide pending notifications while only the originating open completes its deferred timestamp",
+              "directory rename updates change time at close without applying a data-file archive bit",
+              "SMB process loss recovers durable rename metadata; offline backup refuses unresolved markers and succeeds after file-service restart recovery",
+              "recovery discards stale rename markers without transferring metadata to a replacement native incarnation"
+            ]
+          }
+        }
+      }
+    },
+    "clang": {
+      "artifact_id": 13307642726,
+      "artifact_sha256": "eb901694515c42f723eb338c131fe2b8b88fdc9381345a0804dfe24b0d13e19c",
+      "reports": {
+        "samba-notify.json": {
+          "sha256": "aae0831e40239ce683c369bdc7b271af5777aaf21e09a91044a7394e262f01ef",
+          "result": {
+            "status": "passed",
+            "tests": [
+              {
+                "selector": "smb2.notify.dir",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.tcon",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.tdis1",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.close",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.logoff",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.file",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.handle-permissions",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rmdir1",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rmdir2",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rmdir3",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rmdir4",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.invalid-reauth",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rec",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.mask-change",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              }
+            ]
+          }
+        },
+        "smb-rename-metadata.json": {
+          "sha256": "528d01d10582ceccc57fc9dc73e5c89412546332fe46deb5a2c3f9b1427ea33f",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "four signed/encrypted dialects set archive immediately, preserve creation/access/write times and defer change time plus one attribute notification to close",
+              "explicit change time stays frozen across repeated rename and close while a real archive change is notified once at the final name",
+              "explicit time after rename cancels its deferred update; -2 re-enables it without inventing archive changes",
+              "another close flushes file-wide pending notifications while only the originating open completes its deferred timestamp",
+              "directory rename updates change time at close without applying a data-file archive bit",
+              "SMB process loss recovers durable rename metadata; offline backup refuses unresolved markers and succeeds after file-service restart recovery",
+              "recovery discards stale rename markers without transferring metadata to a replacement native incarnation"
+            ]
+          }
+        }
+      }
+    },
+    "msvc": {
+      "artifact_id": 13307935919,
+      "artifact_sha256": "9f309eefad47c9390e0a62ae7a5d950b33ecf20e421929908ab290c83d6c6f97",
+      "reports": {
+        "smb-rename-metadata.json": {
+          "sha256": "cd0f60d0c89159e87784b444b13a1610eb152877e71a9ff1c30b169f3e3018b6",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "four signed/encrypted dialects set archive immediately, preserve creation/access/write times and defer change time plus one attribute notification to close",
+              "explicit change time stays frozen across repeated rename and close while a real archive change is notified once at the final name",
+              "explicit time after rename cancels its deferred update; -2 re-enables it without inventing archive changes",
+              "another close flushes file-wide pending notifications while only the originating open completes its deferred timestamp",
+              "directory rename updates change time at close without applying a data-file archive bit",
+              "SMB process loss recovers durable rename metadata; offline backup refuses unresolved markers and succeeds after file-service restart recovery",
+              "recovery discards stale rename markers without transferring metadata to a replacement native incarnation"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

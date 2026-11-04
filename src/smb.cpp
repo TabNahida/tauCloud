@@ -399,22 +399,17 @@ struct opened {
   std::optional<uint32_t> notify_capacity = std::nullopt;
   size_t ea_cursor = 0;
 };
-struct client {
-  smb_state &s;
-  pace::tcp::stream socket;
-  bool negotiated = false, authenticated = false, ending = false, raw_ntlm = false;
-  bool multiprotocol = false;
-  bool logged_off = false, reauthenticating = false;
-  uint64_t session = 0, high = 1;
+struct session_state {
+  bool authenticated = false, raw_ntlm = false;
+  bool logged_off = false, reauthenticating = false, completing_authentication = false;
+  uint64_t session = 0;
+  int64_t authentication_started = now();
   uint64_t previous_session = 0;
-  std::set<uint64_t> credits_available{0};
   std::string exchange, token, username;
   std::unique_ptr<gss_context> kerberos;
   int64_t kerberos_deadline = 0;
   bytes key, encryption_key, decryption_key;
-  negotiation selected;
   bytes transcript = bytes(64, '\0');
-  bytes negotiate_transcript = bytes(64, '\0');
   bytes nonce_prefix = decode_bytes(random_hex(4));
   uint64_t nonce_counter = 0;
   std::set<bytes> received_nonces;
@@ -442,6 +437,25 @@ struct client {
     bytes data;
   };
   std::map<uint64_t, pending_notify> pending_notifications;
+  session_state() = default;
+  session_state(session_state &&) = default;
+  session_state &operator=(session_state &&) = default;
+  ~session_state() {
+    for (auto *secret : {&key, &encryption_key, &decryption_key, &token})
+      if (!secret->empty()) OPENSSL_cleanse(secret->data(), secret->size());
+  }
+};
+// One reactor and cooperative gate serialize access to the selected session.
+// Inactive contexts keep independent authentication, keys, opens and waiters.
+struct client : session_state, std::enable_shared_from_this<client> {
+  smb_state &s;
+  pace::tcp::stream socket;
+  bool negotiated = false, ending = false, multiprotocol = false;
+  uint64_t high = 1;
+  std::set<uint64_t> credits_available{0};
+  negotiation selected;
+  bytes negotiate_transcript = bytes(64, '\0');
+  std::map<uint64_t, session_state> sessions;
   uint64_t next_async_id = 1;
   bool dispatching = false, pump_done = false;
   int64_t last_activity = now();
@@ -449,6 +463,54 @@ struct client {
     socket.set_no_delay();
   }
   void close() { socket.close(); }
+  session_state *find_session(uint64_t id) {
+    if (!id) return nullptr;
+    if (session == id) return this;
+    auto found = sessions.find(id);
+    return found == sessions.end() ? nullptr : &found->second;
+  }
+  std::vector<uint64_t> session_ids() const {
+    std::vector<uint64_t> ids;
+    if (session) ids.push_back(session);
+    for (const auto &[id, context] : sessions) ids.push_back(id);
+    return ids;
+  }
+  bool has_pending() const {
+    if (!pending_locks.empty() || !pending_notifications.empty()) return true;
+    for (const auto &[id, context] : sessions)
+      if (!context.pending_locks.empty() || !context.pending_notifications.empty()) return true;
+    return false;
+  }
+  bool has_authenticated() const {
+    if (authenticated) return true;
+    for (const auto &[id, context] : sessions) if (context.authenticated) return true;
+    return false;
+  }
+  void reset_context() {
+    for (auto *secret : {&key, &encryption_key, &decryption_key, &token})
+      if (!secret->empty()) OPENSSL_cleanse(secret->data(), secret->size());
+    static_cast<session_state &>(*this) = session_state{};
+    transcript = negotiate_transcript;
+  }
+  bool select_session(uint64_t id) {
+    if (session == id) return true;
+    if (id && !sessions.contains(id)) return false;
+    if (session) sessions.emplace(session, std::move(static_cast<session_state &>(*this)));
+    if (id) {
+      auto node = sessions.extract(id);
+      static_cast<session_state &>(*this) = std::move(node.mapped());
+    } else reset_context();
+    return true;
+  }
+  void prune_sessions() {
+    if (logged_off || (session && !authenticated && !completing_authentication && now() - authentication_started >= 10000))
+      reset_context();
+    std::erase_if(sessions, [](const auto &item) {
+      const auto &context = item.second;
+      return context.logged_off || (!context.authenticated && !context.completing_authentication && now() - context.authentication_started >= 10000);
+    });
+  }
+
   json auth() { return {{"token", token}, {"kind", "smb"}}; }
   pace::task<json> authorize(uint32_t tid, std::string relative, bool writing) {
     check(trees.contains(tid), 0xc00000c9);
@@ -560,11 +622,11 @@ struct client {
   }
   void renamed(const json &result) {
     std::string from = result.at("from"), to = result.at("path"), space = result.at("space");
-    for (auto *connection : s.clients)
-      for (auto &[id, h] : connection->files) {
+    auto update = [&](session_state &context) {
+      for (auto &[id, h] : context.files) {
         if (h.pipe)
           continue;
-        auto &t = connection->trees.at(h.tree_id);
+        auto &t = context.trees.at(h.tree_id);
         if (t.space != space)
           continue;
         auto full = t.prefix + (t.prefix.empty() || h.path.empty() ? "" : "/") + h.path;
@@ -580,9 +642,15 @@ struct client {
           // accepts the previous path only via a fresh grant, never by unauthenticated ID.
         }
       }
+    };
+    for (auto *connection : s.clients) {
+      update(*connection);
+      for (auto &[id, context] : connection->sessions) update(context);
+    }
   }
 #include "smb_async.inc"
 #include "smb_rpc.inc"
+#include "smb_sessions.inc"
   pace::task<bytes> command(std::string_view p, uint32_t &tid, uint32_t &code, bool encrypted) {
     check(!logged_off, 0xc0000203);
     auto cmd = get(p, 12, 2);
@@ -602,6 +670,9 @@ struct client {
         check(get(p, 80, 8) == 0);
         reauthenticating = true;
       }
+      // MS-SMB2 processes PreviousSessionId from the request that completes
+      // authentication, not from an earlier challenge-producing message.
+      previous_session = get(p, 80, 8);
       auto security = slice(p, get(p, 76, 2), get(p, 78, 2), 88);
       json request = {{"token", encode_bytes(security)}};
       if (authenticated) request["replace_token"] = token;
@@ -610,9 +681,13 @@ struct client {
       bool complete = false;
       if (exchange.empty() && !kerberos) {
         check(get(p, 40, 8) == (authenticated ? session : 0));
-        previous_session = get(p, 80, 8);
         raw_ntlm = security.starts_with(std::string_view("NTLMSSP\0", 8));
-        if (!authenticated) session = get(decode_bytes(random_hex(8)), 0, 8) | 1;
+        if (!authenticated) {
+          check(sessions.size() < 16, 0xc000009a);
+          authentication_started = now();
+          do { session = get(decode_bytes(random_hex(8)), 0, 8) | 1; }
+          while (session_in_use(session));
+        }
         bool ntlm = raw_ntlm;
         if (!ntlm) {
           try { ntlm_token(security); ntlm = true; }
@@ -667,10 +742,8 @@ struct client {
         username = result.at("username");
         // A reconnect still proves credentials. Only then may it replace an
         // older session belonging to that same canonical identity.
-        for (auto *other : s.clients)
-          if (other != this && previous_session && other->session == previous_session &&
-              other->username == username)
-            other->close();
+        completing_authentication = true;
+        co_await replace_previous_session();
         // MS-SMB2 3.3.5.5.2: renewal retains the original signing/cipher keys
         // and nonce history, while identity atomically replaces its grant token.
         if (!authenticated) {
@@ -693,6 +766,7 @@ struct client {
           OPENSSL_cleanse(session_key.data(), session_key.size());
         }
         authenticated = true;
+        completing_authentication = false;
         reauthenticating = false;
       }
       auto b = sized(8, 9);
@@ -1390,8 +1464,8 @@ struct client {
       while (socket.is_open() && !ending) {
         bytes prefix;
         {
-          auto timer = s.io->call_after(authenticated ? 60s : 10s, [this] {
-            if (!authenticated || (pending_locks.empty() && pending_notifications.empty() && now() - last_activity >= 60000))
+          auto timer = s.io->call_after(has_authenticated() ? 60s : 10s, [this] {
+            if (!has_authenticated() || (!has_pending() && now() - last_activity >= 60000))
               close();
           });
           prefix = co_await socket.read_exact(4, 4);
@@ -1455,10 +1529,13 @@ struct client {
           continue;
         }
         bool encrypted = packet.starts_with(std::string_view("\xfdSMB", 4));
+        uint64_t encrypted_session = 0;
         if (encrypted) {
-          check(authenticated && selected.cipher != 0 && received_nonces.size() < 65536);
-          auto plain = decrypt(decryption_key, selected.cipher, session, packet);
-          check(received_nonces.insert(packet.substr(20, 16)).second);
+          encrypted_session = get(packet, 44, 8);
+          auto *context = find_session(encrypted_session);
+          check(context && context->authenticated && selected.cipher != 0 && context->received_nonces.size() < 65536);
+          auto plain = decrypt(context->decryption_key, selected.cipher, encrypted_session, packet);
+          check(context->received_nonces.insert(packet.substr(20, 16)).second);
           packet = std::move(plain);
         }
         check(packet.size() <= 1024 * 1024);
@@ -1482,18 +1559,14 @@ struct client {
             allowed_flags |= 2; // Only CANCEL may carry a client AsyncId.
           check(!(flags & ~allowed_flags) && get(p, 6, 2) <= 1);
           check(cmd != 12 || (requests.empty() && !next));
-          check(authenticated || (requests.empty() && !next));
+          check(has_authenticated() || (requests.empty() && !next));
           auto request_session = (flags & 4) && !requests.empty() ? request_sessions.back() : get(p, 40, 8);
-          if (authenticated) {
-            check(cmd != 0, 0xc000035c);
-            // An unknown session gets USER_SESSION_DELETED without a signature.
-            // Never borrow this connection's session/key to execute its request.
-            // Known-session signatures still all validate before any side effects.
-            if (request_session == session && !encrypted)
-              check((flags & 8) &&
-                        equal(p.substr(48, 16), signature(key, p, selected.signing)),
-                    0xc0000022);
-          }
+          if (encrypted) check(request_session == encrypted_session, 0xc0000022);
+          if (negotiated) check(cmd != 0, 0xc000035c);
+          auto *context = find_session(request_session);
+          if (context && context->authenticated && !encrypted)
+            check((flags & 8) && equal(p.substr(48, 16), signature(context->key, p, selected.signing)),
+                  0xc0000022);
           auto id = get(p, 24, 8);
           if (cmd != 12)
             check(credits_available.erase(id) == 1);
@@ -1506,7 +1579,7 @@ struct client {
         if (requests.size() == 1 && get(requests[0], 12, 2) == 12) {
           auto &p = requests[0];
           check(p.size() >= 68 && get(p, 64, 2) == 4);
-          if (authenticated && request_sessions[0] == session) {
+          if (select_session(request_sessions[0]) && authenticated && request_sessions[0] == session) {
             uint64_t target = 0;
             for (const auto &[id, pending] : pending_locks)
               if ((get(p, 16, 4) & 2) ? id == get(p, 32, 8) : pending.message_id == get(p, 24, 8)) {
@@ -1525,7 +1598,7 @@ struct client {
           }
           continue; // CANCEL consumes no credit and never receives its own reply.
         }
-        related_file.clear();
+        for (auto sid : session_ids()) find_session(sid)->related_file.clear();
         uint32_t inherited_tree = 0, inherited_failure = 0;
         bytes output;
         for (size_t i = 0; i < requests.size(); ++i) {
@@ -1533,6 +1606,7 @@ struct client {
           auto cmd = get(p, 12, 2);
           uint32_t tid = static_cast<uint32_t>(get(p, 36, 4)), code = 0;
           bool related = get(p, 16, 4) & 4;
+          bool known_session = select_session(request_sessions[i]);
           if (related)
             tid = inherited_tree;
           else {
@@ -1542,8 +1616,8 @@ struct client {
           bytes body;
           bool connection_echo = cmd == 13 && request_sessions[i] == 0;
           bool unknown_session = !connection_echo && cmd != 0 &&
-              (authenticated ? request_sessions[i] != session : cmd != 1 && request_sessions[i] != 0);
-          if (cmd == 0 || (cmd == 1 && selected.dialect == 0x311))
+              (!known_session || (!authenticated && cmd != 1));
+          if (cmd == 0 || (cmd == 1 && known_session && selected.dialect == 0x311))
             transcript = preauth(transcript, p);
           try {
             if (related && i == 0) inherited_failure = 0xc000000d;
@@ -1588,8 +1662,13 @@ struct client {
               put(body, 2, 1, 1);
               put(body, 4, 8, 4);
             }
-            if (cmd == 0 || (cmd == 1 && !authenticated))
-              ending = true;
+            if (cmd == 0) ending = true;
+            if (cmd == 1 && !unknown_session && !authenticated) {
+              if (!token.empty()) {
+                try { co_await smb_rpc(s, "identity", "logout", auth()); } catch (...) {}
+              }
+              logged_off = true;
+            }
           }
           auto response = sized(64, 0);
           response.replace(0, 4, "\xfeSMB", 4);
@@ -1638,52 +1717,10 @@ struct client {
         }
         if (!socket.is_open())
           break;
-        if (!output.empty())
-          co_await send_packet(std::move(output), encrypted);
-        // A later CLOSE/TREE_DISCONNECT/LOGOFF in this compound can complete a
-        // lock before its interim response has left the socket. Send in order.
-        std::vector<std::pair<uint64_t, uint32_t>> completed;
-        for (auto &[id, pending] : pending_locks) {
-          pending.announced = true;
-          if (pending.completion)
-            completed.emplace_back(id, *pending.completion);
-        }
-        for (auto [id, code] : completed)
-          co_await finish_lock(id, code);
-        completed.clear();
-        for (auto &[id, pending] : pending_notifications) {
-          pending.announced = true;
-          if (pending.completion) completed.emplace_back(id, *pending.completion);
-        }
-        for (auto [id, code] : completed)
-          co_await finish_notify(id, code, pending_notifications.at(id).data);
-        // Mutations on this connection have already reached the file domain.
-        // Complete ready notifications before accepting its next frame, so a
-        // later WRITE is buffered for the next request instead of being merged
-        // into the initial CREATE event by the periodic host-event poll.
-        std::vector<uint64_t> ready_notifications;
-        for (const auto &[id, pending] : pending_notifications)
-          ready_notifications.push_back(id);
-        for (auto id : ready_notifications) {
-          if (!socket.is_open()) break;
-          co_await poll_notification(id);
-        }
-        if (logged_off) {
-          // LOGOFF ends the session, not the transport. Keeping the connection
-          // alive also prevents EOF racing the client's receipt of this reply.
-          logged_off = authenticated = raw_ntlm = reauthenticating = false;
-          session = 0;
-          token.clear();
-          username.clear();previous_session = 0;
-          exchange.clear();
-          kerberos.reset();
-          std::fill(key.begin(), key.end(), 0);
-          std::fill(encryption_key.begin(), encryption_key.end(), 0);
-          std::fill(decryption_key.begin(), decryption_key.end(), 0);
-          key.clear();encryption_key.clear();decryption_key.clear();
-          received_nonces.clear();nonce_counter = 0;
-          transcript = negotiate_transcript;
-        }
+        if (encrypted) check(select_session(encrypted_session));
+        if (!output.empty()) co_await send_packet(std::move(output), encrypted);
+        co_await complete_frame_notifications();
+
       }
     } catch (const status_error &e) {
       log("smb", "connection_rejected", std::to_string(e.status));
@@ -1696,17 +1733,14 @@ struct client {
     close();
     while (!pump_done)
       co_await s.io->sleep_for(1ms);
-    co_await cleanup();
-    if (!token.empty()) {
-      try {
-        json a = auth();
-        co_await smb_rpc(s, "identity", "logout", a);
-      } catch (...) {
+    while (dispatching) co_await s.io->sleep_for(1ms);
+    {
+      dispatch_guard guard(dispatching);
+      for (auto sid : session_ids()) {
+        if (!select_session(sid)) continue;
+        co_await retire_active_session();
       }
     }
-    std::fill(key.begin(), key.end(), 0);
-    std::fill(encryption_key.begin(), encryption_key.end(), 0);
-    std::fill(decryption_key.begin(), decryption_key.end(), 0);
     s.clients.erase(this);
     --s.connections;
   }
