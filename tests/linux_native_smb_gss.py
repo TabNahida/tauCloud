@@ -5,6 +5,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import time
 import uuid
 
 
@@ -16,6 +17,7 @@ def exercise(fixture, kdc, host, output, report):
         return result
 
     report.update(status='failed', profiles=[])
+    started = int(time.time())
     base = kdc.base / 'native-smb'
     base.mkdir()
     mount = base / 'mount'
@@ -30,7 +32,9 @@ def exercise(fixture, kdc, host, output, report):
     helper = shutil.which('cifs.upcall', path='/usr/sbin:/sbin:/usr/bin')
     assert helper, 'cifs-utils is required'
     rule = base / 'request-key.conf'
-    rule.write_text(f'create cifs.spnego *;host={host};* * {helper} -k {config} %k\n')
+    # keyutils 1.6.x supports ONE wildcard per field, not shell glob syntax.
+    # The kernel's v2 upcall description starts with this exact version/host.
+    rule.write_text(f'create cifs.spnego ver=0x2;host={host};* * {helper} -k {config} %k\n')
     installed = '/etc/request-key.d/00-taucloud-' + uuid.uuid4().hex + '.conf'
     installed_rule = False
     try:
@@ -71,3 +75,6 @@ p.unlink();d.rmdir()
         log = run(['sudo', '-n', 'dmesg', '--ctime'], check=False)
         output.resolve().with_suffix('.kernel.log').write_text('\n'.join(
             line for line in log.stdout.splitlines() if 'cifs' in line.lower() or 'smb' in line.lower())[-16000:] + '\n')
+        log = run(['sudo', '-n', 'journalctl', '--no-pager', '--since', '@' + str(started),
+                   '-t', 'cifs.upcall', '-t', 'request-key'], check=False)
+        output.resolve().with_suffix('.upcall.log').write_text(log.stdout[-16000:])

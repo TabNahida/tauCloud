@@ -60,6 +60,9 @@ def main():
                  [sys.executable, 'tests/m6_integration.py', '--bin', str(binary),
                   '--large-mib', str(args.large_mib), '--output', str(output.with_suffix('.smb3.json'))]
                  + (['--sanitizers'] if args.sanitizers else [])]
+    commands += [[sys.executable, 'tests/smb_reauthentication.py', '--bin', str(binary),
+                  '--output', str(output.with_suffix('.smb-reauth.json'))]
+                 + (['--sanitizers'] if args.sanitizers else [])]
     commands += [[str(binary / ('taucloud_m7_tests' + suffix))],
                  [sys.executable, 'tests/m7_integration.py', '--bin', str(binary),
                   '--output', str(output.with_suffix('.nfs.json'))]

@@ -80,7 +80,8 @@ json subject(sqlite3 *db, const json &body) {
                   "u.name=s.name WHERE s.hash=? AND s.kind=? AND u.enabled=1");
   q.bind(1, digest(auth.at("token").get<std::string>()));
   q.bind(2, auth.at("kind"));
-  require(q.row() && q.integer(3) > now(), "unauthorized");
+  require(q.row(), "unauthorized");
+  require(q.integer(3) > now(), auth.at("kind") == "smb" ? "session_expired" : "unauthorized");
   return {{"username", q.text(0)},
           {"role", q.text(1)},
           {"scope", q.text(2)},

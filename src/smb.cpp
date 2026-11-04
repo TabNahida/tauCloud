@@ -61,6 +61,8 @@ void check(bool value, uint32_t status = 0xc000000d) {
     throw status_error(status);
 }
 uint32_t status(std::string_view code) {
+  if (code == "session_expired")
+    return 0xc000035c; // STATUS_NETWORK_SESSION_EXPIRED: retain opens for renewal.
   if (code == "invalid_security_descriptor")
     return 0xc0000079;
   if (code == "invalid_owner")
@@ -399,7 +401,7 @@ struct client {
   pace::tcp::stream socket;
   bool negotiated = false, authenticated = false, ending = false, raw_ntlm = false;
   bool multiprotocol = false;
-  bool logged_off = false;
+  bool logged_off = false, reauthenticating = false;
   uint64_t session = 0, high = 1;
   uint64_t previous_session = 0;
   std::set<uint64_t> credits_available{0};
@@ -572,17 +574,23 @@ struct client {
     }
     check(negotiated, 0xc00000bb);
     if (cmd == 1) {
-      check(!authenticated && structure == 25 && p.size() >= 88 && get(p, 66, 1) == 0);
+      check(structure == 25 && p.size() >= 88 && get(p, 66, 1) == 0);
+      if (authenticated) {
+        check(get(p, 40, 8) == session, 0xc0000203);
+        check(get(p, 80, 8) == 0);
+        reauthenticating = true;
+      }
       auto security = slice(p, get(p, 76, 2), get(p, 78, 2), 88);
       json request = {{"token", encode_bytes(security)}};
+      if (authenticated) request["replace_token"] = token;
       bytes response;
       json result;
       bool complete = false;
       if (exchange.empty() && !kerberos) {
-        check(get(p, 40, 8) == 0);
+        check(get(p, 40, 8) == (authenticated ? session : 0));
         previous_session = get(p, 80, 8);
         raw_ntlm = security.starts_with(std::string_view("NTLMSSP\0", 8));
-        session = get(decode_bytes(random_hex(8)), 0, 8) | 1;
+        if (!authenticated) session = get(decode_bytes(random_hex(8)), 0, 8) | 1;
         bool ntlm = raw_ntlm;
         if (!ntlm) {
           try { ntlm_token(security); ntlm = true; }
@@ -621,12 +629,15 @@ struct client {
         } catch (...) { kerberos.reset(); throw; }
         if (accepted.major == 0) {
           kerberos.reset();
-          key = secret.substr(0, 16);
-          key.resize(16, '\0'); // MS-SMB2 SessionKey, for the negotiated AES-128 ciphers.
+          auto session_key = secret.substr(0, 16);
+          session_key.resize(16, '\0'); // MS-SMB2 SessionKey, for the negotiated AES-128 ciphers.
           OPENSSL_cleanse(secret.data(), secret.size());
           json verified = {{"principal", accepted.principal}, {"lifetime", accepted.lifetime}};
+          if (authenticated) verified["replace_token"] = token;
+          auto encoded_key = encode_bytes(session_key);
+          OPENSSL_cleanse(session_key.data(), session_key.size());
           result = co_await smb_rpc(s, "identity", "smb_kerberos", verified);
-          result["session_key"] = encode_bytes(key);
+          result["session_key"] = encoded_key;
           complete = true;
         } else code = 0xc0000016;
       }
@@ -639,8 +650,10 @@ struct client {
           if (other != this && previous_session && other->session == previous_session &&
               other->username == username)
             other->close();
-        key = decode_bytes(result.at("session_key").get<std::string>());
-        if (selected.dialect >= 0x300) {
+        // MS-SMB2 3.3.5.5.2: renewal retains the original signing/cipher keys
+        // and nonce history, while identity atomically replaces its grant token.
+        if (!authenticated) key = decode_bytes(result.at("session_key").get<std::string>());
+        if (!authenticated && selected.dialect >= 0x300) {
           auto session_key = key;
           if (selected.dialect == 0x311) {
             key = kdf(session_key, "SMBSigningKey", transcript);
@@ -654,6 +667,7 @@ struct client {
           std::fill(session_key.begin(), session_key.end(), 0);
         }
         authenticated = true;
+        reauthenticating = false;
       }
       auto b = sized(8, 9);
       put(b, 4, 72, 2);
@@ -1470,14 +1484,13 @@ struct client {
           }
           bytes body;
           bool connection_echo = cmd == 13 && request_sessions[i] == 0;
-          bool unknown_session = !connection_echo && cmd != 0 && cmd != 1 &&
-              (authenticated ? request_sessions[i] != session : request_sessions[i] != 0);
+          bool unknown_session = !connection_echo && cmd != 0 &&
+              (authenticated ? request_sessions[i] != session : cmd != 1 && request_sessions[i] != 0);
           if (cmd == 0 || (cmd == 1 && selected.dialect == 0x311))
             transcript = preauth(transcript, p);
           try {
             if (related && i == 0) inherited_failure = 0xc000000d;
             if (related && inherited_failure) throw status_error(inherited_failure);
-            if (cmd == 1 && authenticated) throw status_error(0xc000000d);
             if (unknown_session)
               throw status_error(0xc0000203);
             check(cmd <= 18);
@@ -1491,6 +1504,16 @@ struct client {
           } catch (const json::exception &) {
             code = 0xc000000d;
             log("smb", "command_" + std::to_string(cmd), "invalid_json");
+          }
+          if (cmd == 1 && code && code != 0xc0000016 && reauthenticating && !unknown_session) {
+            // An authentication failure tears down all old authority, but its
+            // error response is still protected with the established keys.
+            json a = auth();
+            try { co_await smb_rpc(s, "identity", "logout", a); } catch (...) {}
+            co_await revoke_session();
+            exchange.clear();
+            kerberos.reset();
+            reauthenticating = false;
           }
           if (code && cmd == 17 && p.size() >= 96 && get(p, 66, 1) == 3)
             log("smb", "failed_security_information", std::to_string(get(p, 76, 4)));
@@ -1572,7 +1595,7 @@ struct client {
         if (logged_off) {
           // LOGOFF ends the session, not the transport. Keeping the connection
           // alive also prevents EOF racing the client's receipt of this reply.
-          logged_off = authenticated = raw_ntlm = false;
+          logged_off = authenticated = raw_ntlm = reauthenticating = false;
           session = 0;
           token.clear();
           username.clear();previous_session = 0;

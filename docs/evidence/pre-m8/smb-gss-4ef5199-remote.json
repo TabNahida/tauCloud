@@ -1,0 +1,274 @@
+{
+  "recorded_at": "2026-11-04T04:42:42.917126+00:00",
+  "commit": "4ef5199ecc54b6f25f33699f2d60c32c52e99e64",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41773281172",
+  "status": "failure",
+  "scope": "Linux SMB Kerberos/SPNEGO and shared-platform regression. Native CIFS first attempt fails before SMB authentication; Windows GSS remains unimplemented.",
+  "jobs": [
+    {
+      "compiler": "gcc",
+      "status": "failure",
+      "job": 126387689115,
+      "artifact": 13296820387,
+      "sha256": "73a05b0ce549a9a6b5041619e1086b2cb14a6f15509794520481f247095f7745",
+      "results": {
+        "smb-gss.json": {
+          "status": "failed",
+          "checks": [
+            "principal mappings require administrator authority and reject ambiguous duplicate principal bindings",
+            "real Kerberos and SPNEGO negotiate authenticate SMB2.1/3.0/3.0.2/3.1.1; independent client validates signing and AES encryption during write/read/flush/rename/truncate/delete",
+            "unmodified Samba smbclient requires Kerberos and verifies 1 MiB signed SMB2.1 and encrypted SMB3.1.1 roundtrips",
+            "unmapped principals, tickets for another acceptor and modified authenticators fail without NTLM or guest fallback",
+            "independent raw Kerberos verifies mutual AP-REP and final SMB2 HMAC; replaying the same AP-REQ on a fresh transport is rejected",
+            "live principal mapping revocation terminates existing file authority and new logins; explicit reenable admits fresh authentication",
+            "atomic cifs keytab rotation admits fresh tickets while existing signed/encrypted sessions remain valid",
+            "ticket lifetime bounds SMB authority; Kerberos is independent of NTLM enrollment and existing mandatory-MIC NTLM authentication still works"
+          ],
+          "native": {
+            "status": "failed",
+            "profiles": [
+              {
+                "dialect": "2.1",
+                "security": "krb5",
+                "status": "failed"
+              }
+            ]
+          },
+          "error": "Traceback (most recent call last):\n  File \"/home/runner/work/tauCloud/tauCloud/tests/smb_gss_integration.py\", line 215, in main\n    exercise(f, kdc, HOST, args.output, report['native'])\n  File \"/home/runner/work/tauCloud/tauCloud/tests/linux_native_smb_gss.py\", line 59, in exercise\n    run(['sudo', '-n', 'mount', '-t', 'cifs', '//' + host + '/smb', str(mount), '-o', options])\n  File \"/home/runner/work/tauCloud/tauCloud/tests/linux_native_smb_gss.py\", line 15, in run\n    assert result.returncode == 0, (command, result.stdout, result.stderr)\n           ^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: (['sudo', '-n', 'mount', '-t', 'cifs', '//files.taucloud.test/smb', '/tmp/tc-krb-5rvvz7ev/native-smb/mount', '-o', 'ip=127.0.0.1,port=48241,vers=2.1,sec=krb5,sign,cruid=0,cache=none,nosharesock,soft'], '', 'mount error(126): Required key not available\\nRefer to the mount.cifs(8) manual page (e.g. man mount.cifs) and kernel log messages (dmesg)\\n')\n"
+        },
+        "nfs-gss.json": {
+          "status": "passed",
+          "checks": [
+            "real MIT tickets: mutual authentication and NFSv3/v4.1 read/write in krb5, krb5i and krb5p; AUTH_SYS downgrade denied; MOUNT and SECINFO advertise Kerberos",
+            "header/body MIC and encrypted-body tampering rejected; 64-entry replay window drops duplicates/old requests and accepts out-of-order requests; MAXSEQ and body sequence enforced",
+            "v3 duplicate mutation with fresh GSS sequence replays its result and rechecks revoked authority; context survives TCP reconnect; authenticated DESTROY invalidates the handle",
+            "SECINFO negotiates across disallowed weaker/stronger tuples, AUTH_SYS and authorized anonymous discovery; bare/repeated/saved PUTFH and LOOKUPP obey WRONGSEC placement; discovery consumes FH, replays safely and enforces traversal ACLs",
+            "unmapped principals and wrong acceptor tickets denied; per-export privacy requirement prevents downgrade; existing contexts lose access after principal mapping revocation",
+            "unmodified pinned pynfs COMP1, CSESS1, OPEN1, OPEN30 and VF1r pass using krb5, krb5i and krb5p",
+            "atomic service-key rotation accepts newly issued tickets while established contexts continue; live group-membership revocation denies existing contexts",
+            "expired tickets and pre-restart context handles are rejected; fresh mutual authentication preserves access to stable file handles",
+            "unmodified Linux kernel NFSv4.1 mounts and file roundtrips pass with krb5, krb5i and krb5p"
+          ],
+          "native": {
+            "status": "passed",
+            "profiles": [
+              {
+                "service": "krb5",
+                "status": "passed",
+                "checks": [
+                  "native kernel mount",
+                  "256 KiB write/fsync/read",
+                  "mapped owner",
+                  "rename/overwrite/truncate",
+                  "directory enumeration/unlink/rmdir"
+                ]
+              },
+              {
+                "service": "krb5i",
+                "status": "passed",
+                "checks": [
+                  "native kernel mount",
+                  "256 KiB write/fsync/read",
+                  "mapped owner",
+                  "rename/overwrite/truncate",
+                  "directory enumeration/unlink/rmdir"
+                ]
+              },
+              {
+                "service": "krb5p",
+                "status": "passed",
+                "checks": [
+                  "native kernel mount",
+                  "256 KiB write/fsync/read",
+                  "mapped owner",
+                  "rename/overwrite/truncate",
+                  "directory enumeration/unlink/rmdir"
+                ]
+              }
+            ]
+          }
+        },
+        "security.json": {
+          "status": "passed",
+          "checks": [
+            "schema 5 migration backs up each file authority before adding persistent security descriptors",
+            "self-relative owner/group/DACL query, requested sections, required buffer size and READ_CONTROL/WRITE_DAC/SACL boundaries",
+            "ordered deny/allow access checks, MAXIMUM_ALLOWED and explicit-right intersection; existing handles retain granted rights",
+            "SMB denial enforced by NFSv3 READ/ACCESS, NFSv4 ACCESS, core API and WebDAV readonly aliases",
+            "ACE order, empty versus NULL DACL, implicit owner rights and OWNER RIGHTS SID",
+            "malformed offsets, overlaps, truncation and unsupported ACEs rejected atomically; ownership cannot be assigned to another user",
+            "file/directory inheritance with CREATOR OWNER substitution and multi-generation propagation; ACL follows rename",
+            "SecD CREATE persists protected initial ACL, validates ownership and rejects duplicate/malformed contexts before mutation",
+            "group ACE enforcement and membership revocation use freshly signed identity grants",
+            "schema 6 durability across process restart; replacement object receives fresh owner and ACL",
+            "NFS writer publication still enforces file DACL; WRITE and chmod cannot bypass SMB restrictions",
+            "DAV writer cannot bypass ACL; staged PUT retains restrictions, recursive COPY checks descendants and inherits destination ACL through private staging parents",
+            "DAV LOCK on unmapped URL checks parent create rights and persists inherited DACL"
+          ]
+        },
+        "smb3.json": {
+          "status": "passed",
+          "checks": [
+            "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+            "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+            "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+            "0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+            "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+            "leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent",
+            "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+            "unsupported signing/cipher/hash and malformed contexts fail without dialect fallback",
+            "independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+            "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+            "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+            "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+          ]
+        }
+      },
+      "native_kernel_log": "[Wed Nov  4 04:26:36 2026] efi: ACPI=0x3fffa000 ACPI 2.0=0x3fffa014 SMBIOS=0x3ff88000 SMBIOS 3.0=0x3ff86000 MEMATTR=0x3ee8f698 MOKvar=0x3ff84000 RNG=0x3ffd2018 \n[Wed Nov  4 04:26:36 2026] SMBIOS 3.1.0 present.\n[Wed Nov  4 04:40:39 2026] Key type cifs.spnego registered\n[Wed Nov  4 04:40:39 2026] Key type cifs.idmap registered\n[Wed Nov  4 04:40:39 2026] CIFS: Attempting to mount //files.taucloud.test/smb\n[Wed Nov  4 04:40:39 2026] CIFS: VFS: \\\\files.taucloud.test failed to create a new SMB session with Kerberos: -126\n[Wed Nov  4 04:40:39 2026] CIFS: VFS: cifs_mount failed w/return code = -126\n[Wed Nov  4 04:40:39 2026] CIFS: Attempting to mount //files.taucloud.test/smb\n[Wed Nov  4 04:40:39 2026] CIFS: VFS: \\\\files.taucloud.test failed to create a new SMB session with Kerberos: -126\n[Wed Nov  4 04:40:39 2026] CIFS: VFS: cifs_mount failed w/return code = -126\n"
+    },
+    {
+      "compiler": "clang",
+      "status": "success",
+      "job": 126387688819,
+      "artifact": 13295339357,
+      "sha256": "e244a774e66565d1da8f297e7338334b82fb54fae658a0910d54cdcfbd41da6d",
+      "results": {
+        "smb-gss.json": {
+          "status": "passed",
+          "checks": [
+            "principal mappings require administrator authority and reject ambiguous duplicate principal bindings",
+            "real Kerberos and SPNEGO negotiate authenticate SMB2.1/3.0/3.0.2/3.1.1; independent client validates signing and AES encryption during write/read/flush/rename/truncate/delete",
+            "unmodified Samba smbclient requires Kerberos and verifies 1 MiB signed SMB2.1 and encrypted SMB3.1.1 roundtrips",
+            "unmapped principals, tickets for another acceptor and modified authenticators fail without NTLM or guest fallback",
+            "independent raw Kerberos verifies mutual AP-REP and final SMB2 HMAC; replaying the same AP-REQ on a fresh transport is rejected",
+            "live principal mapping revocation terminates existing file authority and new logins; explicit reenable admits fresh authentication",
+            "atomic cifs keytab rotation admits fresh tickets while existing signed/encrypted sessions remain valid",
+            "ticket lifetime bounds SMB authority; Kerberos is independent of NTLM enrollment and existing mandatory-MIC NTLM authentication still works"
+          ]
+        },
+        "nfs-gss.json": {
+          "status": "passed",
+          "checks": [
+            "real MIT tickets: mutual authentication and NFSv3/v4.1 read/write in krb5, krb5i and krb5p; AUTH_SYS downgrade denied; MOUNT and SECINFO advertise Kerberos",
+            "header/body MIC and encrypted-body tampering rejected; 64-entry replay window drops duplicates/old requests and accepts out-of-order requests; MAXSEQ and body sequence enforced",
+            "v3 duplicate mutation with fresh GSS sequence replays its result and rechecks revoked authority; context survives TCP reconnect; authenticated DESTROY invalidates the handle",
+            "SECINFO negotiates across disallowed weaker/stronger tuples, AUTH_SYS and authorized anonymous discovery; bare/repeated/saved PUTFH and LOOKUPP obey WRONGSEC placement; discovery consumes FH, replays safely and enforces traversal ACLs",
+            "unmapped principals and wrong acceptor tickets denied; per-export privacy requirement prevents downgrade; existing contexts lose access after principal mapping revocation",
+            "unmodified pinned pynfs COMP1, CSESS1, OPEN1, OPEN30 and VF1r pass using krb5, krb5i and krb5p",
+            "atomic service-key rotation accepts newly issued tickets while established contexts continue; live group-membership revocation denies existing contexts",
+            "expired tickets and pre-restart context handles are rejected; fresh mutual authentication preserves access to stable file handles"
+          ]
+        },
+        "security.json": {
+          "status": "passed",
+          "checks": [
+            "schema 5 migration backs up each file authority before adding persistent security descriptors",
+            "self-relative owner/group/DACL query, requested sections, required buffer size and READ_CONTROL/WRITE_DAC/SACL boundaries",
+            "ordered deny/allow access checks, MAXIMUM_ALLOWED and explicit-right intersection; existing handles retain granted rights",
+            "SMB denial enforced by NFSv3 READ/ACCESS, NFSv4 ACCESS, core API and WebDAV readonly aliases",
+            "ACE order, empty versus NULL DACL, implicit owner rights and OWNER RIGHTS SID",
+            "malformed offsets, overlaps, truncation and unsupported ACEs rejected atomically; ownership cannot be assigned to another user",
+            "file/directory inheritance with CREATOR OWNER substitution and multi-generation propagation; ACL follows rename",
+            "SecD CREATE persists protected initial ACL, validates ownership and rejects duplicate/malformed contexts before mutation",
+            "group ACE enforcement and membership revocation use freshly signed identity grants",
+            "schema 6 durability across process restart; replacement object receives fresh owner and ACL",
+            "NFS writer publication still enforces file DACL; WRITE and chmod cannot bypass SMB restrictions",
+            "DAV writer cannot bypass ACL; staged PUT retains restrictions, recursive COPY checks descendants and inherits destination ACL through private staging parents",
+            "DAV LOCK on unmapped URL checks parent create rights and persists inherited DACL"
+          ]
+        },
+        "smb3.json": {
+          "status": "passed",
+          "checks": [
+            "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+            "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+            "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+            "0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+            "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+            "leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent",
+            "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+            "unsupported signing/cipher/hash and malformed contexts fail without dialect fallback",
+            "independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+            "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+            "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+            "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+          ]
+        }
+      }
+    },
+    {
+      "compiler": "msvc",
+      "status": "success",
+      "job": 126387689084,
+      "artifact": 13296730676,
+      "sha256": "2df6e956f54d0324b7a59e76f32ea5eacb0aef61bb0973106e20e3b8d90f6613",
+      "results": {
+        "security.json": {
+          "status": "passed",
+          "checks": [
+            "schema 5 migration backs up each file authority before adding persistent security descriptors",
+            "self-relative owner/group/DACL query, requested sections, required buffer size and READ_CONTROL/WRITE_DAC/SACL boundaries",
+            "ordered deny/allow access checks, MAXIMUM_ALLOWED and explicit-right intersection; existing handles retain granted rights",
+            "SMB denial enforced by NFSv3 READ/ACCESS, NFSv4 ACCESS, core API and WebDAV readonly aliases",
+            "ACE order, empty versus NULL DACL, implicit owner rights and OWNER RIGHTS SID",
+            "malformed offsets, overlaps, truncation and unsupported ACEs rejected atomically; ownership cannot be assigned to another user",
+            "file/directory inheritance with CREATOR OWNER substitution and multi-generation propagation; ACL follows rename",
+            "SecD CREATE persists protected initial ACL, validates ownership and rejects duplicate/malformed contexts before mutation",
+            "group ACE enforcement and membership revocation use freshly signed identity grants",
+            "schema 6 durability across process restart; replacement object receives fresh owner and ACL",
+            "NFS writer publication still enforces file DACL; WRITE and chmod cannot bypass SMB restrictions",
+            "DAV writer cannot bypass ACL; staged PUT retains restrictions, recursive COPY checks descendants and inherits destination ACL through private staging parents",
+            "DAV LOCK on unmapped URL checks parent create rights and persists inherited DACL"
+          ]
+        },
+        "smb3.json": {
+          "status": "passed",
+          "checks": [
+            "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+            "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+            "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+            "0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+            "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+            "leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent",
+            "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+            "unsupported signing/cipher/hash and malformed contexts fail without dialect fallback",
+            "independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+            "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+            "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+            "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+          ]
+        },
+        "windows-native-security.json": {
+          "status": "passed"
+        }
+      }
+    }
+  ],
+  "native_analysis": {
+    "observation": "Native mount returns ENOKEY before a new SESSION_SETUP reaches the SMB server.",
+    "fixture_defect": "The request-key description pattern uses two wildcards; Ubuntu keyutils 1.6.x supports one wildcard per field.",
+    "correction": "Use ver=0x2;host=files.taucloud.test;* and retain native reacceptance as pending.",
+    "sources": [
+      "https://man7.org/linux/man-pages/man5/request-key.conf.5.html",
+      "https://kernel.googlesource.com/pub/scm/linux/kernel/git/torvalds/linux/+/9d83e1f05c98bab5de350bef89177e2be8b34db0/fs/smb/client/cifs_spnego.c"
+    ]
+  }
+}

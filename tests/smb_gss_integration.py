@@ -19,6 +19,7 @@ from smbprotocol.file_info import FileRenameInformation, FileEndOfFileInformatio
 
 from m5_integration import Fixture, create, denied, setinfo
 from nfs_gss_integration import Kdc, REALM
+from smb_reauthentication import reauthenticate
 
 HOST = 'files.taucloud.test'
 SERVICE = 'cifs/' + HOST + '@' + REALM
@@ -166,6 +167,36 @@ def main():
         c.disconnect()
         passed('independent raw Kerberos verifies mutual AP-REP and final SMB2 HMAC; replaying the same AP-REQ on a fresh transport is rejected')
 
+        for dialect, encrypted in ((0x210, False), (0x300, True), (0x302, True), (0x311, False), (0x311, True)):
+            c, s, tree = connect(dialect, encrypted)
+            h = create(tree, f'kerberos-renew-{dialect}-{encrypted}'); h.write(b'renew')
+            for protocol in ('kerberos', 'negotiate'):
+                tickets()
+                reauthenticate(s, 'alice@' + REALM, protocol=protocol)
+                assert h.read(0, 5) == b'renew'
+            h.close(); c.disconnect()
+        passed('fresh Kerberos and SPNEGO renew all SMB2/3 dialects with unchanged signing/cipher keys and live file handles')
+
+        f.api('smb-principals', f.admin, dict(id='alias-kerberos', principal='unmapped@' + REALM, username='alice'))
+        c, s, tree = connect(encrypted=True)
+        h = create(tree, 'principal-renewal', share=0); h.write(b'bound')
+        tickets('unmapped')
+        denied(lambda: reauthenticate(s, 'unmapped@' + REALM, protocol='kerberos'), 0xc000006d)
+        fresh, _, tree = connect(encrypted=True, user='unmapped')
+        h2 = create(tree, 'principal-renewal', share=0, disposition=1)
+        assert h2.read(0, 5) == b'bound'
+        h2.close(); fresh.disconnect(); c.disconnect(close=False)
+        tickets()
+        c, s, tree = connect(encrypted=True)
+        h = create(tree, 'revoked-renewal', share=0)
+        f.api('smb-principals', f.admin, dict(mapping, update=True, enabled=False))
+        f.api('smb-principals', f.admin, dict(mapping, update=True))
+        denied(lambda: reauthenticate(s, 'alice@' + REALM, protocol='negotiate'), 0xc000006d)
+        fresh, _, tree = connect(encrypted=True)
+        h2 = create(tree, 'revoked-renewal', share=0, disposition=1)
+        h2.close(); fresh.disconnect(); c.disconnect(close=False)
+        passed('renewal cannot switch to another Kerberos principal mapped to the same account or revive a revoked mapping token; failures release exclusive opens')
+
         c, s, tree = connect(encrypted=True)
         h = create(tree, 'revoked'); h.write(b'before')
         f.api('smb-principals', f.admin, dict(mapping, update=True, enabled=False))
@@ -196,9 +227,11 @@ def main():
         c, s, tree = connect(encrypted=True)
         h = create(tree, 'expiry'); h.write(b'expiring')
         time.sleep(7)
-        denied(lambda: h.read(0, 8), 0xc000006d)
-        c.disconnect(close=False)
+        denied(lambda: h.read(0, 8), 0xc000035c)
         tickets()
+        reauthenticate(s, 'alice@' + REALM, protocol='negotiate')
+        assert h.read(0, 8) == b'expiring'
+        h.close(); c.disconnect()
         # No separate NTLM password enrollment is required for Kerberos access.
         f.api('smb/credentials', f.admin, dict(username='alice', enabled=False))
         c, _, tree = connect(encrypted=True)

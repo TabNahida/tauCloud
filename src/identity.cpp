@@ -115,9 +115,25 @@ struct identity_store::impl {
     }
     tx.commit();
   }
-  json smb_session(const std::string &name, int64_t expires, const std::string &principal = "") {
-    statement prune(db, "DELETE FROM sessions WHERE expires<=?");
+  json smb_session(const std::string &name, int64_t expires, const std::string &principal,
+                   const std::string &replace) {
+    transaction tx(db);
+    auto provenance = principal.empty() ? "" : "krb5:" + principal;
+    if (!replace.empty()) {
+      require(replace.size() == 64, "unauthorized");
+      statement old(db, "SELECT name,csrf,expires FROM sessions WHERE hash=? AND kind='smb'");
+      old.bind(1, digest(replace));
+      // Expired sessions may renew, revoked sessions may not. Preserve both the
+      // canonical account and authentication principal across the old keys.
+      require(old.row() && old.text(0) == name && old.text(1) == provenance &&
+                  old.integer(2) > now() - 3600000, "unauthorized");
+      statement del(db, "DELETE FROM sessions WHERE hash=?");
+      del.bind(1, digest(replace));
+      del.row();
+    }
+    statement prune(db, "DELETE FROM sessions WHERE expires<=? AND (kind!='smb' OR expires<=?-3600000)");
     prune.bind(1, now());
+    prune.bind(2, now());
     prune.row();
     statement count(db, "SELECT count(*) FROM sessions");
     count.row();
@@ -126,9 +142,10 @@ struct identity_store::impl {
     statement add(db, "INSERT INTO sessions VALUES(?,?,'smb','files',?,?)");
     add.bind(1, digest(access));
     add.bind(2, name);
-    add.bind(3, principal.empty() ? "" : "krb5:" + principal);
+    add.bind(3, provenance);
     add.bind(4, expires);
     add.row();
+    tx.commit();
     return {{"token", access}, {"username", name}, {"expires", expires}};
   }
   json smb_dispatch(const std::string &op, const json &body, const call_context &ctx) {
@@ -194,7 +211,8 @@ struct identity_store::impl {
       auto lifetime = body.at("lifetime").get<uint32_t>();
       require(lifetime > 0, "unauthorized");
       ctx.check();
-      return smb_session(name, now() + int64_t(std::min(lifetime, 3600u)) * 1000, principal);
+      return smb_session(name, now() + int64_t(std::min(lifetime, 3600u)) * 1000, principal,
+                         body.value("replace_token", ""));
     }
     std::erase_if(exchanges, [](const auto &item) { return item.second.expires <= now(); });
     if (op == "smb_negotiate") {
@@ -234,7 +252,7 @@ struct identity_store::impl {
     OPENSSL_cleanse(hash.data(), hash.size());
     ctx.check();
     authenticated_attempt("smb:" + path_fold(name));
-    result.update(smb_session(name, now() + 3600000));
+    result.update(smb_session(name, now() + 3600000, "", body.value("replace_token", "")));
     return result;
   }
   json dispatch(const std::string &op, const json &body, const call_context &ctx) {
@@ -300,8 +318,9 @@ struct identity_store::impl {
       auto token = random_hex(), csrf = random_hex();
       int64_t expires = now() + (kind == "cli" ? 3600000 : 1800000);
       transaction tx(db);
-      statement prune(db, "DELETE FROM sessions WHERE expires<=?");
+      statement prune(db, "DELETE FROM sessions WHERE expires<=? AND (kind!='smb' OR expires<=?-3600000)");
       prune.bind(1, now());
+      prune.bind(2, now());
       prune.row();
       statement count(db, "SELECT count(*) FROM sessions");
       count.row();
@@ -324,9 +343,10 @@ struct identity_store::impl {
       statement get(db, "SELECT s.name,s.kind,s.scope,s.csrf,s.expires,u.role FROM sessions s JOIN "
                         "users u ON s.name=u.name WHERE s.hash=? AND u.enabled=1");
       get.bind(1, digest(token));
-      require(get.row() && get.integer(4) > now() &&
-                  get.text(1) == body.at("kind").get<std::string>(),
+      require(get.row() && get.text(1) == body.at("kind").get<std::string>(),
               "unauthorized");
+      require(get.integer(4) > now() || (op == "logout" && ctx.caller == "smb" && get.text(1) == "smb"),
+              get.text(1) == "smb" ? "session_expired" : "unauthorized");
       if (body.value("admin", false))
         require(get.text(2) == "admin" && get.text(5) == "admin", "forbidden");
       if (body.value("write", false)) {

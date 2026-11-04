@@ -1,0 +1,131 @@
+{
+  "recorded_at": "2026-11-04T04:37:17.766749+00:00",
+  "commit": "ec96983d302f424a41863f620d8b5561b5881f97",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41771121141",
+  "status": "passed",
+  "scope": "Anonymous NFS security discovery on GCC, Clang ASan/UBSan and MSVC; Linux GSS and native NFSv4.1 regression. Windows GSS is not implemented.",
+  "jobs": [
+    {
+      "compiler": "gcc",
+      "job": 126380780855,
+      "artifact": 13295507033,
+      "sha256": "a73e271e110b0b38a7f380bb5ec9be5f874348e4be5e46ff4665f3622462ebec",
+      "discovery": {
+        "status": "passed",
+        "checks": [
+          "EXPORT and DUMP filter root-squashed/unmapped principals; duplicate MNT is idempotent",
+          "mount records survive reconnect; UMNT/UMNTALL affect only caller and preserve NFS filehandles",
+          "rpcbind DUMP/GETVERSADDR advertise implemented TCP services plus UDP NSM; older NLM versions remain absent",
+          "recognized unsupported file types return per-operation errors after successful SEQUENCE/PUTFH",
+          "BACKCHANNEL_CTL updates bounded callback configuration; unknown GSS, SP4_NONE SET_SSV and obsolete v4.0 operations return defined per-operation errors",
+          "optional pNFS/delegation/attribute operations are decoded and return NOTSUPP with their own operation number, not OP_ILLEGAL",
+          "AUTH_NONE negotiates through a separately scoped anonymous identity; no file access or AUTH_SYS reply reuse; anonymous policy revocation invalidates security replies",
+          "export revocation immediately hides discovery and denies subsequent MNT"
+        ]
+      },
+      "gss": {
+        "status": "passed",
+        "checks": [
+          "real MIT tickets: mutual authentication and NFSv3/v4.1 read/write in krb5, krb5i and krb5p; AUTH_SYS downgrade denied; MOUNT and SECINFO advertise Kerberos",
+          "header/body MIC and encrypted-body tampering rejected; 64-entry replay window drops duplicates/old requests and accepts out-of-order requests; MAXSEQ and body sequence enforced",
+          "v3 duplicate mutation with fresh GSS sequence replays its result and rechecks revoked authority; context survives TCP reconnect; authenticated DESTROY invalidates the handle",
+          "SECINFO negotiates across disallowed weaker/stronger tuples, AUTH_SYS and authorized anonymous discovery; bare/repeated/saved PUTFH and LOOKUPP obey WRONGSEC placement; discovery consumes FH, replays safely and enforces traversal ACLs",
+          "unmapped principals and wrong acceptor tickets denied; per-export privacy requirement prevents downgrade; existing contexts lose access after principal mapping revocation",
+          "unmodified pinned pynfs COMP1, CSESS1, OPEN1, OPEN30 and VF1r pass using krb5, krb5i and krb5p",
+          "atomic service-key rotation accepts newly issued tickets while established contexts continue; live group-membership revocation denies existing contexts",
+          "expired tickets and pre-restart context handles are rejected; fresh mutual authentication preserves access to stable file handles",
+          "unmodified Linux kernel NFSv4.1 mounts and file roundtrips pass with krb5, krb5i and krb5p"
+        ],
+        "native": {
+          "status": "passed",
+          "profiles": [
+            {
+              "service": "krb5",
+              "status": "passed",
+              "checks": [
+                "native kernel mount",
+                "256 KiB write/fsync/read",
+                "mapped owner",
+                "rename/overwrite/truncate",
+                "directory enumeration/unlink/rmdir"
+              ]
+            },
+            {
+              "service": "krb5i",
+              "status": "passed",
+              "checks": [
+                "native kernel mount",
+                "256 KiB write/fsync/read",
+                "mapped owner",
+                "rename/overwrite/truncate",
+                "directory enumeration/unlink/rmdir"
+              ]
+            },
+            {
+              "service": "krb5p",
+              "status": "passed",
+              "checks": [
+                "native kernel mount",
+                "256 KiB write/fsync/read",
+                "mapped owner",
+                "rename/overwrite/truncate",
+                "directory enumeration/unlink/rmdir"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "compiler": "clang",
+      "job": 126380780843,
+      "artifact": 13295346379,
+      "sha256": "ddb5c4612d2ef63d5bfaffd728b08222298b4435a4f1eab4dad362fd2647ea04",
+      "discovery": {
+        "status": "passed",
+        "checks": [
+          "EXPORT and DUMP filter root-squashed/unmapped principals; duplicate MNT is idempotent",
+          "mount records survive reconnect; UMNT/UMNTALL affect only caller and preserve NFS filehandles",
+          "rpcbind DUMP/GETVERSADDR advertise implemented TCP services plus UDP NSM; older NLM versions remain absent",
+          "recognized unsupported file types return per-operation errors after successful SEQUENCE/PUTFH",
+          "BACKCHANNEL_CTL updates bounded callback configuration; unknown GSS, SP4_NONE SET_SSV and obsolete v4.0 operations return defined per-operation errors",
+          "optional pNFS/delegation/attribute operations are decoded and return NOTSUPP with their own operation number, not OP_ILLEGAL",
+          "AUTH_NONE negotiates through a separately scoped anonymous identity; no file access or AUTH_SYS reply reuse; anonymous policy revocation invalidates security replies",
+          "export revocation immediately hides discovery and denies subsequent MNT"
+        ]
+      },
+      "gss": {
+        "status": "passed",
+        "checks": [
+          "real MIT tickets: mutual authentication and NFSv3/v4.1 read/write in krb5, krb5i and krb5p; AUTH_SYS downgrade denied; MOUNT and SECINFO advertise Kerberos",
+          "header/body MIC and encrypted-body tampering rejected; 64-entry replay window drops duplicates/old requests and accepts out-of-order requests; MAXSEQ and body sequence enforced",
+          "v3 duplicate mutation with fresh GSS sequence replays its result and rechecks revoked authority; context survives TCP reconnect; authenticated DESTROY invalidates the handle",
+          "SECINFO negotiates across disallowed weaker/stronger tuples, AUTH_SYS and authorized anonymous discovery; bare/repeated/saved PUTFH and LOOKUPP obey WRONGSEC placement; discovery consumes FH, replays safely and enforces traversal ACLs",
+          "unmapped principals and wrong acceptor tickets denied; per-export privacy requirement prevents downgrade; existing contexts lose access after principal mapping revocation",
+          "unmodified pinned pynfs COMP1, CSESS1, OPEN1, OPEN30 and VF1r pass using krb5, krb5i and krb5p",
+          "atomic service-key rotation accepts newly issued tickets while established contexts continue; live group-membership revocation denies existing contexts",
+          "expired tickets and pre-restart context handles are rejected; fresh mutual authentication preserves access to stable file handles"
+        ]
+      }
+    },
+    {
+      "compiler": "msvc",
+      "job": 126380780560,
+      "artifact": 13294733736,
+      "sha256": "2ddc8fbc91dfb3ab5978201b836da15385209a0a5c7e4592904065417867b6a1",
+      "discovery": {
+        "status": "passed",
+        "checks": [
+          "EXPORT and DUMP filter root-squashed/unmapped principals; duplicate MNT is idempotent",
+          "mount records survive reconnect; UMNT/UMNTALL affect only caller and preserve NFS filehandles",
+          "rpcbind DUMP/GETVERSADDR advertise implemented TCP services plus UDP NSM; older NLM versions remain absent",
+          "recognized unsupported file types return per-operation errors after successful SEQUENCE/PUTFH",
+          "BACKCHANNEL_CTL updates bounded callback configuration; unknown GSS, SP4_NONE SET_SSV and obsolete v4.0 operations return defined per-operation errors",
+          "optional pNFS/delegation/attribute operations are decoded and return NOTSUPP with their own operation number, not OP_ILLEGAL",
+          "AUTH_NONE negotiates through a separately scoped anonymous identity; no file access or AUTH_SYS reply reuse; anonymous policy revocation invalidates security replies",
+          "export revocation immediately hides discovery and denies subsequent MNT"
+        ]
+      }
+    }
+  ]
+}

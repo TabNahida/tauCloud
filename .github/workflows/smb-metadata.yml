@@ -11,6 +11,7 @@ on:
       - 'src/ipc.cpp'
       - 'src/api.cpp'
       - 'tests/smb_gss_integration.py'
+      - 'tests/smb_reauthentication.py'
       - 'tests/linux_native_smb_gss.py'
       - 'src/smb_async.inc'
       - 'tests/smb_blocking_locks.py'
@@ -88,6 +89,8 @@ jobs:
         run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_m2_tests${{ matrix.suffix }}
       - name: SMB authority and failed CREATE cleanup
         run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_m5_tests${{ matrix.suffix }}
+      - name: SMB session renewal and failure cleanup
+        run: python tests/smb_reauthentication.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/smb-reauth.json
       - name: Persistent ACLs and cross-protocol permission checks
         run: python tests/smb_security_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/security.json
       - name: Native Windows security descriptor operations
