@@ -114,6 +114,12 @@ def main():
     checks=[];f=Fixture(a.bin,512);engines=[];report=dict(status='failed',checks=checks)
     def api(op,b=None,expected=200,token=None):return f.api('plugins/'+op,token or f.admin,b,expected)
     def installed(id):return next(x for x in api('list')['plugins'] if x['id']==id)
+    def manager_restarted(previous_pid):
+        # Restart can clear identity between two status calls. Inspect one
+        # coherent snapshot and keep waiting while identity is unavailable.
+        status=f.ctl('status')['plugins']
+        pid=(status.get('identity') or {}).get('pid')
+        return status['status']=='running' and pid is not None and pid!=previous_pid
     def install(path):
         plan=api('plan',dict(source=str(path)));m=plan['manifest']
         return api('install',dict(source=str(path),approved_digest=plan['digest'],approved_permissions=m['capabilities'],trusted_code=True))
@@ -141,7 +147,7 @@ def main():
         instance=f.state/'plugins/state/echo/plugin.instance.json';before=json.loads(instance.read_text())
         manager_pid=f.ctl('status')['plugins']['identity']['pid']
         os.kill(manager_pid,signal.SIGTERM if os.name=='nt' else signal.SIGKILL)
-        wait(lambda:f.ctl('status')['plugins']['status']=='running' and f.ctl('status')['plugins']['identity']['pid']!=manager_pid)
+        wait(lambda:manager_restarted(manager_pid))
         wait(lambda:installed('echo')['status']=='running')
         after=json.loads(instance.read_text());assert (before['pid'],before['birth'])==(after['pid'],after['birth'])
         assert api('invoke',dict(id='echo',request=dict(value='adopted')))['echo']['value']=='adopted'
@@ -156,7 +162,7 @@ def main():
         spawned=json.loads((f.state/'plugins/registry.json').read_text())['plugins']['slow']['identity']
         manager_pid=f.ctl('status')['plugins']['identity']['pid']
         os.kill(manager_pid,signal.SIGTERM if os.name=='nt' else signal.SIGKILL)
-        wait(lambda:f.ctl('status')['plugins']['status']=='running' and f.ctl('status')['plugins']['identity']['pid']!=manager_pid)
+        wait(lambda:manager_restarted(manager_pid))
         wait(lambda:installed('slow')['status']=='running')
         adopted=json.loads((f.state/'plugins/state/slow/plugin.instance.json').read_text())
         assert (spawned['pid'],spawned['birth'])==(adopted['pid'],adopted['birth'])

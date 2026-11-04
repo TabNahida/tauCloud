@@ -1,5 +1,5 @@
 {
-  "recorded_at": "2026-11-04T10:16:27.593150+00:00",
+  "recorded_at": "2026-11-04T10:22:04.369216+00:00",
   "base_source": "4f8ec28df4db0f6390307d95797c8969e0dc0331",
   "status": "partial",
   "scope": "Linux RPCSEC_GSS protection of existing NFSv4.1 callbacks, additive credential lifecycle, exact channel limits and shared-context replay-window admission. Full SMB/NFS remains open. Mixed valid flavor arrays succeed; CREATE_SESSION and BACKCHANNEL_CTL reject unknown GSS handles before mutation.",
@@ -13,7 +13,7 @@
     "src/nfs_v4.inc": "6f14f99becbd093e2b0f09f194263ab6ceafc57530dde476ef6bd72b3cbe4fd1",
     "src/gss.cpp": "ef94e05b5fa085951ef78bd0e74f3bb35f42652cf80992f5c2442fd31e6d84a0",
     "include/taucloud/gss.hpp": "eb688a2056277bc17371b36e70ceb76ac24f6cbf7af96a1786248a6b72c68f98",
-    "tests/nfs_gss_backchannel.py": "d00668aeda918769f1c231f3cd8ce3fbb634097fbb869bc1452b32b72b052573",
+    "tests/nfs_gss_backchannel.py": "2eb77112f59b03105a4289c385235afec72d376fbe8b2d08b5d06a864452a82f",
     ".github/workflows/smb-metadata.yml": "c1558d7c8359c45999f9e94ff8f2524facb6829584ff156d0b8d2d5317997c60",
     "scripts/run_m7.py": "38321ff8274d5b4f2457ade7d29985ebc5613e5bb3ea650fa48639c0f4d53671",
     "tests/pynfs_gss_handle_diagnostic.py": "c79b283c4cba573792821b74bdeeb4c2b16c80153fa413edd6d9b6ce48f9d960",
@@ -5743,5 +5743,5 @@
     "Windows GSS acceptor",
     "Other Full SMB/NFS gates in TODO.md"
   ],
-  "followup_base": "895f4f0d077fb892946120a5af07952d2ead2eb9"
+  "followup_base": "97209e9e24ed6277120a9a367a9f1a1acb103076"
 }

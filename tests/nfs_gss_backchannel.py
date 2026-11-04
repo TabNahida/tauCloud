@@ -159,7 +159,10 @@ def main():
         window = client(); window.hold = True; offer = window.offer(3)
         session_ids = []
         for _ in range(32):
-            window.session_back([offer]); session_ids.append(window.sid)
+            # No file state is needed here. Omit unrelated RECLAIM_COMPLETE
+            # calls so all probes fit comfortably within their real deadline.
+            CallbackClient.establish(window, [offer]); session_ids.append(window.sid)
+        assert window.compound([], False).status == 0
         peer = client(); peer.reverse = window.reverse; peer.hold = True
         for sid in session_ids:
             r = peer.compound([op.bind_conn_to_session(sid, 3, False)], False)
