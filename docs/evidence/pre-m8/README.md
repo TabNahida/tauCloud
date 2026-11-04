@@ -1,5 +1,7 @@
 # M5/M7 selected-profile acceptance — 2026-10-31
 
+The [buffered-notification follow-up](smb-notify-buffered-local.json) passes 14 independent notification groups, four signing groups and the full 14-case Samba ACL suite under Clang ASan/UBSan. The complete unmodified notification diagnostic improves to 16 successes and seven failures; its original log remains included. `dir` and `tcon` join the continuous regression selection. Cross-platform reacceptance is pending.
+
 The [SMB signing increment](smb-signing-local.json) implements SMB3.1.1 GMAC/CMAC/HMAC-SHA256 negotiation and mandatory CMAC fallback. Local Clang ASan/UBSan passes 1,125 core checks, four independent signing groups, 20 SMB3 groups and 12 real Kerberos groups. It retains the full notification diagnostic (15 pass, eight fail), the Windows `5f536b3` first-watch failure and its pending handle-reopen fix, and the same-binary 512 MiB/1 GiB full ACL comparison. Only sanitizer fixtures receive the larger budget; production limits are unchanged. Remote reacceptance and the full compatibility gates remain open.
 
 **Scope update (2026-10-31): the user requires full SMB/NFS standards compatibility before further M8 development. The limited-profile results below remain valid evidence, but do not close that expanded milestone. See [TODO](../../../TODO.md).**

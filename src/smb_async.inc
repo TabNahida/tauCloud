@@ -69,6 +69,36 @@ pace::task<void> finish_lock(uint64_t async_id, uint32_t code) {
     response.replace(48, 16, signature(key, response, selected.signing));
   co_await send_packet(std::move(response), pending.encrypted);
 }
+bytes notify_data(const json &result, uint32_t limit, uint32_t &code) {
+  bytes data;
+  if (result.at("overflow").get<bool>()) { code = 0x10c; return data; }
+  for (const auto &entry : result.at("events")) {
+    auto name = entry.at("name").get<std::string>();
+    std::replace(name.begin(), name.end(), '/', '\\');
+    auto wire = utf16(name);
+    auto length = 12 + wire.size();
+    auto offset = data.size();
+    auto aligned = (length + 3) / 4 * 4;
+    if (offset + length > limit) { code = 0x10c; data.clear(); break; }
+    auto item = sized(aligned, 0);
+    put(item, 0, aligned, 4); put(item, 4, entry.at("action").get<uint32_t>(), 4);
+    put(item, 8, wire.size(), 4); item.replace(12, wire.size(), wire);
+    data += item;
+  }
+  // Last record has no padding requirement and no following offset.
+  if (!data.empty()) {
+    size_t offset = 0;
+    while (offset + get(data, offset, 4) < data.size()) offset += get(data, offset, 4);
+    data.resize(offset + 12 + get(data, offset + 8, 4));
+    put(data, offset, 0, 4);
+  }
+  return data;
+}
+bytes notify_body(const bytes &data) {
+  auto body = sized(8, 9);
+  put(body, 2, data.empty() ? 0 : 72, 2); put(body, 4, data.size(), 4);
+  return body + data;
+}
 pace::task<void> finish_notify(uint64_t async_id, uint32_t code, bytes data = {}) {
   auto found = pending_notifications.find(async_id);
   if (found == pending_notifications.end()) co_return;
@@ -86,9 +116,7 @@ pace::task<void> finish_notify(uint64_t async_id, uint32_t code, bytes data = {}
   put(response, 24, pending.message_id, 8); put(response, 32, async_id, 8);
   put(response, 40, session, 8);
   if (!code || code == 0x10b || code == 0x10c) {
-    auto body = sized(8, 9);
-    put(body, 2, data.empty() ? 0 : 72, 2); put(body, 4, data.size(), 4);
-    response += body + data;
+    response += notify_body(data);
   } else response += sized(9, 9);
   if (!pending.encrypted)
     response.replace(48, 16, signature(key, response, selected.signing));
@@ -119,31 +147,7 @@ pace::task<void> pump_notifications() {
       limit = std::min(limit, file->second.notify_capacity.value_or(limit));
       auto result = co_await operation(file->second, "notify", false);
       waiting = result.at("pending");
-      if (!waiting) {
-        if (result.at("overflow").get<bool>()) code = 0x10c;
-        else {
-          for (const auto &entry : result.at("events")) {
-            auto name = entry.at("name").get<std::string>();
-            std::replace(name.begin(), name.end(), '/', '\\');
-            auto wire = utf16(name);
-            auto length = 12 + wire.size();
-            auto offset = data.size();
-            auto aligned = (length + 3) / 4 * 4;
-            if (offset + length > limit) { code = 0x10c; data.clear(); break; }
-            auto item = sized(aligned, 0);
-            put(item, 0, aligned, 4); put(item, 4, entry.at("action").get<uint32_t>(), 4);
-            put(item, 8, wire.size(), 4); item.replace(12, wire.size(), wire);
-            data += item;
-          }
-          // Last record has no padding requirement and no following offset.
-          if (!data.empty()) {
-            size_t offset = 0;
-            while (offset + get(data, offset, 4) < data.size()) offset += get(data, offset, 4);
-            data.resize(offset + 12 + get(data, offset + 8, 4));
-            put(data, offset, 0, 4);
-          }
-        }
-      }
+      if (!waiting) data = notify_data(result, limit, code);
     } catch (const status_error &e) { waiting = false; code = e.status; }
       catch (const error &e) { waiting = false; code = status(e.what()); }
     if (!waiting) co_await finish_notify(id, code, std::move(data));

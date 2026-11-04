@@ -1101,9 +1101,19 @@ struct client {
       auto limit = get(p, 68, 4);
       check(limit <= 65536);
       check(pending_notifications.size() < 16 && next_async_id != UINT64_MAX, 0xc000009a);
-      json request = {{"filter", get(p, 88, 4)}, {"recursive", bool(get(p, 66, 2) & 1)}, {"register", true}};
-      co_await operation(h, "notify", false, request);
+      // Buffered events belong to this request immediately. Deferring their
+      // drain until the waiter pump would mix in later mutations. An older
+      // outstanding request on this open must still consume the buffer first.
+      bool queued = false;
+      for (const auto &[id, pending] : pending_notifications)
+        queued |= pending.fid == fid_for(h);
+      json request = {{"filter", get(p, 88, 4)}, {"recursive", bool(get(p, 66, 2) & 1)}, {"register", queued}};
+      auto result = co_await operation(h, "notify", false, request);
       if (!h.notify_capacity) h.notify_capacity = static_cast<uint32_t>(limit);
+      if (!result.at("pending").get<bool>()) {
+        auto data = notify_data(result, std::min(static_cast<uint32_t>(limit), *h.notify_capacity), code);
+        co_return notify_body(data);
+      }
       pending_notifications.emplace(next_async_id++, pending_notify{fid_for(h), get(p, 24, 8),
           static_cast<uint32_t>(limit), encrypted, false, {}, {}});
       code = 0x103;
@@ -1569,7 +1579,8 @@ struct client {
           if (!socket.is_open())
             break;
           if (code && code != 0xc0000016 && code != 0x80000005) {
-            body = sized(9, 9);
+            body = cmd == 15 && (code == 0x10b || code == 0x10c)
+                       ? notify_body({}) : sized(9, 9);
             if (code == 0xc0000004 && selected.dialect == 0x311) {
               body = sized(16, 9);
               put(body, 2, 1, 1);

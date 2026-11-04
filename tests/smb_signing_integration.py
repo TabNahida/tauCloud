@@ -44,6 +44,9 @@ def run():
             req = notify(d)
             h = create(t, d.file_name + '/child'); h.close()
             assert events(c, req) == [(1, 'child')]
+            h = create(t, d.file_name + '/buffered'); h.close()
+            req = notify(d, interim=False)
+            assert events(c, req, asynchronous=False) == [(1, 'buffered')]
             req = notify(d); req.cancel(); denied(lambda: c.receive(req, timeout=10), 0xc0000120)
             # Cancellation before the interim arrives must use the request MID;
             # after it arrives it may identify the request by AsyncId instead.
@@ -51,7 +54,7 @@ def run():
             denied(lambda: c.receive(req, timeout=10), 0xc0000120)
             d.close(); c.disconnect()
         passed('HMAC-SHA256/CMAC/GMAC-only offers authenticate, verify signed I/O and preserve the key and open across same-session renewal')
-        passed('each negotiated algorithm signs asynchronous notifications and supports CANCEL before/after STATUS_PENDING')
+        passed('each negotiated algorithm signs synchronous/asynchronous notifications and supports CANCEL before/after STATUS_PENDING')
         for algorithm in (0, 1, 2):
             sock, sid, key, *_ = wire_auth(f.smbport, f.password, 'alice', signing_algorithm=algorithm)
             packet = sign(header(13, 3, sid, flags=8) + struct.pack('<HH', 4, 0), key, algorithm)

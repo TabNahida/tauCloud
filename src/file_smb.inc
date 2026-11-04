@@ -448,6 +448,10 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
       smb_save_attributes(info, attributes);
       if (!existing && body.contains("eas"))
         smb_update_eas(info, body.at("eas"));
+      // Initial metadata is part of the added object, not a later mutation.
+      // Keep native CREATE visible but do not emit synthetic MODIFIED events
+      // for the descriptor, attributes or EAs assigned by this same CREATE.
+      if (!existing) pending_metadata.erase(info.at("object").get<std::string>());
     }
     if (directory)
       file = native_file();

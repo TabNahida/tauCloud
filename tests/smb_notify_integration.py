@@ -31,9 +31,10 @@ def notify(h, mask=3, recursive=False, limit=65536, interim=True):
     return result
 
 
-def events(c, request):
+def events(c, request, asynchronous=True):
     response = c.receive(request, timeout=10)
-    assert response['flags'].get_value() & 2 and response['credit_response'].get_value() == 0
+    assert bool(response['flags'].get_value() & 2) == asynchronous
+    assert response['credit_response'].get_value() == (0 if asynchronous else 1)
     packet = response.pack()
     size, offset, length = struct.unpack_from('<HHI', packet, 64)
     assert size == 9 and offset == 72 and length <= len(packet) - offset
@@ -104,7 +105,15 @@ def run():
         h = create(t, 'fifo/two'); h.close(); assert events(c, second) == [(1, 'two')]
         # Events remain buffered between requests; new filters cannot change an open.
         h = create(t, 'fifo/buffered'); h.close()
-        req = notify(d, 0); assert events(c, req) == [(1, 'buffered')]
+        req = notify(d, 0, interim=False); assert events(c, req, asynchronous=False) == [(1, 'buffered')]
+        # Mutations sent after an already-buffered request form the next batch.
+        for i in range(10):
+            h = create(t, 'fifo/batch-' + str(i)); h.close()
+        req = notify(d, interim=False)
+        h = create(t, 'fifo/after-request'); h.close()
+        assert events(c, req, asynchronous=False) == [(1, 'batch-' + str(i)) for i in range(10)]
+        req = notify(d, interim=False)
+        assert events(c, req, asynchronous=False) == [(1, 'after-request')]
         d.close()
         passed('per-open first filter/watch-tree settings, FIFO completion and events buffered between requests')
 
@@ -196,13 +205,26 @@ def run():
             h.close(); d.close()
         passed('portable DOS attributes, creation-time and EA changes participate in native notification streams')
 
+        d = create(t, 'initial-metadata', options=1, access=0x120089)
+        req = notify(d, 0x185)  # FILE_NAME, ATTRIBUTES, EA, SECURITY.
+        h = create(t, 'initial-metadata/file', access=0x1f01ff)
+        assert events(c, req) == [(1, 'file')]
+        req = notify(d)
+        set_sd(h, descriptor([ace(EVERYONE, 0x120089)]))
+        assert events(c, req) == [(3, 'file')]
+        h.close(); d.close()
+        passed('initial CREATE metadata produces only ADDED; subsequent changes still produce MODIFIED')
+
         if os.name != 'nt':
             name = 'watch-cap'
             d = create(t, name, options=1, access=0x120089)
             for index in range(100): (root / name / str(index)).mkdir()
             for _ in range(2):
-                req = notify(d, 1, True)
+                req = notify(d, 1, True, interim=False)
                 denied(lambda: c.receive(req, timeout=10), 0x10c)
+                assert not req.response['flags'].get_value() & 2
+                assert req.response['credit_response'].get_value() == 1
+                assert req.response['data'].get_value() == struct.pack('<HHI', 9, 0, 0)
             d.close()
             passed('recursive descriptor exhaustion stays visibly overflowed across requests and releases all watches on close')
 
