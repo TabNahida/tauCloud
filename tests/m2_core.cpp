@@ -2,7 +2,11 @@
 #include <taucloud/database.hpp>
 #include <fstream>
 #include <iostream>
-#ifndef _WIN32
+#include <future>
+#include <thread>
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <sys/resource.h>
 #endif
 using namespace tc;
@@ -26,6 +30,102 @@ int main() {
   try {
     auto state = temp / "state", root_path = temp / "root";
     fs::create_directories(root_path);
+    {
+      auto directory = native_file::root(root_path);
+      auto file = directory.open("cache-exclusion", false, true, true);
+      file.write(0, "old"); file.flush();
+      // The future is destroyed after the guard, so a failed assertion still
+      // releases the lease before waiting for a blocked external open.
+      std::future<std::string> external;
+      auto guard = file.cache_guard(true);
+      check(bool(guard) && !guard->breaking());
+      check(!file.cache_guard(true));
+      auto retained = file.retain();
+      check(!retained.cache_guard(false));
+      rejects([&] { directory.open("cache-exclusion"); }, "locked");
+      check(guard->breaking());
+      external = std::async(std::launch::async, [&] {
+#ifdef _WIN32
+        // MSVC fstream does not share DELETE. Use an ordinary blocking native
+        // open with the same share flags as real protocol-backed handles.
+        auto handle = CreateFileW((root_path / "cache-exclusion").c_str(), GENERIC_READ,
+            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr,
+            OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+        require(handle != INVALID_HANDLE_VALUE, "external_open_failed");
+        std::string result(3, '\0');
+        DWORD size = 0;
+        auto ok = ReadFile(handle, result.data(), 3, &size, nullptr);
+        CloseHandle(handle);
+        require(ok && size == 3, "external_read_failed");
+        return result;
+#else
+        std::ifstream stream(root_path / "cache-exclusion", std::ios::binary);
+        require(bool(stream), "external_open_failed");
+        return std::string(std::istreambuf_iterator<char>(stream), {});
+#endif
+      });
+      check(external.wait_for(std::chrono::milliseconds(100)) == std::future_status::timeout);
+      // A protocol holder must be able to flush while contenders are blocked.
+      file.write(0, "new"); file.flush();
+      guard->release(); guard->release();
+      check(external.wait_for(std::chrono::seconds(2)) == std::future_status::ready);
+      check(external.get() == "new");
+      check(!guard->breaking());
+      guard.reset(); retained = native_file(); file = native_file();
+
+      auto reader = directory.open("cache-exclusion");
+#ifdef _WIN32
+      // Native Windows R breaks do not block a writer, so they cannot promise
+      // this primitive's delayed admission guarantee.
+      check(!reader.cache_guard(false));
+#else
+      auto read_guard = reader.cache_guard(false);
+      check(bool(read_guard) && !read_guard->breaking());
+      { auto other = directory.open("cache-exclusion"); check(other.read(0, 3) == "new"); }
+      check(!read_guard->breaking());
+      rejects([&] { directory.open("cache-exclusion", false, false, true); }, "locked");
+      check(read_guard->breaking());
+      read_guard.reset();
+      auto writer = directory.open("cache-exclusion", false, false, true);
+      check(writer.write(0, "ack") == 3);
+      check(!reader.cache_guard(false)); // Existing writer prevents a read lease.
+      check(!writer.cache_guard(true));  // Existing reader prevents exclusivity.
+#endif
+      check(!directory.cache_guard(true));
+      // An already-open native reader prevents granting exclusive caching.
+      auto competitor = directory.open("cache-exclusion", false, false, true);
+      check(!competitor.cache_guard(true));
+    }
+    {
+      auto directory = native_file::root(root_path);
+      auto file = directory.open("cache-cancel", false, true, true);
+      auto retained = file.retain();
+      // Repeated voluntary cancellation drains the notification, including
+      // Windows OVERLAPPED storage, without closing retained descriptors.
+      for (int i = 0; i < 8; ++i) {
+        auto guard = file.cache_guard(true);
+        check(bool(guard) && !guard->breaking());
+      }
+      check(retained.write(0, "cancelled") == 9);
+      file.flush();
+      { auto other = directory.open("cache-cancel"); check(other.read(0, 9) == "cancelled"); }
+      auto guard = file.cache_guard(true);
+      check(bool(guard));
+      // Offset, sparse writes and metadata must keep working after the native
+      // file has been converted to overlapped I/O on Windows.
+      auto offset = uint64_t(4) * 1024 * 1024 * 1024 + 7;
+      check(file.write(offset, "Z") == 1);
+      check(file.read(offset, 1) == "Z");
+      check(file.read(offset + 1, 1).empty());
+      file.allocate(8192);
+      check(file.info().at("size") == 8192);
+      file.truncate(9); file.flush();
+      check(retained.read(0, 9) == "cancelled");
+      file.set_times({}, uint64_t(1700000000) * 1000000000);
+      check(file.info().at("modified_ns") == uint64_t(1700000000) * 1000000000);
+      guard.reset();
+      check(directory.open("cache-cancel").read(0, 9) == "cancelled");
+    }
     {
       auto directory = native_file::root(root_path);
       auto file = directory.open("allocation-failure", false, true, true);

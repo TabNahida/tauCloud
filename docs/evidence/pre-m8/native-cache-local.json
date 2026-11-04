@@ -1,0 +1,38 @@
+{
+  "recorded_at": "2026-11-04T10:44:04.332011+00:00",
+  "base_source": "70838b75fb2a291e7831f12fd20e3a252aa763e9",
+  "status": "partial",
+  "scope": "Native cache exclusion prerequisite only. No SMB cache grants or NFS delegations enabled. Windows implementation awaiting remote acceptance.",
+  "sanitizers": "Linux Clang ASan/UBSan/LSan",
+  "files_sha256": {
+    "src/native_cache.inc": "b18f5c6eb6539681c7bf7a169e77ca78aacbdcd23900d69a2933269f40943a6d",
+    "src/native_files.cpp": "8f3bd8939b10d8ca11f7026fd1d041244e3ba225968e2d5b12ef3a8e20729a69",
+    "include/taucloud/files.hpp": "505f99ebcf15366a879a7b6ca4811284a418df9c29fd69dfa311dedbd2329a5b",
+    "tests/m2_core.cpp": "12e36f79509034abded0ae9c5daf36b06e8dd94373980e28a301157ef3cc6a7f",
+    ".github/workflows/smb-metadata.yml": "f3af08be4a676307a3657e338719ae48ef13adce0e706c2acdbdee1afc7550a8"
+  },
+  "local": {
+    "m2": {
+      "checks": 75,
+      "disk_full": "native-adapter fault injection",
+      "offset_bits": 64,
+      "status": "passed"
+    },
+    "m5": {
+      "checks": 12422,
+      "status": "passed"
+    },
+    "m7": {
+      "checks": 98,
+      "status": "passed"
+    }
+  },
+  "regression_note": "M5/M7 ran before final test additions and comment-only native-cache change; Linux executable native behavior unchanged. M2 reran on final source.",
+  "remaining": [
+    "SMB break/ACK and shared cross-protocol coordinator",
+    "Linux finite kernel break deadline and namespace coherency",
+    "Windows R/RH exclusion unavailable",
+    "NFS delegation/recall/revocation",
+    "Full SMB/NFS standards conformance"
+  ]
+}

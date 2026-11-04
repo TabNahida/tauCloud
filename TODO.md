@@ -140,6 +140,12 @@ Selected-profile acceptance: [M7 guide](docs/m7.md), [中文](docs/m7.zh-CN.md),
 
 ## Full SMB/NFS compatibility prerequisite (user decision, 2026-10-31)
 
+Native cache exclusion now has a Linux lease / Windows RW-oplock adapter and
+actual blocking-open/flush/cancellation tests. Local sanitizer acceptance is
+recorded; Windows remote acceptance and network break/ACK coordination remain
+open. This foundation does not enable SMB caching or NFS delegations; see
+[native cache coherence](docs/native-cache-coherence.md).
+
 The earlier ADR exclusions describe the existing implementation, not permission to exclude features from this expanded goal. Preserve the passing limited-profile evidence while adding independent evidence for the following gates. Optional protocol facilities must be explicitly negotiated/refused according to the standards; refusal alone is not feature implementation.
 
 - [x] Implement AlSi CREATE/overwrite allocation with durable quota, initial EA prevalidation and failed-new-CREATE cleanup; targeted GCC/Clang ASan+UBSan/MSVC checks pass at `fc28c4c`, including the smaller sparse-overwrite correction.

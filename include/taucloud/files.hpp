@@ -10,9 +10,11 @@ void portable_path(const std::string &path, bool internal = false);
 bool file_role(std::string_view role);
 const std::vector<std::string> &file_roles();
 class native_watch;
+class native_cache_guard;
 // Every traversal is relative to a pinned directory handle. No path-based fallback.
 class native_file {
   friend class native_watch;
+  friend class native_cache_guard;
   struct impl;
   std::unique_ptr<impl> impl_;
   native_file open_impl(const std::string &, bool, bool, bool, bool) const;
@@ -25,6 +27,10 @@ public:
   // Share an already-confined descriptor, retaining access after unlink.
   native_file retain() const;
   std::unique_ptr<native_watch> watch(bool recursive, uint32_t filter) const;
+  // Kernel-enforced data-cache exclusion. Returns null if the requested
+  // guarantee cannot be established; callers must then decline caching.
+  // This alone does not coordinate namespace/handle caching or SMB leases.
+  std::unique_ptr<native_cache_guard> cache_guard(bool write_cache) const;
   // Private namespace links preserve an open incarnation across process death.
   // Ordinary opens continue to reject all hard links.
   native_file pin(const native_file &directory, const std::string &name) const;
@@ -49,6 +55,19 @@ public:
               bool directory = false) const;
   void remove(const std::string &path, bool directory = false,
               const std::string &pinned_object = "") const;
+};
+class native_cache_guard {
+  struct impl;
+  std::unique_ptr<impl> impl_;
+  friend class native_file;
+  native_cache_guard();
+public:
+  ~native_cache_guard();
+  // A break allows the protocol owner to flush/invalidate before release().
+  // Linux may force the lease off after its system-wide break timeout; callers
+  // must recall clients within that deadline. Windows RW waits for release.
+  bool breaking() const;
+  void release();
 };
 // A bounded, nonblocking native directory notification stream. Paths are
 // relative to a pinned directory; overflow requires client enumeration.

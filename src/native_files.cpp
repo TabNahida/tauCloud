@@ -18,6 +18,7 @@
 #include <sys/syscall.h>
 #include <sys/inotify.h>
 #include <unistd.h>
+#include <csignal>
 #endif
 namespace tc {
 #ifdef TAUCLOUD_TEST_IO
@@ -138,6 +139,8 @@ static void native_error() {
     throw error("already_exists");
   if (errno == EACCES || errno == EPERM)
     throw error("permission_denied");
+  if (errno == EAGAIN)
+    throw error("locked");
   if (errno == EXDEV)
     throw error("cross_volume");
   if (errno == ELOOP || errno == ENOTDIR)
@@ -147,8 +150,11 @@ static void native_error() {
 }
 namespace {
 struct resource {
+  std::atomic_bool cache_owned = false;
 #ifdef _WIN32
   HANDLE handle = INVALID_HANDLE_VALUE;
+  ACCESS_MASK access = 0;
+  bool overlapped = false;
   ~resource() {
     if (handle != INVALID_HANDLE_VALUE)
       CloseHandle(handle);
@@ -162,6 +168,34 @@ struct resource {
 #endif
 };
 } // namespace
+#ifdef _WIN32
+// Keep each asynchronous operation's storage alive through completion. These
+// ordinary I/O calls may wait; the separately retained oplock IRP must not.
+struct native_operation {
+  OVERLAPPED value{};
+  native_operation(uint64_t offset = 0) {
+    value.Offset = static_cast<DWORD>(offset);
+    value.OffsetHigh = static_cast<DWORD>(offset >> 32);
+    value.hEvent = CreateEventW(nullptr, TRUE, FALSE, nullptr);
+    if (!value.hEvent) native_error();
+  }
+  ~native_operation() { CloseHandle(value.hEvent); }
+  native_operation(const native_operation &) = delete;
+  DWORD finish(HANDLE file, BOOL immediate, bool read = false) {
+    auto code = immediate ? ERROR_SUCCESS : GetLastError();
+    if (code != ERROR_SUCCESS && code != ERROR_IO_PENDING) {
+      if (read && code == ERROR_HANDLE_EOF) return 0;
+      SetLastError(code); native_error();
+    }
+    DWORD size = 0;
+    if (!GetOverlappedResult(file, &value, &size, TRUE)) {
+      if (read && GetLastError() == ERROR_HANDLE_EOF) return 0;
+      native_error();
+    }
+    return size;
+  }
+};
+#endif
 struct native_file::impl {
   std::shared_ptr<resource> file = std::make_shared<resource>();
   std::vector<std::shared_ptr<resource>> parents;
@@ -183,6 +217,7 @@ native_file native_file::retain() const {
   return result;
 }
 #include "native_notify.inc"
+#include "native_cache.inc"
 std::string native_file::stable_identity() const {
 #ifdef _WIN32
   // NTFS file IDs contain the MFT sequence, and are verified on the pinned handle.
@@ -370,9 +405,15 @@ native_file native_file::open_impl(const std::string &path, bool directory, bool
     ACCESS_MASK rights = GENERIC_READ | SYNCHRONIZE;
     if (last && write_access)
       rights |= GENERIC_WRITE | DELETE;
+    next->access = rights;
     auto code = open(&next->handle, rights, &a, &io, nullptr, FILE_ATTRIBUTE_NORMAL,
                      FILE_SHARE_READ | FILE_SHARE_WRITE | (dir ? 0 : FILE_SHARE_DELETE),
-                     last && create ? 2 : 1, 0x00200000 | 0x20 | (dir ? 1 : 0x40), nullptr, 0);
+                     last && create ? 2 : 1,
+                     0x00200000 | 0x20 | (dir ? 1 : 0x40 | 0x100), nullptr, 0);
+    // FILE_COMPLETE_IF_OPLOCKED can return a valid handle with this positive
+    // alternate success status. Close it and retry after the holder's ACK;
+    // admitting I/O here would bypass its dirty-cache flush.
+    if (code == 0x108) throw error("locked"); // STATUS_OPLOCK_BREAK_IN_PROGRESS
     if (code < 0) {
       auto convert = reinterpret_cast<ULONG(WINAPI *)(NTSTATUS)>(
           GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "RtlNtStatusToDosError"));
@@ -407,7 +448,9 @@ native_file native_file::open_impl(const std::string &path, bool directory, bool
       native_error();
   }
   open_how how{};
-  how.flags = O_CLOEXEC | O_NOFOLLOW |
+  // Lease conflicts must yield to the protocol reactor instead of blocking
+  // the file worker that also has to service the holder's flush/acknowledgment.
+  how.flags = O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK |
               (directory ? O_RDONLY | O_DIRECTORY : (write_access ? O_RDWR : O_RDONLY));
   if (create && !directory) {
     how.flags |= O_CREAT | O_EXCL;
@@ -453,6 +496,8 @@ native_file native_file::pin(const native_file &directory, const std::string &na
   require(!before.at("directory").get<bool>() && directory.info().at("directory") &&
       directory.info().at("volume") == before.at("volume"), "unsafe_path");
 #ifdef _WIN32
+  // Linking requires a namespace transition and must follow cache recall.
+  require(!impl_->file->cache_owned, "locked");
   auto wide = wide_name(name);
   // FILE_LINK_INFORMATION has the same layout as FILE_RENAME_INFORMATION.
   std::vector<char> buffer(sizeof(FILE_RENAME_INFO) + wide.size() * sizeof(wchar_t));
@@ -467,6 +512,10 @@ native_file native_file::pin(const native_file &directory, const std::string &na
   IO_STATUS_BLOCK io{};
   auto code = set(impl_->file->handle, &io, link, static_cast<ULONG>(buffer.size()),
                   static_cast<FILE_INFORMATION_CLASS>(11));
+  if (code == 0x103) { // STATUS_PENDING on a previously cache-enabled handle.
+    require(WaitForSingleObject(impl_->file->handle, INFINITE) == WAIT_OBJECT_0, "io_error");
+    code = io.Status;
+  }
   if (code < 0) {
     auto convert = reinterpret_cast<ULONG(WINAPI *)(NTSTATUS)>(
         GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "RtlNtStatusToDosError"));
@@ -554,6 +603,14 @@ std::string native_file::read(uint64_t offset, size_t count) const {
   info();
   std::string result(count, '\0');
 #ifdef _WIN32
+  if (impl_->file->overlapped) {
+    native_operation operation(offset);
+    auto size = operation.finish(impl_->file->handle,
+        ReadFile(impl_->file->handle, result.data(), static_cast<DWORD>(count), nullptr,
+                 &operation.value), true);
+    result.resize(size);
+    return result;
+  }
   LARGE_INTEGER position{};
   position.QuadPart = static_cast<LONGLONG>(offset);
   DWORD size = 0;
@@ -586,9 +643,18 @@ size_t native_file::write(uint64_t offset, std::string_view data) {
 #ifdef _WIN32
   if (offset > info().at("size").get<uint64_t>() + file_chunk_size) {
     DWORD returned = 0;
-    if (!DeviceIoControl(impl_->file->handle, FSCTL_SET_SPARSE, nullptr, 0, nullptr, 0, &returned,
-                         nullptr))
-      native_error();
+    if (impl_->file->overlapped) {
+      native_operation operation;
+      operation.finish(impl_->file->handle, DeviceIoControl(impl_->file->handle,
+          FSCTL_SET_SPARSE, nullptr, 0, nullptr, 0, nullptr, &operation.value));
+    } else if (!DeviceIoControl(impl_->file->handle, FSCTL_SET_SPARSE, nullptr, 0, nullptr, 0,
+                               &returned, nullptr)) native_error();
+  }
+  if (impl_->file->overlapped) {
+    native_operation operation(offset);
+    return operation.finish(impl_->file->handle,
+        WriteFile(impl_->file->handle, data.data(), static_cast<DWORD>(data.size()), nullptr,
+                  &operation.value));
   }
   LARGE_INTEGER position{};
   position.QuadPart = static_cast<LONGLONG>(offset);
@@ -633,7 +699,10 @@ void native_file::allocate(uint64_t size) {
       GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtQueryVolumeInformationFile"));
   require(query != nullptr, "not_supported");
   IO_STATUS_BLOCK status_block{};
-  auto status = query(impl_->file->handle, &status_block, &volume, sizeof(volume), 3);
+  // A synchronous pinned parent is on the same volume, and cannot confuse a
+  // pending oplock completion with completion of this volume query.
+  auto volume_handle = impl_->file->overlapped ? impl_->parents.back()->handle : impl_->file->handle;
+  auto status = query(volume_handle, &status_block, &volume, sizeof(volume), 3);
   if (status < 0) {
     using convert = ULONG(WINAPI *)(NTSTATUS);
     auto dos = reinterpret_cast<convert>(

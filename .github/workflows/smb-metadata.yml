@@ -41,6 +41,7 @@ on:
       - 'tests/windows_native_smb.py'
       - 'src/native_files.cpp'
       - 'src/native_notify.inc'
+      - 'src/native_cache.inc'
       - 'tests/smb_notify_integration.py'
       - 'tests/smb_rename_integration.py'
       - 'tests/smb_signing_integration.py'
@@ -113,7 +114,7 @@ jobs:
       - run: python scripts/fetch_nfs_client.py
       - run: xmake f -y -c -p ${{ matrix.platform }} -a ${{ matrix.arch }} -m ${{ matrix.mode }} --m0=n --m1=y --toolchain=${{ matrix.compiler }} --sanitizers=${{ matrix.sanitizers }}
       - run: xmake -y -j 8
-      - name: Native allocation failure safety
+      - name: Native cache exclusion, cancellation and allocation safety
         run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_m2_tests${{ matrix.suffix }}
       - name: SMB authority and failed CREATE cleanup
         run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_m5_tests${{ matrix.suffix }}
