@@ -232,6 +232,7 @@ bytes negotiation::accept(std::string_view p, std::string_view guid, bool kerber
       cipher = 1;
   }
   auto security_blob = mechanisms(kerberos);
+  capabilities |= 2; // File leasing. Directory leases/multichannel remain unadvertised.
   bytes b(64, '\0');
   put(b, 0, 65, 2);
   put(b, 2, 3, 2);

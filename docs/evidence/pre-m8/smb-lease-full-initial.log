@@ -1,0 +1,747 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793811419
+time: 2026-11-04 16:56:59.278866
+progress: 39
+test: request
+time: 2026-11-04 16:56:59.278975
+time: 2026-11-04 16:56:59.512976
+failure: request [
+source4/torture/smb2/lease.c:171: Incorrect status NT_STATUS_OBJECT_NAME_INVALID - should be NT_STATUS_OK
+]
+test: break_twice
+time: 2026-11-04 16:56:59.512989
+transport[0x6453c326fa00] acking to 0x1 (R) in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+WARNING!: (source4/torture/smb2/lease.c:1564): wrong value for (&lease_break_info.lease_break)->new_lease_state got 0x1 - should be 0x5
+
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+WARNING!: (source4/torture/smb2/lease.c:1564): wrong value for (&lease_break_info.lease_break_ack)->out.lease.lease_state got 0x1 - should be 0x5
+
+WARNING!: (source4/torture/smb2/lease.c:1576): wrong value for lease_break_info.count got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/lease.c:1576): wrong value for (&lease_break_info.lease_break)->new_lease_state got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/lease.c:1576): wrong value for (&lease_break_info.lease_break)->current_lease.lease_state got 0x0 - should be 0x5
+
+WARNING!: (source4/torture/smb2/lease.c:1576): wrong value for (&lease_break_info.lease_break)->current_lease.lease_key.data[0] got 0x0 - should be 0xe0ddf00d
+
+WARNING!: (source4/torture/smb2/lease.c:1576): wrong value for (&lease_break_info.lease_break)->current_lease.lease_key.data[1] got 0x0 - should be 0x1f220ff2
+
+WARNING!: (source4/torture/smb2/lease.c:1576): wrong value for (&lease_break_info.lease_break)->break_flags got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/lease.c:1576): wrong value for lease_break_info.lease_break.new_epoch got 0x0 - should be 0x14
+
+time: 2026-11-04 16:57:02.967927
+failure: break_twice [
+(source4/torture/smb2/lease.c:1576): wrong value for (uintptr_t)lease_break_info.lease_transport got 0x0 - should be 0xc326fa00
+]
+test: nobreakself
+time: 2026-11-04 16:57:02.967938
+transport[0x6453c326fa00] received to 0x0 () in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+transport[0x6453c326fa00] received to 0x0 () in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+transport[0x6453c326fa00] received to 0x0 () in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+time: 2026-11-04 16:57:07.473939
+success: nobreakself
+test: statopen
+time: 2026-11-04 16:57:07.473951
+WARNING!: (source4/torture/smb2/lease.c:770): wrong value for (&io)->out.lease_response.lease_state got 0x0 - should be 0x7
+
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+WARNING!: (source4/torture/smb2/lease.c:785): wrong value for (&io)->out.lease_response.lease_state got 0x0 - should be 0x7
+
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+WARNING!: (source4/torture/smb2/lease.c:797): wrong value for (&io)->out.lease_response.lease_state got 0x7 - should be 0x3
+
+WARNING!: (source4/torture/smb2/lease.c:799): wrong value for lease_break_info.count got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/lease.c:799): wrong value for (&lease_break_info.lease_break)->new_lease_state got 0x0 - should be 0x3
+
+WARNING!: (source4/torture/smb2/lease.c:799): wrong value for (&lease_break_info.lease_break)->current_lease.lease_state got 0x0 - should be 0x7
+
+WARNING!: (source4/torture/smb2/lease.c:799): wrong value for (&lease_break_info.lease_break)->current_lease.lease_key.data[0] got 0x0 - should be 0xe0ddf00d
+
+WARNING!: (source4/torture/smb2/lease.c:799): wrong value for (&lease_break_info.lease_break)->current_lease.lease_key.data[1] got 0x0 - should be 0x1f220ff2
+
+time: 2026-11-04 16:57:09.681801
+failure: statopen [
+(source4/torture/smb2/lease.c:799): wrong value for (&lease_break_info.lease_break)->break_flags got 0x0 - should be 0x1
+]
+test: statopen2
+time: 2026-11-04 16:57:09.681817
+WARNING!: (source4/torture/smb2/lease.c:850): wrong value for (&io)->out.lease_response.lease_state got 0x0 - should be 0x7
+
+time: 2026-11-04 16:57:11.020054
+failure: statopen2 [
+(source4/torture/smb2/lease.c:874): wrong value for (&io)->out.lease_response.lease_state got 0x0 - should be 0x7
+]
+test: statopen3
+time: 2026-11-04 16:57:11.020066
+time: 2026-11-04 16:57:11.183941
+failure: statopen3 [
+(source4/torture/smb2/lease.c:943): wrong value for (&io)->out.lease_response.lease_state got 0x0 - should be 0x7
+]
+test: statopen4
+time: 2026-11-04 16:57:11.183956
+transport[0x6453c326fa00] acking to 0x3 (RH) in lease handler
+transport[0x6453c326fa00] acking to 0x3 (RH) in lease handler
+transport[0x6453c326fa00] acking to 0x3 (RH) in lease handler
+transport[0x6453c326fa00] acking to 0x3 (RH) in lease handler
+transport[0x6453c326fa00] acking to 0x3 (RH) in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+transport[0x6453c326fa00] acking to 0x3 (RH) in lease handler
+transport[0x6453c326fa00] acking to 0x3 (RH) in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+		Specific bits: 0x0
+WARNING!: (source4/torture/smb2/lease.c:997): wrong value for lease_break_info.count got 0x1 - should be 0x0
+
+time: 2026-11-04 16:57:16.993974
+failure: statopen4 [
+test 8: access_mask: READ_CONTROL_ACCESS , expect_stat_open: yes
+]
+test: upgrade
+time: 2026-11-04 16:57:16.993987
+time: 2026-11-04 16:57:17.195776
+success: upgrade
+test: upgrade2
+time: 2026-11-04 16:57:17.195789
+time: 2026-11-04 16:57:19.937680
+success: upgrade2
+test: upgrade3
+time: 2026-11-04 16:57:19.937693
+WARNING!: (source4/torture/smb2/lease.c:503): wrong value for (&io)->out.lease_response.lease_state got 0x3 - should be 0x1
+
+time: 2026-11-04 16:57:22.781730
+failure: upgrade3 [
+(source4/torture/smb2/lease.c:503): wrong value for (&io)->out.lease_response.lease_state got 0x3 - should be 0x1
+]
+test: break
+time: 2026-11-04 16:57:22.781746
+Hold R(1), requesting R(1), expecting break to R(1) and grant of R(1)
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold R(1), requesting RH(3), expecting break to R(1) and grant of RH(3)
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+WARNING!: (source4/torture/smb2/lease.c:629): wrong value for (&io)->out.lease_response.lease_state got 0x3 - should be 0x1
+
+Hold R(1), requesting RW(5), expecting break to R(1) and grant of R(1)
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+WARNING!: (source4/torture/smb2/lease.c:629): wrong value for (&io)->out.lease_response.lease_state got 0x3 - should be 0x1
+
+Hold R(1), requesting RHW(7), expecting break to R(1) and grant of RH(3)
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+WARNING!: (source4/torture/smb2/lease.c:629): wrong value for (&io)->out.lease_response.lease_state got 0x3 - should be 0x1
+
+Hold RH(3), requesting R(1), expecting break to RH(3) and grant of R(1)
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold RH(3), requesting RH(3), expecting break to RH(3) and grant of RH(3)
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold RH(3), requesting RW(5), expecting break to RH(3) and grant of R(1)
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold RH(3), requesting RHW(7), expecting break to RH(3) and grant of RH(3)
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold RW(5), requesting R(1), expecting break to R(1) and grant of R(1)
+transport[0x6453c326fa00] acking to 0x1 (R) in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+WARNING!: (source4/torture/smb2/lease.c:629): wrong value for (&io)->out.lease_response.lease_state got 0x3 - should be 0x1
+
+Hold RW(5), requesting RH(3), expecting break to R(1) and grant of RH(3)
+transport[0x6453c326fa00] acking to 0x1 (R) in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+WARNING!: (source4/torture/smb2/lease.c:629): wrong value for (&io)->out.lease_response.lease_state got 0x3 - should be 0x1
+
+Hold RW(5), requesting RW(5), expecting break to R(1) and grant of R(1)
+transport[0x6453c326fa00] acking to 0x1 (R) in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+WARNING!: (source4/torture/smb2/lease.c:629): wrong value for (&io)->out.lease_response.lease_state got 0x3 - should be 0x1
+
+Hold RW(5), requesting RHW(7), expecting break to R(1) and grant of RH(3)
+transport[0x6453c326fa00] acking to 0x1 (R) in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+WARNING!: (source4/torture/smb2/lease.c:629): wrong value for (&io)->out.lease_response.lease_state got 0x3 - should be 0x1
+
+Hold RHW(7), requesting R(1), expecting break to RH(3) and grant of R(1)
+transport[0x6453c326fa00] acking to 0x3 (RH) in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold RHW(7), requesting RH(3), expecting break to RH(3) and grant of RH(3)
+transport[0x6453c326fa00] acking to 0x3 (RH) in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold RHW(7), requesting RW(5), expecting break to RH(3) and grant of R(1)
+transport[0x6453c326fa00] acking to 0x3 (RH) in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold RHW(7), requesting RHW(7), expecting break to RH(3) and grant of RH(3)
+transport[0x6453c326fa00] acking to 0x3 (RH) in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+time: 2026-11-04 16:57:51.536233
+failure: break [
+(source4/torture/smb2/lease.c:629): wrong value for (&io)->out.lease_response.lease_state got 0x3 - should be 0x1
+]
+test: oplock
+time: 2026-11-04 16:57:51.536247
+Hold R(1), requesting s(1), expecting break to R(1) and grant of s(1)
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold R(1), requesting x(8), expecting break to R(1) and grant of s(1)
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold R(1), requesting b(9), expecting break to R(1) and grant of s(1)
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold RH(3), requesting s(1), expecting break to RH(3) and grant of (0)
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold RH(3), requesting x(8), expecting break to RH(3) and grant of (0)
+WARNING!: (source4/torture/smb2/lease.c:1268): wrong value for io.out.oplock_level got 0x1 - should be 0x0
+
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold RH(3), requesting b(9), expecting break to RH(3) and grant of (0)
+WARNING!: (source4/torture/smb2/lease.c:1268): wrong value for io.out.oplock_level got 0x1 - should be 0x0
+
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold RW(5), requesting s(1), expecting break to R(1) and grant of s(1)
+transport[0x6453c326fa00] acking to 0x1 (R) in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold RW(5), requesting x(8), expecting break to R(1) and grant of s(1)
+transport[0x6453c326fa00] acking to 0x1 (R) in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold RW(5), requesting b(9), expecting break to R(1) and grant of s(1)
+transport[0x6453c326fa00] acking to 0x1 (R) in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold RHW(7), requesting s(1), expecting break to RH(3) and grant of (0)
+transport[0x6453c326fa00] acking to 0x3 (RH) in lease handler
+WARNING!: (source4/torture/smb2/lease.c:1268): wrong value for io.out.oplock_level got 0x1 - should be 0x0
+
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold RHW(7), requesting x(8), expecting break to RH(3) and grant of (0)
+transport[0x6453c326fa00] acking to 0x3 (RH) in lease handler
+WARNING!: (source4/torture/smb2/lease.c:1268): wrong value for io.out.oplock_level got 0x1 - should be 0x0
+
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold RHW(7), requesting b(9), expecting break to RH(3) and grant of (0)
+transport[0x6453c326fa00] acking to 0x3 (RH) in lease handler
+WARNING!: (source4/torture/smb2/lease.c:1268): wrong value for io.out.oplock_level got 0x1 - should be 0x0
+
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold s(1), requesting R(1), expecting break to s(1) and grant of R(1)
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold s(1), requesting RH(3), expecting break to s(1) and grant of R(1)
+WARNING!: (source4/torture/smb2/lease.c:1268): wrong value for io.out.oplock_level got 0x1 - should be 0x0
+
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold s(1), requesting RW(5), expecting break to s(1) and grant of R(1)
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold s(1), requesting RHW(7), expecting break to s(1) and grant of R(1)
+WARNING!: (source4/torture/smb2/lease.c:1311): wrong value for (&io)->out.lease_response.lease_state got 0x3 - should be 0x1
+
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold x(8), requesting R(1), expecting break to s(1) and grant of R(1)
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold x(8), requesting RH(3), expecting break to s(1) and grant of R(1)
+WARNING!: (source4/torture/smb2/lease.c:1311): wrong value for (&io)->out.lease_response.lease_state got 0x3 - should be 0x1
+
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold x(8), requesting RW(5), expecting break to s(1) and grant of R(1)
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold x(8), requesting RHW(7), expecting break to s(1) and grant of R(1)
+WARNING!: (source4/torture/smb2/lease.c:1311): wrong value for (&io)->out.lease_response.lease_state got 0x3 - should be 0x1
+
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold b(9), requesting R(1), expecting break to s(1) and grant of R(1)
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold b(9), requesting RH(3), expecting break to s(1) and grant of R(1)
+WARNING!: (source4/torture/smb2/lease.c:1311): wrong value for (&io)->out.lease_response.lease_state got 0x3 - should be 0x1
+
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold b(9), requesting RW(5), expecting break to s(1) and grant of R(1)
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Hold b(9), requesting RHW(7), expecting break to s(1) and grant of R(1)
+WARNING!: (source4/torture/smb2/lease.c:1311): wrong value for (&io)->out.lease_response.lease_state got 0x3 - should be 0x1
+
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+time: 2026-11-04 16:58:28.381240
+failure: oplock [
+(source4/torture/smb2/lease.c:1311): wrong value for (&io)->out.lease_response.lease_state got 0x3 - should be 0x1
+]
+test: multibreak
+time: 2026-11-04 16:58:28.381252
+transport[0x6453c35500d0] acking to 0x3 (RH) in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+transport[0x6453c35500d0] received to 0x0 () in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+time: 2026-11-04 16:58:34.316627
+success: multibreak
+test: breaking1
+time: 2026-11-04 16:58:34.316639
+Waiting for a potential lease break...
+transport[0x6453c326fa00] Skip acking to 0x3 (RH) in lease handler
+Got 1 lease breaks
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+time: 2026-11-04 16:58:36.788597
+success: breaking1
+test: breaking2
+time: 2026-11-04 16:58:36.788609
+Waiting for a potential lease break...
+transport[0x6453c354d300] Skip acking to 0x0 () in lease handler
+Got 1 lease breaks
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+time: 2026-11-04 16:58:39.891527
+success: breaking2
+test: breaking3
+time: 2026-11-04 16:58:39.891540
+Waiting for a potential lease break...
+transport[0x6453c354d300] Skip acking to 0x3 (RH) in lease handler
+Got 1 lease breaks
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+transport[0x6453c354d300] Skip acking to 0x0 () in lease handler
+Got 1 lease breaks
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+WARNING!: (source4/torture/smb2/lease.c:2393): wrong value for (&lease_break_info.lease_break)->new_lease_state got 0x0 - should be 0x1
+
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+WARNING!: (source4/torture/smb2/lease.c:2422): wrong value for (&ack)->out.lease.lease_state got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/lease.c:2427): wrong value for lease_break_info.count got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/lease.c:2427): wrong value for (&lease_break_info.lease_break)->current_lease.lease_state got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/lease.c:2427): wrong value for (&lease_break_info.lease_break)->current_lease.lease_key.data[0] got 0x0 - should be 0xe0ddf00d
+
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+time: 2026-11-04 16:58:45.946187
+failure: breaking3 [
+(source4/torture/smb2/lease.c:2427): wrong value for (&lease_break_info.lease_break)->current_lease.lease_key.data[1] got 0x0 - should be 0x1f220ff2
+]
+test: v2_breaking3
+time: 2026-11-04 16:58:45.946212
+Waiting for a potential lease break...
+transport[0x6453c354d300] Skip acking to 0x3 (RH) in lease handler
+Got 1 lease breaks
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+transport[0x6453c354d300] Skip acking to 0x0 () in lease handler
+Got 1 lease breaks
+WARNING!: (source4/torture/smb2/lease.c:2594): wrong value for (&lease_break_info.lease_break)->new_lease_state got 0x0 - should be 0x1
+
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+WARNING!: (source4/torture/smb2/lease.c:2594): wrong value for lease_break_info.lease_break.new_epoch got 0x14 - should be 0x13
+
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+WARNING!: (source4/torture/smb2/lease.c:2626): wrong value for (&ack)->out.lease.lease_state got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/lease.c:2631): wrong value for lease_break_info.count got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/lease.c:2631): wrong value for (&lease_break_info.lease_break)->current_lease.lease_state got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/lease.c:2631): wrong value for (&lease_break_info.lease_break)->current_lease.lease_key.data[0] got 0x0 - should be 0xe0ddf00d
+
+WARNING!: (source4/torture/smb2/lease.c:2631): wrong value for (&lease_break_info.lease_break)->current_lease.lease_key.data[1] got 0x0 - should be 0x1f220ff2
+
+WARNING!: (source4/torture/smb2/lease.c:2631): wrong value for lease_break_info.lease_break.new_epoch got 0x0 - should be 0x14
+
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+time: 2026-11-04 16:58:51.881502
+failure: v2_breaking3 [
+(source4/torture/smb2/lease.c:2631): wrong value for (uintptr_t)lease_break_info.lease_transport got 0x0 - should be 0xc354d300
+]
+test: breaking4
+time: 2026-11-04 16:58:51.881514
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+transport[0x6453c354d300] Skip acking to 0x0 () in lease handler
+Got 1 lease breaks
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+time: 2026-11-04 16:58:54.017791
+failure: breaking4 [
+source4/torture/smb2/lease.c:2735: Expression `req2->state == SMB2_REQUEST_DONE' failed: req2 done
+]
+test: breaking5
+time: 2026-11-04 16:58:54.017799
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+transport[0x6453c354d300] Skip received to 0x0 () in lease handler
+Got 1 lease breaks
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+time: 2026-11-04 16:58:59.242517
+success: breaking5
+test: breaking6
+time: 2026-11-04 16:58:59.242529
+Waiting for a potential lease break...
+transport[0x6453c3566890] Skip acking to 0x3 (RH) in lease handler
+Got 1 lease breaks
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+time: 2026-11-04 16:59:01.726456
+success: breaking6
+test: lock1
+time: 2026-11-04 16:59:01.726467
+transport[0x6453c3566890] acking to 0x3 (RH) in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+transport[0x6453c3544470] acking to 0x0 () in lease handler
+transport[0x6453c35448c0] acking to 0x0 () in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+transport[0x6453c3566890] acking to 0x0 () in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+time: 2026-11-04 16:59:11.881690
+success: lock1
+test: complex1
+time: 2026-11-04 16:59:11.881702
+transport[0x6453c3566890] acking to 0x3 (RH) in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+transport[0x6453c3544470] received to 0x0 () in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+transport[0x6453c3566890] acking to 0x0 () in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+time: 2026-11-04 16:59:17.628703
+success: complex1
+test: v2_request_parent
+time: 2026-11-04 16:59:17.628716
+time: 2026-11-04 16:59:17.665921
+skip: v2_request_parent [
+source4/torture/smb2/lease.c:1477: directory leases are not supported
+]
+test: v2_request
+time: 2026-11-04 16:59:17.665938
+time: 2026-11-04 16:59:17.697694
+skip: v2_request [
+source4/torture/smb2/lease.c:1612: directory leases are not supported
+]
+test: v2_epoch1
+time: 2026-11-04 16:59:17.697708
+time: 2026-11-04 16:59:17.892687
+success: v2_epoch1
+test: v2_epoch2
+time: 2026-11-04 16:59:17.892699
+transport[0x6453c3566890] acking to 0x3 (RH) in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+time: 2026-11-04 16:59:20.389616
+success: v2_epoch2
+test: v2_epoch3
+time: 2026-11-04 16:59:20.389628
+transport[0x6453c3566890] acking to 0x3 (RH) in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+time: 2026-11-04 16:59:22.890365
+success: v2_epoch3
+test: v2_complex1
+time: 2026-11-04 16:59:22.890375
+transport[0x6453c3566890] acking to 0x3 (RH) in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+transport[0x6453c3583c50] received to 0x0 () in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+transport[0x6453c3566890] acking to 0x0 () in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+time: 2026-11-04 16:59:28.644629
+failure: v2_complex1 [
+(source4/torture/smb2/lease.c:3455): wrong value for (uintptr_t)lease_break_info.lease_transport got 0xc3583c50 - should be 0xc3566890
+]
+test: v2_complex2
+time: 2026-11-04 16:59:28.644644
+Waiting for a potential lease break...
+transport[0x6453c3566890] Skip acking to 0x3 (RH) in lease handler
+Got 1 lease breaks
+time: 2026-11-04 16:59:29.262128
+success: v2_complex2
+test: v2_rename
+time: 2026-11-04 16:59:29.262140
+transport[0x6453c3566890] acking to 0x0 () in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+WARNING!: (source4/torture/smb2/lease.c:3928): wrong value for lease_break_info.count got 0x1 - should be 0x0
+
+WARNING!: (source4/torture/smb2/lease.c:3940): wrong value for (&io)->out.lease_response_v2.lease_state got 0x0 - should be 0x7
+
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+WARNING!: (source4/torture/smb2/lease.c:3940): wrong value for (&io)->out.lease_response_v2.lease_epoch got 0x4713 - should be 0x4712
+
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+WARNING!: (source4/torture/smb2/lease.c:3955): wrong value for (&lease_break_info.lease_break)->new_lease_state got 0x0 - should be 0x3
+
+transport[0x6453c3566890] acking to 0x0 () in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+WARNING!: (source4/torture/smb2/lease.c:3955): wrong value for (&lease_break_info.lease_break_ack)->out.lease.lease_state got 0x0 - should be 0x3
+
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+WARNING!: (source4/torture/smb2/lease.c:3970): wrong value for (&lease_break_info.lease_break)->new_lease_state got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/lease.c:3970): wrong value for (&lease_break_info.lease_break_ack)->out.lease.lease_state got 0x0 - should be 0x1
+
+time: 2026-11-04 16:59:35.049607
+failure: v2_rename [
+(source4/torture/smb2/lease.c:3984): wrong value for (&io)->out.lease_response_v2.lease_state got 0x0 - should be 0x3
+]
+test: dynamic_share
+time: 2026-11-04 16:59:35.049626
+time: 2026-11-04 16:59:35.079749
+skip: dynamic_share [
+source4/torture/smb2/lease.c:4020: dynamic shares are not supported
+]
+test: timeout
+time: 2026-11-04 16:59:35.079765
+Waiting for a potential lease break...
+transport[0x6453c35984b0] Skip acking to 0x3 (RH) in lease handler
+Got 1 lease breaks
+time: 2026-11-04 16:59:40.056589
+failure: timeout [
+source4/torture/smb2/lease.c:3655: Incorrect status NT_STATUS_CONNECTION_DISCONNECTED - should be NT_STATUS_OK
+]
+test: unlink
+time: 2026-11-04 16:59:40.056608
+Client opens fname with session 1
+Client opens fname with session 2
+transport[0x6453c35984b0] acking to 0x3 (RH) in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Client closes and then unlinks fname with session 2
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+WARNING!: (source4/torture/smb2/lease.c:4283): wrong value for lease_break_info.count got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/lease.c:4284): wrong value for lease_break_info.count got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/lease.c:4284): wrong value for (&lease_break_info.lease_break)->new_lease_state got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/lease.c:4284): wrong value for (&lease_break_info.lease_break)->current_lease.lease_state got 0x0 - should be 0x3
+
+WARNING!: (source4/torture/smb2/lease.c:4284): wrong value for (&lease_break_info.lease_break)->current_lease.lease_key.data[0] got 0x0 - should be 0xe0ddf00d
+
+WARNING!: (source4/torture/smb2/lease.c:4284): wrong value for (&lease_break_info.lease_break)->current_lease.lease_key.data[1] got 0x0 - should be 0x1f220ff2
+
+time: 2026-11-04 16:59:43.538567
+failure: unlink [
+(source4/torture/smb2/lease.c:4284): wrong value for (&lease_break_info.lease_break)->break_flags got 0x0 - should be 0x1
+]
+test: timeout-disconnect
+time: 2026-11-04 16:59:43.538578
+connect tree2 with the same client_guid
+connect tree3 with the same client_guid
+tree1: create file[lease_timeout_logoff.dat] with durable RH lease (SHARE NONE)
+tree1: skip lease acks
+tree2: open file[lease_timeout_logoff.dat] without lease (SHARE RWD)
+tree1: wait for lease break
+Waiting for a potential lease break...
+transport[0x6453c35984b0] Skip acking to 0x1 (R) in lease handler
+Got 1 lease breaks
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+tree1: reset lease handler
+tree2: check for SMB2_REQUEST_RECV
+sleep 1
+transport1: keepalive
+transport2: keepalive
+transport3: keepalive
+tree2: check for SMB2_REQUEST_RECV
+tree2: check for STATUS_PENDING
+sleep 1
+transport1: keepalive
+transport2: disconnect
+sleep 1
+transport1: keepalive
+transport1: disconnect
+sleep 1
+transport3: keepalive
+transport3: disconnect
+time: 2026-11-04 16:59:48.939315
+success: timeout-disconnect
+test: rename_wait
+time: 2026-11-04 16:59:48.939322
+time: 2026-11-04 16:59:49.178269
+failure: rename_wait [
+source4/torture/smb2/lease.c:3843: Incorrect status NT_STATUS_OBJECT_NAME_NOT_FOUND - should be NT_STATUS_OK
+]
+test: duplicate_create
+time: 2026-11-04 16:59:49.178283
+time: 2026-11-04 16:59:49.348647
+success: duplicate_create
+test: duplicate_open
+time: 2026-11-04 16:59:49.348660
+time: 2026-11-04 16:59:49.586548
+success: duplicate_open
+test: v1_bug15148
+time: 2026-11-04 16:59:49.586561
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+transport[0x6453c35a9550] received to 0x0 () in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+transport[0x6453c35a9550] received to 0x0 () in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+time: 2026-11-04 16:59:54.994458
+success: v1_bug15148
+test: v2_bug15148
+time: 2026-11-04 16:59:54.994471
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+transport[0x6453c35b8470] received to 0x0 () in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+transport[0x6453c35b8470] received to 0x0 () in lease handler
+Waiting for a potential lease break...
+... waiting for a lease break timed out
+time: 2026-11-04 17:00:00.389587
+success: v2_bug15148

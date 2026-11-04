@@ -33,6 +33,61 @@ pace::task<void> cache_watchdog() {
   } catch (...) { close(); }
   watchdog_done = true;
 }
+pace::task<bytes> acknowledge_lease(bytes key, unsigned state) {
+  auto source = session;
+  auto guid = selected.client_info.substr(4, 16);
+  std::shared_ptr<client> owner;
+  uint64_t owner_session = 0;
+  bytes owner_file;
+  auto locate = [&](client *candidate) {
+    if (owner || !candidate->socket.is_open() || candidate->ending ||
+        candidate->selected.client_info.size() < 20 || candidate->selected.client_info.substr(4, 16) != guid) return;
+    for (auto sid : candidate->session_ids()) {
+      auto *context = candidate->find_session(sid);
+      for (const auto &[fid, h] : context->files)
+        if (h.lease && h.lease->key == key) {
+          owner = candidate->shared_from_this(); owner_session = sid; owner_file = fid;
+          return;
+        }
+    }
+  };
+  locate(this);
+  for (auto *candidate : s.clients) locate(candidate);
+  check(bool(owner), 0xc0000034);
+  std::exception_ptr failure;
+  bytes result;
+  auto invoke = [&]() -> pace::task<void> {
+    check(owner->select_session(owner_session), 0xc0000034);
+    auto it = owner->files.find(owner_file);
+    check(it != owner->files.end() && it->second.lease && it->second.lease->key == key, 0xc0000034);
+    auto &h = it->second;
+    json request = {{"cookie", h.cache_cookie}, {"state", state}};
+    auto response = co_await owner->operation(h, "cache_ack", bool(h.access & 6), request);
+    h.lease_state = response.at("state");
+    owner->cache_deadline(h, response);
+    check(response.at("status") == 0, response.at("status"));
+    result = decode_bytes(response.at("response").get<std::string>());
+  };
+  if (owner.get() == this) {
+    try { co_await invoke(); } catch (...) { failure = std::current_exception(); }
+  } else {
+    // Release our gate before waiting for a peer, including reciprocal ACKs.
+    // The owner reauthorizes under its own session; the incoming authenticated
+    // session/tree supplies routing, not a replacement file-access credential.
+    dispatching = false;
+    try {
+      while (owner->dispatching && owner->socket.is_open()) co_await s.io->sleep_for(1ms);
+      check(owner->socket.is_open() && !owner->ending, 0xc0000034);
+      dispatch_guard guard(owner->dispatching);
+      co_await invoke();
+    } catch (...) { failure = std::current_exception(); }
+    while (dispatching) co_await s.io->sleep_for(1ms);
+    dispatching = true;
+  }
+  check(select_session(source), 0xc0000203);
+  if (failure) std::rethrow_exception(failure);
+  co_return result;
+}
 // The caller owns the connection gate, including all RPC and send suspensions.
 pace::task<void> poll_caches_locked() {
   auto saved_session = session;
@@ -48,11 +103,49 @@ pace::task<void> poll_caches_locked() {
         if (it == files.end() || it->second.cache_cookie.empty()) continue;
         json request = {{"cookie", it->second.cache_cookie}};
         auto state = co_await operation(it->second, "cache_poll",
-                                        it->second.cache_level == 8 ||
+                                        it->second.lease ? bool(it->second.access & 6) :
+                                          it->second.cache_level == 8 ||
                                             (it->second.cache_level == 9 && (it->second.access & 6)),
                                         request);
         auto &h = files.at(fid);
         cache_deadline(h, state);
+        if (h.lease) {
+          h.lease_state = state.at("state");
+          if (!h.cache_announced || !state.contains("notification")) continue;
+          auto serial = state.at("notification").at("serial").get<uint64_t>();
+          auto claim = h.lease->delivery_prefix() + h.grant.at("root").at("worker").get<std::string>() +
+              ":" + h.cache_cookie;
+          auto previous = s.lease_sends.find(claim);
+          if (previous != s.lease_sends.end() && previous->second >= serial) continue;
+          s.lease_sends[claim] = serial;
+          struct delivery {
+            std::map<std::string, uint64_t> &claims;
+            std::string key;
+            uint64_t serial;
+            bool complete = false;
+            ~delivery() {
+              auto it = claims.find(key);
+              if (!complete && it != claims.end() && it->second == serial) claims.erase(it);
+            }
+          } sending{s.lease_sends, claim, serial};
+          auto response = sized(64, 64);
+          response.replace(0, 4, "\xfeSMB", 4);
+          put(response, 4, 64, 2); put(response, 12, 18, 2);
+          put(response, 16, 1, 4); put(response, 24, UINT64_MAX, 8);
+          // Lease notifications have zero SessionId/TreeId. Encryption uses
+          // this member's authenticated session in the outer transform.
+          response += decode_bytes(state.at("notification").at("body").get<std::string>());
+          co_await send_packet(std::move(response), h.cache_encrypted);
+          request["serial"] = serial;
+          auto sent = co_await operation(h, "cache_sent", bool(h.access & 6), request);
+          h.lease_state = sent.at("state");
+          cache_deadline(h, sent);
+          // Keep the last delivered serial: another transport may receive a
+          // stale poll response after this send completed. The last lease
+          // binding releases this bounded per-cookie record.
+          sending.complete = true;
+          continue;
+        }
         if (!h.cache_announced || h.cache_break_sent || !state.at("breaking").get<bool>()) continue;
         h.cache_break_sent = true;
         h.cache_break_level = state.at("break_level");

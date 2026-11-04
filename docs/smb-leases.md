@@ -1,15 +1,16 @@
 # SMB lease implementation
 
 The shared protocol state and wire encoders are implemented in
-`include/taucloud/smb_lease.hpp` and `src/smb_lease.cpp`. They are compiled into
-the core library and connected to the file-domain native-cache coordinator,
-but are **not yet connected to network SMB CREATE or break delivery**. File leasing is not advertised
-by negotiation. This is an implementation prerequisite, not lease acceptance
-or complete SMB compatibility.
+`include/taucloud/smb_lease.hpp` and `src/smb_lease.cpp`. They are compiled into the core library and connected to the
+file-domain native-cache coordinator and network SMB CREATE, break delivery and
+ACK routing. Negotiation advertises file leasing on SMB 2.1/3.0/3.0.2/3.1.1;
+directory leasing and multichannel remain unadvertised. This is file-lease
+implementation and targeted acceptance, not complete SMB compatibility.
 
 `lease_registry` indexes entries by ClientGuid and LeaseKey. The caller supplies
-a canonical, namespace-qualified filename and a unique open identifier after
-the open succeeds. Multiple opens share one state; another client using the
+a canonical, namespace-qualified filename and a unique open identifier before
+the asynchronous open. Failed CREATE releases its reservation; successful opens
+retain it through backend CLOSE. Multiple opens share one state; another client using the
 same key has a separate state. Filename mismatches are rejected unless the
 record has delete-on-close intent. Closing the last associated open removes the
 entry and clears its protocol state. Failed registration does not leave an
@@ -21,6 +22,8 @@ CREATE context parsing handles both 32-byte v1 and 52-byte v2 forms. Reserved
 request fields are ignored and response fields are zeroed. Parent keys and v2
 epochs are retained. Promotion requires an available native caching state,
 never removes existing rights, and is suppressed while a break is unsettled.
+A partial initial grant is allowed; promotion of an existing lease requires
+the complete requested state to be available.
 The state machine supports NONE, R, RW, RH and RWH; requests with unsupported
 combinations cannot manufacture native authority.
 
@@ -68,15 +71,39 @@ opens, legacy-cache coexistence, permission isolation, expiry, NFS read/write
 coherence and delivery boundaries. The current local result is 58 checks in
 seven scenarios, alongside the updated 3,214 state checks; see
 [file-domain evidence](evidence/pre-m8/smb-lease-domain-local.json).
-Windows native acceptance is scheduled in Actions and is not yet established.
+The native and state steps pass GCC/Clang/MSVC at `c45d5f2`; the whole jobs
+were still running when recorded ([remote evidence](evidence/pre-m8/smb-lease-domain-c45-remote.json)).
 
-Remaining integration includes CREATE
-contexts/capabilities, notifications and ACK routing across sessions and
-connections, frontend per-open renewal/watchdogs (including NONE-to-cached
-upgrades), global key/name reservation across concurrent CREATEs and file
-domains, directory/parent leases, delete/recreate lifecycle, and original
-Samba/native client tests. The frontend registry is not yet wired to these
-operations; its metadata alone cannot grant native caching authority.
+The frontend now reserves client/key/name tuples across connections and file
+domains before CREATE suspends. It returns v1/v2 RqLs contexts, ignores v2 on
+SMB 2.1, rejects malformed contexts, and keeps per-open renewal/watchdogs active
+even for NONE leases that a sibling may later promote. Leases do not confer
+additional file permissions. The backend remains authoritative for grants.
+
+Break delivery uses a per-cookie serial watermark shared across connections.
+A stale poll cannot retransmit a completed notification; failed delivery can
+be retried by another member, and final-close cleanup removes the watermark.
+Notifications have zero inner SessionId/TreeId and preserve session encryption.
+ACKs use ClientGuid/LeaseKey, can arrive through another authenticated connection,
+and reauthorize the owning open before applying the file-domain transition.
+Cross-connection dispatch releases its own gate before waiting on a peer.
+
+Thirteen independent wire groups pass locally under ASan/UBSan/LSan, including
+four dialects, same-key joins during recall, client isolation, invalid ACKs,
+shared upgrades, native no-ACK invalidation, failed CREATE cleanup and timeout
+fencing. Updated state checks total 3,217; native checks remain 58. See
+[network evidence](evidence/pre-m8/smb-lease-wire-local.json). Cross-platform
+network acceptance is scheduled in Actions and is not yet established.
+
+The first full unmodified Samba lease run on the network integration snapshot
+(before the partial-promotion correction) reports 19 passed, 17 failed and
+three skipped. No test was edited. The final source is also checked with a
+strict eight-case selected regression, with all eight passing; the full suite remains a separately labelled
+non-gating diagnostic in Actions, with its failure reports retained.
+Known remaining work includes metadata-only lease grants, mixed classic/lease
+HANDLE rules, sharing and chained recalls, notification connection selection,
+rename/delete/recreate lifetime, timeout behavior that preserves usable opens,
+ADS and directory/parent leases.
 Durable handles and multichannel session binding remain separate open gates.
 
 The implementation follows Microsoft's [lease object-store rules](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/d8df943d-6ad7-4b30-9f58-96ae90fc6204),

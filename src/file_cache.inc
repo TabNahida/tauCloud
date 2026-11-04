@@ -129,7 +129,9 @@ json lease_cache_dispatch(const std::string &op, const json &body, const json &g
   if (op == "smb_cache_acquire") {
     auto requested = body.at("state").get<unsigned>();
     require((requested & ~7u) == 0, "invalid_request");
-    auto available = requested;
+    // H/W without READ is not a supported lease combination. CREATE still
+    // succeeds with NONE, as required by the lease object-store rules.
+    auto available = (requested & 1) ? requested : 0;
     if (!(h.access & 1)) available = 0;
     if (!h.writable || !grant.at("write").get<bool>()) available &= ~4u;
     std::shared_ptr<native_cache_guard> guard = group->guard;

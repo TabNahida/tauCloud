@@ -121,6 +121,12 @@ int main() {
             l.sent(b.serial, 1000, 5000);
             check(l.state() == 0 && l.deadline() == 0);
           }
+    {
+      lease_state promotion(lease_request{key, {}, 0, 2, 0});
+      check(promotion.promote(1, 1));
+      check(!promotion.promote(7, 3) && promotion.state() == 1 && promotion.epoch() == 1);
+      check(promotion.promote(7, 7) && promotion.state() == 7 && promotion.epoch() == 2);
+    }
     // Caller obtains native exclusion before promote; partial availability
     // must never widen the requested authority or discard existing rights.
     for (unsigned initial : {0u, 1u, 3u, 5u, 7u})

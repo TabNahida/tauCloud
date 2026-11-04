@@ -11,6 +11,7 @@ on:
       - 'src/smb_lease.cpp'
       - 'tests/smb_lease_core.cpp'
       - 'tests/smb_lease_native.cpp'
+      - 'tests/smb_lease_integration.py'
       - 'src/identity.cpp'
       - 'src/ipc.cpp'
       - 'src/api.cpp'
@@ -146,6 +147,19 @@ jobs:
       - name: SMB shared lease native exclusion and file-domain authority
         if: ${{ !cancelled() && steps.compile.outcome == 'success' }}
         run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_smb_lease_native_tests${{ matrix.suffix }}
+      - name: SMB file lease CREATE, shared recall and cross-connection acknowledgments
+        if: ${{ !cancelled() && steps.compile.outcome == 'success' }}
+        shell: bash
+        run: python tests/smb_lease_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/leases.json
+      - name: Original Samba lease grants, upgrades, recalls and epochs
+        if: ${{ !cancelled() && steps.compile.outcome == 'success' && runner.os == 'Linux' }}
+        run: python tests/samba_torture.py ${{ matrix.test_options }} --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/samba-leases.json smb2.lease.nobreakself smb2.lease.upgrade smb2.lease.upgrade2 smb2.lease.upgrade3 smb2.lease.break smb2.lease.v2_epoch1 smb2.lease.v2_epoch2 smb2.lease.v2_epoch3
+      # Diagnostic coverage, not an acceptance gate: retain every failure and
+      # skip while directory leases, ADS and remaining transitions are open.
+      - name: Full Samba lease diagnostic (known incomplete compatibility)
+        if: ${{ !cancelled() && steps.compile.outcome == 'success' && runner.os == 'Linux' }}
+        continue-on-error: true
+        run: python tests/samba_torture.py ${{ matrix.test_options }} --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/samba-leases-full.json smb2.lease
       - name: SMB authority and failed CREATE cleanup
         run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_m5_tests${{ matrix.suffix }}
       - name: SMB per-open delete-on-close and durable recovery

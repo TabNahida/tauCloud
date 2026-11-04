@@ -30,6 +30,9 @@ bool lease_state::promote(unsigned requested, unsigned available) {
   require((requested & ~7u) == 0 && valid_state(available), "invalid_request");
   if (unsettled() || (requested & state_) != state_) return false;
   auto next = requested & available;
+  // Existing leases are promoted only when the complete requested state is
+  // available. Partial initial grants must not become partial upgrades.
+  if (state_ && next != requested) return false;
   if (!valid_state(next) || (next & state_) != state_ || next == state_) return false;
   state_ = next;
   target_ = next;

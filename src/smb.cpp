@@ -1,4 +1,5 @@
 #include <taucloud/smb.hpp>
+#include <taucloud/smb_lease.hpp>
 #include <taucloud/files.hpp>
 #include <taucloud/gss.hpp>
 #include <openssl/crypto.h>
@@ -18,6 +19,29 @@ struct smb_state {
   std::atomic<int> connections = 0;
   std::set<client *> clients;
   bytes guid = decode_bytes(random_hex(16));
+  lease_registry leases;
+  std::map<std::string, uint64_t> lease_sends;
+};
+// Reserve the key/name before suspending in CREATE. Failed/cancelled creates
+// drop their reservation; successful opens retain it through backend CLOSE.
+struct lease_binding {
+  smb_state &server;
+  lease_registry &registry;
+  bytes client, key;
+  std::string id = random_hex(16);
+  lease_binding(smb_state &server, bytes owner, const lease_request &request,
+                const std::string &name)
+      : server(server), registry(server.leases), client(std::move(owner)), key(request.key) {
+    registry.attach(client, request, name, id);
+  }
+  std::string delivery_prefix() const { return encode_bytes(client) + ":" + encode_bytes(key) + ":"; }
+  ~lease_binding() {
+    registry.detach(id);
+    if (!registry.find(client, key)) {
+      auto prefix = delivery_prefix();
+      std::erase_if(server.lease_sends, [&](const auto &entry) { return entry.first.starts_with(prefix); });
+    }
+  }
 };
 pace::task<json> smb_rpc(smb_state &s, std::string target, std::string op,
                          json body = json::object()) {
@@ -438,6 +462,8 @@ struct opened {
   bool cache_encrypted = false, cache_announced = false, cache_break_sent = false;
   unsigned cache_level = 0, cache_break_level = 0;
   bool cache_read_break_completed = false;
+  std::shared_ptr<lease_binding> lease = nullptr;
+  unsigned lease_state = 0;
 };
 struct session_state {
   bool authenticated = false, raw_ntlm = false;
@@ -699,6 +725,9 @@ struct client : session_state, std::enable_shared_from_this<client> {
         auto full = t.prefix + (t.prefix.empty() || h.path.empty() ? "" : "/") + h.path;
         if (full == from || full.starts_with(from + "/")) {
           full = to + full.substr(from.size());
+          if (h.lease)
+            s.leases.rename(h.lease->client, h.lease->key,
+                json::array({h.grant.at("root").at("worker"), space, full}).dump());
           if (t.prefix.empty())
             h.path = full;
           else if (full.starts_with(t.prefix + "/"))
@@ -937,6 +966,8 @@ struct client : session_state, std::enable_shared_from_this<client> {
       std::optional<json> initial_eas;
       std::optional<std::string> initial_security;
       std::optional<uint64_t> initial_allocation;
+      std::optional<lease_request> requested_lease;
+      bytes lease_context;
       auto context_len = get(p, 116, 4);
       if (context_len) {
         auto contexts = slice(p, get(p, 112, 4), context_len, 120);
@@ -973,6 +1004,16 @@ struct client : session_state, std::enable_shared_from_this<client> {
             query_maximal_access = true;
             if (size)
               access_timestamp = get(slice(item, get(item, 10, 2), size, 16), 0, 8);
+          }
+          if (tag == "RqLs" && requested_oplock == 255) {
+            auto data = slice(item, get(item, 10, 2), get(item, 12, 4), 16);
+            // V2 requests are ignored on SMB 2.1. V1 works on every dialect.
+            if (data.size() != 52 || selected.dialect >= 0x300) {
+              check(!requested_lease && (data.size() == 32 || data.size() == 52));
+              check((get(data, 16, 4) & ~7u) == 0);
+              requested_lease = lease_request::decode(data);
+              lease_context = bytes(data);
+            }
           }
           if (tag == "DHnC" || tag == "DH2C" || tag == "TWrp") {
             log("smb", "unsupported_create_context", std::string(tag));
@@ -1012,6 +1053,16 @@ struct client : session_state, std::enable_shared_from_this<client> {
       }
       bool writing = (access & (0xd0000 | 0x156)) || disposition != 1;
       auto grant = co_await authorize(tid, name, writing);
+      std::shared_ptr<lease_binding> binding;
+      if (requested_lease) {
+        auto client_guid = selected.client_info.substr(4, 16);
+        auto lease_name = json::array({grant.at("root").at("worker"),
+            grant.at("space").at("id"), grant.at("path")}).dump();
+        try { binding = std::make_shared<lease_binding>(s, client_guid, *requested_lease, lease_name); }
+        catch (const error &e) {
+          throw status_error(std::string_view(e.what()) == "resource_limit" ? 0xc000009a : 0xc000000d);
+        }
+      }
       json request = {{"grant", grant},
                       {"write", writing},
                       {"access", access},
@@ -1029,6 +1080,8 @@ struct client : session_state, std::enable_shared_from_this<client> {
         request["eas"] = *initial_eas;
       if (initial_allocation)
         request["allocation"] = *initial_allocation;
+      if (binding)
+        request["lease"] = {{"client", encode_bytes(binding->client)}, {"context", encode_bytes(lease_context)}};
       auto meta = co_await smb_rpc(s, grant.at("root").at("worker"), "smb_open", request);
       access = meta.at("access");
       auto fid = decode_bytes(random_hex(16));
@@ -1037,6 +1090,14 @@ struct client : session_state, std::enable_shared_from_this<client> {
           opened{tid, meta.at("handle"), name, grant, access, json::array(), 0, {}, false, {}, {}});
       // SMB2 requires ignoring the synchronous-I/O CREATE flags.
       files.at(fid).mode = static_cast<uint32_t>(options & 0x100e);
+      if (binding && meta.contains("cache")) {
+        auto &h = files.at(fid);
+        h.lease = std::move(binding);
+        h.cache_cookie = meta.at("cache").at("cookie");
+        h.lease_state = meta.at("cache").at("state");
+        h.cache_encrypted = encrypted;
+        cache_deadline(h, meta.at("cache"));
+      }
       related_file = fid;
       auto b = sized(88, 89);
       put(b, 4, meta.at("action").get<uint32_t>(), 4);
@@ -1097,6 +1158,23 @@ struct client : session_state, std::enable_shared_from_this<client> {
         put(context, 28, maximal_access, 4);
         append_context(std::move(context));
       }
+      if (files.at(fid).lease) {
+        std::exception_ptr failure;
+        try {
+          auto &h = files.at(fid);
+          json cache_request = {{"state", requested_lease->state}};
+          auto acquired = co_await operation(h, "cache_acquire", bool(access & 6), cache_request);
+          h.lease_state = acquired.at("state");
+          cache_deadline(h, acquired);
+          auto data = decode_bytes(acquired.at("context").get<std::string>());
+          bytes context((24 + data.size() + 7) / 8 * 8, '\0');
+          put(context, 4, 16, 2); put(context, 6, 4, 2);
+          put(context, 10, 24, 2); put(context, 12, data.size(), 4);
+          context.replace(16, 4, "RqLs"); context.replace(24, data.size(), data);
+          append_context(std::move(context)); b[2] = char(255);
+        } catch (...) { failure = std::current_exception(); }
+        if (failure) { co_await release(fid); std::rethrow_exception(failure); }
+      }
       if (!response_contexts.empty()) {
         put(b, 80, 152, 4);
         put(b, 84, response_contexts.size(), 4);
@@ -1126,6 +1204,10 @@ struct client : session_state, std::enable_shared_from_this<client> {
       co_return b;
     }
     if (cmd == 18) {
+      if (structure == 36) {
+        check(p.size() >= 100);
+        co_return co_await acknowledge_lease(bytes(p.substr(72, 16)), unsigned(get(p, 88, 4)));
+      }
       check(structure == 24 && p.size() >= 88);
       auto &h = handle(p, 72, tid);
       // The object store already completed this II -> NONE transition. Its
