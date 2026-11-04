@@ -140,13 +140,23 @@ Selected-profile acceptance: [M7 guide](docs/m7.md), [中文](docs/m7.zh-CN.md),
 
 ## Full SMB/NFS compatibility prerequisite (user decision, 2026-10-31)
 
+A private, delegation-bound native reservation channel now bypasses the file
+worker's primary queue. It enforces operation/record/token ownership and retains
+protection through channel EOF and file-worker death. Linux 6.19 tests prove
+ACKs still arrive while the file worker is SIGSTOPed; 927 ASan/UBSan guest checks
+pass. The capability handshake now verifies separate client/server HMAC proofs.
+Publication to the network worker, receipt/reply integration and recovery remain unfinished
+([details](docs/nfs-delegations.md#independent-reservation-capability-channel)).
+
 The independent NFS native owner now acknowledges bounded request reservations:
 completion preserves a full lease, cancellation does not renew, duplicates
 cannot renew, and recall remains fixed. Native tmpfs/ext4 tests include worker
 SIGKILL after ACK. File-domain capability routing now handles bounded, retry-safe
 reservations and cleanup after grant expiry/revocation (536 host / 761 Linux 6.19
 checks). Network receipt/reply integration and recovery remain open
-([details](docs/nfs-delegations.md#native-request-reservations)).
+([details](docs/nfs-delegations.md#native-request-reservations)). The same file-domain
+implementation passes 284 host and 766 Linux 6.19 guest checks in Actions at
+`c243218` ([remote evidence](docs/evidence/pre-m8/nfs-domain-reservations-c243-remote.json)).
 
 SMB DELETE_OBJECT_ID and SET_OBJECT_ID_EXTENDED now preserve the underlying
 object and first 16-byte identity, enforce open/share write permissions and
@@ -163,11 +173,12 @@ discard an already acknowledged coherence extension. Local component and Linux
 
 SMB directory-search initialization now survives native cache recall/retry.
 The regression fails on the old binary and passes on all four tested dialects;
-Linux CIFS passes all four native dialect profiles at `c4226c2`, but that workflow
-fails while writing diagnostics to an absent directory; the harness now creates
-it before mounting. macOS reacceptance remains pending
+Linux CIFS passes all four native dialect profiles and the complete workflow at
+`c243218`; the earlier report-directory failure remains recorded. macOS 15.7.9
+SMB and NFSv3 native roundtrips pass at `4188fcc`
 ([local regression](docs/evidence/pre-m8/smb-directory-retry-local.json),
-[remote profiles and harness failure](docs/evidence/pre-m8/smb-c422-native-profiles.json)).
+[Linux acceptance](docs/evidence/pre-m8/smb-native-c243-pass.json),
+[macOS acceptance](docs/evidence/pre-m8/macos-native-4188-pass.json)).
 
 NFS receipt tracking now preserves protocol state while complete records wait
 in the executor or for its protocol mutex. Failed/cancelled requests cannot

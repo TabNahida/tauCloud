@@ -3,6 +3,8 @@
 #include <taucloud/files.hpp>
 #include <taucloud/native_delegation_owner.hpp>
 #include <chrono>
+#include <array>
+#include <cstring>
 #include <iostream>
 #include <thread>
 #include <functional>
@@ -10,6 +12,10 @@
 #include <poll.h>
 #include <signal.h>
 #include <sys/mount.h>
+#include <sys/vfs.h>
+#include <linux/magic.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #include <sys/reboot.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -427,6 +433,235 @@ static void owner_suite(const fs::path &base, bool mandatory) {
         "reserved_worker_death_missing_full_lease"); close(writer);
   std::cout << "PASS " << base << " OWNER/reservation-worker-death-bounded-full-lease\n";
 }
+// This runs even when the host lacks F_SETDELEG. It tests the private client
+// transport only, never claims that a simulated response holds a native guard.
+static void reservation_channel_authentication_suite() {
+  struct packet {
+    uint32_t magic = 0x54434434, op = 0, native_flags = 0, reserved = 0;
+    uint64_t id = 0;
+    int64_t period = 0, remaining = 0;
+    uint64_t reservation = 0;
+    std::array<char, 32> capability{};
+  };
+  static_assert(sizeof(packet) == 80);
+  for (bool reflect_client_proof : {true, false}) {
+    auto endpoint = decode_bytes(random_hex(16)), secret = decode_bytes(random_hex(16));
+    int listener = socket(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC, 0);
+    check(listener >= 0, "channel_auth_listener");
+    sockaddr_un address{}; address.sun_family = AF_UNIX;
+    auto name = "taucloud-nfs-" + encode_bytes(endpoint);
+    std::memcpy(address.sun_path + 1, name.data(), name.size());
+    check(bind(listener, reinterpret_cast<sockaddr *>(&address), offsetof(sockaddr_un, sun_path) + 1 + name.size()) == 0 &&
+        listen(listener, 1) == 0, "channel_auth_bind");
+    auto server = fork(); check(server >= 0, "channel_auth_fork");
+    if (!server) {
+      pollfd pending{listener, POLLIN, 0};
+      if (poll(&pending, 1, 2000) <= 0) _exit(2);
+      int peer = accept4(listener, nullptr, nullptr, SOCK_CLOEXEC);
+      if (peer < 0) _exit(3);
+      auto reply = [&](bool handshake) {
+        pollfd readable{peer, POLLIN, 0}; packet request;
+        if (poll(&readable, 1, 2000) <= 0 || recv(peer, &request, sizeof(request), 0) != sizeof(request)) _exit(4);
+        if (request.magic != 0x54434434 || request.op != (handshake ? 11u : 3u) || request.id != 1) _exit(5);
+        auto nonce = std::string(request.capability.data(), 16);
+        auto tag = decode_bytes(mac(secret, "TCD4-client:" + endpoint + "1:" + nonce).substr(0, 32));
+        if (handshake && std::string(request.capability.data(), 32) != nonce + tag) _exit(6);
+        packet response = request; response.period = monotonic_ms() + 5000;
+        if (handshake && !reflect_client_proof) {
+          tag = decode_bytes(mac(secret, "TCD4-server:" + endpoint + "1:" + nonce).substr(0, 32));
+          std::copy(tag.begin(), tag.end(), response.capability.begin() + 16);
+        }
+        if (send(peer, &response, sizeof(response), MSG_NOSIGNAL) != sizeof(response)) _exit(7);
+      };
+      reply(true);
+      if (!reflect_client_proof) reply(false);
+      close(peer); close(listener); _exit(0);
+    }
+    close(listener); int status = 0; bool reaped = false;
+    try {
+      json capability = {{"id", uint64_t(1)}, {"capability", encode_bytes(endpoint + secret)}};
+      bool refused = false;
+      try {
+        native_delegation_reservation_channel channel(capability);
+        check(!reflect_client_proof && channel.inspect().at("held"), "channel_auth_valid_exchange");
+      } catch (const error &e) { refused = std::string_view(e.what()) == "forbidden"; }
+      check(refused == reflect_client_proof, "channel_accepted_reflected_client_proof");
+      check(waitpid(server, &status, 0) == server, "channel_auth_wait"); reaped = true;
+      check(WIFEXITED(status) && WEXITSTATUS(status) == 0, "channel_auth_server_failed");
+    } catch (...) { if (!reaped) { kill(server, SIGKILL); waitpid(server, nullptr, 0); } throw; }
+  }
+  std::cout << "PASS CHANNEL/independent-client-server-proofs-and-client-packet-lifetime\n";
+}
+static void reservation_channel_suite(const fs::path &base, bool required) {
+  auto root = native_file::root(base);
+  auto file = root.open("owned");
+  native_delegation_owner owner;
+  auto id = owner.acquire(file, 5000, 5000);
+  if (!id) { check(!required, "required_channel_provider_unavailable"); return; }
+  { auto other = root.open("channel-other", false, true, true); other.write(0, "other"); }
+  auto other_file = root.open("channel-other");
+  auto other_id = owner.acquire(other_file, 5000, 5000);
+  check(other_id != 0, "channel_other_acquire");
+  auto other_capability = owner.reservation_capability(other_id);
+  auto capability = owner.reservation_capability(id);
+  check(other_capability.at("capability") != capability.at("capability"), "record_capabilities_not_unique");
+  check(owner.reservation_capability(id) == capability, "capability_retry_rotated_secret");
+  auto rejected = [&](const std::function<void()> &operation, std::string_view code) {
+    bool denied = false;
+    try { operation(); } catch (const error &e) { denied = std::string_view(e.what()) == code; }
+    check(denied, "reservation_channel_wrong_error");
+  };
+  auto forged = capability;
+  auto encoded = forged.at("capability").get<std::string>();
+  encoded.back() = encoded.back() == '0' ? '1' : '0'; forged["capability"] = encoded;
+  rejected([&] { native_delegation_reservation_channel denied(forged); }, "forbidden");
+  forged = capability; forged["id"] = other_id;
+  rejected([&] { native_delegation_reservation_channel denied(forged); }, "forbidden");
+  owner.release(other_id);
+  forged = capability; forged["capability"] = "00";
+  rejected([&] { native_delegation_reservation_channel denied(forged); }, "invalid_request");
+  native_delegation_reservation_channel first(capability), second(capability);
+  check(first.inspect().at("held") && second.inspect().at("reservations") == 0, "channel_bind_not_live");
+  auto token = first.reserve().at("reservation").get<uint64_t>();
+  rejected([&] { second.complete(token, true); }, "stale_handle");
+  rejected([&] { owner.complete(id, token, true); }, "stale_handle");
+  auto expiry = first.inspect().at("lease_expires_ms");
+  check(first.complete(token, false).at("lease_expires_ms") == expiry, "channel_cancel_renewed");
+  rejected([&] { first.complete(token, true); }, "stale_handle");
+  std::vector<uint64_t> tokens;
+  for (int i = 0; i < 32; ++i) tokens.push_back(first.reserve().at("reservation"));
+  rejected([&] { second.reserve(); }, "operation_limit");
+  for (auto value : tokens) first.complete(value, false);
+  check(second.inspect().at("reservations") == 0, "channel_capacity_not_shared");
+
+  // Exercise the capability boundary with raw private packets. The limited
+  // public API alone would not prove that a compromised peer cannot release.
+  struct packet {
+    uint32_t magic = 0x54434434, op = 0, native_flags = 0, reserved = 0;
+    uint64_t id = 0;
+    int64_t period = 0, remaining = 0;
+    uint64_t reservation = 0;
+    std::array<char, 32> capability{};
+  };
+  static_assert(sizeof(packet) == 80);
+  int fd = socket(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC, 0);
+  check(fd >= 0, "channel_raw_socket");
+  try {
+    auto value = decode_bytes(capability.at("capability").get<std::string>());
+    sockaddr_un address{}; address.sun_family = AF_UNIX;
+    auto name = "taucloud-nfs-" + encode_bytes(std::string_view(value).substr(0, 16));
+    std::memcpy(address.sun_path + 1, name.data(), name.size());
+    check(connect(fd, reinterpret_cast<sockaddr *>(&address), offsetof(sockaddr_un, sun_path) + 1 + name.size()) == 0,
+        "channel_raw_connect");
+    auto exchange = [&](packet request) {
+      check(send(fd, &request, sizeof(request), MSG_NOSIGNAL) == sizeof(request), "channel_raw_send");
+      pollfd p{fd, POLLIN, 0};
+      check(poll(&p, 1, 1500) > 0, "channel_raw_reply_timeout");
+      packet response;
+      check(recv(fd, &response, sizeof(response), 0) == sizeof(response), "channel_raw_reply_size");
+      return response;
+    };
+    packet request; request.op = 11; request.id = id;
+    auto nonce = decode_bytes(random_hex(16));
+    auto tag = decode_bytes(mac(std::string_view(value).substr(16),
+        "TCD4-client:" + value.substr(0, 16) + std::to_string(id) + ":" + nonce).substr(0, 32));
+    std::copy(nonce.begin(), nonce.end(), request.capability.begin());
+    std::copy(tag.begin(), tag.end(), request.capability.begin() + 16);
+    auto bound = exchange(request);
+    auto expected_tag = decode_bytes(mac(std::string_view(value).substr(16),
+        "TCD4-server:" + value.substr(0, 16) + std::to_string(id) + ":" + nonce).substr(0, 32));
+    check(bound.op == 11 && std::string(bound.capability.data(), bound.capability.size()) == nonce + expected_tag,
+        "channel_raw_bind_mutual_proof");
+    for (uint32_t op : {1u, 2u, 4u, 5u, 6u, 10u, 11u}) {
+      request = packet(); request.op = op; request.id = id;
+      check((exchange(request).op >> 16) == 6, "limited_channel_accepted_privileged_operation");
+    }
+    request = packet(); request.op = 3; request.id = id + 1;
+    check((exchange(request).op >> 16) == 6, "limited_channel_escaped_record_binding");
+  } catch (...) { close(fd); throw; }
+  close(fd);
+  check(owner.inspect(id).at("held"), "forged_channel_request_released_guard");
+
+  // EOF consumes only this controller's tokens, retaining a full lease. A
+  // sibling controller's reservation remains live and cannot be stolen.
+  auto sibling = second.reserve().at("reservation").get<uint64_t>();
+  auto disconnected_at = monotonic_ms();
+  {
+    native_delegation_reservation_channel disconnected(capability);
+    disconnected.reserve();
+    disconnected_at = monotonic_ms();
+  }
+  auto deadline = std::chrono::steady_clock::now() + 1s;
+  json observed;
+  do {
+    observed = owner.inspect(id);
+    if (observed.at("reservations") == 1) break;
+    std::this_thread::sleep_for(5ms);
+  } while (std::chrono::steady_clock::now() < deadline);
+  check(observed.at("reservations") == 1 && observed.at("lease_expires_ms").get<int64_t>() >= disconnected_at + 5000,
+      "channel_eof_stole_sibling_or_dropped_lease");
+  second.complete(sibling, false);
+  owner.release(id);
+  rejected([&] { first.inspect(); }, "delegation_owner_lost");
+  rejected([&] { native_delegation_reservation_channel stale(capability); }, "forbidden");
+  file = native_file();
+  std::cout << "PASS " << base << " CHANNEL/capability-binding-limited-operations-token-ownership-EOF\n";
+
+  // A stopped file worker cannot process its primary IPC channel. Another
+  // process still receives ACKs directly from the independent owner.
+  int ready[2]; check(pipe2(ready, O_CLOEXEC) == 0, "channel_pause_pipe");
+  auto worker = fork(); check(worker >= 0, "channel_pause_fork");
+  if (!worker) {
+    close(ready[0]);
+    try {
+      auto f = root.open("owned"); native_delegation_owner keeper;
+      auto owned = keeper.acquire(f, 5000, 1000);
+      if (!owned) _exit(2);
+      auto data = keeper.reservation_capability(owned).dump();
+      if (write(ready[1], data.data(), data.size()) != static_cast<ssize_t>(data.size())) _exit(3);
+      raise(SIGSTOP);
+      for (;;) pause();
+    } catch (...) { _exit(4); }
+  }
+  close(ready[1]); int status = 0; bool reaped = false;
+  try {
+    pollfd p{ready[0], POLLIN, 0}; std::array<char, 256> data{};
+    check(poll(&p, 1, 3000) > 0, "channel_pause_missing_capability");
+    auto count = read(ready[0], data.data(), data.size()); close(ready[0]); ready[0] = -1;
+    check(count > 0, "channel_pause_empty_capability");
+    check(waitpid(worker, &status, WUNTRACED) == worker && WIFSTOPPED(status), "file_worker_not_stopped");
+    native_delegation_reservation_channel independent(json::parse(std::string(data.data(), count)));
+    auto pending = independent.reserve().at("reservation").get<uint64_t>();
+    std::this_thread::sleep_for(1200ms);
+    auto held = independent.inspect();
+    check(held.at("held") && held.at("lease_remaining_ms") == 0 && held.at("reservations") == 1,
+        "stopped_worker_request_expired");
+    auto completed_at = monotonic_ms();
+    check(independent.complete(pending, true).at("lease_expires_ms").get<int64_t>() >= completed_at + 5000,
+        "stopped_worker_completion_not_acknowledged");
+    independent.reserve();
+    check(kill(worker, SIGKILL) == 0 && waitpid(worker, &status, 0) == worker && WIFSIGNALED(status),
+        "stopped_worker_not_killed"); reaped = true;
+    auto died_at = std::chrono::steady_clock::now();
+    // Controller death closes its exported capabilities and retains all
+    // outstanding work conservatively; stale channels cannot keep renewing.
+    std::this_thread::sleep_for(50ms);
+    rejected([&] { independent.inspect(); }, "delegation_owner_lost");
+    int writer = open((base / "owned").c_str(), O_WRONLY | O_NONBLOCK);
+    check(writer < 0 && errno == EWOULDBLOCK, "channel_worker_death_released_early");
+    do {
+      std::this_thread::sleep_for(20ms);
+      writer = open((base / "owned").c_str(), O_WRONLY | O_NONBLOCK);
+    } while (writer < 0 && errno == EWOULDBLOCK && std::chrono::steady_clock::now() - died_at < 7s);
+    check(writer >= 0 && std::chrono::steady_clock::now() - died_at >= 4500ms,
+        "channel_worker_death_not_bounded_full_lease"); close(writer);
+  } catch (...) {
+    if (ready[0] >= 0) close(ready[0]);
+    if (!reaped) { kill(worker, SIGKILL); waitpid(worker, nullptr, 0); }
+    throw;
+  }
+  std::cout << "PASS " << base << " CHANNEL/SIGSTOP-file-worker-independent-ACK-and-SIGKILL-retention\n";
+}
 static void file_domain_suite(const fs::path &base) {
   initialize(base / "state", 38443);
   auto cfg = config::load(base / "state"); cfg.nfs_lease_seconds = 5;
@@ -647,20 +882,28 @@ int main(int argc, char **argv) {
   fs::path base;
   try {
     if (guest) {
-      check(mount("proc", "/proc", "proc", 0, nullptr) == 0, "mount_proc");
+      auto mounted = mount("proc", "/proc", "proc", 0, nullptr);
+      struct statfs proc{};
+      check((mounted == 0 || errno == EBUSY) && statfs("/proc", &proc) == 0 && proc.f_type == PROC_SUPER_MAGIC,
+          "mount_proc");
       check(mount("devtmpfs", "/dev", "devtmpfs", 0, nullptr) == 0, "mount_dev");
       check(mount("tmpfs", "/tmp", "tmpfs", 0, nullptr) == 0, "mount_tmpfs");
       check(mount("/dev/vda", "/disk", "ext4", 0, nullptr) == 0, "mount_ext4");
+      reservation_channel_authentication_suite();
       suite("/tmp/delegation", true);
       owner_suite("/tmp/delegation", true);
+      reservation_channel_suite("/tmp/delegation", true);
       file_domain_suite("/tmp/domain");
       suite("/disk/delegation", true);
       owner_suite("/disk/delegation", true);
+      reservation_channel_suite("/disk/delegation", true);
       file_domain_suite("/disk/domain");
     } else {
+      reservation_channel_authentication_suite();
       base = fs::temp_directory_path() / ("tc-native-delegation-" + random_hex(6));
       suite(base, argc > 1 && std::string_view(argv[1]) == "--require");
       owner_suite(base, argc > 1 && std::string_view(argv[1]) == "--require");
+      reservation_channel_suite(base, argc > 1 && std::string_view(argv[1]) == "--require");
     }
     std::cout << "PASS native delegation " << checks << " checks\n";
     if (guest) std::cout << "TAUCLOUD_DELEGATION_VM_PASS\n";

@@ -475,7 +475,7 @@ Late unrelated reservations cannot borrow an existing reservation's protection;
 a validated renewal must first advance the lease.
 
 There are at most 32 tokens per delegation and 512 per owner. Cancellation
-returns capacity. The private TCD3 IPC packet includes the token and confirmed
+returns capacity. The private TCD4 IPC packet includes the token and confirmed
 reservation count. `protected_until_ms` is INT64_MAX only while an acknowledged
 reservation has no recall deadline; the count makes this conditional retention
 explicit. Native conflict detection still establishes a fixed recall deadline,
@@ -524,3 +524,54 @@ The network admission/transport connection remains incomplete. Its independent
 route must avoid waiting behind the same blocked file worker, cover all client
 delegations and acknowledge protection before network state is extended.
 Production handout, replacement recovery and reclaim remain incomplete.
+
+## Independent reservation capability channel
+
+The native owner can export a private, same-host capability bound to one live
+delegation. `native_delegation_reservation_channel` connects directly to that
+owner, independently of the file worker's execution queue and primary control
+connection. The Linux abstract Unix socket name is public routing information;
+a distinct random 128-bit secret authenticates each delegation. A fresh nonce
+and direction-separated HMAC-SHA256-128 proofs bind the endpoint and record.
+The client verifies the owner's proof before trusting its snapshot; reflecting
+a client proof or rebinding an old socket address cannot impersonate the owner
+without the secret. The secret itself is never sent in the channel handshake.
+Both peers also check the Unix peer UID. Neither the capability nor its secret
+belongs on the NFS wire or in diagnostics.
+
+A bound channel supports only inspection, reservation and completion/cancellation.
+The owner rejects acquisition, renewal, recall, release, capability export and
+cross-record requests on it. Reservation tokens are bound to the originating
+connection, including separation from the primary controller; a sibling cannot
+consume a token. Export retries retain the same capability for the same record.
+Returning the delegation closes its channels and invalidates its capability.
+
+The owner admits at most 512 channels and 32 unauthenticated handshakes, with a
+1.5-second handshake deadline and at most eight accepts per maintenance cycle.
+The existing 32-per-record/512-per-owner reservation limits remain shared across
+all controllers. Closing a channel conservatively completes only its tokens with
+a full lease; sibling requests remain outstanding. Primary-controller death
+invalidates all channels, completes outstanding work conservatively and retains
+the existing autonomous expiry behavior. Fixed native recall still takes
+precedence over every form of retention.
+
+[Local Linux 6.19 evidence](evidence/pre-m8/nfs-reservation-channel-local.json)
+records 927 ASan/UBSan checks and verifies actual tmpfs/ext4 protection,
+raw-packet operation restrictions,
+capability and token binding, duplicate/capacity rejection, per-channel EOF,
+SIGSTOP of the file worker while another process obtains native ACKs, and bounded
+retention after SIGKILL. The capability currently exists at the native-owner
+layer. File-domain publication, authoritative import of independent reservations,
+network receipt/reply routing and recovery/reclaim still require integration;
+production handout remains disabled.
+
+The native-client handshake regression also runs on hosts without F_SETDELEG:
+a separate test peer proves the server direction or reflects the client proof;
+only the former is accepted. This transport test does not claim native exclusion.
+GCC and Clang sanitizer host builds both pass its 19 checks/capability probes.
+
+The VM uses a small unsanitized init shim to mount procfs before starting the
+instrumented PID 1 program. ASan otherwise cannot discover that process's stack
+bounds and can leave stale stack poison after exceptions. SDK-resolved libraries
+are also installed under their SONAMEs in the guest's default loader directory.
+The required remote kernel matrix now covers GCC release and Clang ASan/UBSan.

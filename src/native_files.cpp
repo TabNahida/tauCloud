@@ -2,6 +2,7 @@
 #include <taucloud/native_delegation_owner.hpp>
 #include <taucloud/nfs_delegation.hpp>
 #include <algorithm>
+#include <array>
 #include <cstring>
 #include <limits>
 #include <map>
@@ -26,6 +27,7 @@
 #include <poll.h>
 #include <spawn.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #include <sys/wait.h>
 #include <fstream>
 #endif

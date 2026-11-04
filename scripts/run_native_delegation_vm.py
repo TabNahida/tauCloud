@@ -47,14 +47,39 @@ def main():
     if any(output.iterdir()):
         p.error('--output must be empty (a new disposable disk will be created)')
     binary = args.binary.resolve(strict=True)
-    files = {'bin/probe': binary}
-    dependencies = subprocess.check_output(['ldd', str(binary)], text=True)
+    # Sanitizer initialization runs before main() and needs /proc to discover
+    # the initial stack. Starting an instrumented test directly as PID 1 before
+    # /proc exists makes exception unwinding leave false stack poison behind.
+    init_source = output / 'init.c'
+    init_source.write_text('''#include <sys/mount.h>
+#include <unistd.h>
+int main(void) {
+    if (mount("proc", "/proc", "proc", 0, 0)) return 111;
+    char *args[] = {"/bin/probe", 0};
+    char *environment[] = {0};
+    execve(args[0], args, environment);
+    return 112;
+}
+''')
+    init = output / 'init'
+    subprocess.run(['cc', '-O2', '-Wall', '-Wextra', str(init_source), '-o', str(init)], check=True)
+    files = {'init': init, 'bin/probe': binary}
+    dependencies = '\n'.join(subprocess.check_output(['ldd', str(executable)], text=True)
+                             for executable in (init, binary))
     if 'not found' in dependencies:
         raise RuntimeError(dependencies)
     for path in re.findall(r'(/[^\s()]+)', dependencies):
         file = Path(path)
         if file.is_file():
             files[str(file).lstrip('/')] = file.resolve()
+    # ldd may resolve a dependency through the host's LD_LIBRARY_PATH (for
+    # example a local Kerberos SDK). The PID 1 probe and its exec'd owner have
+    # no such environment. Also install each SONAME in the guest loader's
+    # standard x86-64 directory so those dependencies remain discoverable.
+    for name, resolved in re.findall(r'^\s*(\S+)\s+=>\s+(/[^\s()]+)', dependencies, re.MULTILINE):
+        if Path(name).name != name:
+            raise RuntimeError('Unexpected dependency name: ' + name)
+        files['lib/x86_64-linux-gnu/' + name] = Path(resolved).resolve(strict=True)
     (output / 'dependencies.txt').write_text(dependencies)
     initrd = output / 'initrd.cpio.gz'
     initrd.write_bytes(gzip.compress(archive(files), mtime=0))
@@ -66,7 +91,7 @@ def main():
     cmd = ['qemu-system-x86_64', '-accel', 'tcg', '-m', '1024', '-smp', '2',
            '-nographic', '-no-reboot', '-nic', 'none', '-monitor', 'none',
            '-kernel', str(args.kernel.resolve(strict=True)), '-initrd', str(initrd),
-           '-append', 'console=ttyS0 rdinit=/bin/probe panic=-1',
+           '-append', 'console=ttyS0 rdinit=/init panic=-1',
            '-drive', f'file={disk},format=raw,if=virtio']
     (output / 'command.txt').write_text(repr(cmd) + '\n')
     with (output / 'serial.log').open('w') as log:

@@ -1,0 +1,111 @@
+{
+  "status": "passed",
+  "source_base": "a7b981e8c57aee660530f63337177c32a89489d4",
+  "recorded_at": "2026-11-04T23:37:37.786301+00:00",
+  "change": "Independent delegation-bound Unix capability channel with mutual HMAC proofs and controller-bound reservations",
+  "results": {
+    "clang_asan_ubsan_host": {
+      "sha256": "8f147d775854734e6941b9211191621c99b2e71fd6db15ae3e49ef5736f97604",
+      "checks": [
+        "PASS CHANNEL/independent-client-server-proofs-and-client-packet-lifetime",
+        "UNSUPPORTED F_SETDELEG; no fallback claimed as delegation",
+        "UNSUPPORTED owner F_SETDELEG; ordinary descriptor remains usable",
+        "PASS native delegation 19 checks"
+      ]
+    },
+    "gcc_host": {
+      "sha256": "8f147d775854734e6941b9211191621c99b2e71fd6db15ae3e49ef5736f97604",
+      "checks": [
+        "PASS CHANNEL/independent-client-server-proofs-and-client-packet-lifetime",
+        "UNSUPPORTED F_SETDELEG; no fallback claimed as delegation",
+        "UNSUPPORTED owner F_SETDELEG; ordinary descriptor remains usable",
+        "PASS native delegation 19 checks"
+      ]
+    },
+    "clang_asan_ubsan_linux_619_vm": {
+      "sha256": "375f693ff37a7323d791a246ea70ca1e57b3e7df9f4b2c8c090fe30fb74a1cfb",
+      "checks": [
+        "PASS CHANNEL/independent-client-server-proofs-and-client-packet-lifetime",
+        "PASS \"/tmp/delegation\" READ/writer",
+        "PASS \"/tmp/delegation\" READ/truncate",
+        "PASS \"/tmp/delegation\" READ/rename",
+        "PASS \"/tmp/delegation\" READ/unlink",
+        "PASS \"/tmp/delegation\" READ/chmod",
+        "PASS \"/tmp/delegation\" READ/utimens",
+        "PASS \"/tmp/delegation\" READ/xattr",
+        "PASS \"/tmp/delegation\" READ/chown",
+        "PASS \"/tmp/delegation\" READ/link",
+        "PASS \"/tmp/delegation\" WRITE/reader",
+        "PASS \"/tmp/delegation\" WRITE/writer",
+        "PASS \"/tmp/delegation\" DIRECTORY/create",
+        "PASS \"/tmp/delegation\" DIRECTORY/unlink",
+        "PASS \"/tmp/delegation\" DIRECTORY/rename",
+        "PASS \"/tmp/delegation\" DIRECTORY/cross-parent-rename",
+        "PASS \"/tmp/delegation\" DIRECTORY/rmdir-after-move",
+        "PASS \"/tmp/delegation\" OWNER/renew-recall-revoke-return",
+        "PASS \"/tmp/delegation\" OWNER/detach-retention-expiry",
+        "PASS \"/tmp/delegation\" OWNER/SIGKILL-worker-retention-expiry",
+        "PASS \"/tmp/delegation\" OWNER/absolute-expiry-and-confirmed-death-cleanup",
+        "PASS \"/tmp/delegation\" OWNER/private-pin-and-unlinked-incarnation",
+        "PASS \"/tmp/delegation\" OWNER/request-reservation-postreply-lease",
+        "PASS \"/tmp/delegation\" OWNER/reservation-capacity-cancellation-and-token-binding",
+        "PASS \"/tmp/delegation\" OWNER/reservation-cannot-postpone-native-recall",
+        "PASS \"/tmp/delegation\" OWNER/reservation-worker-death-bounded-full-lease",
+        "PASS \"/tmp/delegation\" CHANNEL/capability-binding-limited-operations-token-ownership-EOF",
+        "PASS \"/tmp/delegation\" CHANNEL/SIGSTOP-file-worker-independent-ACK-and-SIGKILL-retention",
+        "PASS \"/tmp/domain\" FILE-DOMAIN/expired-authority-coherence-retention",
+        "PASS \"/tmp/domain\" FILE-DOMAIN/reservation-binding-retry-completion-capacity-revocation",
+        "PASS \"/tmp/domain\" FILE-DOMAIN/owner-renew-recall-return-replacement-SIGKILL",
+        "PASS \"/disk/delegation\" READ/writer",
+        "PASS \"/disk/delegation\" READ/truncate",
+        "PASS \"/disk/delegation\" READ/rename",
+        "PASS \"/disk/delegation\" READ/unlink",
+        "PASS \"/disk/delegation\" READ/chmod",
+        "PASS \"/disk/delegation\" READ/utimens",
+        "PASS \"/disk/delegation\" READ/xattr",
+        "PASS \"/disk/delegation\" READ/chown",
+        "PASS \"/disk/delegation\" READ/link",
+        "PASS \"/disk/delegation\" WRITE/reader",
+        "PASS \"/disk/delegation\" WRITE/writer",
+        "PASS \"/disk/delegation\" DIRECTORY/create",
+        "PASS \"/disk/delegation\" DIRECTORY/unlink",
+        "PASS \"/disk/delegation\" DIRECTORY/rename",
+        "PASS \"/disk/delegation\" DIRECTORY/cross-parent-rename",
+        "PASS \"/disk/delegation\" DIRECTORY/rmdir-after-move",
+        "PASS \"/disk/delegation\" OWNER/renew-recall-revoke-return",
+        "PASS \"/disk/delegation\" OWNER/detach-retention-expiry",
+        "PASS \"/disk/delegation\" OWNER/SIGKILL-worker-retention-expiry",
+        "PASS \"/disk/delegation\" OWNER/absolute-expiry-and-confirmed-death-cleanup",
+        "PASS \"/disk/delegation\" OWNER/private-pin-and-unlinked-incarnation",
+        "PASS \"/disk/delegation\" OWNER/request-reservation-postreply-lease",
+        "PASS \"/disk/delegation\" OWNER/reservation-capacity-cancellation-and-token-binding",
+        "PASS \"/disk/delegation\" OWNER/reservation-cannot-postpone-native-recall",
+        "PASS \"/disk/delegation\" OWNER/reservation-worker-death-bounded-full-lease",
+        "PASS \"/disk/delegation\" CHANNEL/capability-binding-limited-operations-token-ownership-EOF",
+        "PASS \"/disk/delegation\" CHANNEL/SIGSTOP-file-worker-independent-ACK-and-SIGKILL-retention",
+        "PASS \"/disk/domain\" FILE-DOMAIN/expired-authority-coherence-retention",
+        "PASS \"/disk/domain\" FILE-DOMAIN/reservation-binding-retry-completion-capacity-revocation",
+        "PASS \"/disk/domain\" FILE-DOMAIN/owner-renew-recall-return-replacement-SIGKILL",
+        "PASS native delegation 927 checks",
+        "TAUCLOUD_DELEGATION_VM_PASS"
+      ]
+    }
+  },
+  "limits": [
+    "Native-owner capability primitive; file-domain publication and lifetime import, network admission/reply integration and recovery remain incomplete.",
+    "Production delegation handout is still disabled.",
+    "Host kernel lacks F_SETDELEG; positive native functionality is verified in the mandatory Linux 6.19 guest."
+  ],
+  "prior_harness_failures": [
+    {
+      "log_sha256": "e5137db6a551b8aedff0703b5046652db7c930510af16a7dc7bbebdbbcdd9898",
+      "failure": "Locally supplied libgssapi_krb5.so.2 was outside guest loader search paths.",
+      "fix": "Bundle SONAME aliases under /lib/x86_64-linux-gnu, including dependencies of the init shim."
+    },
+    {
+      "log_sha256": "852ca0ef4b1037af9efbd452761756d1c464ad7dd9b6f779acd37b149ec52bb2",
+      "failure": "ASan initialized before procfs existed and reported default stack top 0, ignored __asan_handle_no_return, then reported poisoned stack accesses after exceptions.",
+      "fix": "An unsanitized init shim mounts procfs before exec of the instrumented PID 1 test. The same native implementation then passes 927 checks without sanitizer warnings/errors."
+    }
+  ]
+}
