@@ -39,6 +39,8 @@ struct session {
   uint32_t callback_request_limit = 0, callback_response_limit = 0;
   uint32_t callback_slots = 0, callback_sequence = 1;
   bool callback_unresolved = false;
+  bool callback_session_seen = false, callback_fault = false;
+  int64_t callback_retry_after = 0;
   uint64_t callback_generation = 0;
   uint32_t callback_operations = 0;
   std::string callback_extra, callback_references;
@@ -1166,11 +1168,15 @@ std::string v4(const identity &who, reader &r) {
           check(hash == sl.hash, 10076);
           check(!sl.pending && !sl.reply.empty(), 10008);
           replay_authorized(who, sl.authority);
+          s.callback_session_seen = true;
+          sequence_callback(sid);
           s.expires = now() + 60000;
           client_ids.at(s.client).expires = s.expires;
           return sl.reply;
         }
         check(seq == sl.seq + 1 && !sl.pending, 10063);
+        s.callback_session_seen = true;
+        sequence_callback(sid);
         sl.seq = seq;
         sl.hash = hash;
         sl.reply.clear();
@@ -1186,6 +1192,7 @@ std::string v4(const identity &who, reader &r) {
             .u32(uint32_t(s.slots.size() - 1))
             .u32(uint32_t(s.slots.size() - 1))
             .u32((callback_path_up(s.client) ? 0 : 1) | callback_gss_flags(s) |
+                 (s.callback_fault ? 0x400 : 0) |
                  (s.callback_unresolved && s.back_connections.empty() ? 0x200 : 0));
         sequence_args = writer().fixed(decode_bytes(sid)).u32(seq).u32(n)
             .u32(a.at("highest")).boolean(a.at("cache")).data;
@@ -1211,6 +1218,7 @@ std::string v4(const identity &who, reader &r) {
           if (bound & 1) s.connections.insert(connection);
           if (bound & 2) s.back_connections.insert(connection);
         }
+        s.callback_session_seen = true;
         if ((bound & 2) && !s.callback_up.contains(connection)) probe_callback(id, connection);
         body.fixed(decode_bytes(id)).u32(bound).boolean(false);
       } else if (op == 44) {

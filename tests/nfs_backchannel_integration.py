@@ -238,8 +238,6 @@ def run(args):
         for offset, value in ((0, 10008), (4, 4), (8, 0), (8, 2), (12, 3),
                               (16, 10052), (20, 0), (36, 2), (40, 1)):
             bad = bytearray(valid); struct.pack_into('>I', bad, offset, value); malformed.append(bytes(bad))
-        # A well-formed CB_SEQUENCE error also leaves the slot unchanged.
-        malformed.append(struct.pack('>5I', 10008, 0, 1, 11, 10008))
         for bad in malformed:
             q.acknowledge_sequence(body=bad); q.wait_closed()
             count = len(q.sequences)
@@ -248,7 +246,7 @@ def run(args):
         q.acknowledge_sequence(); q.path(True)
         old_reply = q.sequences[-1]
         q.acknowledge(old_reply[0], old_reply[2]); q.path(True)
-        passed('truncated/trailing XDR, bad status/tag/count/op/session/sequence/slot and CB_SEQUENCE errors close the transport before exact retry; only a valid reply advances the slot')
+        passed('truncated/trailing XDR and mismatched status/tag/count/op/session/sequence/slot close the transport before exact retry; only a valid success advances the slot')
 
         r = q.compound([op.backchannel_ctl(q.program, [t4.callback_sec_parms4(0)])]); assert r.status == 0, r
         q.path(False)

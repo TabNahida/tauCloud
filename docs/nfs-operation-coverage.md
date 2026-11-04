@@ -28,10 +28,34 @@ Simple NFSv4 ACL attribute and mode synchronization are implemented in `src/file
 
 Solo CB_SEQUENCE callback sequencing, exact retry, transport failover, session teardown and dynamic slot maxima are covered by `tests/nfs_backchannel_integration.py` ([local evidence](evidence/pre-m8/nfs-cb-sequence-local.json)); this does not yet exercise delegation/recall authority.
 
+Callback error recovery now distinguishes a complete CB_SEQUENCE error from an
+unverifiable reply. DELAY and an initial BADSESSION caused by racing session
+installation retain the exact slot/request and retry after a 250 ms backoff,
+without closing the live transport or renewing the lease. The initial-race
+classification is captured when the callback is sent; intervening forechannel
+progress cannot turn that reply into a false permanent fault. This also allows
+sessions used only for callbacks to establish without a forechannel SEQUENCE.
+CONN_NOT_BOUND_TO_SESSION withdraws that path until an explicit bind restores
+it. Established-session slot errors set SEQ4_STATUS_BACKCHANNEL_FAULT; the
+client can drain/destroy the session over the surviving connection. A new
+session clears the fault. Malformed/trailing XDR and invalid authentication
+still require confirmed disconnection before retry. Successful error parsing
+never advances the callback sequence or grants file/lock authority.
+
+`tests/nfs_callback_recovery.py` covers six deterministic lifecycle/race groups;
+`tests/nfs_gss_backchannel.py` additionally covers authenticated integrity and
+privacy errors. This fixes the failure mechanism recorded in the original
+[pynfs LOOKUPP timeout](evidence/pre-m8/nfs-ssv-preceding-remote-failures.json),
+where initial CB_SEQUENCE received BADSESSION and the server closed the shared
+connection. The original upstream client has not been modified. See
+[local acceptance](evidence/pre-m8/nfs-callback-recovery-local.json). The full
+compatibility gate remains open.
+
+
 CB_NOTIFY_LOCK now follows denied READW_LT/WRITEW_LT requests, with fresh authority, explicit owner/file identification, referring calls, bounded single-slot dispatch and exact disconnect-gated retry. Independent tests include nonblocking cancellation, CLOSE/revocation/lease-expiry cleanup and advisory-only behavior; a separate test uses the unmodified pynfs client stack ([evidence](evidence/pre-m8/nfs-notify-lock-local.json)). Other callback operations and delegation authority remain unfinished.
 
 ## Upstream placeholder GSS handles
 
-The earlier 145-case AUTH_SYS result predates GSS callback validation. Original `CSESS16` and `CSESS16a` offer the literal, unestablished `Handle from server` and expect successful CREATE_SESSION. RFC 8881 §18.36.3 requires NOENT when that handle does not exist. Both cases now fail with precisely NOENT; their [original failures](evidence/pre-m8/pynfs-gss-placeholder-handles.json) and [log](evidence/pre-m8/pynfs-gss-placeholder-handles.log) remain visible and are not counted as passes. The control/regular acceptance selection separates these two cases (`noCSESS16 noCSESS16a` in the regular selector); all other selection constraints remain unchanged. `pynfs_gss_handle_diagnostic.py` runs both originals and fails on any result other than those exact two conflicts. The remaining regular-profile remote run is pending.
+The earlier 145-case AUTH_SYS result predates GSS callback validation. Original `CSESS16` and `CSESS16a` offer the literal, unestablished `Handle from server` and expect successful CREATE_SESSION. RFC 8881 §18.36.3 requires NOENT when that handle does not exist. Both cases now fail with precisely NOENT; their [original failures](evidence/pre-m8/pynfs-gss-placeholder-handles.json) and [log](evidence/pre-m8/pynfs-gss-placeholder-handles.log) remain visible and are not counted as passes. The control/regular acceptance selection separates these two cases (`noCSESS16 noCSESS16a` in the regular selector); all other selection constraints remain unchanged. `pynfs_gss_handle_diagnostic.py` runs both originals and fails on any result other than those exact two conflicts. The current unmodified regular-profile local run passes all 143 selected cases (zero failures/errors; 123 of 266 cases not selected), including LKPP1d/LKPP1r. The [report](evidence/pre-m8/pynfs-callback-recovery-regular.json) and [original log](evidence/pre-m8/pynfs-callback-recovery-regular.log) retain every selection/result. Remote acceptance of the callback-recovery change is pending.
 
 Independent real-KDC tests supply valid handles in mixed AUTH_NONE/AUTH_SYS/GSS arrays and verify actual signed/encrypted callbacks for all three services. They separately assert NOENT for mixed arrays containing an unknown GSS handle, preserving the existing session/program. See [GSS callback evidence](evidence/pre-m8/nfs-gss-backchannel-local.json).

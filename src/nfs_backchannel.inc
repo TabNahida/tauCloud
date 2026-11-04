@@ -7,6 +7,7 @@ struct callback_probe {
   uint64_t generation = 0;
   std::string gss_handle;
   uint32_t gss_sequence = 0, gss_service = 0;
+  bool initializing = false;
 };
 std::map<uint32_t, callback_probe> callback_probes;
 std::set<std::string> callback_closing;
@@ -82,7 +83,7 @@ bool callback_fits(const session &s, size_t extra = 0, size_t response_extra = 0
 }
 bool callback_available(const session &s) const {
   // RPC header plus a solo CB_SEQUENCE, including the exact AUTH_SYS body.
-  return send_backchannel && s.callback_slots && callback_fits(s);
+  return !s.callback_fault && send_backchannel && s.callback_slots && callback_fits(s);
 }
 bool callback_path_up(uint64_t client) const {
   for (const auto &[id, s] : sessions)
@@ -103,6 +104,7 @@ void send_callback_probe(const std::string &id, const std::string &bound, bool c
     body.fixed(s.callback_extra);
   }
   callback_probe probe{id, bound, now() + 5000, compound, s.callback_sequence, s.callback_generation};
+  probe.initializing = !s.callback_session_seen && s.callback_sequence == 1;
   writer call;
   call.u32(callback_xid).u32(0).u32(2).u32(s.callback_program).u32(1).u32(compound ? 1 : 0);
   auto extra = compound ? body.data.size() - 56 : 0;
@@ -143,6 +145,7 @@ void send_callback_probe(const std::string &id, const std::string &bound, bool c
 }
 void sequence_callback(const std::string &id) {
   auto &s = sessions.at(id);
+  if (s.callback_fault || now() < s.callback_retry_after) return;
   auto client = client_ids.find(s.client);
   if (s.expires <= now() || client == client_ids.end() || client->second.expires <= now()) return;
   if (!callback_available(s) || callback_probes.size() >= 128) return;
@@ -223,6 +226,7 @@ void callback_reply(uint32_t xid, reader &r) {
     s.callback_ready.erase(connection);
   }
   bool valid = false;
+  uint32_t sequence_error = 0;
   std::string clear;
   try {
     if (probe.deadline > now() && r.data.size() <= s.callback_response_limit && r.u32() == 0) {
@@ -251,20 +255,31 @@ void callback_reply(uint32_t xid, reader &r) {
         // Validate the complete result before committing sequence/lease state.
         auto status = r.u32();
         bool notification = !s.callback_extra.empty();
-        if (!r.opaque().empty() || r.u32() != (notification ? 2u : 1u) || r.u32() != 11 ||
-            r.u32() != 0 || r.fixed(16) != decode_bytes(probe.session) ||
-            r.u32() != probe.sequence || r.u32() != 0)
-          throw xdr_error();
-        // The peer may grow/shrink its slot table after CREATE_SESSION
-        // (RFC 8881 2.10.6.1). Slot zero fits every advertised maximum; no
-        // allocation or concurrency increase is needed to honor either value.
-        r.u32(); // csr_highest_slotid
-        r.u32(); // csr_target_highest_slotid
-        // CB_NOTIFY_LOCK is an optional hint. Even NOTSUPP or an uncached
-        // replay result consumes the sequence; no lock authority is granted.
-        if (notification) {
-          if (r.u32() != 13 || r.u32() != status) throw xdr_error();
-        } else if (status != 0) throw xdr_error();
+        if (!r.opaque().empty()) throw xdr_error();
+        auto count = r.u32();
+        if (r.u32() != 11) throw xdr_error();
+        sequence_error = r.u32();
+        if (sequence_error) {
+          // A completed error is not an uncertain/malformed reply. RFC 8881
+          // 20.9.3 leaves the slot unchanged; no following operation executed.
+          static const std::set<uint32_t> errors = {10052, 10053, 10036, 10077, 10055,
+              10008, 10066, 10067, 10065, 10068, 10064, 10076, 10063, 10070};
+          if (count != 1 || status != sequence_error || !errors.contains(sequence_error)) throw xdr_error();
+        } else {
+          if (count != (notification ? 2u : 1u) || r.fixed(16) != decode_bytes(probe.session) ||
+              r.u32() != probe.sequence || r.u32() != 0)
+            throw xdr_error();
+          // The peer may grow/shrink its slot table after CREATE_SESSION
+          // (RFC 8881 2.10.6.1). Slot zero fits every advertised maximum; no
+          // allocation or concurrency increase is needed to honor either value.
+          r.u32(); // csr_highest_slotid
+          r.u32(); // csr_target_highest_slotid
+          // CB_NOTIFY_LOCK is an optional hint. Even NOTSUPP or an uncached
+          // replay result consumes the sequence; no lock authority is granted.
+          if (notification) {
+            if (r.u32() != 13 || r.u32() != status) throw xdr_error();
+          } else if (status != 0) throw xdr_error();
+        }
       }
       r.end();
       valid = true;
@@ -278,9 +293,30 @@ void callback_reply(uint32_t xid, reader &r) {
     return;
   }
   callback_probes.erase(found);
+  if (valid && sequence_error) {
+    if (sequence_error == 10008 || (sequence_error == 10052 && probe.initializing)) {
+      // A new backchannel can race the client's CREATE_SESSION installation.
+      // It need not ever carry a forechannel SEQUENCE: retry the definitive
+      // initial BADSESSION without renewing its lease or resetting its slot.
+      if (current_config) s.callback_ready.insert(connection);
+      s.callback_retry_after = now() + 250;
+    } else if (sequence_error == 10055) {
+      // A bind can repair this path without discarding other usable paths.
+      if (current_config) s.callback_ready.erase(connection);
+    } else {
+      // Unknown/mismatched slot state cannot be safely advanced. Tell the
+      // client to drain and recreate this session, preserving the TCP stream.
+      s.callback_fault = true;
+      s.callback_up.clear();
+      s.callback_ready.clear();
+    }
+    sequence_callback(probe.session);
+    return;
+  }
   if (valid) {
     if (current_config) s.callback_ready.insert(connection);
     if (probe.compound) {
+      s.callback_session_seen = true;
       ++s.callback_sequence; // Unsigned wraparound is part of the protocol.
       s.callback_unresolved = false;
       s.callback_extra.clear();

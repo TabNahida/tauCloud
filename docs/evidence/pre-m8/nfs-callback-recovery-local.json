@@ -1,0 +1,159 @@
+{
+  "recorded_at": "2026-11-04T16:05:31.443529+00:00",
+  "base_source": "546919a7dc72624a088b90890513cecb547ed7bb",
+  "status": "local-passed-remote-pending",
+  "sanitizers": "Linux Clang ASan/UBSan/LSan",
+  "scope": "Definitive CB_SEQUENCE error recovery, session installation races and authenticated callback regression. Full SMB/NFS remains unfinished.",
+  "source_sha256": {
+    "src/nfs_backchannel.inc": "7910f7da0827ac006082040ae8c5af7f617dcf301e7979a49a939d676f6d87be",
+    "src/nfs_v4.inc": "1b710450d10ae7059b9a7c4afc9d797c011b6e6b162b371987efe6504d6dce07",
+    "tests/nfs_callback_recovery.py": "d7a2e25daf1fd561041dd359ebf336fd12f77a16eaac19f0c16865ffc9bfdcb3",
+    "tests/nfs_backchannel_integration.py": "2c03cd6a87e9b254ff66e0663f19a3658737908680c9ed5077c6472133080b85",
+    "tests/nfs_gss_backchannel.py": "c92d21d370be5adc95d39dbbf0913b45e71753d25ba19de93ddcc301046321e9",
+    ".github/workflows/smb-metadata.yml": "99e499a1ee36dfd5b8594d0c9d302c2ecbf13ed6d50449b7abd6ee3826b784ee"
+  },
+  "reports": {
+    "local": {
+      "sha256": "acdb1f56e3898d67867a463844d1ffa96631362a0e6125799dc06272fbe7e731",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "initial CB_SEQUENCE BADSESSION retries exact slot after session-installation race, without requiring forechannel SEQUENCE on a callback-only session",
+          "initial-callback classification is captured when sent, so a forechannel SEQUENCE overtaking its BADSESSION reply cannot create a false permanent fault",
+          "CB_SEQUENCE DELAY retains exact request/slot, retries after backoff on the live connection and leaves ordinary file operations usable",
+          "BADSESSION, BADSLOT, SEQ_MISORDERED and SEQ_FALSE_RETRY report BACKCHANNEL_FAULT without tearing down the shared TCP stream; a new session recovers",
+          "CONN_NOT_BOUND_TO_SESSION withdraws callback readiness; explicit rebind retries the same sequence without marking a permanent session fault",
+          "an error reply with trailing XDR remains invalid and must disconnect before an exact retry"
+        ]
+      }
+    },
+    "backchannel": {
+      "sha256": "51edb28636374d7de2b1160cfabcd1ff1064c48d818a6da7b9c2eafa389d8171",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "CREATE_SESSION binds a bidirectional transport; CB_NULL uses the requested program/version and AUTH_NONE while forechannel RPC stays usable",
+          "probe replies are bound to their exact TCP connection and XID; cross-connection, duplicate and unknown replies cannot change path state",
+          "BACKCHANNEL_CTL changes program and invalidates old probes; malformed matched replies keep path down and idempotent rebinding reprobes it",
+          "cleared callback credentials and destroyed/recreated sessions cannot be validated by a stale probe response",
+          "BIND_CONN_TO_SESSION supports BACK and BACK_OR_BOTH on new transports, rejects invalid directions and changes to existing channel roles",
+          "AUTH_SYS CB_NULL carries the offered timestamp, machine name, UID/GID and supplementary groups exactly",
+          "five-second probe timeout ignores late success; rebind recovers the path without recreating the session",
+          "losing the only callback transport sets CB_PATH_DOWN on a surviving forechannel connection",
+          "CB_NULL success alone does not validate the sequenced backchannel; CB_SEQUENCE success on the wrong transport is ignored",
+          "truncated/trailing XDR and mismatched status/tag/count/op/session/sequence/slot close the transport before exact retry; only a valid success advances the slot",
+          "successful CB_SEQUENCE advances exactly once; BACKCHANNEL_CTL retains the session sequence and ignores old duplicate replies",
+          "BIND and callback program replacement never retry an outstanding CB_COMPOUND on a live transport; its original reply releases the slot without validating the new program",
+          "completion of a callback issued before credential removal advances its slot but cannot resurrect the disabled backchannel",
+          "CB_COMPOUND timeout closes the original transport before retry; stale RPC replies on the replacement cannot complete the unresolved slot",
+          "one callback slot serializes multiple bound paths; transport loss retries the unresolved request on another bound connection",
+          "loss of the only backchannel with an unanswered CB_COMPOUND reports CB_PATH_DOWN_SESSION; binding a replacement clears that flag and preserves the pending sequence",
+          "client-advertised slot growth beyond CREATE_SESSION and shrink back to zero are accepted without allocation or increasing callback concurrency",
+          "destroying and recreating a session starts a distinct callback slot at sequence one; old CB_COMPOUND success cannot validate it",
+          "UINT32_MAX offered callback slots require only slot zero; AUTH_SYS credentials must fit the negotiated complete CB_COMPOUND request size"
+        ],
+        "sanitizers": true
+      }
+    },
+    "gss": {
+      "sha256": "3fc9f9c401405e3c9d83c81ee56b7d688f30a75334fc8db9e062139eab98032f",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "one context shared across 32 sessions and three TCP paths admits only its 64-entry RPC window; completing the oldest request releases the next authenticated callback",
+          "krb5/krb5i/krb5p CB_NULL, CB_SEQUENCE and CB_NOTIFY_LOCK use real Kerberos, independent RPC counters and exact referring calls; notifications grant no lock",
+          "BACKCHANNEL_CTL rejects unknown handles/invalid services/oversized RPC credentials atomically; existing handles are idempotent and counters never reset",
+          "BACKCHANNEL_CTL adds handles instead of replacing them; empty additions retain GSS, and destruction of another context preserves the live path",
+          "sixteen live callback tuples are bounded; exhaustion preserves the existing channel and duplicate offers consume no extra capacity",
+          "negotiated channel sizes include exact GSS credential, MIC and wrapped-body overhead; exact request limits succeed and one-byte-short channels send no oversized callbacks",
+          "unsigned, bad MIC/ciphertext and wrong authenticated sequences cannot complete callbacks; disconnect/rebind retries exact CB_SEQUENCE plaintext with fresh RPC authentication",
+          "authenticated integrity/privacy DELAY replies retry unchanged slots on live transports; established slot faults report BACKCHANNEL_FAULT through the protected forechannel",
+          "nearly expired and expired contexts set SEQUENCE flags; expiry/destroy removes path authority without AUTH_NONE fallback, and fresh contexts restore it"
+        ]
+      }
+    },
+    "ssv": {
+      "sha256": "fe5a74d6ccc5f4ad4a8a7baba488194ac84b33a9e5c45e4213f25d3214cc2348",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "AUTH_SYS and authentication-only Kerberos cannot establish SP4_SSV",
+          "empty algorithms, zero window, unsupported OIDs and forbidden hash/cipher combinations return protocol errors",
+          "SHA-1/AES-128: indexes, confirmation identity, zero-key rejection, SET_SSV digest/length and all three RPC protection services",
+          "SHA-1: reflected signatures and corrupted privacy payloads do not authenticate",
+          "SHA-1: handles have independent RPC counters, share key rotations, accept the negotiated old-key window and reject expired versions",
+          "SHA-1: self-protected SET_SSV and exact replay, immutable policy, additive handles, protected session maintenance and client destruction",
+          "SHA-224/AES-192: indexes, confirmation identity, zero-key rejection, SET_SSV digest/length and all three RPC protection services",
+          "SHA-224: reflected signatures and corrupted privacy payloads do not authenticate",
+          "SHA-224: handles have independent RPC counters, share key rotations, accept the negotiated old-key window and reject expired versions",
+          "SHA-224: self-protected SET_SSV and exact replay, immutable policy, additive handles, protected session maintenance and client destruction",
+          "SHA-256/AES-256: indexes, confirmation identity, zero-key rejection, SET_SSV digest/length and all three RPC protection services",
+          "SHA-256: reflected signatures and corrupted privacy payloads do not authenticate",
+          "SHA-256: handles have independent RPC counters, share key rotations, accept the negotiated old-key window and reject expired versions",
+          "SSV CB_NULL and CB_SEQUENCE authenticate all three services across distinct handles with one non-repeating reverse counter for the shared context",
+          "SSV state-only credentials cannot read user data but can close negotiated state after user mapping revocation",
+          "zero initial handles can be added after confirmation; foreign SSV credentials cannot bind or destroy another client; algorithms/window cannot silently change",
+          "SHA-256: self-protected SET_SSV and exact replay, immutable policy, additive handles, protected session maintenance and client destruction",
+          "SHA-384/AES-256: indexes, confirmation identity, zero-key rejection, SET_SSV digest/length and all three RPC protection services",
+          "SHA-384: reflected signatures and corrupted privacy payloads do not authenticate",
+          "SHA-384: handles have independent RPC counters, share key rotations, accept the negotiated old-key window and reject expired versions",
+          "SHA-384: self-protected SET_SSV and exact replay, immutable policy, additive handles, protected session maintenance and client destruction",
+          "SHA-512/AES-256: indexes, confirmation identity, zero-key rejection, SET_SSV digest/length and all three RPC protection services",
+          "SHA-512: reflected signatures and corrupted privacy payloads do not authenticate",
+          "SHA-512: handles have independent RPC counters, share key rotations, accept the negotiated old-key window and reject expired versions",
+          "SHA-512: self-protected SET_SSV and exact replay, immutable policy, additive handles, protected session maintenance and client destruction"
+        ]
+      }
+    },
+    "notify": {
+      "sha256": "027c953efcf1d6f60c5ceaa6ae1e82180cc9cac1632831ab3945c6f15a13bb29",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "OPEN advertises MAY_NOTIFY_LOCK; READW conflict release delivers exact handle/owner/referring request; the hint neither grants nor reserves the lock",
+          "nonblocking LOCK denial does not enroll a waiter and cancels a previous blocking request for the same owner/file",
+          "closing the waiting OPEN removes its unsent notification without granting lock state",
+          "fresh write-policy authority is required before dispatch; revocation drops the waiter and restoring rights does not resurrect it",
+          "inconsistent operation status and lost notification reply cause disconnect then exact two-operation replay; RETRY_UNCACHED_REP consumes the slot without granting a lock",
+          "multiple waiting owners share one bounded callback slot and no second notification is sent before the first completes",
+          "client NOTSUPP completes the optional callback; foreground polling and explicit lock acquisition remain usable",
+          "two-operation callbacks respect negotiated operation and full RPC size limits; constrained clients can still poll for locks",
+          "expired client and OPEN state remove the queued hint; releasing the competing lock never notifies or revives the expired session"
+        ],
+        "sanitizers": true
+      }
+    }
+  },
+  "core": {
+    "checks": 1537,
+    "status": "passed"
+  },
+  "before_diagnostic": {
+    "note": "An earlier diagnostic asserted that no CB_SEQUENCE preceded any forechannel request naming the session. It failed on the base source, proving early delivery. Early delivery itself is allowed; the final implementation recovers initial BADSESSION rather than imposing that diagnostic as a protocol restriction. This is not a pre-fix run of the final six-group test.",
+    "report": {
+      "status": "failed",
+      "checks": [],
+      "error": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/tests/nfs_callback_recovery.py\", line 35, in main\n    assert c.probes and not c.sequences, 'CB_SEQUENCE raced CREATE_SESSION installation'\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: CB_SEQUENCE raced CREATE_SESSION installation\n",
+      "server_log": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793807262074}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793807262918}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793807263551}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793807264232}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793807264313}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793807265112}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793807265300}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793807265629}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793807266458}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793807266989}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793807267006}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793807267596}\n{\"code\":\"service_unavailable\",\"event\":\"worker_unhealthy\",\"role\":\"ftp\",\"time\":1793807267818}\n{\"code\":\"service_unavailable\",\"event\":\"worker_unhealthy\",\"role\":\"smb\",\"time\":1793807267819}\n{\"code\":\"service_unavailable\",\"event\":\"worker_unhealthy\",\"role\":\"nfs\",\"time\":1793807267820}\n{\"code\":\"service_unavailable\",\"event\":\"worker_unhealthy\",\"role\":\"plugins\",\"time\":1793807267820}\n{\"code\":\"service_unavailable\",\"event\":\"worker_unhealthy\",\"role\":\"api\",\"time\":1793807267821}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793807268360}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793807268512}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793807269015}\n{\"code\":\"service_unavailable\",\"event\":\"worker_unhealthy\",\"role\":\"plugins\",\"time\":1793807269157}\n{\"code\":\"service_unavailable\",\"event\":\"worker_unhealthy\",\"role\":\"api\",\"time\":1793807269158}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793807270068}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"api\",\"time\":1793807271910}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"nfs\",\"time\":1793807271994}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"smb\",\"time\":1793807272036}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"ftp\",\"time\":1793807272078}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"webdav\",\"time\":1793807272121}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"helper\",\"time\":1793807272162}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"storage_admin\",\"time\":1793807272204}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"updater\",\"time\":1793807272246}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"monitor\",\"time\":1793807272288}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"protocol\",\"time\":1793807272331}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_3\",\"time\":1793807272373}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_2\",\"time\":1793807272415}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_1\",\"time\":1793807272457}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file\",\"time\":1793807272499}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"identity\",\"time\":1793807272541}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"supervisor\",\"time\":1793807272571}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793807272613}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793807272644}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793807272771}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793807272890}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793807273014}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793807273126}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793807273234}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793807273351}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793807273470}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793807273588}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793807273706}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793807273828}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793807273942}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793807274067}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793807274235}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793807274426}\n"
+    }
+  },
+  "original_pynfs": {
+    "selector": "all nodeleg noblock nochar nofifo nosocket nosymlink noRNM20 noCSESS16 noCSESS16a",
+    "selected_passed": 143,
+    "unselected": 123,
+    "summary": {
+      "errors": 0,
+      "failures": 0,
+      "name": "all",
+      "skipped": 123,
+      "tests": 266,
+      "time": 391.81466007232666,
+      "timestamp": "2026-11-04 16:00:58.831148"
+    },
+    "report": "pynfs-callback-recovery-regular.json",
+    "report_sha256": "b923799cb1b981b75218aee74f44ecea6a7cbd455ced70265dde98966c51673b",
+    "log": "pynfs-callback-recovery-regular.log",
+    "log_sha256": "5d1001a16a0390649baacf933a2a397a3b7a35a36354282d3fc81d29ba0d3c2d",
+    "note": "Original upstream client is unmodified. LKPP1d and LKPP1r pass. This run had no initial BADSESSION and alone does not reproduce the intermittent remote race; deterministic independent tests cover that mechanism."
+  }
+}

@@ -290,6 +290,20 @@ def main():
             c.close()
         passed('unsigned, bad MIC/ciphertext and wrong authenticated sequences cannot complete callbacks; disconnect/rebind retries exact CB_SEQUENCE plaintext with fresh RPC authentication')
 
+        for service in (2, 3):
+            c = client(); c.hold_sequence = True
+            c.session_back([c.offer(service)]); c.path(False)
+            original = c.sequences[-1][1]; count = len(c.sequences)
+            c.acknowledge_sequence(body=uints(10008, 0, 1, 11, 10008))
+            c.sequence_count(count + 1)
+            assert c.sequences[-1][1] == original and not c.flags() & 0x400
+            c.acknowledge_sequence(); c.path(True)
+            ctl(c, [c.offer(service)]); c.path(False)
+            c.acknowledge_sequence(body=uints(10063, 0, 1, 11, 10063))
+            assert c.flags() & 0x400
+            c.close()
+        passed('authenticated integrity/privacy DELAY replies retry unchanged slots on live transports; established slot faults report BACKCHANNEL_FAULT through the protected forechannel')
+
         c = client(); short = client(kdc.credentials(lifetime='5s'))
         c.session_back([c.offer(3, short)]); c.path(True)
         assert c.flags() & 2

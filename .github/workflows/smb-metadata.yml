@@ -69,6 +69,7 @@ on:
       - 'src/nfs_backchannel.inc'
       - 'include/taucloud/nfs.hpp'
       - 'tests/nfs_backchannel_integration.py'
+      - 'tests/nfs_callback_recovery.py'
       - 'tests/nfs_notify_lock_integration.py'
       - 'src/nfs_locks.inc'
       - 'src/nfs_gss.inc'
@@ -143,6 +144,9 @@ jobs:
         run: python tests/smb_rename_metadata.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/smb-rename-metadata.json
       - name: NFSv4.1 reverse RPC, callback sequence replay and lifecycle
         run: python tests/nfs_backchannel_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/nfs-backchannel.json
+      - name: NFSv4.1 callback installation races and definitive error recovery
+        if: ${{ !cancelled() && steps.compile.outcome == 'success' }}
+        run: python tests/nfs_callback_recovery.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/nfs-callback-recovery.json
       - name: NFSv4.1 channel limits and CREATE_SESSION replay
         run: python tests/nfs_session_negotiation.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/nfs-session-negotiation.json
       - name: NFSv4.1 blocking lock notification and callback replay

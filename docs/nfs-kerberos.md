@@ -150,6 +150,14 @@ Context expiration, authenticated DESTROY and service restart invalidate the ass
 
 `tests/nfs_gss_backchannel.py` uses a disposable real MIT KDC and an independent reverse-RPC client. Eight local groups cover the three services and lock notifications, atomic invalid offers, additive handles, capacity, a 32-session shared-context replay window, exact packet limits, forged replies and exact retry, expiry/destroy/recovery. All pass with Clang ASan/UBSan/LSan. The ordinary nineteen-group callback regression, 98 core checks, forward GSS/pynfs and session negotiation are also exercised. [GCC/Clang remote callback acceptance at `70838b7`](evidence/pre-m8/nfs-gss-backchannel-708-remote.json) passes all eight groups; MSVC passes shared AUTH_SYS regression. See [local evidence](evidence/pre-m8/nfs-gss-backchannel-local.json).
 
+Complete CB_SEQUENCE errors now pass the same authentication checks as successes.
+DELAY retains the exact request and retries on the live connection after
+backoff; initial session-installation BADSESSION races are also recoverable.
+Established slot faults are reported as BACKCHANNEL_FAULT instead of closing
+unrelated forechannel traffic. Tampered/verifier-invalid replies retain the
+existing disconnect-before-retry behavior. Two real-KDC service variants cover
+this distinction; see [callback recovery](nfs-operation-coverage.md).
+
 Protocol references: [RFC 8881 callback security](https://www.rfc-editor.org/rfc/rfc8881.html#section-2.10.8.2), [context pairs](https://www.rfc-editor.org/rfc/rfc8881.html#section-18.36.3), [BACKCHANNEL_CTL](https://www.rfc-editor.org/rfc/rfc8881.html#section-18.33.3), [SEQUENCE flags](https://www.rfc-editor.org/rfc/rfc8881.html#section-18.46.3).
 
 ## Acceptance
