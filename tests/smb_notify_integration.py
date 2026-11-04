@@ -111,7 +111,8 @@ def run():
             h = create(t, 'fifo/batch-' + str(i)); h.close()
         req = notify(d, interim=False)
         h = create(t, 'fifo/after-request'); h.close()
-        assert events(c, req, asynchronous=False) == [(1, 'batch-' + str(i)) for i in range(10)]
+        batch = events(c, req, asynchronous=False)
+        assert batch == [(1, 'batch-' + str(i)) for i in range(10)], batch
         req = notify(d, interim=False)
         assert events(c, req, asynchronous=False) == [(1, 'after-request')]
         d.close()

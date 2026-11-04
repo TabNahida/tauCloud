@@ -136,32 +136,39 @@ json native_watch::poll() {
     events.push_back({{"name", name}, {"action", action}});
   };
 #ifdef _WIN32
-  DWORD count = 0;
-  if (w.pending && GetOverlappedResult(w.directory, &w.operation, &count, FALSE)) {
-    w.pending = false;
-    if (!count) w.overflow = true;
-    size_t at = 0;
-    while (at < count) {
-      auto *entry = reinterpret_cast<FILE_NOTIFY_INFORMATION *>(w.buffer + at);
-      if (count - at < 12 || entry->FileNameLength > count - at - 12 || entry->FileNameLength % 2) {
-        w.overflow = true; break;
+  // The first OVERLAPPED completion can contain only the first change; Windows
+  // queues subsequent changes on the directory handle until the next read.
+  // Drain already-completed reads before returning a buffered SMB response,
+  // matching the bounded inotify drain and preserving the next request's batch.
+  size_t batches = 0;
+  while (w.pending && ++batches <= 16) {
+    DWORD count = 0;
+    if (GetOverlappedResult(w.directory, &w.operation, &count, FALSE)) {
+      w.pending = false;
+      if (!count) w.overflow = true;
+      size_t at = 0;
+      while (at < count) {
+        auto *entry = reinterpret_cast<FILE_NOTIFY_INFORMATION *>(w.buffer + at);
+        if (count - at < 12 || entry->FileNameLength > count - at - 12 || entry->FileNameLength % 2) {
+          w.overflow = true; break;
+        }
+        auto name = narrow_name(std::wstring(entry->FileName, entry->FileNameLength / 2));
+        std::replace(name.begin(), name.end(), '\\', '/');
+        event(name, entry->Action, w.filter);
+        if (!entry->NextEntryOffset) break;
+        if (entry->NextEntryOffset < 12 || entry->NextEntryOffset > count - at) { w.overflow = true; break; }
+        at += entry->NextEntryOffset;
       }
-      auto name = narrow_name(std::wstring(entry->FileName, entry->FileNameLength / 2));
-      std::replace(name.begin(), name.end(), '\\', '/');
-      event(name, entry->Action, w.filter);
-      if (!entry->NextEntryOffset) break;
-      if (entry->NextEntryOffset < 12 || entry->NextEntryOffset > count - at) { w.overflow = true; break; }
-      at += entry->NextEntryOffset;
-    }
-    w.arm();
-  } else if (w.pending) {
-    auto error = GetLastError();
-    if (error != ERROR_IO_INCOMPLETE) {
+      w.arm();
+    } else {
+      auto error = GetLastError();
+      if (error == ERROR_IO_INCOMPLETE) break;
       w.pending = false;
       if (error == ERROR_NOTIFY_ENUM_DIR) { w.overflow = true; w.arm(); }
-      else w.deleted = true;
+      else { w.deleted = true; break; }
     }
   }
+  if (batches > 16) w.overflow = true;
 #else
   struct move { std::string name; uint32_t mask; bool directory; };
   std::map<uint32_t, move> removed;
