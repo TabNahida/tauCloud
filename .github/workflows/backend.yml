@@ -86,10 +86,16 @@ jobs:
         if: always() && matrix.compiler == 'gcc'
         run: python3 tests/nfs_create_integration.py --bin build/linux/x86_64/release --output build/acceptance/nfs-create.json
       - name: Package the same Linux server for macOS native-client tests
+        id: server_package
         if: always() && matrix.compiler == 'gcc'
-        run: tar czf build/linux-server.tgz -C build/linux/x86_64/release .
+        run: |
+          for role in supervisor api webdav ftp smb nfs plugins docker identity file file_1 file_2 file_3 protocol monitor updater storage_admin helper ctl; do
+            test -x "build/linux/x86_64/release/taucloud_$role"
+          done
+          tar czf build/linux-server.tgz.tmp -C build/linux/x86_64/release .
+          mv build/linux-server.tgz.tmp build/linux-server.tgz
       - uses: actions/upload-artifact@v4
-        if: always() && matrix.compiler == 'gcc'
+        if: always() && matrix.compiler == 'gcc' && steps.server_package.conclusion == 'success'
         with:
           name: linux-server
           path: build/linux-server.tgz

@@ -28,10 +28,21 @@ jobs:
             candidates="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/backend.yml/runs?branch=codex/pre-m8-acceptance&per_page=20" --jq '.workflow_runs[].id')"
             for candidate in $candidates; do
               count="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$candidate/artifacts" --jq '[.artifacts[] | select(.name=="linux-server" and .expired==false)] | length')"
-              if [[ "$count" -gt 0 ]]; then SOURCE_RUN="$candidate"; break; fi
+              [[ "$count" -gt 0 ]] || continue
+              packaged="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$candidate/jobs?per_page=100" --jq '[.jobs[].steps[]? | select(.name=="Package the same Linux server for macOS native-client tests" and .conclusion=="success")] | length')"
+              [[ "$packaged" -gt 0 ]] || continue
+              candidate_sha="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$candidate" --jq .head_sha)"
+              git fetch --no-tags --depth=1 origin "$candidate_sha"
+              if git diff --quiet "$candidate_sha" HEAD -- src include apps xmake.lua dependencies.lock.json; then
+                SOURCE_RUN="$candidate"
+                break
+              fi
+              echo "Skipping server artifact with different sources: $candidate ($candidate_sha)"
             done
           fi
-          [[ "$SOURCE_RUN" =~ ^[0-9]+$ ]] || exit 1
+          [[ "$SOURCE_RUN" =~ ^[0-9]+$ ]] || { echo 'No complete server artifact matches this checkout'; exit 1; }
+          packaged="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN/jobs?per_page=100" --jq '[.jobs[].steps[]? | select(.name=="Package the same Linux server for macOS native-client tests" and .conclusion=="success")] | length')"
+          [[ "$packaged" -gt 0 ]] || { echo 'Server packaging did not succeed'; exit 1; }
           server_sha="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN" --jq .head_sha)"
           git fetch --no-tags --depth=1 origin "$server_sha"
           git diff --exit-code "$server_sha" HEAD -- src include apps xmake.lua dependencies.lock.json
