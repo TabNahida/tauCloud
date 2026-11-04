@@ -354,7 +354,13 @@ def main():
         assert c.exchange(c.packet(100003, 3, 0, b'', sequence=100)) == b''
         assert c.exchange(c.packet(100003, 3, 0, b'', sequence=99)) == b''
         silent(c, c.packet(100003, 3, 0, b'', sequence=36))
-        reject(c, c.packet(100003, 3, 0, b'', sequence=0x80000000), 'denied', 14)
+        overflow = c.packet(100003, 3, 0, b'', sequence=0x80000000)
+        forged_overflow = bytearray(overflow); forged_overflow[40] ^= 1
+        reject(c, bytes(forged_overflow), 'denied', 13)
+        assert c.exchange(c.packet(100003, 3, 0, b'', sequence=101)) == b''
+        reject(c, overflow, 'denied', 14)
+        reject(c, c.packet(100003, 3, 0, b'', sequence=102), 'denied', 13)
+        c.establish(100003, 3)
         # Bad high signed-body sequence is an authenticated RPC error.
         reject(c, c.packet(100003, 3, 0, b'', sequence=101, inner_sequence=102), 'accepted', 4)
         bad = bytearray(c.packet(100003, 3, 0, b'', sequence=102))
@@ -365,7 +371,7 @@ def main():
         bad[-8] ^= 1
         reject(c, bytes(bad), 'accepted', 4)
         assert c.exchange(c.packet(100003, 3, 0, b'', sequence=104)) == b''
-        passed('header/body MIC and encrypted-body tampering rejected; 64-entry replay window drops duplicates/old requests and accepts out-of-order requests; MAXSEQ and body sequence enforced')
+        passed('header/body MIC and encrypted-body tampering rejected; replay window accepts out-of-order requests; forged MAXSEQ cannot retire a context, authenticated overflow destroys it, and fresh context enforces body sequences')
 
         c = client()
         c.session()

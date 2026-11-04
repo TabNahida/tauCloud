@@ -1,8 +1,10 @@
 #include <taucloud/nfs.hpp>
+#include <taucloud/nfs_ssv.hpp>
 #include <taucloud/files.hpp>
 #include <iostream>
 using namespace tc;
 using namespace tc::nfs_detail;
+#include "nfs_ssv_vectors.inc"
 int main() {
   int checks = 0;
   auto ok = [&](bool b) {
@@ -20,6 +22,39 @@ int main() {
     }
   };
   try {
+    for (const auto &v : ssv_vectors) {
+      ssv_context context(v.hash, v.cipher, 2);
+      auto delta = decode_bytes(v.delta), request = decode_bytes(v.request_digest);
+      auto client_mic = decode_bytes(v.client_mic), client_wrap = decode_bytes(v.client_wrap);
+      rejected([&] { context.sign("message"); }, "ssv_context");
+      rejected([&] { context.wrap("message"); }, "ssv_context");
+      ok(!context.verify("message", client_mic));
+      rejected([&] { context.update("short", "request", request, "response"); }, "ssv_length");
+      rejected([&] { context.update(delta, "request", "wrong", "response"); }, "ssv_digest");
+      ok(context.sequence() == 0);
+      ok(context.update(delta, "request", request, "response") == decode_bytes(v.response_digest));
+      ok(context.sign("message") == decode_bytes(v.server_mic));
+      ok(context.verify("message", client_mic));
+      ok(!context.verify("message", decode_bytes(v.server_mic)));
+      ok(!context.verify("changed", client_mic));
+      ok(context.unwrap(client_wrap) == "message");
+      for (size_t n = 0; n < client_mic.size(); ++n)
+        ok(!context.verify("message", std::string_view(client_mic).substr(0, n)));
+      for (size_t n = 0; n < client_wrap.size(); ++n) {
+        auto damaged = client_wrap; damaged[n] ^= 1;
+        bool refused = false;
+        try { context.unwrap(damaged); }
+        catch (const error &) { refused = true; }
+        catch (const xdr_error &) { refused = true; }
+        ok(refused);
+      }
+      for (uint32_t n = 0; n < 64; ++n) {
+        auto token = context.wrap(std::string(n, 'a'));
+        ok(context.wrap_size_limit(uint32_t(token.size())) >= n);
+        auto limit = context.wrap_size_limit(uint32_t(token.size()) - 1);
+        if (limit) ok(context.wrap(std::string(limit, 'a')).size() < token.size());
+      }
+    }
     writer w;
     w.u32(0x12345678).u64(UINT64_MAX).boolean(true).opaque("abc");
     reader r(w.data);

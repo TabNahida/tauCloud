@@ -1,0 +1,23 @@
+{
+  "status": "unresolved-failures",
+  "cases": [
+    {
+      "source": "e2306de017800ad5b4bb936072bff7b68eae3605",
+      "run": "https://github.com/TabNahida/tauCloud/actions/runs/41851507870",
+      "job_id": 126648748850,
+      "artifact_id": 13339465417,
+      "artifact_sha256": "83eb3d9c6a465ecd0a441b82bc552a956e7294105adc1975d567acdc070795d0",
+      "observed": "Regular profile exceeded its 900-second deadline. Last active case VF1r; earlier LKPP1d received CB_SEQUENCE, replied BADSESSION, then rpc.poll closed transport; LKPP1d RPC timeout followed by negative-fd select failure in upstream PollingThread. Root cause of initial callback/session mismatch is not established.",
+      "log_sha256": "475a8910ac305469cb75fef2b57e86f4a722c4e491738c2f6e309e5252a38bf5",
+      "log_excerpt": "pynfs-e230-timeout.log"
+    },
+    {
+      "source": "2d5aa126ca9cfd7720699d87a83d796c733d2bee",
+      "run": "https://github.com/TabNahida/tauCloud/actions/runs/41856001079",
+      "job_id": 126664677568,
+      "artifact_id": 13338218013,
+      "artifact_sha256": "ff8cbe65642912c7df547b9a35bb70a657c92d39b7ee72f74e603e71637b9a08",
+      "observed": "Windows backend failed in tests/m2_integration.py initial put: files/begin returned HTTP 409 lease_expired. Native Windows SMB, NFS and FileZilla steps subsequently passed. This is not evidence of a fixed lease-expiry cause."
+    }
+  ]
+}

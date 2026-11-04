@@ -8,6 +8,8 @@ struct client_id {
   uint64_t replaces = 0;
   uint32_t protection = 0;
   std::vector<uint32_t> enforce, allow;
+  std::shared_ptr<ssv_context> ssv;
+  std::shared_ptr<uint32_t> ssv_callback_sequence;
 };
 struct slot {
   uint32_t seq = 0;
@@ -171,20 +173,62 @@ bool has(const std::vector<uint32_t> &bits, unsigned i) {
 }
 bool protected_gss(const identity &who) {
   auto service = who.credential.value("service", 0u);
-  return who.credential.value("auth", "") == "rpcsec-gss" && (service == 2 || service == 3);
+  auto auth = who.credential.value("auth", "");
+  return (auth == "rpcsec-gss" || auth == "rpcsec-ssv") && (service == 2 || service == 3);
 }
 bool machine_credential(const client_id &client, const identity &who) {
   // The RPCSEC_GSS acceptor currently accepts only Kerberos; who.key includes
   // both that mechanism and the authenticated principal, never the local UID.
-  return client.protection == 1 && protected_gss(who) && client.principal == who.key;
+  return client.protection && protected_gss(who) && client.principal == who.key;
+}
+bool state_credential(const client_id &client, const identity &who) {
+  if (client.protection == 1) return machine_credential(client, who);
+  return client.protection == 2 && protected_gss(who) && client.ssv &&
+      who.credential.value("auth", "") == "rpcsec-ssv" &&
+      who.credential.value("ssv_client", uint64_t(0)) != 0 &&
+      client_ids.contains(who.credential.at("ssv_client").get<uint64_t>()) &&
+      client_ids.at(who.credential.at("ssv_client").get<uint64_t>()).ssv == client.ssv;
 }
 void enforce_machine(const client_id &client, const identity &who, uint32_t op) {
-  if (client.protection == 1 && has(client.enforce, op))
-    check(machine_credential(client, who), 10082);
+  if (client.protection && has(client.enforce, op))
+    check(state_credential(client, who), 10082);
 }
 bool machine_cleanup(const std::string &sid, const identity &who, uint32_t op) {
   const auto &client = client_ids.at(sessions.at(sid).client);
-  return has(client.allow, op) && machine_credential(client, who);
+  return has(client.allow, op) && state_credential(client, who);
+}
+struct ssv_selection { uint32_t hash, cipher, hash_index, cipher_index; };
+ssv_selection select_ssv(const json &a, const ssv_context *existing = nullptr) {
+  static const std::map<std::string, uint32_t> hashes = {
+      {"06052b0e03021a", 1}, {"0609608648016503040204", 224},
+      {"0609608648016503040201", 256}, {"0609608648016503040202", 384},
+      {"0609608648016503040203", 512}};
+  static const std::map<std::string, uint32_t> ciphers = {
+      {"0609608648016503040102", 128}, {"0609608648016503040116", 192},
+      {"060960864801650304012a", 256}};
+  check(!a.at("hashes").empty() && !a.at("ciphers").empty() && a.at("ssv_window") != 0);
+  std::vector<std::pair<uint32_t, uint32_t>> offered_hashes, offered_ciphers;
+  for (uint32_t i = 0; i < a.at("hashes").size(); ++i) {
+    auto found = hashes.find(a.at("hashes")[i].get<std::string>());
+    if (found != hashes.end()) offered_hashes.emplace_back(found->second, i);
+  }
+  for (uint32_t i = 0; i < a.at("ciphers").size(); ++i) {
+    auto found = ciphers.find(a.at("ciphers")[i].get<std::string>());
+    if (found != ciphers.end()) offered_ciphers.emplace_back(found->second, i);
+  }
+  check(!offered_hashes.empty(), 10072);
+  check(!offered_ciphers.empty(), 10079);
+  // Prefer the strongest compatible pair, avoiding SHA-1 whenever possible.
+  std::sort(offered_hashes.rbegin(), offered_hashes.rend());
+  std::sort(offered_ciphers.rbegin(), offered_ciphers.rend());
+  for (auto [hash, hi] : offered_hashes) for (auto [cipher, ci] : offered_ciphers) {
+    if (cipher > (hash == 1 ? 160 : hash)) continue;
+    if (existing && (hash != existing->hash_bits() || cipher != existing->cipher_bits())) continue;
+    if (existing) check(a.at("ssv_window").get<uint32_t>() >= existing->window());
+    return {hash, cipher, hi, ci};
+  }
+  check(false, existing ? 10027 : 10079);
+  return {};
 }
 std::vector<uint32_t> supported_attrs() {
   std::vector<uint32_t> b(3);
@@ -543,10 +587,20 @@ json parse4(reader &r) {
     a["owner"] = encode_bytes(r.opaque(1024));
     a["flags"] = r.u32();
     a["protect"] = r.u32();
-    check(a["protect"] == 0 || a["protect"] == 1, 10006);
-    if (a["protect"] == 1) {
+    check(a["protect"].get<uint32_t>() <= 2, 10006);
+    if (a["protect"] != 0) {
       a["enforce"] = bitmap(r);
       a["allow"] = bitmap(r);
+    }
+    if (a["protect"] == 2) {
+      for (auto field : {"hashes", "ciphers"}) {
+        auto count = r.u32();
+        if (count > 32) throw xdr_error();
+        a[field] = json::array();
+        for (uint32_t i = 0; i < count; ++i) a[field].push_back(encode_bytes(r.opaque(128)));
+      }
+      a["ssv_window"] = r.u32();
+      a["ssv_handles"] = r.u32();
     }
     auto n = r.u32();
     if (n > 1)
@@ -574,7 +628,8 @@ json parse4(reader &r) {
     a["callback_flavors"] = callback_security(r, a);
     break;
   case 54:
-    r.opaque(1024); r.opaque(1024);
+    a["ssv"] = encode_bytes(r.opaque(1024));
+    a["digest"] = encode_bytes(r.opaque(1024));
     break;
   case 7: // Optional delegation purge, no delegations are issued.
   case 30: // NFSv4.0 RENEW is obsolete in v4.1.
@@ -877,7 +932,7 @@ std::string v4(const identity &who, reader &r) {
   // A shared AUTH_SYS session must never replay another user's cached data.
   auto hash = digest(who.key + std::string(r.data.substr(start)));
   expire();
-  std::string sid, current, saved, current_state, saved_state;
+  std::string sid, current, saved, current_state, saved_state, sequence_args, sequence_result;
   slot *active = nullptr;
   uint32_t final_status = 0, done = 0;
   writer results;
@@ -894,7 +949,7 @@ std::string v4(const identity &who, reader &r) {
   for (const auto &a : ops) {
     unsigned op = a.at("op");
     bound += (op == 25 || op == 26) ? std::min(a.value("count", 0u), 65536u) + 64
-                                  : (op == 9 ? 1024 : 256);
+                                  : (op == 9 || op == 42 ? 1024 : 256);
   }
   if (bound > 120 * 1024) {
     if (!ops.empty())
@@ -936,17 +991,33 @@ std::string v4(const identity &who, reader &r) {
           // confirmed machine-protected client during its lease.
           check(machine_credential(client_ids.at(existing), who), flags & 0x40000000 ? 1 : 10017);
         }
+        bool ssv_owner = false;
+        if (existing && client_ids.at(existing).protection == 2) {
+          const auto &c = client_ids.at(existing);
+          enforce_machine(c, who, op);
+          ssv_owner = state_credential(c, who) && (has(c.enforce, op) || has(c.allow, op));
+          check(ssv_owner || machine_credential(c, who), flags & 0x40000000 ? 1 : 10017);
+        }
+        ssv_selection algorithms{};
+        uint32_t handle_count = 0;
+        if (protection == 2) {
+          const ssv_context *old = existing && client_ids.at(existing).verifier == a.at("verifier").get<std::string>()
+              ? client_ids.at(existing).ssv.get() : nullptr;
+          algorithms = select_ssv(a, old);
+          handle_count = std::min(a.at("ssv_handles").get<uint32_t>(), 8u);
+          check(gss_sessions.size() + handle_count <= 128, 10018);
+        }
         if (flags & 0x40000000) {
           check(existing != 0, 2);
           auto &c = client_ids.at(existing);
-          check(c.principal == who.key, 1);
+          check(c.principal == who.key || ssv_owner, 1);
           check(c.verifier == a.at("verifier").get<std::string>(), 10027);
           id = existing; confirmed = true;
         } else if (existing) {
           auto &c = client_ids.at(existing);
-          if (c.principal == who.key && c.verifier == a.at("verifier").get<std::string>()) {
+          if ((c.principal == who.key || ssv_owner) && c.verifier == a.at("verifier").get<std::string>()) {
             id = existing; confirmed = true;
-          } else if (c.principal == who.key) replaces = existing;
+          } else if (c.principal == who.key || ssv_owner) replaces = existing;
           else {
             for (const auto &[key, o] : opens) check(o.client != existing, 10017);
             for (const auto &[key, s] : sessions) check(s.client != existing, 10017);
@@ -974,6 +1045,12 @@ std::string v4(const identity &who, reader &r) {
             client.allow = {0, 0};
             for (auto cleanup : {4u, 14u, 21u, 45u})
               if (has(requested, cleanup)) client.allow[cleanup / 32] |= 1u << (cleanup % 32);
+            if (protection == 2) {
+              if (has(requested, 42)) client.allow[1] |= 1u << (42 - 32);
+              client.ssv = std::make_shared<ssv_context>(algorithms.hash, algorithms.cipher,
+                  std::min(a.at("ssv_window").get<uint32_t>(), 16u));
+              client.ssv_callback_sequence = std::make_shared<uint32_t>(0);
+            }
           }
         }
         body.u64(id)
@@ -984,6 +1061,22 @@ std::string v4(const identity &who, reader &r) {
           put_bitmap(body, client.enforce);
           put_bitmap(body, client.allow);
         }
+        if (client.ssv) {
+          body.u32(algorithms.hash_index).u32(algorithms.cipher_index).u32(client.ssv->length())
+              .u32(client.ssv->window()).u32(handle_count);
+          for (uint32_t n = 0; n < handle_count; ++n) {
+            auto handle = decode_bytes(random_hex(32));
+            gss_session entry;
+            entry.ssv = client.ssv; entry.ssv_client = id;
+            entry.ssv_callback_sequence = client.ssv_callback_sequence;
+            entry.principal = "ssv:" + std::to_string(id);
+            entry.program = 100003; entry.version = 4;
+            entry.mic_size = client.ssv->mic_size();
+            entry.expires = std::chrono::steady_clock::time_point::max();
+            gss_sessions.emplace(handle, std::move(entry));
+            body.opaque(handle);
+          }
+        }
         body.u64(1)
             .opaque("tauCloud")
             .opaque("tauCloud-loopback")
@@ -993,10 +1086,11 @@ std::string v4(const identity &who, reader &r) {
         auto it = client_ids.find(id);
         check(it != client_ids.end(), 10022);
         auto &c = it->second;
-        enforce_machine(c, who, op);
-        if (c.protection && c.create_reply.empty()) check(machine_credential(c, who), 10082);
-        check(!c.create_reply.empty() || c.principal == who.key, 10017);
         auto seq = a.at("seq").get<uint32_t>();
+        bool confirmation = c.create_reply.empty() || (seq == 1 && c.sequence == 2);
+        if (c.protection && confirmation) check(machine_credential(c, who), 10082);
+        else enforce_machine(c, who, op);
+        check(!c.create_reply.empty() || c.principal == who.key, 10017);
         if (seq + 1 == c.sequence && !c.create_reply.empty()) {
           // CREATE_SESSION has its own replay slot, independent of the enclosing
           // COMPOUND/session/tag. The sequence ID identifies the cached result.
@@ -1093,6 +1187,9 @@ std::string v4(const identity &who, reader &r) {
             .u32(uint32_t(s.slots.size() - 1))
             .u32((callback_path_up(s.client) ? 0 : 1) | callback_gss_flags(s) |
                  (s.callback_unresolved && s.back_connections.empty() ? 0x200 : 0));
+        sequence_args = writer().fixed(decode_bytes(sid)).u32(seq).u32(n)
+            .u32(a.at("highest")).boolean(a.at("cache")).data;
+        sequence_result = writer().u32(0).fixed(body.data).data;
       } else if (op == 41) {
         auto id = a.at("session").get<std::string>();
         auto &s = session_check(id);
@@ -1128,7 +1225,8 @@ std::string v4(const identity &who, reader &r) {
         auto id = a.at("client").get<uint64_t>();
         auto i = client_ids.find(id);
         if (i != client_ids.end()) enforce_machine(i->second, who, op);
-        check(i != client_ids.end() && i->second.principal == who.key, 10022);
+        check(i != client_ids.end() && (i->second.principal == who.key ||
+              state_credential(i->second, who)), 10022);
         for (const auto &[n, s] : sessions)
           check(s.client != id, 10074);
         for (const auto &[n, o] : opens)
@@ -1198,7 +1296,14 @@ std::string v4(const identity &who, reader &r) {
           s.callback_ready.clear();
           for (const auto &bound : s.back_connections) probe_callback(sid, bound);
         } else if (op == 54) {
-          check(false, 22); // SET_SSV is invalid for the negotiated SP4_NONE.
+          check(client.protection == 2 && client.ssv);
+          try {
+            body.opaque(client.ssv->update(decode_bytes(a.at("ssv").get<std::string>()), sequence_args,
+                decode_bytes(a.at("digest").get<std::string>()), sequence_result));
+          } catch (const error &e) {
+            std::string_view reason(e.what());
+            check(false, reason == "ssv_digest" ? 10051 : reason == "ssv_length" ? 22 : 10018);
+          }
         } else if (op == 24 || op == 23) {
           put_handle(pseudo);
         } else if (op == 22) {

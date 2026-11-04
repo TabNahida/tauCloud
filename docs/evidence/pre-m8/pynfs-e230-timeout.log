@@ -1,0 +1,110 @@
+.client.cb:Handling CB_NULL
+INFO   :nfs.client.cb:********************
+INFO   :nfs.client.cb:Handling COMPOUND
+INFO   :nfs.client.cb:*** OP_CB_SEQUENCE (11) ***
+INFO   :nfs.client.cb:In CB_SEQUENCE
+INFO   :nfs.client.cb:Replying.  Status NFS4_OK (0)
+INFO   :nfs.client.cb:[nfs_cb_resop4(resop=11, opcbsequence=CB_SEQUENCE4res(csr_status=NFS4_OK, csr_resok4=CB_SEQUENCE4resok(csr_sessionid=b'\xdb\xe4\xa3Mk\x0c8\xbf\xf6\x1ebi\x0b\x176\t', csr_sequenceid=1, csr_slotid=0, csr_highest_slotid=8, csr_target_highest_slotid=8)))]
+RNM16    st_rename.testDirToFullDir                               : PASS
+RNM13    st_rename.testDirToDir                                   : RUNNING
+INFO   :nfs.client.cb:********************
+INFO   :nfs.client.cb:Handling CB_NULL
+INFO   :nfs.client.cb:********************
+INFO   :nfs.client.cb:Handling COMPOUND
+INFO   :nfs.client.cb:*** OP_CB_SEQUENCE (11) ***
+INFO   :nfs.client.cb:In CB_SEQUENCE
+INFO   :nfs.client.cb:Replying.  Status NFS4_OK (0)
+INFO   :nfs.client.cb:[nfs_cb_resop4(resop=11, opcbsequence=CB_SEQUENCE4res(csr_status=NFS4_OK, csr_resok4=CB_SEQUENCE4resok(csr_sessionid=b'\xa8n\xfb\x9ea0%\x8a\xa5z%|\xb5\x01)\xe7', csr_sequenceid=1, csr_slotid=0, csr_highest_slotid=8, csr_target_highest_slotid=8)))]
+RNM13    st_rename.testDirToDir                                   : PASS
+RNM3r    st_rename.testCfhFile                                    : RUNNING
+INFO   :nfs.client.cb:********************
+INFO   :nfs.client.cb:Handling CB_NULL
+INFO   :nfs.client.cb:********************
+INFO   :nfs.client.cb:Handling COMPOUND
+INFO   :nfs.client.cb:*** OP_CB_SEQUENCE (11) ***
+INFO   :nfs.client.cb:In CB_SEQUENCE
+INFO   :nfs.client.cb:Replying.  Status NFS4_OK (0)
+INFO   :nfs.client.cb:[nfs_cb_resop4(resop=11, opcbsequence=CB_SEQUENCE4res(csr_status=NFS4_OK, csr_resok4=CB_SEQUENCE4resok(csr_sessionid=b'\x0f\xf6{pIv\xc5oJ\xc0\x04-Xp\x8b\xee', csr_sequenceid=1, csr_slotid=0, csr_highest_slotid=8, csr_target_highest_slotid=8)))]
+RNM3r    st_rename.testCfhFile                                    : PASS
+LKPP3    st_lookupp.testNoFH                                      : RUNNING
+INFO   :nfs.client.cb:********************
+INFO   :nfs.client.cb:Handling CB_NULL
+INFO   :nfs.client.cb:********************
+INFO   :nfs.client.cb:Handling COMPOUND
+INFO   :nfs.client.cb:*** OP_CB_SEQUENCE (11) ***
+INFO   :nfs.client.cb:In CB_SEQUENCE
+INFO   :nfs.client.cb:Replying.  Status NFS4_OK (0)
+INFO   :nfs.client.cb:[nfs_cb_resop4(resop=11, opcbsequence=CB_SEQUENCE4res(csr_status=NFS4_OK, csr_resok4=CB_SEQUENCE4resok(csr_sessionid=b'\x9e]\xa0\x852H/-\x95\xe4\xe3x7\xf7\x1f\xfc', csr_sequenceid=1, csr_slotid=0, csr_highest_slotid=8, csr_target_highest_slotid=8)))]
+LKPP3    st_lookupp.testNoFH                                      : PASS
+LKPP2    st_lookupp.testLookuppRoot                               : RUNNING
+INFO   :nfs.client.cb:********************
+INFO   :nfs.client.cb:Handling CB_NULL
+INFO   :nfs.client.cb:********************
+INFO   :nfs.client.cb:Handling COMPOUND
+INFO   :nfs.client.cb:*** OP_CB_SEQUENCE (11) ***
+INFO   :nfs.client.cb:In CB_SEQUENCE
+INFO   :nfs.client.cb:Replying.  Status NFS4_OK (0)
+INFO   :nfs.client.cb:[nfs_cb_resop4(resop=11, opcbsequence=CB_SEQUENCE4res(csr_status=NFS4_OK, csr_resok4=CB_SEQUENCE4resok(csr_sessionid=b'\xd8\x12\x82\x19~\xb8d\xdb\x16\x97\x84H\xe6"\xe3\xab', csr_sequenceid=1, csr_slotid=0, csr_highest_slotid=8, csr_target_highest_slotid=8)))]
+LKPP2    st_lookupp.testLookuppRoot                               : PASS
+LKPP1d   st_lookupp.testLookupp                                   : RUNNING
+INFO   :nfs.client.cb:********************
+INFO   :nfs.client.cb:Handling CB_NULL
+INFO   :nfs.client.cb:********************
+INFO   :nfs.client.cb:Handling COMPOUND
+INFO   :nfs.client.cb:*** OP_CB_SEQUENCE (11) ***
+INFO   :nfs.client.cb:In CB_SEQUENCE
+INFO   :nfs.client.cb:Replying.  Status NFS4ERR_BADSESSION (10052)
+INFO   :nfs.client.cb:[nfs_cb_resop4(resop=11, opcbsequence=CB_SEQUENCE4res(csr_status=NFS4ERR_BADSESSION))]
+INFO   :rpc.poll:Closing 6
+Traceback (most recent call last):
+  File "/home/runner/work/tauCloud/tauCloud/build/pynfs/nfs4.1/testmod.py", line 234, in run
+    self.runtest(self, environment)
+  File "/home/runner/work/tauCloud/tauCloud/build/pynfs/nfs4.1/server41tests/st_lookupp.py", line 20, in testLookupp
+    res = sess1.compound(ops)
+          ^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/tauCloud/tauCloud/build/pynfs/nfs4.1/nfs4client.py", line 552, in compound
+    res = self.c.compound([seq_op] + ops, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/tauCloud/tauCloud/build/pynfs/nfs4.1/nfs4client.py", line 94, in compound
+    res = self.listen(xid, pipe=pipe)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/tauCloud/tauCloud/build/pynfs/nfs4.1/nfs4client.py", line 106, in listen
+    header, data = pipe.listen(xid, timeout)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/tauCloud/tauCloud/build/pynfs/rpc/rpc.py", line 375, in listen
+    self._pending[xid].wait(timeout)
+  File "/home/runner/work/tauCloud/tauCloud/build/pynfs/rpc/rpc.py", line 152, in wait
+    raise RPCTimeout
+rpc.rpc.RPCTimeout
+LKPP1d   st_lookupp.testLookupp                                   : FAILURE
+           rpc.rpc.RPCTimeout
+LKPP1r   st_lookupp.testFile                                      : RUNNING
+Exception in thread PollingThread:
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/threading.py", line 1073, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.12/threading.py", line 1010, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/runner/work/tauCloud/tauCloud/build/pynfs/rpc/rpc.py", line 509, in start
+    r,w,e = select.select(self.readlist, self.writelist, self.errlist)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: file descriptor cannot be a negative integer (-1)
+Traceback (most recent call last):
+  File "/home/runner/work/tauCloud/tauCloud/build/pynfs/nfs4.1/testmod.py", line 233, in run
+    environment.startUp()
+  File "/home/runner/work/tauCloud/tauCloud/build/pynfs/nfs4.1/server41tests/environment.py", line 222, in startUp
+    self.c1.null()
+  File "/home/runner/work/tauCloud/tauCloud/build/pynfs/nfs4.1/nfs4client.py", line 70, in null
+    return self.listen(xid)
+           ^^^^^^^^^^^^^^^^
+  File "/home/runner/work/tauCloud/tauCloud/build/pynfs/nfs4.1/nfs4client.py", line 106, in listen
+    header, data = pipe.listen(xid, timeout)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/tauCloud/tauCloud/build/pynfs/rpc/rpc.py", line 375, in listen
+    self._pending[xid].wait(timeout)
+  File "/home/runner/work/tauCloud/tauCloud/build/pynfs/rpc/rpc.py", line 152, in wait
+    raise RPCTimeout
+rpc.rpc.RPCTimeout
+LKPP1r   st_lookupp.testFile                                      : FAILURE
+           rpc.rpc.RPCTimeout
+VF1r     st_verify.testMandFile                                   : RUNNING

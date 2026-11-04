@@ -38,7 +38,12 @@ const gss_session *callback_context(const callback_gss &c) const {
   if (found == gss_sessions.end()) return nullptr;
   const auto &g = found->second;
   if (g.principal.empty() || g.program != 100003 || g.version != 4 ||
-      g.expires <= std::chrono::steady_clock::now() || g.callback_sequence >= 0x7fffffffu) return nullptr;
+      g.expires <= std::chrono::steady_clock::now() || g.callback_counter() >= 0x7fffffffu) return nullptr;
+  if (g.ssv) {
+    auto client = client_ids.find(g.ssv_client);
+    if (client == client_ids.end() || client->second.expires <= now() ||
+        client->second.create_reply.empty() || !g.ssv->sequence()) return nullptr;
+  }
   return &g;
 }
 uint32_t callback_gss_flags(const session &s) const {
@@ -59,7 +64,7 @@ bool callback_gss_fits(const session &s, const callback_gss &c, size_t extra, si
     if (c.service == 1) return body <= limit - header;
     if (c.service == 2) return 8 + 4 + pad(body) + pad(g->mic_size) <= limit - header;
     if (limit - header < 4) return false;
-    try { return body + 4 <= g->context->wrap_size_limit((limit - header - 4) & ~3u); }
+    try { return body + 4 <= g->wrap_size_limit((limit - header - 4) & ~3u); }
     catch (...) { return false; }
   };
   return fits(60 + pad(c.client_handle.size()) + pad(g->mic_size), 56 + extra, s.callback_request_limit) &&
@@ -105,23 +110,26 @@ void send_callback_probe(const std::string &id, const std::string &bound, bool c
     auto &g = gss_sessions.at(c->server_handle);
     // A context can serve several sessions/transports. Do not advance beyond
     // the peer's 64-entry RPC window while an older request is outstanding.
-    for (const auto &[xid, pending] : callback_probes)
-      if (pending.gss_handle == c->server_handle && g.callback_sequence - pending.gss_sequence >= 63)
-        return;
+    for (const auto &[xid, pending] : callback_probes) {
+      auto other = gss_sessions.find(pending.gss_handle);
+      bool same = pending.gss_handle == c->server_handle || (g.ssv &&
+          other != gss_sessions.end() && other->second.ssv == g.ssv);
+      if (same && g.callback_counter() - pending.gss_sequence >= 63) return;
+    }
     probe.gss_handle = c->server_handle;
-    probe.gss_sequence = ++g.callback_sequence;
+    probe.gss_sequence = g.next_callback();
     probe.gss_service = c->service;
     auto credential = writer().u32(1).u32(0).u32(probe.gss_sequence).u32(c->service).opaque(c->client_handle).data;
     try {
       call.u32(6).opaque(credential);
-      auto verifier = g.context->sign(call.data);
+      auto verifier = g.sign(call.data);
       if (verifier.size() > 400) return;
       call.u32(6).opaque(verifier);
       if (c->service == 1) call.fixed(body.data);
       else {
         auto clear = writer().u32(probe.gss_sequence).fixed(body.data).data;
-        if (c->service == 2) call.opaque(clear).opaque(g.context->sign(clear));
-        else call.opaque(g.context->wrap(clear));
+        if (c->service == 2) call.opaque(clear).opaque(g.sign(clear));
+        else call.opaque(g.wrap(clear));
       }
     } catch (...) { return; } // Never silently downgrade a failed GSS operation.
   } else {
@@ -226,14 +234,14 @@ void callback_reply(uint32_t xid, reader &r) {
         if (found_gss == gss_sessions.end() || found_gss->second.expires <= std::chrono::steady_clock::now())
           throw xdr_error();
         auto &g = found_gss->second;
-        if (flavor != 6 || !g.context->verify(writer().u32(probe.gss_sequence).data, verifier) || accepted)
+        if (flavor != 6 || !g.verify(writer().u32(probe.gss_sequence).data, verifier) || accepted)
           throw xdr_error();
         if (probe.gss_service != 1) {
           auto token = r.opaque(max_record);
           if (probe.gss_service == 2) {
-            if (!g.context->verify(token, r.opaque(400))) throw xdr_error();
+            if (!g.verify(token, r.opaque(400))) throw xdr_error();
             clear = std::move(token);
-          } else clear = g.context->unwrap(token);
+          } else clear = g.unwrap(token);
           r.end();
           r = reader(clear);
           if (r.u32() != probe.gss_sequence) throw xdr_error();

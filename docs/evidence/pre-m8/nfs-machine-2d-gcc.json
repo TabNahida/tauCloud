@@ -1,0 +1,34 @@
+{
+  "source": "2d5aa126ca9cfd7720699d87a83d796c733d2bee",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41856001002",
+  "status": "gcc-passed-clang-pending",
+  "job_id": 126664665277,
+  "artifact_id": 13340140148,
+  "artifact_sha256": "ee494b3f32fcd4210a0c23accf8cc6daabe82e64d8d79e35746a5fa6dc6d3590",
+  "report": {
+    "status": "passed",
+    "checks": [
+      "krb5 service 2: negotiates exact enforced operations and cleanup-only allow set; confirmation and CREATE_SESSION replay require the machine",
+      "krb5 service 2: confirmed EXCHANGE_ID retains its policy and rejects credential or protection downgrade",
+      "krb5 service 2: unbound SEQUENCE cannot attach a connection; authenticated bind works; user session maintenance is denied without damaging the live session",
+      "krb5 service 2: an unmapped machine releases user locks/open state after mapping revocation, but cannot read user data",
+      "krb5 service 2: cleanup cannot cross client IDs, confirmed protection lists are immutable, and write locks remain releasable after OPEN_DOWNGRADE",
+      "krb5 service 2: negotiated SEQUENCE protection rejects a user before slot consumption",
+      "krb5 service 2: cached success cannot be downgraded to authentication-only; integrity/privacy replay and authorized destruction succeed",
+      "krb5 service 3: negotiates exact enforced operations and cleanup-only allow set; confirmation and CREATE_SESSION replay require the machine",
+      "krb5 service 3: confirmed EXCHANGE_ID retains its policy and rejects credential or protection downgrade",
+      "krb5 service 3: unbound SEQUENCE cannot attach a connection; authenticated bind works; user session maintenance is denied without damaging the live session",
+      "krb5 service 3: an unmapped machine releases user locks/open state after mapping revocation, but cannot read user data",
+      "krb5 service 3: cleanup cannot cross client IDs, confirmed protection lists are immutable, and write locks remain releasable after OPEN_DOWNGRADE",
+      "krb5 service 3: negotiated SEQUENCE protection rejects a user before slot consumption",
+      "krb5 service 3: cached success cannot be downgraded to authentication-only; integrity/privacy replay and authorized destruction succeed",
+      "machine state cleanup requires an agreed allow bit; ordinary owner cleanup remains usable",
+      "AUTH_SYS and authentication-only GSS cannot negotiate machine protection; SP4_NONE implicit binding remains available"
+    ]
+  },
+  "limitations": [
+    "Clang targeted run still pending when recorded.",
+    "MSVC shared AUTH_SYS regression passes; Windows GSS is not implemented.",
+    "Full backend Windows run has a separate initial files/begin lease_expired failure."
+  ]
+}

@@ -1,0 +1,189 @@
+{
+  "source": "0276cbbc803f766df6ed13191f599c086be79ee1",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41851088538",
+  "status": "targeted-three-platform-passed",
+  "scope": "SMB security metadata archive/deferred change-time and shared protocol regression; not Full SMB/NFS acceptance.",
+  "jobs": [
+    {
+      "id": 126647273942,
+      "name": "clang metadata",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 126647274223,
+      "name": "gcc metadata",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 126647274307,
+      "name": "msvc metadata",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 13337286744,
+      "name": "smb-metadata-clang",
+      "sha256": "sha256:b0243ff7e6acfdeaf4259c4c2a99c4d24c8751039b994c7efd3bdab85bab27eb"
+    },
+    {
+      "id": 13337238557,
+      "name": "smb-metadata-gcc",
+      "sha256": "sha256:fd2e457e55d57fb310de3c8ea156092ce06194a98e9aa9478eef0b92a891b270"
+    },
+    {
+      "id": 13336333748,
+      "name": "smb-metadata-msvc",
+      "sha256": "sha256:2237db28de9365377d193dd7deb0dc06b57565e665e048e9beef25d2f1105be7"
+    }
+  ],
+  "reports": {
+    "13337286744/security-metadata.json": {
+      "sha256": "44aa451515b99e215769fc2f2045a6455748f8d7ed9a586a52890588deb9e81d",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "210: security notification is immediate; archive is visible before close; change time is deferred",
+          "210: security notification is immediate; archive is visible before close; change time is frozen",
+          "210: rejected security updates change neither descriptor, attributes, times nor notifications",
+          "210: directory security updates do not invent archive or change-time changes",
+          "300: security notification is immediate; archive is visible before close; change time is deferred",
+          "300: security notification is immediate; archive is visible before close; change time is frozen",
+          "300: rejected security updates change neither descriptor, attributes, times nor notifications",
+          "300: directory security updates do not invent archive or change-time changes",
+          "302: security notification is immediate; archive is visible before close; change time is deferred",
+          "302: security notification is immediate; archive is visible before close; change time is frozen",
+          "302: rejected security updates change neither descriptor, attributes, times nor notifications",
+          "302: directory security updates do not invent archive or change-time changes",
+          "311: security notification is immediate; archive is visible before close; change time is deferred",
+          "311: security notification is immediate; archive is visible before close; change time is frozen",
+          "311: rejected security updates change neither descriptor, attributes, times nor notifications",
+          "311: directory security updates do not invent archive or change-time changes",
+          "another close flushes file-wide notifications; only the originating close completes its timestamp",
+          "explicit ChangeTime cancels a pending automatic update; -2 re-enables it",
+          "repeated security updates and rename merge their pending metadata at the final name",
+          "SMB process loss recovers the committed descriptor, archive and deferred timestamp; clean metadata backup succeeds"
+        ]
+      }
+    },
+    "13337286744/security-oplocks.json": {
+      "sha256": "49b037d65cb0dd8052c0b31d2110dd301aa9160952c22badccd1b0c5c4367fb5",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "210/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "210/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "210/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "300/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "300/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "300/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "302/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "302/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "302/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "311/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "311/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "311/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK"
+        ]
+      }
+    },
+    "13337238557/security-metadata.json": {
+      "sha256": "44aa451515b99e215769fc2f2045a6455748f8d7ed9a586a52890588deb9e81d",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "210: security notification is immediate; archive is visible before close; change time is deferred",
+          "210: security notification is immediate; archive is visible before close; change time is frozen",
+          "210: rejected security updates change neither descriptor, attributes, times nor notifications",
+          "210: directory security updates do not invent archive or change-time changes",
+          "300: security notification is immediate; archive is visible before close; change time is deferred",
+          "300: security notification is immediate; archive is visible before close; change time is frozen",
+          "300: rejected security updates change neither descriptor, attributes, times nor notifications",
+          "300: directory security updates do not invent archive or change-time changes",
+          "302: security notification is immediate; archive is visible before close; change time is deferred",
+          "302: security notification is immediate; archive is visible before close; change time is frozen",
+          "302: rejected security updates change neither descriptor, attributes, times nor notifications",
+          "302: directory security updates do not invent archive or change-time changes",
+          "311: security notification is immediate; archive is visible before close; change time is deferred",
+          "311: security notification is immediate; archive is visible before close; change time is frozen",
+          "311: rejected security updates change neither descriptor, attributes, times nor notifications",
+          "311: directory security updates do not invent archive or change-time changes",
+          "another close flushes file-wide notifications; only the originating close completes its timestamp",
+          "explicit ChangeTime cancels a pending automatic update; -2 re-enables it",
+          "repeated security updates and rename merge their pending metadata at the final name",
+          "SMB process loss recovers the committed descriptor, archive and deferred timestamp; clean metadata backup succeeds"
+        ]
+      }
+    },
+    "13337238557/security-oplocks.json": {
+      "sha256": "49b037d65cb0dd8052c0b31d2110dd301aa9160952c22badccd1b0c5c4367fb5",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "210/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "210/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "210/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "300/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "300/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "300/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "302/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "302/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "302/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "311/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "311/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "311/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK"
+        ]
+      }
+    },
+    "13336333748/security-metadata.json": {
+      "sha256": "05863db130cf890a971c08f3078c1848a5455c9fbd2eb10358be49e0bedbae5f",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "210: security notification is immediate; archive is visible before close; change time is deferred",
+          "210: security notification is immediate; archive is visible before close; change time is frozen",
+          "210: rejected security updates change neither descriptor, attributes, times nor notifications",
+          "210: directory security updates do not invent archive or change-time changes",
+          "300: security notification is immediate; archive is visible before close; change time is deferred",
+          "300: security notification is immediate; archive is visible before close; change time is frozen",
+          "300: rejected security updates change neither descriptor, attributes, times nor notifications",
+          "300: directory security updates do not invent archive or change-time changes",
+          "302: security notification is immediate; archive is visible before close; change time is deferred",
+          "302: security notification is immediate; archive is visible before close; change time is frozen",
+          "302: rejected security updates change neither descriptor, attributes, times nor notifications",
+          "302: directory security updates do not invent archive or change-time changes",
+          "311: security notification is immediate; archive is visible before close; change time is deferred",
+          "311: security notification is immediate; archive is visible before close; change time is frozen",
+          "311: rejected security updates change neither descriptor, attributes, times nor notifications",
+          "311: directory security updates do not invent archive or change-time changes",
+          "another close flushes file-wide notifications; only the originating close completes its timestamp",
+          "explicit ChangeTime cancels a pending automatic update; -2 re-enables it",
+          "repeated security updates and rename merge their pending metadata at the final name",
+          "SMB process loss recovers the committed descriptor, archive and deferred timestamp; clean metadata backup succeeds"
+        ]
+      }
+    },
+    "13336333748/security-oplocks.json": {
+      "sha256": "2b5c26b1200a631dc29a85841791cf73acef6a67afbd0c857e88b6e66029d62c",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "210/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "210/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "210/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "300/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "300/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "300/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "302/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "302/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "302/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "311/1: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "311/8: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK",
+          "311/9: security updates preserve classic caches and existing rights; new opens enforce ACLs; own exclusive allocation/EOF preserves cache, while Level II EOF invalidates all readers without ACK"
+        ]
+      }
+    }
+  }
+}

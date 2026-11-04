@@ -2,7 +2,12 @@
 // plaintext only; every accepted reply (including RPC errors) is authenticated.
 void gss_expire() {
   auto time = std::chrono::steady_clock::now();
-  std::erase_if(gss_sessions, [&](const auto &entry) { return entry.second.expires <= time; });
+  std::erase_if(gss_sessions, [&](const auto &entry) {
+    const auto &g = entry.second;
+    if (!g.ssv) return g.expires <= time;
+    auto c = client_ids.find(g.ssv_client);
+    return c == client_ids.end() || c->second.expires <= now() || c->second.ssv != g.ssv;
+  });
 }
 std::string dispatch(std::string_view packet, std::string connection_id) {
   std::lock_guard guard(mutex);
@@ -13,6 +18,9 @@ std::string dispatch(std::string_view packet, std::string connection_id) {
     return writer().u32(xid).u32(1).u32(1).u32(1).u32(code).data;
   };
   try {
+    // Reverse replies must also discard SSV handles whose owning client has
+    // expired, including a handle offered on another client's backchannel.
+    gss_expire();
     auto direction = r.u32();
     if (direction == 1) { callback_reply(xid, r); return {}; }
     if (direction != 0 || r.u32() != 2) return dispatch_plain(packet);
@@ -32,7 +40,6 @@ std::string dispatch(std::string_view packet, std::string connection_id) {
     if (control > 3 || (control && procedure)) return denied(1);
     if (!((program == 100003 && (version == 3 || version == 4)) ||
           (program == 100005 && version == 3))) return denied(2);
-    gss_expire();
     if (control == 1 || control == 2) {
       if (vf || !verifier.empty() || (control == 1 && !handle.empty())) return denied(1);
       auto token = r.opaque(65536);
@@ -61,7 +68,7 @@ std::string dispatch(std::string_view packet, std::string connection_id) {
         entry.principal = accepted.principal;
         entry.expires = std::chrono::steady_clock::now() +
             std::chrono::seconds(std::min(accepted.lifetime, 3600u));
-        auto verifier = entry.context->sign(writer().u32(64).data);
+        auto verifier = entry.sign(writer().u32(64).data);
         entry.mic_size = static_cast<uint32_t>(verifier.size());
         reply.u32(6).opaque(verifier);
       } else reply.u32(0).opaque("");
@@ -78,8 +85,16 @@ std::string dispatch(std::string_view packet, std::string connection_id) {
     if (found == gss_sessions.end() || found->second.principal.empty() ||
         found->second.program != program || found->second.version != version) return denied(13);
     auto &entry = found->second;
-    if (!entry.context->verify(packet.substr(0, header_end), verifier)) return denied(13);
-    if (sequence >= 0x80000000u) return denied(14);
+    if (entry.ssv) {
+      auto client = client_ids.find(entry.ssv_client);
+      if (client == client_ids.end() || client->second.create_reply.empty() || !entry.ssv->sequence())
+        return denied(13);
+    }
+    if (!entry.verify(packet.substr(0, header_end), verifier)) return denied(13);
+    if (sequence >= 0x80000000u) {
+      gss_sessions.erase(found); // RFC 2203 5.3.3.3: authenticated MAXSEQ overflow retires this handle.
+      return denied(14);
+    }
     // Verify the header before advancing the window: a forged high sequence
     // cannot evict outstanding legitimate requests. GSS sequence flags are
     // deliberately not the RPC replay mechanism (requests may arrive unordered).
@@ -94,11 +109,11 @@ std::string dispatch(std::string_view packet, std::string connection_id) {
     auto protect = [&](uint32_t status, std::string_view body) {
       writer out;
       out.u32(xid).u32(1).u32(0).u32(6)
-          .opaque(entry.context->sign(writer().u32(sequence).data)).u32(status);
+          .opaque(entry.sign(writer().u32(sequence).data)).u32(status);
       if (status || service == 1) return out.fixed(body).data;
       auto data = writer().u32(sequence).fixed(body).data;
-      if (service == 2) return out.opaque(data).opaque(entry.context->sign(data)).data;
-      return out.opaque(entry.context->wrap(data)).data;
+      if (service == 2) return out.opaque(data).opaque(entry.sign(data)).data;
+      return out.opaque(entry.wrap(data)).data;
     };
     std::string clear;
     try {
@@ -107,9 +122,9 @@ std::string dispatch(std::string_view packet, std::string connection_id) {
         auto token = r.opaque(max_record);
         if (service == 2) {
           auto mic = r.opaque(400);
-          require(entry.context->verify(token, mic), "gss_context");
+          require(entry.verify(token, mic), "gss_context");
           clear = std::move(token);
-        } else clear = entry.context->unwrap(token);
+        } else clear = entry.unwrap(token);
         r.end();
         reader data(clear);
         if (data.u32() != sequence) return protect(4, "");
@@ -125,6 +140,12 @@ std::string dispatch(std::string_view packet, std::string connection_id) {
     identity who;
     who.credential = {{"auth", "rpcsec-gss"}, {"principal", entry.principal}, {"service", service}};
     who.key = digest("rpcsec-gss:krb5:" + entry.principal);
+    if (entry.ssv) {
+      // State credentials have no user identity or export data rights.
+      who.credential["auth"] = "rpcsec-ssv";
+      who.credential["ssv_client"] = entry.ssv_client;
+      who.key = digest("rpcsec-gss:ssv:" + std::to_string(entry.ssv_client));
+    }
     auto plaintext = std::string(packet.substr(0, arguments)) + clear;
     auto result = dispatch_plain(plaintext, &who);
     reader reply(result);

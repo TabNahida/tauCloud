@@ -2,6 +2,7 @@
 #include <taucloud/files.hpp>
 #include <taucloud/database.hpp>
 #include <taucloud/gss.hpp>
+#include <taucloud/nfs_ssv.hpp>
 #include <algorithm>
 #include <map>
 #include <set>
@@ -152,6 +153,7 @@ struct server::impl {
     return digest(grant.dump());
   }
   json authorize(const json &body) {
+    check(body.at("credential").value("auth", "") != "rpcsec-ssv", 13);
     auto grant = call("identity", "nfs_authorize", body);
     if (recording_authority) {
       auto uuid = grant.at("export").at("uuid").get<std::string>();
@@ -165,6 +167,7 @@ struct server::impl {
     return grant;
   }
   json export_view(const identity &who) {
+    check(who.credential.value("auth", "") != "rpcsec-ssv", 13);
     auto view = call("identity", "nfs_exports", {{"peer", "127.0.0.1"}, {"credential", who.credential}});
     if (recording_authority)
       recording_authority->namespace_view = digest(view.at("exports").dump());

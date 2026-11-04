@@ -75,6 +75,10 @@ on:
       - 'src/nfs_gss_state.inc'
       - 'tests/nfs_gss_backchannel.py'
       - 'tests/nfs_machine_credentials.py'
+      - 'tests/nfs_ssv_integration.py'
+      - 'tests/nfs_ssv_vectors.inc'
+      - 'src/nfs_ssv.cpp'
+      - 'include/taucloud/nfs_ssv.hpp'
       - 'src/gss.cpp'
       - 'include/taucloud/gss.hpp'
       - 'include/taucloud/core.hpp'
@@ -128,6 +132,9 @@ jobs:
         run: xmake -y -j 8
       - name: Native cache exclusion, cancellation and allocation safety
         run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_m2_tests${{ matrix.suffix }}
+      - name: NFS core and independent SSV cryptographic vectors
+        if: ${{ !cancelled() && steps.compile.outcome == 'success' }}
+        run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_m7_tests${{ matrix.suffix }}
       - name: SMB authority and failed CREATE cleanup
         run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_m5_tests${{ matrix.suffix }}
       - name: SMB per-open delete-on-close and durable recovery
@@ -231,6 +238,9 @@ jobs:
       - name: NFS Kerberos machine state protection and cleanup
         if: ${{ runner.os == 'Linux' && !cancelled() && steps.compile.outcome == 'success' }}
         run: python tests/nfs_machine_credentials.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/nfs-machine.json
+      - name: NFS SSV key negotiation, RPC protection, rotation and cleanup
+        if: ${{ runner.os == 'Linux' && !cancelled() && steps.compile.outcome == 'success' }}
+        run: python tests/nfs_ssv_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/nfs-ssv.json
       - name: Unmodified pynfs callback program and RPC version
         if: runner.os == 'Linux'
         run: python tests/pynfs_acceptance.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/pynfs-backchannel.json CSESS20 CSESS21
