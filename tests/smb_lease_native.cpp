@@ -221,6 +221,42 @@ int main() {
         std::cout << "PASS delivered RH invalidation permits SMB/native data operations before ACK while sharing waits and expired authority still fences its open\n";
       }
 
+      {
+        const std::string from = "rename-own", to = "renamed-own";
+        auto holder = open(from, client); write(from, holder, "cached");
+        auto cookie = acquire(from, holder).at("cookie");
+        auto rename = [&](const std::string &src, const std::string &dst) {
+          return call("rename", src, {{"handle", holder}, {"target", grant(dst)}, {"replace", false}});
+        };
+        rename(from, to);
+        auto state = poll(to, holder, cookie);
+        check(state.at("state") == 7 && state.at("epoch") == 11 && !state.at("breaking"));
+        rejects([&] { open(to, peer); }, "cache_break_pending");
+        check(ack(to, holder, cookie, 3).at("state") == 3);
+        auto other = open(to, peer); auto other_cookie = acquire(to, other).at("cookie");
+        rejects([&] { rename(to, from); }, "cache_break_pending");
+        state = poll(to, other, other_cookie);
+        auto body = decode_bytes(state.at("notification").at("body").get<std::string>());
+        check(get(body, 24, 4) == 3 && get(body, 28, 4) == 1 && get(body, 4, 4) == 1);
+        check(!poll(to, holder, cookie).at("breaking"));
+        check(fs::exists(base / "root/space" / to) && !fs::exists(base / "root/space" / from));
+        check(ack(to, other, other_cookie, 3).at("status") == 0xc00000d0u);
+        check(ack(to, other, other_cookie, 1).at("status") == 0);
+        rename(to, from);
+        check(poll(from, holder, cookie).at("state") == 3 && poll(from, other, other_cookie).at("state") == 1);
+        check(decode_bytes(call("read", from, {{"handle", other}, {"offset", 0}, {"count", 6}}).at("data").get<std::string>()) == "cached");
+        check(acquire(from, other, 3).at("state") == 3);
+        call("disposition", from, {{"handle", holder}, {"delete", false}});
+        check(!poll(from, other, other_cookie).at("breaking"));
+        rejects([&] { call("disposition", from, {{"handle", holder}, {"delete", true}}); }, "cache_break_pending");
+        check(ack(from, other, other_cookie, 1).at("status") == 0);
+        call("disposition", from, {{"handle", holder}, {"delete", true}});
+        check(poll(from, holder, cookie).at("state") == 3);
+        close(from, holder); check(fs::exists(base / "root/space" / from));
+        close(from, other); check(!fs::exists(base / "root/space" / from));
+        std::cout << "PASS rename preserves originating native exclusion and waits for foreign HANDLE ACK; disposition preserves READ until last close\n";
+      }
+
       h = open("expiry", client); auto sibling = open("expiry", client);
       cookie = acquire("expiry", h).at("cookie");
       store->dispatch("smb_cache_poll", {{"grant", grant("expiry", true, 100)},

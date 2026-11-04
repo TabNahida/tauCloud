@@ -28,6 +28,15 @@ void announce_caches() {
     for (auto &[fid, h] : find_session(sid)->files)
       if (!h.cache_cookie.empty()) h.cache_announced = true;
 }
+void wake_cache_polls() {
+  // A namespace waiter can be followed immediately by other requests on the
+  // same transport. Publish its break before those responses, rather than
+  // leaving the holder unaware until the periodic renewal interval expires.
+  for (auto *connection : s.clients)
+    for (auto sid : connection->session_ids())
+      for (auto &[fid, h] : connection->find_session(sid)->files)
+        if (!h.cache_cookie.empty()) h.cache_poll_at = 0;
+}
 // This coroutine has no RPC or dispatch-gate waits. A stalled operation or
 // socket write must not keep a cache-bearing transport alive beyond authority.
 pace::task<void> cache_watchdog() {
@@ -144,10 +153,13 @@ pace::task<void> poll_caches_locked() {
           response.replace(0, 4, "\xfeSMB", 4);
           put(response, 4, 64, 2); put(response, 12, 18, 2);
           put(response, 16, 1, 4); put(response, 24, UINT64_MAX, 8);
-          // Lease notifications have zero SessionId/TreeId. Encryption uses
-          // this member's authenticated session in the outer transform.
+          // MS-SMB2 3.3.4.7: lease notifications have zero SessionId/TreeId,
+          // independent of a member's session. Do not wrap one in that
+          // session's transform: 3.2.5.1.1.1 requires the client to disconnect
+          // when the inner and transform SessionIds differ. ACKs and ordinary
+          // responses still use the authenticated session's signing/encryption.
           response += decode_bytes(state.at("notification").at("body").get<std::string>());
-          co_await send_packet(std::move(response), h.cache_encrypted);
+          co_await send_packet(std::move(response), false);
           request["serial"] = serial;
           auto sent = co_await operation(h, "cache_sent", bool(h.access & 6), request);
           h.lease_state = sent.at("state");

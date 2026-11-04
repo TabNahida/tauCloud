@@ -20,7 +20,7 @@ from smbprotocol.open import Open, SMB2SetInfoRequest
 from smbprotocol.create_contexts import SMB2CreateContextRequest
 from smbprotocol.structure import Structure, IntField, BytesField
 from m5_integration import Fixture, create, denied, query, setinfo, lock
-from smbprotocol.file_info import FileEndOfFileInformation
+from smbprotocol.file_info import FileEndOfFileInformation, FileRenameInformation, FileDispositionInformation
 from smb_blocking_locks import pending
 from smb_oplock_integration import native_read, native_write
 
@@ -35,7 +35,7 @@ class Ack(Structure):
         super().__init__()
 
 
-def capture_breaks(c, received):
+def capture_breaks(c, received, encrypted_session=False):
     original = c.transport.recv
     def receive(timeout):
         while True:
@@ -46,9 +46,11 @@ def capture_breaks(c, received):
             if encrypted:
                 transform = SMB2TransformHeader(); transform.unpack(raw)
                 plain = c._decrypt(transform)
+                assert struct.unpack_from('<Q', plain, 40)[0] == transform['session_id'].get_value(), 'inner/transform SessionId mismatch'
             if (len(plain) >= 64 and struct.unpack_from('<Q', plain, 24)[0] == 2**64-1 and
                     struct.unpack_from('<H', plain, 12)[0] == 18):
                 h = SMB2HeaderResponse(); h.unpack(plain)
+                assert not encrypted, 'sessionless lease notification must not borrow an open session transform'
                 assert len(plain) == 108 and h['status'].get_value() == 0
                 assert h['flags'].get_value() == 1 and h['credit_response'].get_value() == 0
                 assert plain[36:64] == bytes(28)  # TreeId, SessionId and signature
@@ -56,6 +58,8 @@ def capture_breaks(c, received):
                 assert size == 44 and flags in (0, 1) and (reason, access, share) == (0, 0, 0)
                 received.put((key, current, target, epoch, flags, encrypted))
                 continue
+            if len(plain) >= 64 and struct.unpack_from('<H', plain, 12)[0] == 18:
+                assert encrypted == encrypted_session, 'ACK response must preserve session protection'
             return raw
     c.transport.recv = receive
 
@@ -67,9 +71,9 @@ def lease_context(key, state=7, version=2, epoch=0, flags=0):
     return c
 
 
-def leased(t, name, key, state=7, version=2, epoch=0, send=True, disposition=3, access=0x13019f, share=7):
+def leased(t, name, key, state=7, version=2, epoch=0, send=True, disposition=3, access=0x13019f, share=7, options=0x40):
     h = Open(t, name)
-    result = h.create(2, access, 0x80, share, disposition, 0x40, oplock_level=255,
+    result = h.create(2, access, 0x80, share, disposition, options, oplock_level=255,
                       create_contexts=[lease_context(key, state, version, epoch)], send=send)
     return h, result
 
@@ -99,7 +103,7 @@ def main():
         clients.append(c); c.connect(dialect=dialect, timeout=10)
         assert c.server_capabilities.get_value() & 2
         assert not c.server_capabilities.get_value() & (8 | 32)  # multichannel/directory leasing
-        q = received if received is not None else queue.Queue(); capture_breaks(c, q)
+        q = received if received is not None else queue.Queue(); capture_breaks(c, q, dialect >= 0x300)
         s = Session(c, 'TAUCLOUD\\alice', f.password, require_encryption=dialect >= 0x300, auth_protocol='ntlm')
         s.connect(); t = TreeConnect(s, r'\\127.0.0.1\smb'); t.connect()
         return c, s, t, q
@@ -110,6 +114,12 @@ def main():
         message, receive = result; t = h.tree_connect
         r = t.session.connection.send(message, t.session.session_id, t.tree_connect_id)
         pending(r); return r, receive
+    def begin_setinfo(h, info):
+        msg = SMB2SetInfoRequest(); msg['info_type'] = info.INFO_TYPE
+        msg['file_info_class'] = info.INFO_CLASS; msg['file_id'] = h.file_id; msg['buffer'] = info
+        t = h.tree_connect
+        request = h.connection.send(msg, t.session.session_id, t.tree_connect_id)
+        pending(request); return request
     try:
         f = Fixture(a.bin, memory=1024)
         for dialect in (0x210, 0x300, 0x302, 0x311):
@@ -127,7 +137,7 @@ def main():
             denied(lambda: ack(c, s, t, key, 7), 0xc0000001)
             other, result = leased(ft, name, uuid.uuid4().bytes, state=0, version=version, send=False)
             request, receive = begin(other, result)
-            assert q.get(timeout=10) == (key, 7, 3, 0 if version == 1 else 12, 1, s.encrypt_data)
+            assert q.get(timeout=10) == (key, 7, 3, 0 if version == 1 else 12, 1, False)
             denied(lambda: ack(c, s, t, key, 7), 0xc00000d0)
             denied(lambda: ack(foreign, fs, ft, key, 3), 0xc0000034)
             join, ctx = leased(pt, name, key, version=version)
@@ -138,13 +148,67 @@ def main():
             # A foreign WRITE invalidates the shared RH state only once.
             msg, receive_write = other.write(b'changed!!', send=False)
             wr = foreign.send(msg, fs.session_id, ft.tree_connect_id); pending(wr)
-            assert q.get(timeout=10) == (key, 3, 0, 0 if version == 1 else 13, 1, s.encrypt_data)
+            assert q.get(timeout=10) == (key, 3, 0, 0 if version == 1 else 13, 1, False)
             ack(c, s, t, key, 0); assert receive_write(wr) == 9
             assert sibling.read(0, 9) == b'changed!!' and q.empty()
             denied(lambda: ack(peer, ps, pt, key, 0), 0xc0000001)
             for handle in (join, sibling, h, other): handle.close()
             for conn in (c, peer, foreign): conn.disconnect()
             passed(f'{dialect:x}: v{version} shared lease survives renewal, joins during recall, validates client/key/ACK state and coherently breaks RWH to RH to NONE')
+
+        for dialect in (0x210, 0x300, 0x302, 0x311):
+            version = 1 if dialect == 0x210 else 2
+            c, s, t, q = connect(dialect); peer, ps, pt, pq = connect(dialect)
+            key, other_key = uuid.uuid4().bytes, uuid.uuid4().bytes
+            src, dst = f'namespace-{dialect:x}', f'namespace-{dialect:x}-moved'
+            h, ctx = leased(t, src, key, version=version); response(ctx, key, 7, version, 1)
+            h.write(b'rename-data')
+            rename = FileRenameInformation(); rename['file_name'] = dst
+            setinfo(h, rename)
+            join, ctx = leased(t, dst, key, state=0, version=version)
+            response(ctx, key, 7, version, 1); join.close(); assert q.empty()
+            other, result = leased(pt, dst, other_key, version=version, send=False)
+            request, receive = begin(other, result)
+            assert q.get(timeout=10) == (key, 7, 3, 0 if version == 1 else 2, 1, False)
+            ack(c, s, t, key, 3); response(receive(request), other_key, 3, version, 1)
+            rename['file_name'] = src
+            request = begin_setinfo(h, rename)
+            assert pq.get(timeout=10) == (other_key, 3, 1, 0 if version == 1 else 2, 1, False)
+            assert q.empty()
+            for _ in range(3):
+                denied(lambda: leased(pt, src, uuid.uuid4().bytes, version=version, disposition=1), 0xc0000034)
+            with request.response_event_lock:
+                assert request.response['status'].get_value() == 0x103
+            denied(lambda: ack(peer, ps, pt, other_key, 3), 0xc00000d0)
+            ack(peer, ps, pt, other_key, 1); c.receive(request, timeout=10)
+            join, ctx = leased(t, src, key, state=0, version=version)
+            response(ctx, key, 3, version, 2); join.close()
+            assert h.read(0, 11) == other.read(0, 11) == b'rename-data'
+            join, ctx = leased(pt, src, other_key, state=3, version=version)
+            response(ctx, other_key, 3, version, 3); join.close()
+            disposition = FileDispositionInformation(); disposition['delete_pending'] = False
+            setinfo(h, disposition); assert q.empty() and pq.empty()
+            disposition['delete_pending'] = True
+            request = begin_setinfo(h, disposition)
+            assert pq.get(timeout=10) == (other_key, 3, 1, 0 if version == 1 else 4, 1, False)
+            assert q.empty(); ack(peer, ps, pt, other_key, 1); c.receive(request, timeout=10)
+            denied(lambda: create(pt, src, disposition=1), 0xc0000056)
+            assert other.read(0, 11) == b'rename-data'
+            h.close(); assert (f.root/'smbdata'/src).exists()
+            other.close(); assert not (f.root/'smbdata'/src).exists()
+            assert q.empty() and pq.empty()
+            key = uuid.uuid4().bytes
+            h, ctx = leased(t, src, key, state=3, version=version)
+            response(ctx, key, 3, version, 1)
+            deleter, result = leased(pt, src, uuid.uuid4().bytes, state=0, version=version,
+                                     access=0x10000, options=0x1040, send=False)
+            request, receive = begin(deleter, result)
+            assert q.get(timeout=10) == (key, 3, 1, 0 if version == 1 else 2, 1, False)
+            ack(c, s, t, key, 1); receive(request); deleter.close()
+            denied(lambda: create(pt, src, disposition=1), 0xc0000056)
+            h.close(); assert not (f.root/'smbdata'/src).exists()
+            c.disconnect(); peer.disconnect()
+            passed(f'{dialect:x}: rename preserves own lease/epoch, waits for foreign HANDLE ACK before publishing path, and disposition/DELETE_ON_CLOSE recall HANDLE while preserving READ until last close')
 
         c, s, t, q = connect(); peer, ps, pt, pq = connect(0x311, c.client_guid, q)
         key = uuid.uuid4().bytes
@@ -160,10 +224,10 @@ def main():
         h, ctx = leased(t, 'read-only-cache', key, state=1); response(ctx, key, 1, epoch=1)
         with ThreadPoolExecutor() as pool:
             write = pool.submit(native_write, f.root/'smbdata/read-only-cache', b'native')
-            assert q.get(timeout=10) == (key, 1, 0, 2, 0, True)
+            assert q.get(timeout=10) == (key, 1, 0, 2, 0, False)
             assert write.result(timeout=10) == 6
         assert h.read(0, 6) == b'native'; h.close()
-        passed('R-only native invalidation delivers an encrypted no-ACK break before releasing exclusion')
+        passed('R-only native invalidation delivers a sessionless no-ACK break before releasing exclusion')
 
         key = uuid.uuid4().bytes
         h, ctx = leased(t, 'reserved-key', key, state=0); response(ctx, key, 0, epoch=0)
@@ -188,7 +252,7 @@ def main():
         sibling.write(b'retained'); sibling.close(); time.sleep(2.6)
         with ThreadPoolExecutor() as pool:
             read = pool.submit(native_read, f.root/'smbdata/promote-none')
-            assert q.get(timeout=10) == (key, 7, 0, 2, 1, True)
+            assert q.get(timeout=10) == (key, 7, 0, 2, 1, False)
             ack(peer, ps, pt, key, 0); assert read.result(timeout=10) == b'retained'
         h.close()
         passed('an original NONE member renews promoted shared authority after the promoting member closes')
@@ -261,7 +325,7 @@ def main():
             sibling.close(); time.sleep(2.6)
             contender, result = leased(ot, name, uuid.uuid4().bytes, send=False)
             request, receive = begin(contender, result)
-            assert q.get(timeout=10) == (key, 7, 3, 2, 1, True)
+            assert q.get(timeout=10) == (key, 7, 3, 2, 1, False)
             ack(c, s, t, key, 3)
             contexts = receive(request)
             assert contexts[0]['lease_state'].get_value() == 3
@@ -296,7 +360,7 @@ def main():
         denied(lambda: h.write(b'forbidden'), 0xc0000022)
         with ThreadPoolExecutor() as pool:
             read = pool.submit(native_read, f.root/'smbdata/policy-read-lease')
-            assert q.get(timeout=10) == (key, 7, 0, 2, 1, True)
+            assert q.get(timeout=10) == (key, 7, 0, 2, 1, False)
             ack(c, s, readonly, key, 0); assert read.result(timeout=10) == b'policy'
         h.close(); readonly.disconnect()
         passed('read-only-share metadata lease renews and ACKs without obtaining write authority or data access')
@@ -310,7 +374,7 @@ def main():
             response(ctx, key, 7, version, 11); holder.write(b'dirty data')
             contender, result = leased(contender_t, name, other_key, version=version, share=1, send=False)
             request, receive = begin(contender, result)
-            assert owner_queue.get(timeout=10) == (key, 7, 5, 0 if version == 1 else 12, 1, owner_session.encrypt_data)
+            assert owner_queue.get(timeout=10) == (key, 7, 5, 0 if version == 1 else 12, 1, False)
             ack(owner, owner_session, owner_tree, key, 5)
             denied(lambda: receive(request), 0xc0000043)
             holder.write(b'newer data'); holder.flush()
@@ -319,7 +383,7 @@ def main():
             # open now recalls WRITE, independently of the earlier HANDLE break.
             contender, result = leased(contender_t, name, other_key, version=version, send=False)
             request, receive = begin(contender, result)
-            assert owner_queue.get(timeout=10) == (key, 5, 1, 0 if version == 1 else 13, 1, owner_session.encrypt_data)
+            assert owner_queue.get(timeout=10) == (key, 5, 1, 0 if version == 1 else 13, 1, False)
             ack(owner, owner_session, owner_tree, key, 1)
             response(receive(request), other_key, 3, version, 1)
             assert contender.read(0, 10) == b'newer data'
@@ -335,7 +399,7 @@ def main():
             reader = Open(pt, name)
             result = reader.create(2, 0x13019f, 0x80, 7, 1, 0x40, send=False)
             read_request, read_receive = begin(reader, result)
-            assert oq.get(timeout=10) == (key, 7, 3, 0 if version == 1 else 12, 1, os.encrypt_data)
+            assert oq.get(timeout=10) == (key, 7, 3, 0 if version == 1 else 12, 1, False)
             overwrite = Open(pt, name)
             result = overwrite.create(2, 0x13019f, 0x80, 7, 4, 0x40, send=False)
             write_request, write_receive = begin(overwrite, result)
@@ -344,7 +408,7 @@ def main():
             assert oq.empty()
             holder.write(b'flushed!!!'); holder.flush()
             ack(owner, os, ot, key, 3)
-            assert oq.get(timeout=10) == (key, 3, 1, 0 if version == 1 else 13, 1, os.encrypt_data)
+            assert oq.get(timeout=10) == (key, 3, 1, 0 if version == 1 else 13, 1, False)
             join, ctx = leased(ot, name, key, version=version)
             response(ctx, key, 3, version, 13, breaking=True); join.close()
             # The original open and overwrite remain pending through the
@@ -353,7 +417,7 @@ def main():
             assert holder.read(0, 10) == b'flushed!!!'
             denied(lambda: ack(owner, os, ot, key, 3), 0xc00000d0)
             ack(owner, os, ot, key, 1)
-            assert oq.get(timeout=10) == (key, 1, 0, 0 if version == 1 else 14, 0, os.encrypt_data)
+            assert oq.get(timeout=10) == (key, 1, 0, 0 if version == 1 else 14, 0, False)
             read_receive(read_request); write_receive(write_request)
             assert struct.unpack_from('<Q', query(holder, 5), 8)[0] == 0
             overwrite.write(b'after'); assert holder.read(0, 5) == b'after'
@@ -371,7 +435,7 @@ def main():
             overwrite = Open(pt, name)
             result = overwrite.create(2, 0x13019f, 0x80, 7, 4, 0x40, send=False)
             request, receive = begin(overwrite, result)
-            assert oq.get(timeout=10) == (key, 3, 0, 0 if version == 1 else 12, 1, os.encrypt_data)
+            assert oq.get(timeout=10) == (key, 3, 0, 0 if version == 1 else 12, 1, False)
             # No ACK yet: compatible data operations complete through pinned
             # descriptors, while CREATE still reports the outstanding RH break.
             receive(request)
@@ -412,7 +476,7 @@ def main():
         overwrite = Open(pt, name)
         result = overwrite.create(2, 0x13019f, 0x80, 7, 4, 0x40, send=False)
         request, receive = begin(overwrite, result)
-        assert oq.get(timeout=10) == (key, 3, 0, 2, 1, True)
+        assert oq.get(timeout=10) == (key, 3, 0, 2, 1, False)
         receive(request); overwrite.write(b'current')
         conflict = Open(pt, name)
         result = conflict.create(2, 0x13019f, 0x80, 1, 1, 0x40, send=False)

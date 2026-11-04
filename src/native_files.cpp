@@ -842,9 +842,10 @@ void native_file::set_times(std::optional<uint64_t> accessed, std::optional<uint
 #endif
 }
 void native_file::rename(const std::string &from, const std::string &to, bool replace,
-                         bool directory) const {
+                         bool directory, const native_file *pinned_source) const {
 #ifndef _WIN32
   (void)directory;
+  (void)pinned_source;
 #endif
   portable_path(from, true);
   portable_path(to, true);
@@ -866,7 +867,9 @@ void native_file::rename(const std::string &from, const std::string &to, bool re
     b = target_parent.impl_->file;
   }
 #ifdef _WIN32
-  auto source = open(from, directory, false, true);
+  // SMB may retain a data-cache exclusion on this exact native description.
+  // A second path open would break it before the namespace-only operation.
+  auto source = pinned_source ? pinned_source->retain() : open(from, directory, false, true);
   std::wstring wide = wide_name(toname);
   std::vector<char> buffer(sizeof(FILE_RENAME_INFO) + wide.size() * sizeof(wchar_t));
   auto *rename = reinterpret_cast<FILE_RENAME_INFO *>(buffer.data());

@@ -1,0 +1,86 @@
+{
+  "source_commit": "e3d3208412cba20c9984ffd10dc23c2314b6cd8f",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41883602665",
+  "job": 126762091362,
+  "host": "Windows-2025Server-10.0.26100-SP0",
+  "status": "failed",
+  "failure": "Native Set-Acl restoration returned error 59.",
+  "observed": [
+    {
+      "access": 131200,
+      "command": 5,
+      "connection": "e27c2210153cb164",
+      "disposition": 1,
+      "encrypted": true,
+      "flags": 48,
+      "lease": {
+        "epoch": 0,
+        "flags": 0,
+        "key": "ddfcdcc20182ed17",
+        "state": 0,
+        "version": 2
+      },
+      "message": 48,
+      "oplock": 255,
+      "options": 2113536,
+      "outbound": false,
+      "session": "9389678890054900871",
+      "share": 7,
+      "size": 308,
+      "tree": 1,
+      "time": 1793815912257
+    },
+    {
+      "async": 1,
+      "command": 5,
+      "connection": "e27c2210153cb164",
+      "encrypted": true,
+      "flags": 3,
+      "message": 48,
+      "outbound": true,
+      "session": "9389678890054900871",
+      "size": 73,
+      "status": 259,
+      "time": 1793815912273
+    },
+    {
+      "ack_required": 1,
+      "command": 18,
+      "connection": "e27c2210153cb164",
+      "current": 7,
+      "encrypted": true,
+      "epoch": 2,
+      "flags": 1,
+      "lease_key": "caca22bd02db6ad5",
+      "message": "18446744073709551615",
+      "outbound": true,
+      "session": 0,
+      "size": 108,
+      "status": 0,
+      "structure": 44,
+      "target": 3,
+      "tree": 0,
+      "time": 1793815912369
+    }
+  ],
+  "connection_close": [
+    {
+      "code": "e27c2210153cb164",
+      "event": "protocol_close",
+      "role": "smb",
+      "time": 1793815912370
+    },
+    {
+      "code": "d217d04100ff9acf",
+      "event": "protocol_close",
+      "role": "smb",
+      "time": 1793815913551
+    }
+  ],
+  "finding": "The outgoing lease break has inner SessionId=0 but was encrypted using a nonzero session. MS-SMB2 3.2.5.1.1.1 requires disconnect for this mismatch. The peer closed immediately after this notification; no ACK was received.",
+  "fix": "Send sessionless lease notifications without a session transform; keep ACKs and normal session traffic protected. Native reacceptance pending.",
+  "sources": [
+    "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/c367fad4-c00f-4778-913d-c0560ead1360",
+    "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/d3c03e33-7dc7-4d58-8428-0a1484c5c874"
+  ]
+}

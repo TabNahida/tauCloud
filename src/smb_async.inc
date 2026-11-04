@@ -97,6 +97,7 @@ pace::task<void> pump_commands(uint64_t sid) {
       catch (const error &e) {
         auto cmd = get(item.request, 12, 2);
         if ((cmd == 5 || cmd == 9 || cmd == 10 || cmd == 14 || cmd == 17) && std::string_view(e.what()) == "cache_break_pending") {
+          wake_cache_polls();
           auto current = pending_commands.find(id);
           // A sharing/namespace operation can wait for the independent RH
           // HANDLE ACK timer. Bound that wait beyond the protocol deadline;

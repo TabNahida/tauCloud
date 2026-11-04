@@ -1,5 +1,15 @@
 # M5/M7 selected-profile acceptance — 2026-10-31
 
+The [lease namespace/notification increment](smb-lease-namespace-local.json)
+passes 34 wire groups, 103 native checks, 3,271 state checks, 32 classic groups,
+12 security/cache groups and 12,583 M5 checks locally. The [full original lease
+log](smb-lease-full-namespace.log) records 32 passed / 4 failed / 3 skipped;
+v2_rename, rename_wait and unlink now pass. [Windows trace at e3d3208](smb-native-lease-transform-e3-remote.json)
+identifies an invalid encrypted sessionless lease notification immediately before
+the Set-Acl disconnect. Notification framing is corrected and ACK/data protection
+is independently checked; native Windows reacceptance is pending. Full SMB/NFS
+remains unfinished.
+
 [BATCH handle-cache integration](smb-batch-local.json) passes 37 independent groups, 40 Level II and 28 EXCLUSIVE regressions, 12,573 SMB core checks and 98 NFS core checks locally. The [full original oplock diagnostic](smb-batch-full-oplock.log) has 35 successes and seven failures with no skips. Original session reconnect1/2, reauth1/6 and two_logoff pass after enabling BATCH on delete-on-close handles. The broader session diagnostic retains its failures and skips; selected success does not establish session conformance. Same-transport timeout recovery, old parent-sharing expectations and alternate streams remain visible; this is not full oplock conformance. Cross-platform BATCH acceptance is pending.
 
 The preceding [overwrite and shared-cache integration](smb-overwrite-local.json) passes 40 independent four-dialect groups, 28 EXCLUSIVE regressions, 12,560 SMB core checks, 98 NFS core checks, nine metadata groups and four allocation groups locally under Clang sanitizers. Original exclusive5/9 now pass; its [complete original diagnostic](smb-overwrite-full-oplock.log) has eight successes and 34 failures with no skips. The older-parent-sharing expectation in exclusive6 is documented without counting the case as passed. Remote overwrite acceptance is pending; Full SMB/NFS remains unfinished.

@@ -53,7 +53,7 @@ public:
   void set_times(std::optional<uint64_t> accessed_ns, std::optional<uint64_t> modified_ns);
   void flush() const;
   void rename(const std::string &from, const std::string &to, bool replace = false,
-              bool directory = false) const;
+              bool directory = false, const native_file *source = nullptr) const;
   void remove(const std::string &path, bool directory = false,
               const std::string &pinned_object = "") const;
 };

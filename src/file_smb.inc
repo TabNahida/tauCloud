@@ -578,11 +578,16 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     auto exempt_lease = requested_lease;
     if (preserving_open && attribute_open && !cache_owner.empty() && handles.at(cache_owner).lease_cache_state)
       exempt_lease = handles.at(cache_owner).lease_cache_state;
-    cache_conflict(space, path, cache_owner,
+    // Retaining a shared native description is not an originating-lease
+    // exemption. In particular DELETE_ON_CLOSE must still recall its H bit.
+    auto exempt_owner = cache_owner;
+    if (!cache_owner.empty() && handles.at(cache_owner).lease_cache_state) exempt_owner.clear();
+    cache_conflict(space, path, exempt_owner,
                    (((data_open || attribute_open) && preserving_open) ||
                        (shared_read_open && preserving_data)) &&
                        !needs_write_handle ? 1 : 0, exempt_lease,
-                   preserving_data && !needs_write_handle ? 3 : 0, true);
+                   preserving_data && !needs_write_handle ? ((options & 0x1000) ? 1 : 3) : 0,
+                   !(options & 0x1000));
     // Validate all initial metadata and quota before creating or truncating a file.
     if (!existing && body.contains("eas"))
       smb_merge_eas(json::object(), body.at("eas"));
@@ -759,16 +764,18 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
   if (op == "smb_rename" || op == "smb_disposition" || op == "smb_attributes" ||
       op == "smb_set_eas" || op == "smb_resize" ||
       op == "smb_allocation" || op == "smb_list") {
-    // Delete-pending changes namespace visibility, not the cached file data;
-    // existing Level II readers retain their opens until the last close.
+    // Namespace changes remove HANDLE caching from foreign leases, not READ
+    // caching. The originating lease key is exempt (MS-FSA 2.1.4.12).
+    bool namespace_change = op == "smb_rename" || op == "smb_disposition";
     // MS-FSA 2.1.4.12 excludes the originating exclusive open from data
     // invalidation. A Level II holder still invalidates every reader,
     // including itself. Native I/O uses h.file, the guarded open description.
     auto cache_owner = (op == "smb_resize" || op == "smb_allocation") && h.cache &&
                                (h.cache_level == 8 || h.cache_level == 9) ? id : "";
-    cache_conflict(space, path, cache_owner, op == "smb_disposition" ? 1 : 0,
-        (op == "smb_resize" || op == "smb_allocation") ? h.lease_cache_state : nullptr,
-        op == "smb_disposition" ? 3 : 0, op == "smb_resize" || op == "smb_allocation");
+    if (op != "smb_disposition" || body.at("delete").get<bool>())
+      cache_conflict(space, path, cache_owner, op == "smb_disposition" ? 1 : 0,
+          (namespace_change || op == "smb_resize" || op == "smb_allocation") ? h.lease_cache_state : nullptr,
+          namespace_change ? 5 : 0, op == "smb_resize" || op == "smb_allocation");
     if (op == "smb_rename") {
       auto target = verify(body.at("target"), true);
       require(target.at("space").at("id") == space && target.at("actor") == actor &&
@@ -1122,7 +1129,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
   if (op == "smb_rename") {
     require(!path.empty() && (h.access & 0x10000) && !meta.at("delete_pending").get<bool>(),
             "forbidden");
-    security_sticky(s, grant, path);
+    security_sticky(s, grant, path, &meta);
     auto target = verify(body.at("target"), true);
     require(target.at("protocol") == "smb" && target.at("space").at("id") == space &&
                 target.at("actor") == actor && target.at("share") == grant.at("share"),
@@ -1170,7 +1177,8 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     intent_target.bind(1, to); intent_target.bind(2, space); intent_target.bind(3, path);
     intent_target.row();
     // On failure keep both names: flush can fail after a successful rename.
-    s.directory.rename(path, to, body.value("replace", false), h.directory);
+    s.directory.rename(path, to, body.value("replace", false), h.directory,
+                       !h.directory && h.file.writable() ? &h.file : nullptr);
     s.directory.flush();
     statement intent_moved(db, "UPDATE smb_close_delete SET path=?,target='' WHERE space=? AND path=?");
     intent_moved.bind(1, to); intent_moved.bind(2, space); intent_moved.bind(3, path);
@@ -1182,11 +1190,18 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     // Preserve the basic times until CLOSE (MS-FSA product note 187).
     // Archive and the deferred change/notification survive loss of the SMB
     // process; record them by native incarnation and originating open.
-    scan(s, ctx);
+    // A regular-file rename does not change the data incarnation. Reopening
+    // every path in scan() would recall the very leases this rename preserves.
+    if (h.directory) scan(s, ctx);
     auto moved = h.directory ? s.directory.open(to, true) : native_file();
     auto info = h.directory ? moved.info(true) : h.file.info(true);
     auto native = info.at("object").get<std::string>();
     transaction tx(db);
+    if (!h.directory) {
+      auto identity = object(space, path).at("object").get<std::string>();
+      erase(space, path);
+      index(space, to, info, identity);
+    }
     smb_defer_change(h, id, info, meta);
     tx.commit();
     smb_deferred_times.insert(native);

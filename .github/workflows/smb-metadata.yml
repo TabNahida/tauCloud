@@ -154,7 +154,7 @@ jobs:
         run: python tests/smb_lease_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/leases.json
       - name: Original Samba lease grants, upgrades, recalls and epochs
         if: ${{ !cancelled() && steps.compile.outcome == 'success' && runner.os == 'Linux' }}
-        run: python tests/samba_torture.py ${{ matrix.test_options }} --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/samba-leases.json smb2.lease.breaking4 smb2.lease.breaking3 smb2.lease.break_twice smb2.lease.statopen smb2.lease.statopen2 smb2.lease.statopen3 smb2.lease.statopen4 smb2.lease.oplock smb2.lease.nobreakself smb2.lease.upgrade smb2.lease.upgrade2 smb2.lease.upgrade3 smb2.lease.break smb2.lease.v2_epoch1 smb2.lease.v2_epoch2 smb2.lease.v2_epoch3
+        run: python tests/samba_torture.py ${{ matrix.test_options }} --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/samba-leases.json smb2.lease.v2_rename smb2.lease.rename_wait smb2.lease.unlink smb2.lease.breaking4 smb2.lease.breaking3 smb2.lease.break_twice smb2.lease.statopen smb2.lease.statopen2 smb2.lease.statopen3 smb2.lease.statopen4 smb2.lease.oplock smb2.lease.nobreakself smb2.lease.upgrade smb2.lease.upgrade2 smb2.lease.upgrade3 smb2.lease.break smb2.lease.v2_epoch1 smb2.lease.v2_epoch2 smb2.lease.v2_epoch3
       # Diagnostic coverage, not an acceptance gate: retain every failure and
       # skip while directory leases, ADS and remaining transitions are open.
       - name: Full Samba lease diagnostic (known incomplete compatibility)

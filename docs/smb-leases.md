@@ -82,16 +82,24 @@ additional file permissions. The backend remains authoritative for grants.
 Break delivery uses a per-cookie serial watermark shared across connections.
 A stale poll cannot retransmit a completed notification; failed delivery can
 be retried by another member, and final-close cleanup removes the watermark.
-Notifications have zero inner SessionId/TreeId and preserve session encryption.
+Notifications are sessionless, with zero SessionId/TreeId, and are sent unsigned
+without a session encryption transform. ACKs and ordinary file responses retain
+the session's signing/encryption. The earlier encrypted-notification behavior
+was incorrect: a nonzero transform SessionId with inner SessionId zero violates
+the client's required consistency check and causes Windows to disconnect.
+The failure is captured at `e3d3208` in
+[native trace evidence](evidence/pre-m8/smb-native-lease-transform-e3-remote.json).
+See [MS-SMB2 lease notification construction](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/c367fad4-c00f-4778-913d-c0560ead1360)
+and [client transform validation](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/d3c03e33-7dc7-4d58-8428-0a1484c5c874).
 ACKs use ClientGuid/LeaseKey, can arrive through another authenticated connection,
 and reauthorize the owning open before applying the file-domain transition.
 Cross-connection dispatch releases its own gate before waiting on a peer.
 
-Thirty independent wire groups pass locally under ASan/UBSan/LSan, including
+Thirty-four independent wire groups pass locally under ASan/UBSan/LSan, including
 four dialects, same-key joins during recall, client isolation, invalid ACKs,
 shared upgrades, native no-ACK invalidation, failed CREATE cleanup and timeout
-fencing. Updated state checks total 3,271; native checks total 85. See
-[current network evidence](evidence/pre-m8/smb-lease-rh-local.json).
+fencing. Updated state checks total 3,271; native checks total 103. See
+[current network evidence](evidence/pre-m8/smb-lease-namespace-local.json).
 The initial 13-group network step passes GCC/Clang/MSVC at `3450ec6`, while
 that run fails a Windows security/oplock regression after eight cases. Its
 root cause remains open ([remote evidence](evidence/pre-m8/smb-lease-wire-3450-remote.json)).
@@ -189,9 +197,24 @@ See [MS-FSA RH break processing](https://learn.microsoft.com/en-us/openspecs/win
 and [MS-SMB2 acknowledgment timers](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/0a2c6b57-693a-4a48-a90d-0a48735674e9).
 
 Known remaining work includes notification connection selection,
-rename/delete/recreate lifetime, other cache timeout paths that preserve usable opens,
+delete/recreate/reconnect lifetime, other cache timeout paths that preserve usable opens,
 ADS and directory/parent leases.
 Durable handles and multichannel session binding remain separate open gates.
+
+Regular-file rename preserves the originating lease and recalls only HANDLE
+from foreign leases. SET_DISPOSITION(TRUE) and DELETE_ON_CLOSE also recall
+foreign HANDLE caching; clearing disposition does not recall a lease. Pending
+rename keeps its destination invisible until the required ACK. The native
+rename reuses the pinned Windows description and regular-file indexing avoids
+reopening cached data. This preserves READ caching and the originating epoch.
+Lease conflicts wake notification polls immediately; a same-transport request
+cannot overtake its break notification with several unrelated replies.
+The unmodified Samba `v2_rename`, `rename_wait` and `unlink` cases now pass.
+Final local acceptance passes 34 lease wire groups, 103 native checks, 3,271
+state checks, 32 classic oplock groups and 12 security/oplock groups, alongside
+12,583 M5 checks. The complete original lease suite is **32 passed, four failed,
+three skipped**. [Evidence](evidence/pre-m8/smb-lease-namespace-local.json) retains
+all failures/skips; Windows native and compiler-matrix acceptance is pending.
 
 The implementation follows Microsoft's [lease object-store rules](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/d8df943d-6ad7-4b30-9f58-96ae90fc6204),
 [per-lease state](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/212eb853-7e50-4608-877e-22d42e0664f3),

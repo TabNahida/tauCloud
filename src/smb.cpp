@@ -1844,6 +1844,7 @@ struct client : session_state, std::enable_shared_from_this<client> {
             inherited_async = 0;
           }
           bytes body;
+          bool cache_recall = false;
           bool connection_echo = cmd == 13 && request_sessions[i] == 0;
           bool unknown_session = !connection_echo && cmd != 0 &&
               (!known_session || (!authenticated && cmd != 1));
@@ -1867,6 +1868,8 @@ struct client : session_state, std::enable_shared_from_this<client> {
             log("smb", "command_" + std::to_string(cmd), std::to_string(code));
           } catch (const error &e) {
             if ((cmd == 5 || cmd == 9 || cmd == 10 || cmd == 14 || cmd == 17) && std::string_view(e.what()) == "cache_break_pending") {
+              wake_cache_polls();
+              cache_recall = true;
               try { defer_command(p, tid, encrypted, 0, related_file); code = 0x103; }
               catch (const status_error &limit) { code = limit.status; }
             } else code = status(e.what());
@@ -1875,6 +1878,7 @@ struct client : session_state, std::enable_shared_from_this<client> {
             code = 0xc000000d;
             log("smb", "command_" + std::to_string(cmd), "invalid_json");
           }
+          if (cache_recall) co_await poll_caches_locked();
           if (cmd == 1 && code && code != 0xc0000016 && reauthenticating && !unknown_session) {
             // An authentication failure tears down all old authority, but its
             // error response is still protected with the established keys.
