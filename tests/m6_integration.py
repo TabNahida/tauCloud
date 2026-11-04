@@ -179,7 +179,7 @@ def run(args):
         passed('SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected')
         for dialect in (0x300,0x302,0x311):
             c,s,t=connect(dialect)
-            assert c.dialect==dialect and c.supports_encryption and not c.supports_file_leasing and not c.supports_multi_channel
+            assert c.dialect==dialect and c.supports_encryption and c.supports_file_leasing and not c.supports_multi_channel
             h=create(t,'signed-'+hex(dialect));h.write(b'signed');assert h.read(0,6)==b'signed';h.close()
             h=create(t,'native-options-'+hex(dialect),options=0x400060|0x400|0x20000|0x800000)
             h.write(b'local');assert h.read(0,5)==b'local'
@@ -267,7 +267,9 @@ def run(args):
         lease=SMB2CreateRequestLease();lease['lease_key']=os.urandom(16);lease['lease_state']=7
         durable=SMB2CreateDurableHandleRequestV2();durable['create_guid']=uuid.uuid4()
         h=Open(mt,'ordinary-open');contexts=h.create(ImpersonationLevel.Impersonation,0x13019f,FileAttributes.FILE_ATTRIBUTE_NORMAL,7,3,0x40,create_contexts=[lease,durable],oplock_level=0xff)
-        assert not contexts and h.oplock_level==0;fid=h.file_id;h.close()
+        assert h.oplock_level==0xff and len(contexts)==1
+        assert contexts[0].pack()==lease.pack()  # RWH lease only; no durable response.
+        h.write(b'leased');assert h.read(0,6)==b'leased';fid=h.file_id;h.close()
         reconnect=SMB2CreateDurableHandleReconnectV2();reconnect['file_id']=fid;reconnect['create_guid']=durable['create_guid'].get_value()
         denied(lambda:Open(mt,'ordinary-open').create(ImpersonationLevel.Impersonation,0x13019f,FileAttributes.FILE_ATTRIBUTE_NORMAL,7,1,0x40,create_contexts=[reconnect]),0xc00000bb)
         directory=create(mt,'',access=0x120089,disposition=1,options=1)
@@ -275,7 +277,7 @@ def run(args):
         from smb_blocking_locks import pending
         request=modern.send(notify,ms.session_id,mt.tree_connect_id);pending(request)
         request.cancel();denied(lambda:modern.receive(request),0xc0000120);directory.close()
-        passed('leases and durable handles are not granted; durable reconnect explicitly unsupported; encrypted change notification cancels asynchronously; multichannel absent')
+        passed('RWH lease is granted with an ignored durable request and supports encrypted IO; durable reconnect explicitly unsupported; encrypted change notification cancels asynchronously; multichannel absent')
         # A separate disposable owner keeps login throttling active during the matrix.
         legacy=Connection(uuid.uuid4(),'127.0.0.1',f.smbport,require_signing=True);clients.append(legacy);legacy.connect(dialect=0x210)
         mixed_user=user()

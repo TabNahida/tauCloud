@@ -122,12 +122,32 @@ int main() {
               {"disposition", 4}, {"options", 0x40}}).at("handle").get<std::string>();
         };
         rejects([&] { open(path, ""); }, "cache_break_pending");
-        auto first = poll(path, holder, cookie).at("notification").at("serial");
-        call("cache_sent", path, {{"handle", holder}, {"cookie", cookie}, {"serial", first}});
+        auto state = poll(path, holder, cookie);
+        check(state.at("fence_pending") && state.at("fence_remaining_ms") <= 5000);
+        auto first = state.at("notification").at("serial");
+        state = call("cache_sent", path, {{"handle", holder}, {"cookie", cookie}, {"serial", first}});
+        check(!state.at("fence_pending") && state.at("remaining_ms") > 34000 && state.at("remaining_ms") <= 35000);
+        // A native conflict tightens this outstanding SMB break. Its hard
+        // deadline persists across the subsequent notification and renewal.
+        rejects([&] { native.open("space/chained"); }, "locked");
+        state = poll(path, holder, cookie);
+        auto native_remaining = state.at("fence_remaining_ms").get<int64_t>();
+        check(state.at("fence_pending") && native_remaining > 39000 && native_remaining <= 40000);
         rejects(overwrite, "cache_break_pending");
-        auto state = ack(path, holder, cookie, 3);
+        state = ack(path, holder, cookie, 3);
         auto body = decode_bytes(state.at("notification").at("body").get<std::string>());
         check(get(body, 24, 4) == 3 && get(body, 28, 4) == 1 && get(body, 4, 4) == 1);
+        check(state.at("fence_pending") && state.at("fence_remaining_ms") <= 5000);
+        std::this_thread::sleep_for(std::chrono::milliseconds(60));
+        state = call("cache_sent", path, {{"handle", holder}, {"cookie", cookie},
+            {"serial", state.at("notification").at("serial")}});
+        check(state.at("remaining_ms") > 34000 && state.at("fence_pending"));
+        check(state.at("fence_remaining_ms") <= native_remaining - 50);
+        auto ack_remaining = state.at("remaining_ms").get<int64_t>();
+        std::this_thread::sleep_for(std::chrono::milliseconds(60));
+        state = call("cache_sent", path, {{"handle", holder}, {"cookie", cookie}, {"serial", first}});
+        check(state.at("remaining_ms") <= ack_remaining - 50);
+        check(state.at("fence_remaining_ms") <= native_remaining - 100);
         rejects(overwrite, "cache_break_pending");
         rejects([&] { native.open("space/chained"); }, "locked");
         check(ack(path, holder, cookie, 3).at("status") == 0xc00000d0u);
@@ -139,6 +159,7 @@ int main() {
         rejects(overwrite, "cache_break_pending");
         call("cache_sent", path, {{"handle", holder}, {"cookie", cookie},
             {"serial", state.at("notification").at("serial")}});
+        check(!poll(path, holder, cookie).at("fence_pending"));
         check(native.open("space/chained").read(0, 6) == "cached");
         auto writer = overwrite();
         check(native.open("space/chained").info().at("size") == 0);
@@ -267,6 +288,24 @@ int main() {
       rejects([&] { native.open("space/expiry"); }, "locked");
       ack("expiry", sibling, cookie); close("expiry", sibling);
       std::cout << "PASS expiry fences only that open; a fresh sibling keeps exclusion until acknowledgment\n";
+
+      // A missing send completion has no protocol ACK timer. Renewed file
+      // authority cannot extend the independent five-second delivery bound.
+      h = open("unsent", client); write("unsent", h, "kept");
+      cookie = acquire("unsent", h).at("cookie");
+      rejects([&] { open("unsent", peer); }, "cache_break_pending");
+      auto started = std::chrono::steady_clock::now();
+      while (std::chrono::steady_clock::now() - started < std::chrono::milliseconds(4200)) {
+        auto state = poll("unsent", h, cookie);
+        check(state.at("notification").contains("serial") && state.at("fence_pending"));
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+      }
+      // Last renewal is still fresh when the original delivery timer expires.
+      poll("unsent", h, cookie);
+      std::this_thread::sleep_until(started + std::chrono::milliseconds(5200));
+      rejects([&] { poll("unsent", h, cookie); }, "stale_handle");
+      check(native.open("space/unsent").read(0, 4) == "kept");
+      std::cout << "PASS missing delivery fences the open after five seconds despite continuous authority renewal\n";
 
       h = open("cross-nfs", client); write("cross-nfs", h, "smb");
       auto export_id = random_hex(16);

@@ -126,7 +126,7 @@ int main() {
       check(!rh.data_invalidated());
       rh.sent(notice.serial, 100, 5000);
       check(rh.data_invalidated() && rh.state() == 3 && rh.breaking());
-      check(!rh.expire_read_invalidation(5099));
+      check(!rh.expire_acknowledgment(5099));
       rh.recall(5); // A sharing conflict still needs the outstanding HANDLE ACK.
       check(rh.data_invalidated() && rh.acknowledge(1) == 0xc00000d0);
       check(rh.acknowledge(0) == 0 && !rh.data_invalidated());
@@ -139,15 +139,38 @@ int main() {
       dirty.promote(7, 7); dirty.recall(0);
       dirty.sent(dirty.pending()->serial, 300, 5000);
       check(!dirty.data_invalidated());
-      check(!dirty.expire_read_invalidation(5300) && dirty.state() == 7);
+      check(dirty.expire_acknowledgment(5300) && dirty.state() == 0);
       lease_state expired(lease_request{key, {}, 3, version, 0});
       expired.promote(3, 3); expired.recall(0);
-      check(!expired.expire_read_invalidation(INT64_MAX));
+      check(!expired.expire_acknowledgment(INT64_MAX));
       expired.sent(expired.pending()->serial, 500, 35000);
-      check(!expired.expire_read_invalidation(35499));
-      check(expired.expire_read_invalidation(35500));
+      check(!expired.expire_acknowledgment(35499));
+      check(expired.expire_acknowledgment(35500));
       check(expired.state() == 0 && !expired.unsettled() && expired.acknowledge(0) == 0xc0000001);
     }
+    // Every delivered ACK-requiring transition expires to NONE, including
+    // exclusive WRITE caching and a tightened target queued behind that break.
+    for (unsigned version : {1u, 2u})
+      for (unsigned initial : {3u, 5u, 7u})
+        for (unsigned target : {0u, 1u, 3u, 5u}) {
+          if ((initial & target) == initial) continue;
+          lease_state lease(lease_request{key, {}, initial, version, 100});
+          lease.promote(initial, initial); lease.recall(target);
+          auto event = *lease.pending();
+          check(!lease.expire_acknowledgment(INT64_MAX) && lease.state() == initial);
+          lease.sent(event.serial + 1, 100, 35000);
+          check(!lease.expire_acknowledgment(INT64_MAX));
+          lease.sent(event.serial, 100, 35000);
+          lease.recall(0);
+          check(!lease.expire_acknowledgment(35099));
+          lease.sent(event.serial, 35000, 35000);
+          check(lease.deadline() == 35100);
+          check(lease.expire_acknowledgment(35100));
+          check(lease.state() == 0 && !lease.unsettled() && !lease.pending());
+          check(lease.epoch() == event.epoch && lease.acknowledge(0) == 0xc0000001);
+          check(!lease.expire_acknowledgment(INT64_MAX));
+          check(lease.promote(7, 7));
+        }
     // Exhaust every supported initial/target/ACK combination independently of
     // implementation branches. ACK may only remove bits of the notified target.
     for (unsigned version : {1u, 2u})

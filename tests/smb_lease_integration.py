@@ -323,21 +323,27 @@ def main():
         h.close(); independent.close()
         passed('the same LeaseKey under different client GUIDs identifies independent leases')
 
-        # No ACK: the stale transport must be fenced before a native writer
-        # can modify the file. A fresh client then reads the committed bytes.
+        # Protocol ACK expiry revokes caching while retaining authorized opens.
+        # Native exclusion must wait for that expiry, then admit the writer.
         stale, ss, st, sq = connect()
         key = uuid.uuid4().bytes
         h, ctx = leased(st, 'unacknowledged-lease', key); h.write(b'previous')
         with ThreadPoolExecutor() as pool:
             write = pool.submit(native_write, f.root/'smbdata/unacknowledged-lease', b'current!')
             assert sq.get(timeout=10)[:3] == (key, 7, 0)
+            started = time.monotonic()
+            while time.monotonic() - started < 32:
+                assert not write.done(), 'native exclusion ended before the ACK deadline'
+                stale.echo(sid=ss.session_id, timeout=5); time.sleep(.5)
             assert write.result(timeout=10) == 8
-            end = time.monotonic() + 3
-            while stale.transport.connected and time.monotonic() < end: time.sleep(.02)
-            assert not stale.transport.connected
+            assert stale.transport.connected and h.read(0, 8) == b'current!'
+            denied(lambda: ack(stale, ss, st, key, 0), 0xc0000001)
+            join, ctx = leased(st, 'unacknowledged-lease', key, state=0)
+            response(ctx, key, 0, epoch=2); join.close()
+            h.write(b'ordinary'); h.close(); stale.disconnect()
         fresh = create(ot, 'unacknowledged-lease', disposition=1)
-        assert fresh.read(0, 8) == b'current!'; fresh.close()
-        passed('unacknowledged native recall fences stale lease authority before admitting the native writer')
+        assert fresh.read(0, 8) == b'ordinary'; fresh.close()
+        passed('native recall waits 35 seconds for ACK expiry, revokes caching before admitting the writer, rejects late ACK and preserves ordinary IO on the original open')
         for access in (0x80, 0x20000, 2):
             name = f'lease-rights-{access:x}'
             seed = create(t, name); seed.write(b'initial'); seed.close()
@@ -526,6 +532,45 @@ def main():
         for h in (join, holder, overwrite): h.close()
         owner.disconnect(); peer.disconnect()
         passed('unacknowledged delivered RH invalidation completes to NONE after 35 seconds, lets a pending CREATE recheck sharing, rejects late ACK and preserves authenticated transport and usable opens')
+        # Start all dialects together, keeping real 35-second timers without
+        # multiplying wall time. The competing CREATE uses the SAME transport.
+        waits = []
+        for dialect in (0x210, 0x300, 0x302, 0x311):
+            version = 1 if dialect == 0x210 else 2
+            owner, os, ot, oq = connect(dialect)
+            key = uuid.uuid4().bytes; other_key = uuid.uuid4().bytes
+            name = f'rwh-ack-expiry-{dialect:x}'
+            holder, ctx = leased(ot, name, key, version=version)
+            response(ctx, key, 7, version, 1); holder.write(b'initial')
+            contender, result = leased(ot, name, other_key, version=version, send=False)
+            request, receive = begin(contender, result)
+            assert oq.get(timeout=10) == (key, 7, 3, 0 if version == 1 else 2, 1, False)
+            waits.append((dialect, version, owner, os, ot, oq, key, other_key, name,
+                          holder, contender, request, receive, time.monotonic()))
+        deadline = max(w[-1] for w in waits) + 36
+        while time.monotonic() < deadline:
+            for w in waits:
+                _, _, owner, os, _, _, _, _, _, _, _, request, _, started = w
+                owner.echo(sid=os.session_id, timeout=5)
+                if time.monotonic() - started < 32: pending(request)
+            time.sleep(min(.5, max(0, deadline - time.monotonic())))
+        for w in waits:
+            dialect, version, owner, os, ot, oq, key, other_key, name, holder, contender, request, receive, _ = w
+            response(receive(request), other_key, 3, version, 1)
+            denied(lambda: ack(owner, os, ot, key, 1), 0xc0000001)
+            join, ctx = leased(ot, name, key, state=0, version=version)
+            response(ctx, key, 0, version, 2)
+            # A valid old open remains usable and invalidates the foreign RH
+            # lease. RH data invalidation does not wait for its HANDLE ACK.
+            holder.write(b'updated')
+            assert oq.get(timeout=10) == (other_key, 3, 0, 0 if version == 1 else 2, 1, False)
+            assert contender.read(0, 7) == b'updated'
+            ack(owner, os, ot, other_key, 0)
+            contender.close(); join.close()
+            again, ctx = leased(ot, name, key, version=version)
+            response(ctx, key, 7, version, 3)
+            again.close(); holder.close(); owner.disconnect()
+            passed(f'{dialect:x}: RWH ACK expiry unblocks same-transport CREATE after 35 seconds, rejects late ACK, preserves original IO and permits later RWH reacquisition')
         report['status'] = 'passed'
     except Exception:
         report['error'] = traceback.format_exc(); print(report['error'], flush=True)

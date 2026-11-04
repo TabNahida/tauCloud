@@ -63,6 +63,8 @@ struct file_store::impl {
     smb_detail::lease_state state;
     std::shared_ptr<native_cache_guard> guard;
     int64_t break_until = 0;
+    int64_t delivery_until = 0, native_until = 0;
+    uint64_t delivery_serial = 0;
     lease_cache(std::string owner, const smb_detail::lease_request &request)
         : client(std::move(owner)), state(request) {}
   };

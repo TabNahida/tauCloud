@@ -140,6 +140,8 @@ Selected-profile acceptance: [M7 guide](docs/m7.md), [中文](docs/m7.zh-CN.md),
 
 ## Full SMB/NFS compatibility prerequisite (user decision, 2026-10-31)
 
+Latest file-lease timeout work completes all delivered ACK expirations to NONE after 35 seconds while preserving valid opens, with separate authority/delivery/native fencing deadlines. Local checks pass 42 wire groups, 3,451 state checks, 125 native checks and all 23 M6 groups. The unmodified Samba lease suite improves to **34 passed / 2 failed / 3 skipped**, with `timeout` added to mandatory Actions acceptance; ADS, legacy chained-epoch expectations and directory-related exclusions remain visible ([evidence](docs/evidence/pre-m8/smb-lease-timeout-local.json)). The `0811b01` native Windows gate passes, while its matrix has a pending Windows file-domain failure and an obsolete M6 leasing-disabled assertion, now corrected ([remote snapshot](docs/evidence/pre-m8/smb-lease-0811-remote.json)). Full SMB/NFS remains open.
+
 Native exclusion uses Linux leases / Windows RW oplocks. The adapter and file-domain
 coordinator pass the full GCC/Clang ASan+UBSan/MSVC targeted matrix at `9b32f48`
 ([evidence](docs/evidence/pre-m8/cache-authority-9b-remote.json)). The separate Windows

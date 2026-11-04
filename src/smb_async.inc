@@ -99,11 +99,11 @@ pace::task<void> pump_commands(uint64_t sid) {
         if ((cmd == 5 || cmd == 9 || cmd == 10 || cmd == 14 || cmd == 17) && std::string_view(e.what()) == "cache_break_pending") {
           wake_cache_polls();
           auto current = pending_commands.find(id);
-          // A sharing/namespace operation can wait for the independent RH
-          // HANDLE ACK timer. Bound that wait beyond the protocol deadline;
-          // retries never restart it, and native dirty-cache fencing stays 5s.
+          // A conflicting operation can wait for the lease ACK timer. Bound
+          // that wait beyond its delivery and protocol deadlines; retries
+          // never restart it. Native exclusion has a separate hard bound.
           if (current != pending_commands.end() && !current->second.deadline)
-            current->second.deadline = async_clock() + lease_handle_ack_ms + 5000;
+            current->second.deadline = async_clock() + lease_ack_ms + 5000;
           executing_command = 0;
           continue;
         }

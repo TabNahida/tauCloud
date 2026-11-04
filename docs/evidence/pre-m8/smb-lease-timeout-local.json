@@ -1,0 +1,224 @@
+{
+  "recorded_at": "2026-11-04T18:49:56.120385+00:00",
+  "base_source": "0811b01a7561627cf9fa55e928784be6b517c76c",
+  "status": "42-wire-groups-passed-full-suite-34-pass-2-fail-3-skip",
+  "scope": "Delivered lease ACK expiry completes to NONE and preserves authorized opens; separate delivery, authorization and native exclusion bounds.",
+  "sanitizers": "Linux Clang ASan/UBSan/LSan",
+  "source_sha256": {
+    "include/taucloud/smb_lease.hpp": "da21b8a05abae9d79ad46e925f4a4a5f4607d1d7ac76b09dedbca7368dd7a2b6",
+    "src/smb_lease.cpp": "3e99667eb79e682252cde20523a67c474a13723e858d7d0317444c82d6e2efbd",
+    "src/files.cpp": "f509e209b8f6e5084a1019fc2bcf039449c050ecb2cf670d27e7866efa359b98",
+    "src/file_cache.inc": "ded7f0bec801d22a5b62703cf6fe1267ecdb2165d3e42c0c6b1fafe7f082eaf4",
+    "src/smb_cache.inc": "538138915164825a55c99030bae9eb366a50b66a3f6f0dec8bff4051fb162622",
+    "src/smb_async.inc": "e31aa06299163a0551430c2328806f9993e1dddf9a19d651a983d6649f56aced",
+    "tests/smb_lease_core.cpp": "bd5799b929f9c1f218d4d81168053551f9274e412ac5964d7e6a8943ff19ee6f",
+    "tests/smb_lease_native.cpp": "9bad7ecd7a1d5680daf0b56cb7040b7c0998891efd17b71ad7d31c0fc5b8a280",
+    "tests/smb_lease_integration.py": "df7a983e96b9e32f33c944afd31bfc71e73048c8822b8fc528ed5a08ac31659d",
+    "tests/m6_integration.py": "c529214f0c7e3c06e0403edf63d8fddaf1cc8e39bfc41ee7c66d67919b0d9ad3",
+    ".github/workflows/smb-metadata.yml": "f49cfb9bfada00500aa6d2a18e68f114e6fec1d6aaf3e28f906373620f822bf6"
+  },
+  "core": {
+    "status": "passed",
+    "checks": 3451
+  },
+  "native": {
+    "status": "passed",
+    "checks": 125,
+    "log": "PASS shared native exclusion, own IO, compatible foreign opens, same-key CREATE during break and final-close lifetime\nPASS chained recalls retain native exclusion through both ACKs and exact final notification delivery\nPASS HANDLE recall permits cached close, while same-key sharing conflicts do not bypass access rules\nPASS classic Level II and lease grants retain independent authority over one native guard\nPASS delivered RH invalidation permits SMB/native data operations before ACK while sharing waits and expired authority still fences its open\nPASS rename preserves originating native exclusion and waits for foreign HANDLE ACK; disposition preserves READ until last close\nPASS expiry fences only that open; a fresh sibling keeps exclusion until acknowledgment\nPASS missing delivery fences the open after five seconds despite continuous authority renewal\nPASS NFS reads and writes recall SMB lease authority before accessing shared file data\nPASS R-only invalidation releases native exclusion only after the matching notification is sent\nPASS same-key membership grants no extra file rights, caller authority or revocation exemption\n{\"checks\":125,\"status\":\"passed\"}\n"
+  },
+  "m5": {
+    "status": "passed",
+    "checks": 12583
+  },
+  "reports": {
+    "wire": {
+      "sha256": "f7915ed3cb068ada4efeb62bfba52dc6746f979c6070b889eadcdaaaceb7db8c",
+      "report": {
+        "status": "passed",
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "checks": [
+          "210: v1 shared lease survives renewal, joins during recall, validates client/key/ACK state and coherently breaks RWH to RH to NONE",
+          "300: v2 shared lease survives renewal, joins during recall, validates client/key/ACK state and coherently breaks RWH to RH to NONE",
+          "302: v2 shared lease survives renewal, joins during recall, validates client/key/ACK state and coherently breaks RWH to RH to NONE",
+          "311: v2 shared lease survives renewal, joins during recall, validates client/key/ACK state and coherently breaks RWH to RH to NONE",
+          "210: rename preserves own lease/epoch, waits for foreign HANDLE ACK before publishing path, and disposition/DELETE_ON_CLOSE recall HANDLE while preserving READ until last close",
+          "300: rename preserves own lease/epoch, waits for foreign HANDLE ACK before publishing path, and disposition/DELETE_ON_CLOSE recall HANDLE while preserving READ until last close",
+          "302: rename preserves own lease/epoch, waits for foreign HANDLE ACK before publishing path, and disposition/DELETE_ON_CLOSE recall HANDLE while preserving READ until last close",
+          "311: rename preserves own lease/epoch, waits for foreign HANDLE ACK before publishing path, and disposition/DELETE_ON_CLOSE recall HANDLE while preserving READ until last close",
+          "210: lease notification selects the first available authenticated ClientGuid transport without a member open, excludes unauthenticated/foreign peers and falls back after disconnect",
+          "300: lease notification selects the first available authenticated ClientGuid transport without a member open, excludes unauthenticated/foreign peers and falls back after disconnect",
+          "302: lease notification selects the first available authenticated ClientGuid transport without a member open, excludes unauthenticated/foreign peers and falls back after disconnect",
+          "311: lease notification selects the first available authenticated ClientGuid transport without a member open, excludes unauthenticated/foreign peers and falls back after disconnect",
+          "same-client authenticated transport without an open routes the native recall ACK to the owning connection",
+          "R-only native invalidation delivers a sessionless no-ACK break before releasing exclusion",
+          "global key/name reservation covers NONE leases, rejects another path and is released after final close or failed CREATE",
+          "all eight v1/v2 requested state combinations return legal grants; H/W without READ succeeds with NONE",
+          "an original NONE member renews promoted shared authority after the promoting member closes",
+          "a conflicting lease prevents partial promotion of an existing R lease to RH when RWH was requested",
+          "malformed sizes, unknown state bits and duplicate lease contexts fail; reserved flags are ignored and v2 is ignored on SMB 2.1",
+          "the same LeaseKey under different client GUIDs identifies independent leases",
+          "native recall waits 35 seconds for ACK expiry, revokes caching before admitting the writer, rejects late ACK and preserves ordinary IO on the original open",
+          "metadata-only and write-only opens hold renewable RWH without gaining READ/WRITE rights; foreign leases recall to shared RH",
+          "a pre-existing metadata-only handle shares native identity with a later write-only leased handle without adding data access",
+          "READ_CONTROL, attribute and synchronize-only opens retain native exclusion without a data-cache recall",
+          "read-only-share metadata lease renews and ACKs without obtaining write authority or data access",
+          "210: incompatible sharing recalls only HANDLE (RWH to RW), preserves dirty writes on denial, then a compatible open recalls WRITE (RW to R)",
+          "300: incompatible sharing recalls only HANDLE (RWH to RW), preserves dirty writes on denial, then a compatible open recalls WRITE (RW to R)",
+          "302: incompatible sharing recalls only HANDLE (RWH to RW), preserves dirty writes on denial, then a compatible open recalls WRITE (RW to R)",
+          "311: incompatible sharing recalls only HANDLE (RWH to RW), preserves dirty writes on denial, then a compatible open recalls WRITE (RW to R)",
+          "210: queued overwrite chains RWH to RH to R to NONE, preserves same-key opens and dirty flush, and waits through both ACKs before truncating",
+          "300: queued overwrite chains RWH to RH to R to NONE, preserves same-key opens and dirty flush, and waits through both ACKs before truncating",
+          "302: queued overwrite chains RWH to RH to R to NONE, preserves same-key opens and dirty flush, and waits through both ACKs before truncating",
+          "311: queued overwrite chains RWH to RH to R to NONE, preserves same-key opens and dirty flush, and waits through both ACKs before truncating",
+          "210: delivered RH invalidation allows overwrite/write/EOF/allocation/lock before HANDLE ACK, preserves breaking CREATE state and still waits for incompatible sharing",
+          "300: delivered RH invalidation allows overwrite/write/EOF/allocation/lock before HANDLE ACK, preserves breaking CREATE state and still waits for incompatible sharing",
+          "302: delivered RH invalidation allows overwrite/write/EOF/allocation/lock before HANDLE ACK, preserves breaking CREATE state and still waits for incompatible sharing",
+          "311: delivered RH invalidation allows overwrite/write/EOF/allocation/lock before HANDLE ACK, preserves breaking CREATE state and still waits for incompatible sharing",
+          "unacknowledged delivered RH invalidation completes to NONE after 35 seconds, lets a pending CREATE recheck sharing, rejects late ACK and preserves authenticated transport and usable opens",
+          "210: RWH ACK expiry unblocks same-transport CREATE after 35 seconds, rejects late ACK, preserves original IO and permits later RWH reacquisition",
+          "300: RWH ACK expiry unblocks same-transport CREATE after 35 seconds, rejects late ACK, preserves original IO and permits later RWH reacquisition",
+          "302: RWH ACK expiry unblocks same-transport CREATE after 35 seconds, rejects late ACK, preserves original IO and permits later RWH reacquisition",
+          "311: RWH ACK expiry unblocks same-transport CREATE after 35 seconds, rejects late ACK, preserves original IO and permits later RWH reacquisition"
+        ],
+        "recorded_at": "2026-11-04T18:43:26.578818+00:00"
+      }
+    },
+    "wire_initial_login_failure": {
+      "sha256": "8a6b184b9f3e80fc9e33b2cc212b0e0d6aff73e512f65b705bf47c2604015f74",
+      "report": {
+        "status": "failed",
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "checks": [],
+        "recorded_at": "2026-11-04T18:42:30.339337+00:00",
+        "error": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/tests/smb_lease_integration.py\", line 127, in main\n    guid = uuid.uuid4(); c, s, t, q = connect(dialect, guid)\n                                      ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/tests/smb_lease_integration.py\", line 108, in connect\n    s.connect(); t = TreeConnect(s, r'\\\\127.0.0.1\\smb'); t.connect()\n    ^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/.deps/nfs-venv/lib/python3.12/site-packages/smbprotocol/session.py\", line 303, in connect\n    request = self.connection.send(session_setup, sid=self.session_id, credit_request=64)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/.deps/nfs-venv/lib/python3.12/site-packages/smbprotocol/connection.py\", line 975, in send\n    return self._send(\n           ^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/.deps/nfs-venv/lib/python3.12/site-packages/smbprotocol/connection.py\", line 1299, in _send\n    self._check_worker_running()\n  File \"/media/data1/Project/Network/tauCloud/.deps/nfs-venv/lib/python3.12/site-packages/smbprotocol/connection.py\", line 1187, in _check_worker_running\n    raise SMBConnectionClosed(\"SMB socket was closed, cannot send or receive any more data\")\nsmbprotocol.exceptions.SMBConnectionClosed: SMB socket was closed, cannot send or receive any more data\n",
+        "server_log": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793817750411}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793817750510}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793817750593}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793817750706}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793817750827}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793817750935}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793817751031}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793817751149}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793817751267}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793817751386}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793817751503}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793817751624}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793817751741}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793817751858}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793817751975}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793817752215}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"api\",\"time\":1793817754043}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"nfs\",\"time\":1793817754147}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"smb\",\"time\":1793817754189}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"ftp\",\"time\":1793817754231}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"webdav\",\"time\":1793817754274}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"helper\",\"time\":1793817754316}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"storage_admin\",\"time\":1793817754378}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"updater\",\"time\":1793817754420}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"monitor\",\"time\":1793817754482}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"protocol\",\"time\":1793817754544}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_3\",\"time\":1793817754587}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_2\",\"time\":1793817754629}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_1\",\"time\":1793817754671}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file\",\"time\":1793817754713}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"identity\",\"time\":1793817754755}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"supervisor\",\"time\":1793817754785}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793817754972}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793817755038}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793817755184}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793817755310}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793817755435}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793817755559}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793817755632}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793817755750}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793817755868}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793817755987}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793817756104}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793817756226}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793817756342}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793817756593}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793817756597}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793817756832}\n",
+        "smb_log": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793817751858}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"smb\",\"time\":1793817754189}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793817756597}\n"
+      }
+    },
+    "classic": {
+      "sha256": "5287515138464443ae501b198f82521c02fc4f2bf07453ab9341d1dc8761ff60",
+      "report": {
+        "status": "passed",
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "checks": [
+          "210: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "210: READ_CONTROL-only CREATE recalls classic EXCLUSIVE and does not gain READ_DATA; its stat-open exemption applies only to leases",
+          "210: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "210: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "300: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "300: READ_CONTROL-only CREATE recalls classic EXCLUSIVE and does not gain READ_DATA; its stat-open exemption applies only to leases",
+          "300: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "300: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "302: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "302: READ_CONTROL-only CREATE recalls classic EXCLUSIVE and does not gain READ_DATA; its stat-open exemption applies only to leases",
+          "302: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "302: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "311: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+          "311: READ_CONTROL-only CREATE recalls classic EXCLUSIVE and does not gain READ_DATA; its stat-open exemption applies only to leases",
+          "311: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+          "311: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+          "210: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "300: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "302: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "311: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+          "sharing violations do not recall dirty caches; readonly, directory, delete-on-close and conflicting native opens receive no unsupported cache grant",
+          "a lease-form ACK for a classic oplock is rejected and finishes the recall without leaving native exclusion stuck",
+          "two encrypted sessions on one transport renew independent cache authority and route breaks/ACKs with their own keys; a foreign-session ACK cannot release another open",
+          "native host reads/writes wait for SMB recall; dirty client data flushes before host access and the original handle observes subsequent native writes",
+          "own EXCLUSIVE SET_INFO EOF completes synchronously and preserves its cache without a self-recall",
+          "related cached CREATE/SET_INFO/READ preserves the inherited FileId and completes without an unnecessary self-recall",
+          "NFSv3 READ on an existing handle returns JUKEBOX during native recall; repeated retries leave SMB flush/ACK live and the next read returns current data",
+          "DAV GET returns a retryable response while a cache recall is pending and reads freshly flushed bytes after ACK",
+          "another transport cannot ACK the holder FileId; CLOSE flushes/releases authority and wakes the peer CREATE",
+          "unacknowledged recall fences the holder transport and open while the conflicting client completes after native exclusion releases",
+          "credential revocation closes the cache-bearing transport and releases native exclusion without requiring a client request",
+          "stalled identity RPC cannot hold the cache transport past its authority: independent watchdog closes it before IPC timeout and autonomous worker expiry releases native exclusion"
+        ],
+        "recorded_at": "2026-11-04T18:48:40.860381+00:00"
+      }
+    },
+    "m6": {
+      "sha256": "d848686c5666a4a5369baa7ff28a8c2a8df0bbc54b312db320b73f95eb6a5a54",
+      "report": {
+        "status": "passed",
+        "checks": [
+          "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+          "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+          "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+          "0x300 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x302 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "0x311 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+          "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+          "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+          "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+          "AES-256-CCM/GCM-only offers use 32-byte directional keys, verified encrypted file I/O and same-handle NTLM renewal",
+          "RWH lease is granted with an ignored durable request and supports encrypted IO; durable reconnect explicitly unsupported; encrypted change notification cancels asynchronously; multichannel absent",
+          "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+          "absent encryption context is omitted from reply; no common cipher selects zero; CMAC/GMAC authenticated signed file I/O works without cipher fallback",
+          "cipher-free sessions reject unsigned commands and unnegotiated AES-GCM transforms even with correctly derived keys",
+          "repeated ignored NETNAME/transport/unknown contexts are accepted; missing mandatory preauthentication context returns INVALID_PARAMETER",
+          "unknown signing IDs select CMAC and unknown ciphers select zero; unsupported hash and malformed contexts fail without dialect fallback",
+          "independent AES-128/256 CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+          "AES-256-CCM/GCM reject modified tags, nonces, plaintext lengths, session IDs and ciphertext",
+          "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+          "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+          "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+        ],
+        "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "authentication_provider": "pyspnego NTLM",
+        "large_mib": 1,
+        "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+        "port": 45751,
+        "sanitizers": true
+      }
+    },
+    "samba_timeout": {
+      "sha256": "131860fcedfec598eb3dd1bd73392b76ff8afbf23090936fd27a18299cd08035",
+      "status": "passed",
+      "tests": [
+        {
+          "selector": "smb2.lease.timeout",
+          "status": "passed",
+          "returncode": 0,
+          "counts": {
+            "success": 1,
+            "failure": 0,
+            "error": 0,
+            "skip": 0
+          }
+        }
+      ]
+    },
+    "samba_full": {
+      "sha256": "b6b326b942c0553ba2f4c9fcc2f7686edee58f14c10ed6d1383105b75f77fda4",
+      "status": "failed",
+      "tests": [
+        {
+          "selector": "smb2.lease",
+          "status": "failed",
+          "returncode": 1,
+          "counts": {
+            "success": 34,
+            "failure": 2,
+            "error": 0,
+            "skip": 3
+          }
+        }
+      ]
+    }
+  },
+  "full_samba_log": {
+    "path": "smb-lease-full-timeout.log",
+    "sha256": "e18111c44b38dd2e8f2b0aae7891b80b3c4a3c7b4b9a5c827d5cdc12ae3b9463"
+  },
+  "limitations": [
+    "Full SMB/NFS is incomplete. Full unmodified lease diagnostic retains ADS and legacy chained-epoch failures, and directory/dynamic-share skips.",
+    "First wire run disconnected during initial SESSION_SETUP before any lease case; no cache watchdog event was recorded. Same-source trace-enabled diagnostic passed 42 groups. Root cause is unproven; the original failure is retained.",
+    "Initial local M6 run after correcting capability negotiation exposed a second obsolete assertion requiring the lease CREATE response to be absent. Both assertions now positively validate leasing; final M6 passes all 23 groups.",
+    "Previous 0811b01 classic authority-watchdog failure remains unresolved; this source passes all 32 classic groups in an isolated trace-enabled run.",
+    "Cross-platform acceptance for this source remains pending. The previous 0811b01 MSVC native file-domain failure awaits logs; native Windows redirector passed."
+  ]
+}

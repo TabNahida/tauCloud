@@ -6,7 +6,7 @@
 #include <set>
 
 namespace tc::smb_detail {
-inline constexpr int64_t lease_handle_ack_ms = 35000;
+inline constexpr int64_t lease_ack_ms = 35000;
 // Protocol state shared by every open carrying one (ClientGuid, LeaseKey).
 // This class grants no file authority: the caller must first obtain native
 // exclusion, and keep it until a break is delivered/acknowledged or fenced.
@@ -52,10 +52,12 @@ public:
   // An ACK can overtake the asynchronous send completion on another transport.
   uint32_t acknowledge(unsigned state);
   bool timed_out(int64_t time) const;
-  // A delivered RH -> NONE notification already invalidated all data. Its
-  // HANDLE ACK timeout can complete to NONE without fencing usable opens.
-  bool expire_read_invalidation(int64_t time);
-  // Call only after the associated opens/transports have been fenced/closed.
+  // MS-SMB2 3.3.6.5: a delivered break's ACK timeout completes to NONE.
+  // The caller acknowledges/releases object-store cache authority, preserving
+  // otherwise valid opens. Independent authorization/native deadlines remain.
+  bool expire_acknowledgment(int64_t time);
+  // Reset cache state after fencing/closing its opens, or on protocol ACK
+  // expiry via expire_acknowledgment. The caller releases native exclusion.
   void fence();
   bytes response() const;
   bytes acknowledgment_response() const;

@@ -1,0 +1,332 @@
+{
+  "recorded_at": "2026-11-04T18:48:03.171Z",
+  "source": "0811b01a7561627cf9fa55e928784be6b517c76c",
+  "status": "native-Windows-passed-metadata-and-backend-failures-under-investigation",
+  "runs": [
+    {
+      "run_id": 41888366771,
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41888366771",
+      "jobs": [
+        {
+          "id": 126778820392,
+          "name": "msvc metadata",
+          "status": "in_progress",
+          "conclusion": null,
+          "run_id": 41888366771,
+          "logs_url": null,
+          "steps": [
+            {
+              "name": "Run xmake f -y -c -p windows -a x64 -m release --m0=n --m1=y --toolchain=msvc --sanitizers=n",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 10
+            },
+            {
+              "name": "NFS core and independent SSV cryptographic vectors",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 13
+            },
+            {
+              "name": "SMB shared lease state, wire vectors and break transitions",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 14
+            },
+            {
+              "name": "SMB shared lease native exclusion and file-domain authority",
+              "status": "completed",
+              "conclusion": "failure",
+              "number": 15
+            },
+            {
+              "name": "SMB file lease CREATE, shared recall and cross-connection acknowledgments",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 16
+            },
+            {
+              "name": "Original Samba lease grants, upgrades, recalls and epochs",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 17
+            },
+            {
+              "name": "Full Samba lease diagnostic (known incomplete compatibility)",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 18
+            },
+            {
+              "name": "SMB security archive, deferred timestamps and recovery",
+              "status": "in_progress",
+              "conclusion": null,
+              "number": 35
+            },
+            {
+              "name": "Native Windows security descriptor operations",
+              "status": "pending",
+              "conclusion": null,
+              "number": 41
+            },
+            {
+              "name": "SMB3 dialects and encrypted allocation",
+              "status": "pending",
+              "conclusion": null,
+              "number": 65
+            }
+          ],
+          "completed_steps": 34,
+          "total_steps": 69
+        },
+        {
+          "id": 126778820705,
+          "name": "clang metadata",
+          "status": "in_progress",
+          "conclusion": null,
+          "run_id": 41888366771,
+          "logs_url": null,
+          "steps": [
+            {
+              "name": "NFS core and independent SSV cryptographic vectors",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 13
+            },
+            {
+              "name": "SMB shared lease state, wire vectors and break transitions",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 14
+            },
+            {
+              "name": "SMB shared lease native exclusion and file-domain authority",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 15
+            },
+            {
+              "name": "SMB file lease CREATE, shared recall and cross-connection acknowledgments",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 16
+            },
+            {
+              "name": "Original Samba lease grants, upgrades, recalls and epochs",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 17
+            },
+            {
+              "name": "Full Samba lease diagnostic (known incomplete compatibility)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 18
+            },
+            {
+              "name": "NFSv4.1 reverse RPC, callback sequence replay and lifecycle",
+              "status": "in_progress",
+              "conclusion": null,
+              "number": 22
+            },
+            {
+              "name": "Native Windows security descriptor operations",
+              "status": "pending",
+              "conclusion": null,
+              "number": 41
+            },
+            {
+              "name": "SMB3 dialects and encrypted allocation",
+              "status": "pending",
+              "conclusion": null,
+              "number": 65
+            }
+          ],
+          "completed_steps": 21,
+          "total_steps": 69
+        },
+        {
+          "id": 126778820750,
+          "name": "gcc metadata",
+          "status": "in_progress",
+          "conclusion": null,
+          "run_id": 41888366771,
+          "logs_url": null,
+          "steps": [
+            {
+              "name": "Run xmake f -y -c -p linux -a x86_64 -m release --m0=n --m1=y --toolchain=gcc --sanitizers=n",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 10
+            },
+            {
+              "name": "NFS core and independent SSV cryptographic vectors",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 13
+            },
+            {
+              "name": "SMB shared lease state, wire vectors and break transitions",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 14
+            },
+            {
+              "name": "SMB shared lease native exclusion and file-domain authority",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 15
+            },
+            {
+              "name": "SMB file lease CREATE, shared recall and cross-connection acknowledgments",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 16
+            },
+            {
+              "name": "Original Samba lease grants, upgrades, recalls and epochs",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 17
+            },
+            {
+              "name": "Full Samba lease diagnostic (known incomplete compatibility)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 18
+            },
+            {
+              "name": "NFSv4.1 blocking lock notification and callback replay",
+              "status": "in_progress",
+              "conclusion": null,
+              "number": 25
+            },
+            {
+              "name": "Native Windows security descriptor operations",
+              "status": "pending",
+              "conclusion": null,
+              "number": 41
+            },
+            {
+              "name": "SMB3 dialects and encrypted allocation",
+              "status": "pending",
+              "conclusion": null,
+              "number": 65
+            }
+          ],
+          "completed_steps": 24,
+          "total_steps": 69
+        }
+      ]
+    },
+    {
+      "run_id": 41888366814,
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41888366814",
+      "jobs": [
+        {
+          "id": 126778819709,
+          "name": "native",
+          "status": "completed",
+          "conclusion": "success",
+          "run_id": 41888366814,
+          "logs_url": null,
+          "steps": [
+            {
+              "name": "Run xmake f -y -c -p windows -a x64 -m release --m0=n --m1=y --toolchain=msvc --sanitizers=n",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7
+            },
+            {
+              "name": "Native redirector encrypted IO and security descriptors",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9
+            }
+          ],
+          "completed_steps": 13,
+          "total_steps": 13
+        }
+      ]
+    },
+    {
+      "run_id": 41888367189,
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41888367189",
+      "jobs": [
+        {
+          "id": 126778820478,
+          "name": "linux (clang)",
+          "status": "completed",
+          "conclusion": "failure",
+          "run_id": 41888367189,
+          "logs_url": null,
+          "steps": [
+            {
+              "name": "Run python3 scripts/run_m7.py --compiler clang --mode debug --sanitizers --litmus build/litmus/installed/bin/litmus",
+              "status": "completed",
+              "conclusion": "failure",
+              "number": 10
+            },
+            {
+              "name": "Upstream NFS regular-file/directory profile including lease expiry",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 23
+            }
+          ],
+          "completed_steps": 30,
+          "total_steps": 30
+        },
+        {
+          "id": 126778820981,
+          "name": "linux (gcc)",
+          "status": "in_progress",
+          "conclusion": null,
+          "run_id": 41888367189,
+          "logs_url": null,
+          "steps": [
+            {
+              "name": "Run python3 scripts/run_m7.py --compiler gcc  --litmus build/litmus/installed/bin/litmus",
+              "status": "in_progress",
+              "conclusion": null,
+              "number": 10
+            },
+            {
+              "name": "Upstream NFS regular-file/directory profile including lease expiry",
+              "status": "pending",
+              "conclusion": null,
+              "number": 23
+            }
+          ],
+          "completed_steps": 9,
+          "total_steps": 29
+        },
+        {
+          "id": 126778820988,
+          "name": "windows",
+          "status": "in_progress",
+          "conclusion": null,
+          "run_id": 41888367189,
+          "logs_url": null,
+          "steps": [
+            {
+              "name": "Run python scripts/run_m7.py --compiler msvc",
+              "status": "in_progress",
+              "conclusion": null,
+              "number": 7
+            }
+          ],
+          "completed_steps": 6,
+          "total_steps": 17
+        }
+      ]
+    }
+  ],
+  "findings": [
+    "Windows native redirector job 126778819709 passed encrypted IO and security descriptor operations.",
+    "MSVC file-domain lease test failed; completed logs unavailable while job is running. The corresponding step passed on prior e3ede07.",
+    "Backend Clang job 126778820478 failed tests/m6_integration.py:182 because it still asserted not c.supports_file_leasing. This stale assertion is corrected in the next source.",
+    "Prior e3ede07 MSVC metadata job 126771440403 finished with only the same M6 capability assertion failing; other mandatory steps including file-domain leases and native Windows security passed.",
+    "This is a snapshot, not whole-matrix acceptance. Jobs with no conclusion remain pending."
+  ]
+}

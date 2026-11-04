@@ -5,21 +5,33 @@ static int64_t cache_clock() {
   return std::chrono::duration_cast<std::chrono::milliseconds>(
       std::chrono::steady_clock::now().time_since_epoch()).count();
 }
-static bool cache_native_deadline_safe() {
+static bool cache_native_deadline_safe(bool lease = false) {
 #ifdef __linux__
-  // Leave a margin beyond the five-second recall deadline. Never change the
-  // host's global setting or infer unlimited time from an unknown value.
+  // Lease ACK waits last 35 seconds after delivery. Reserve five seconds for
+  // delivery and another five before kernel-forced release. Classic oplocks
+  // retain their shorter deadline. Never change the host's global setting.
   int64_t seconds = 0;
   std::ifstream input("/proc/sys/fs/lease-break-time");
-  return bool(input >> seconds) && seconds >= 10;
+  return bool(input >> seconds) && seconds >= (lease ? 45 : 10);
 #else
+  (void)lease;
   return true; // Windows RW waits for an explicit native acknowledgement.
 #endif
 }
 void sync_lease_cache(const std::shared_ptr<lease_cache> &group) {
   auto state = group->state.state();
-  if (!group->state.unsettled()) group->break_until = 0;
+  if (auto &pending = group->state.pending(); pending) {
+    if (group->delivery_serial != pending->serial) {
+      group->delivery_serial = pending->serial;
+      group->delivery_until = cache_clock() + 5000;
+    }
+    group->break_until = group->delivery_until;
+  } else {
+    group->delivery_until = 0;
+    group->break_until = group->state.deadline();
+  }
   if ((!state && !group->state.unsettled()) || group->state.data_invalidated()) group->guard.reset();
+  if (!group->guard) group->native_until = 0;
   for (auto &[id, member] : handles) {
     if (member.lease_cache_state != group) continue;
     member.cache = group->guard;
@@ -28,11 +40,18 @@ void sync_lease_cache(const std::shared_ptr<lease_cache> &group) {
     member.cache_break_until = group->break_until;
   }
 }
-void cache_break(opened &h, unsigned level = 0, unsigned lease_target = 0) {
+int64_t lease_fence_deadline(const lease_cache &group) const {
+  auto deadline = group.delivery_until;
+  if (group.native_until && (!deadline || group.native_until < deadline)) deadline = group.native_until;
+  return deadline;
+}
+void cache_break(opened &h, unsigned level = 0, unsigned lease_target = 0, bool native = false) {
   if (h.lease_cache_state) {
     auto group = h.lease_cache_state;
     group->state.recall(lease_target);
-    if (group->state.unsettled() && !group->break_until) group->break_until = cache_clock() + 5000;
+    // A native break can precede several chained SMB notifications. Its hard
+    // exclusion deadline must never restart when another notification is sent.
+    if (native && !group->native_until) group->native_until = cache_clock() + 40000;
     sync_lease_cache(group);
     return;
   }
@@ -50,7 +69,7 @@ bool native_cache_breaks() {
   bool pending = false;
   for (auto &[id, h] : handles) {
     if (!h.cache) continue;
-    if (h.cache->breaking()) { cache_break(h); pending = true; }
+    if (h.cache->breaking()) { cache_break(h, 0, 0, true); pending = true; }
   }
   return pending;
 }
@@ -86,18 +105,21 @@ void maintain_caches() {
           (entry.second.lease_cache_state && entry.second.lease_cache_state->state.unsettled()); });
   if (!any) return;
   auto time = cache_clock();
-  bool native_safe = cache_native_deadline_safe();
+  bool native_safe = cache_native_deadline_safe(), lease_native_safe = cache_native_deadline_safe(true);
   for (auto it = handles.begin(); it != handles.end();) {
     auto &h = it->second;
     auto group = h.lease_cache_state;
-    if (group && group->state.expire_read_invalidation(time)) sync_lease_cache(group);
     if (!h.cache && !(group && group->state.unsettled())) { ++it; continue; }
-    bool lost = (!native_safe && h.cache) || h.cache_authority_until <= time ||
-                (h.cache_break_until && h.cache_break_until <= time);
+    bool lost = (!(group ? lease_native_safe : native_safe) && h.cache) || h.cache_authority_until <= time;
     if (!lost) {
-      try { if (h.cache && h.cache->breaking()) cache_break(h); }
+      try { if (h.cache && h.cache->breaking()) cache_break(h, 0, 0, true); }
       catch (...) { lost = true; }
     }
+    auto hard_deadline = group ? lease_fence_deadline(*group) : h.cache_break_until;
+    lost |= hard_deadline && hard_deadline <= time;
+    // ACK timeout revokes caching, not the authenticated open. Authority loss,
+    // failed delivery and the independent native bound still fence first.
+    if (!lost && group && group->state.expire_acknowledgment(time)) sync_lease_cache(group);
     if (!lost) { ++it; continue; }
     // Fence the complete open before admitting another writer. Merely dropping
     // the native guard would let the old client flush stale cached data later.
@@ -112,11 +134,14 @@ void maintain_caches() {
 json cache_snapshot(const opened &h) const {
   if (h.lease_cache_state) {
     const auto &g = *h.lease_cache_state;
+    auto hard_deadline = lease_fence_deadline(g);
     json value = {{"granted", g.state.state() != 0}, {"cookie", g.cookie},
         {"lease", true}, {"state", g.state.state()}, {"epoch", g.state.epoch()},
         {"context", encode_bytes(g.state.response())},
         {"breaking", g.state.unsettled()}, {"ack_required", g.state.breaking()},
         {"data_invalidated", g.state.data_invalidated()},
+        {"fence_pending", hard_deadline != 0},
+        {"fence_remaining_ms", hard_deadline ? std::max<int64_t>(0, hard_deadline - cache_clock()) : 0},
         {"remaining_ms", g.break_until ? std::max<int64_t>(0, g.break_until - cache_clock()) : 0}};
     if (auto &pending = g.state.pending(); pending)
       value["notification"] = {{"serial", pending->serial},
@@ -137,7 +162,7 @@ void cache_renew(opened &h, const json &grant) {
 json lease_cache_dispatch(const std::string &op, const json &body, const json &grant, opened &h) {
   auto group = h.lease_cache_state;
   require(bool(group) && !h.directory && h.access != 0, "forbidden");
-  if (group->guard && group->guard->breaking()) cache_break(h);
+  if (group->guard && group->guard->breaking()) cache_break(h, 0, 0, true);
   if (op == "smb_cache_acquire") {
     auto requested = body.at("state").get<unsigned>();
     require((requested & ~7u) == 0, "invalid_request");
@@ -169,7 +194,7 @@ json lease_cache_dispatch(const std::string &op, const json &body, const json &g
     }
     // The protocol state may only be promoted after proving native exclusion.
     // Keep all existing capabilities when a later CREATE requests fewer bits.
-    if (available && !group->state.unsettled() && cache_native_deadline_safe()) {
+    if (available && !group->state.unsettled() && cache_native_deadline_safe(true)) {
       if (!guard) guard = h.file.cache_guard(true);
       if (guard) {
         cache_renew(h, grant);
@@ -184,15 +209,10 @@ json lease_cache_dispatch(const std::string &op, const json &body, const json &g
   cache_renew(h, grant);
   if (op == "smb_cache_poll") return cache_snapshot(h);
   if (op == "smb_cache_sent") {
-    // RH invalidation has no outstanding dirty data after delivery, so its
-    // protocol ACK uses the normal 35-second lease timer independently of
-    // the short native-exclusion deadline. Dirty W recalls remain bounded.
+    // Delivery starts the protocol ACK timer for every lease state. Stale
+    // completions cannot restart it or the separate native exclusion bound.
     auto serial = body.at("serial").get<uint64_t>();
-    auto notification = group->state.pending();
-    bool rh = notification && notification->serial == serial &&
-              notification->current == 3 && notification->target == 0;
-    group->state.sent(serial, cache_clock(), rh ? smb_detail::lease_handle_ack_ms : 5000);
-    if (rh && group->state.data_invalidated()) group->break_until = group->state.deadline();
+    group->state.sent(serial, cache_clock(), smb_detail::lease_ack_ms);
     sync_lease_cache(group);
     return cache_snapshot(h);
   }

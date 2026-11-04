@@ -35,9 +35,10 @@ break communicates any additional loss after a valid first acknowledgment.
 R-to-NONE needs no client acknowledgment, but retains unsettled state until the
 notification is actually transmitted. A valid ACK can overtake its asynchronous send completion on another connection.
 A stale or duplicate send completion
-cannot consume another notification or extend its timer. Timeout detection
-does not release native exclusion: the caller must fence the associated
-opens/transports before calling `fence`.
+cannot consume another notification or extend its timer. A delivered break's
+35-second ACK expiry completes the lease to NONE and releases native exclusion,
+preserving otherwise valid opens. Authorization loss and failed notification
+delivery remain independent reasons to fence an open/transport.
 
 `taucloud_smb_lease_tests` checks fixed binary vectors, all supported
 initial/target/acknowledgment combinations, authority monotonicity, delayed
@@ -187,8 +188,8 @@ expiration completes to NONE and preserves usable opens, while a late ACK
 receives STATUS_UNSUCCESSFUL. A real 35-second wire case verifies this, and
 the original Samba `breaking4` now passes. Cache-conflicting commands have a
 fixed 40-second wait budget so they can recheck sharing after that timer;
-retries do not restart it and CANCEL remains effective. Dirty W recalls and undelivered
-notifications retain the existing bounded native-exclusion/fencing behavior.
+retries do not restart it and CANCEL remains effective. The subsequent timeout
+implementation below extends open preservation to dirty W recalls as well.
 The final source passes 30 wire groups, 85 native checks, 3,271 state checks,
 32 classic oplock groups and 12,583 M5 checks locally. The unmodified Samba
 lease suite reports **29 passed, seven failed and three skipped**
@@ -197,7 +198,6 @@ See [MS-FSA RH break processing](https://learn.microsoft.com/en-us/openspecs/win
 and [MS-SMB2 acknowledgment timers](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/0a2c6b57-693a-4a48-a90d-0a48735674e9).
 
 Known remaining work includes delete/recreate/reconnect lifetime,
-other cache timeout paths that preserve usable opens,
 ADS and directory/parent leases.
 Durable handles and multichannel session binding remain separate open gates.
 
@@ -231,7 +231,36 @@ the initial failing full-suite log is retained. Final full-suite acceptance is
 **33 passed, three failed, three skipped**, with 38 independent wire groups.
 See [routing evidence](evidence/pre-m8/smb-lease-connection-local.json). The
 remaining failures are ADS, the legacy chained epoch expectation and dirty-cache
-timeout open preservation. Routing changes still require remote acceptance.
+timeout open preservation at that snapshot. The native Windows redirector gate
+also passes on `0811b01`; its full compiler matrix still has unresolved failures.
+
+All delivered ACK-requiring lease breaks now use the same 35-second protocol
+timer, including RWH-to-RH and native RWH-to-NONE recalls. On expiry the file
+domain completes the state to NONE, releases its guard and preserves ordinary
+access through authenticated opens. Late ACKs return STATUS_UNSUCCESSFUL and
+later CREATEs may reacquire caching after conflicts close. This follows
+[MS-SMB2 ACK expiry](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/a009e3f0-4d5b-48a3-b16e-0f75c8de0812).
+
+Protocol expiry is separate from three fencing bounds: each open's signed
+authority, five seconds to deliver an exact notification, and forty seconds
+from detection of a native break. Neither a chained notification nor a duplicate
+send completion restarts the native bound. Linux grants leases only when the
+host's `lease-break-time` is at least 45 seconds; the service does not change
+that setting. Classic oplock deadlines are unchanged. The frontend watchdog
+uses the independent fencing bounds, allowing a normal ACK timer to complete
+without closing the transport.
+
+Local timeout acceptance passes 42 wire groups, 3,451 state checks, 125 native
+checks, 32 classic oplock groups, 12,583 M5 checks and all 23 M6 groups under
+Clang sanitizers. The full unmodified Samba lease suite is **34 passed, two
+failed, three skipped**; `timeout` is now part of mandatory Linux Actions
+acceptance. M6 now positively verifies file leasing and the lease-only response
+to a combined lease/durable request. The first wire attempt disconnected during
+initial login before reaching any lease case; the passing trace-enabled run
+does not establish its cause. That failure and all upstream failures/skips are
+retained in [timeout evidence](evidence/pre-m8/smb-lease-timeout-local.json).
+Cross-platform acceptance of these changes remains pending; see the previous
+[0811b01 remote snapshot](evidence/pre-m8/smb-lease-0811-remote.json).
 
 The implementation follows Microsoft's [lease object-store rules](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/d8df943d-6ad7-4b30-9f58-96ae90fc6204),
 [per-lease state](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/212eb853-7e50-4608-877e-22d42e0664f3),

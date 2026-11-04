@@ -10,8 +10,9 @@ void clear_cache(opened &h, bool read_break_completed = false) {
 void cache_deadline(opened &h, const json &snapshot) {
   auto remaining = h.grant.at("expires").get<int64_t>() - now();
   h.cache_fence_is_break = false;
-  if (snapshot.at("breaking").get<bool>() && !snapshot.value("data_invalidated", false)) {
-    auto break_remaining = snapshot.at("remaining_ms").get<int64_t>();
+  bool lease = snapshot.value("lease", false);
+  if (lease ? snapshot.at("fence_pending").get<bool>() : snapshot.at("breaking").get<bool>()) {
+    auto break_remaining = snapshot.at(lease ? "fence_remaining_ms" : "remaining_ms").get<int64_t>();
     h.cache_fence_is_break = break_remaining <= remaining;
     remaining = std::min(remaining, break_remaining);
   }

@@ -87,8 +87,8 @@ uint32_t lease_state::acknowledge(unsigned state) {
 bool lease_state::timed_out(int64_t time) const {
   return breaking_ && deadline_ && time >= deadline_;
 }
-bool lease_state::expire_read_invalidation(int64_t time) {
-  if (!data_invalidated() || !timed_out(time)) return false;
+bool lease_state::expire_acknowledgment(int64_t time) {
+  if (!timed_out(time)) return false;
   fence();
   return true;
 }
