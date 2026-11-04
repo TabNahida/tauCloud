@@ -140,12 +140,24 @@ Selected-profile acceptance: [M7 guide](docs/m7.md), [中文](docs/m7.zh-CN.md),
 
 ## Full SMB/NFS compatibility prerequisite (user decision, 2026-10-31)
 
+macOS native SMB remains unstable: the `c243218` backend run passes Linux GCC,
+Clang and Windows jobs plus macOS NFSv3, but macOS SMB fails after an authority
+watchdog disconnect. The replacement transport returns a new FileId while
+replayed writes carry the old one and receive FILE_CLOSED. This recurrence is
+preserved alongside the earlier passing run and requires correction
+([trace evidence](docs/evidence/pre-m8/macos-native-c243-failure.json)).
+
 A private, delegation-bound native reservation channel now bypasses the file
 worker's primary queue. It enforces operation/record/token ownership and retains
 protection through channel EOF and file-worker death. Linux 6.19 tests prove
 ACKs still arrive while the file worker is SIGSTOPed; 927 ASan/UBSan guest checks
 pass. The capability handshake now verifies separate client/server HMAC proofs.
-Publication to the network worker, receipt/reply integration and recovery remain unfinished
+The file service now publishes bound capabilities and mirrors owner-confirmed
+reservation counts, deadlines and terminal states without inferring expiry from
+stale local snapshots. Original recall cutoffs survive IPC delay. This integration
+passes 585 host lifecycle and 991 Linux 6.19 ASan/UBSan guest checks
+([evidence](docs/evidence/pre-m8/nfs-channel-domain-local.json)).
+Network receipt/reply integration and recovery remain unfinished
 ([details](docs/nfs-delegations.md#independent-reservation-capability-channel)).
 
 The independent NFS native owner now acknowledges bounded request reservations:

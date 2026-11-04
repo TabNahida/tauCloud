@@ -506,9 +506,10 @@ delegation. Retrying an outstanding ID returns the existing reservation without
 renewing or consuming capacity, even after a higher ID has arrived. A bounded
 high-water mark rejects completed/replayed older IDs; completed IDs cannot renew
 again. At most 32 IDs are outstanding. New reservations after nominal expiry are
-refused even when another request still holds protection. The local lifetime is
-pinned before IPC and exposes success only after the native ACK. Completion
-imports the ACK before removing local protection; cancellation never renews.
+refused even when another request still holds protection. Local bookkeeping is
+allocated before IPC and exposes success only after the native ACK. The owner
+decides expiry and capacity across every controller. Completion imports the ACK;
+cancellation never renews.
 Explicit DELEGRETURN or confirmed native termination clears outstanding IDs.
 
 [File-domain evidence](evidence/pre-m8/nfs-domain-reservations-local.json) covers
@@ -560,10 +561,34 @@ records 927 ASan/UBSan checks and verifies actual tmpfs/ext4 protection,
 raw-packet operation restrictions,
 capability and token binding, duplicate/capacity rejection, per-channel EOF,
 SIGSTOP of the file worker while another process obtains native ACKs, and bounded
-retention after SIGKILL. The capability currently exists at the native-owner
-layer. File-domain publication, authoritative import of independent reservations,
-network receipt/reply routing and recovery/reclaim still require integration;
-production handout remains disabled.
+retention after SIGKILL. Network receipt/reply routing and recovery/reclaim still
+require integration; production handout remains disabled.
+
+The file service now publishes the capability through its private `channel`
+operation after verifying the signed original grant, cookie, client, actor,
+root, export, filehandle and path scope. Ordinary snapshots do not contain it.
+Export retries return the same capability. Cleanup grants remain valid for this
+coherence-only operation after expiry/revocation; they still cannot authorize IO.
+Legacy local guards refuse channel export.
+
+An owner-backed file-service lifetime is an authoritative mirror: it imports the
+owner's lease deadline, terminal state and total reservation count, including
+tokens created through independent channels. A stale snapshot with no tokens
+cannot authorize local expiry, because a side channel may have reserved work
+since that observation. Completing a side token or losing its channel can extend
+the native lease; the file service imports that extension even after its old
+deadline. Explicit return remains authoritative and invalidates every channel.
+Owner communication loss starts a bounded local recall fence; native descriptor
+release still requires an acknowledgment or confirmed owner death.
+
+Local recalls carry their original absolute monotonic cutoff to the owner. IPC
+delay cannot start a later recall interval; a cutoff already in the past revokes
+before acknowledgment, including when reservations remain outstanding.
+[Integration evidence](evidence/pre-m8/nfs-channel-domain-local.json) records 585
+host lifecycle checks and 991 Linux 6.19 ASan/UBSan guest checks across tmpfs and
+ext4, including independent completion/cancellation/EOF across nominal expiry,
+mixed primary/side tokens, binding rejection, return invalidation and revoked
+data authority.
 
 The native-client handshake regression also runs on hosts without F_SETDELEG:
 a separate test peer proves the server direction or reflects the client proof;

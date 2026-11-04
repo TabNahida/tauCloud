@@ -1,0 +1,162 @@
+{
+  "status": "failed",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41931029963",
+  "source_commit": "c243218fd2d5bc3ef39a44c0c72231838a74a57f",
+  "client_host": "macOS-15.7.9-x86_64-i386-64bit-Mach-O",
+  "profiles": [
+    {
+      "name": "macos-native-smb",
+      "status": "failed",
+      "payload_sha256": null,
+      "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\n    with f.open('wb') as out:out.write(data);out.flush();os.fsync(out.fileno())\n                             ~~~~~~~~~^^^^^^\nOSError: [Errno 9] Bad file descriptor\n"
+    },
+    {
+      "name": "macos-native-nfs3",
+      "status": "passed",
+      "payload_sha256": "08e33aedf25337c87eb15e08c32a58f6f4caa21fe073d00b53014c57f8d148e0",
+      "stderr": null
+    }
+  ],
+  "observations": [
+    "Server logs cache_watchdog_expired with authority before reconnection.",
+    "The original transport completes four WRITE requests successfully before reconnect.",
+    "The replacement transport opens the file with a new FileId; subsequent WRITE requests carry the original FileId and receive STATUS_FILE_CLOSED.",
+    "This is an unresolved macOS SMB stability failure; the earlier 4188fcc pass is preserved, not generalized to this run."
+  ],
+  "log_sha256": {
+    "macos-native.json": "046312890ddcbf2053772592cf6e074dd174f269b6301170c843ecb22ecc66b2",
+    "mac-server.log": "71cdf946de832a286e8b16756bccadda609ce24f251f2090f7e25e19a8e2a363",
+    "mac-smb-metadata.json": "5eff562f9743d3d6e341f1e462eb0b26b638aa14f41eb87384ee00dd04ec5c5d"
+  },
+  "trace_excerpt": [
+    {
+      "direction": "response",
+      "time": 354.783774,
+      "connection": 1,
+      "segments": [
+        {
+          "offset": 0,
+          "size": 80,
+          "command": 9,
+          "flags": 9,
+          "message_id": 88,
+          "next_command": 0,
+          "status": "0x0"
+        }
+      ]
+    },
+    {
+      "direction": "response",
+      "time": 354.944333,
+      "connection": 1,
+      "segments": [
+        {
+          "offset": 0,
+          "size": 80,
+          "command": 9,
+          "flags": 9,
+          "message_id": 89,
+          "next_command": 0,
+          "status": "0x0"
+        }
+      ]
+    },
+    {
+      "direction": "response",
+      "time": 355.297547,
+      "connection": 1,
+      "segments": [
+        {
+          "offset": 0,
+          "size": 80,
+          "command": 9,
+          "flags": 9,
+          "message_id": 90,
+          "next_command": 0,
+          "status": "0x0"
+        }
+      ]
+    },
+    {
+      "direction": "response",
+      "time": 355.671977,
+      "connection": 1,
+      "segments": [
+        {
+          "offset": 0,
+          "size": 80,
+          "command": 9,
+          "flags": 9,
+          "message_id": 91,
+          "next_command": 0,
+          "status": "0x0"
+        }
+      ]
+    },
+    {
+      "direction": "request",
+      "time": 360.012407,
+      "connection": 2,
+      "segments": [
+        {
+          "offset": 0,
+          "size": 184,
+          "command": 5,
+          "flags": 8,
+          "message_id": 4,
+          "next_command": 0
+        }
+      ],
+      "fixture_path": "native-probe\\payload"
+    },
+    {
+      "direction": "response",
+      "time": 360.742406,
+      "connection": 2,
+      "segments": [
+        {
+          "offset": 0,
+          "size": 184,
+          "command": 5,
+          "flags": 9,
+          "message_id": 4,
+          "next_command": 0,
+          "status": "0x0",
+          "file_id": "4c23e826dc206a7d4b5f1b4539ea9cd3"
+        }
+      ]
+    },
+    {
+      "direction": "request",
+      "time": 361.063225,
+      "connection": 2,
+      "segments": [
+        {
+          "offset": 0,
+          "size": 65648,
+          "command": 9,
+          "flags": 8,
+          "message_id": 8,
+          "next_command": 0,
+          "file_id": "0e4fcda0b4c4360af55100ff28f254e7"
+        }
+      ]
+    },
+    {
+      "direction": "response",
+      "time": 362.459046,
+      "connection": 2,
+      "segments": [
+        {
+          "offset": 0,
+          "size": 73,
+          "command": 9,
+          "flags": 9,
+          "message_id": 8,
+          "next_command": 0,
+          "status": "0xc0000128"
+        }
+      ]
+    }
+  ]
+}

@@ -389,6 +389,24 @@ static void owner_suite(const fs::path &base, bool mandatory) {
   owner.release(reserved_id);
   std::cout << "PASS " << base << " OWNER/reservation-capacity-cancellation-and-token-binding\n";
 
+  reserved_id = owner.acquire(reserved_file, 5000, 5000);
+  check(reserved_id != 0, "recall_cutoff_acquire");
+  auto cutoff = monotonic_ms() + 300;
+  owner.reserve(reserved_id);
+  check(owner.recall(reserved_id, cutoff).at("recall_deadline_ms") == cutoff, "recall_cutoff_not_imported");
+  check(owner.recall(reserved_id, cutoff + 1000).at("recall_deadline_ms") == cutoff, "recall_cutoff_extended");
+  std::this_thread::sleep_for(450ms);
+  check(owner.inspect(reserved_id).at("state") == "revoked", "recall_cutoff_pending_not_revoked");
+  owner.release(reserved_id);
+  reserved_id = owner.acquire(reserved_file, 5000, 5000);
+  check(reserved_id != 0, "past_recall_cutoff_acquire");
+  owner.reserve(reserved_id);
+  check(owner.recall(reserved_id, monotonic_ms() - 1).at("state") == "revoked", "past_recall_cutoff_not_revoked");
+  writer = open((base / "owned").c_str(), O_WRONLY | O_NONBLOCK);
+  check(writer >= 0, "past_recall_cutoff_kept_native_guard"); close(writer);
+  owner.release(reserved_id);
+  std::cout << "PASS " << base << " OWNER/original-recall-cutoff-and-delayed-delivery\n";
+
   reserved_id = owner.acquire(reserved_file, 5000, 300);
   check(reserved_id != 0, "reservation_recall_acquire");
   auto recalling = owner.reserve(reserved_id).at("reservation").get<uint64_t>();
@@ -775,6 +793,8 @@ static void file_domain_suite(const fs::path &base) {
       request["grant"]["signature"] = mac(signing, request.at("grant").dump());
     }
     rejected(request, "forbidden");
+    request["op"] = "channel";
+    rejected(request, "forbidden");
   }
   std::this_thread::sleep_for(1200ms);
   d = call("poll", cookie);
@@ -816,6 +836,73 @@ static void file_domain_suite(const fs::path &base) {
   writer = open((base / "root/space/cached").c_str(), O_WRONLY | O_NONBLOCK);
   check(writer >= 0, "domain_cancel_kept_native_guard"); close(writer); call("forget", cookie);
 
+  d = call("acquire", "", 400); check(d.at("granted"), "domain_channel_acquire"); cookie = d.at("cookie");
+  auto capability = call("channel", cookie).at("reservation_capability");
+  check(call("channel", cookie).at("reservation_capability") == capability, "domain_channel_retry_changed_capability");
+  check(!call("poll", cookie).contains("reservation_capability"), "domain_poll_leaked_capability");
+  {
+    native_delegation_reservation_channel direct(capability);
+    auto token = direct.reserve().at("reservation").get<uint64_t>();
+    std::this_thread::sleep_for(600ms); // No file-domain call observes the reservation until after its old lease.
+    d = call("poll", cookie);
+    check(d.at("granted") && d.at("reservations") == 1 && d.at("lease_remaining_ms") == 0,
+        "domain_stale_snapshot_released_independent_reservation");
+    check(nfs("read", fh, {{"offset", 0}, {"count", 4}}).at("data") == encode_bytes("data"),
+        "domain_channel_pending_read");
+    auto confirmed = direct.complete(token, true);
+    d = call("poll", cookie);
+    check(d.at("granted") && d.at("reservations") == 0 &&
+        d.at("lease_expires_ms") == confirmed.at("lease_expires_ms"), "domain_independent_extension_not_imported");
+    token = direct.reserve().at("reservation").get<uint64_t>();
+    check(reservation("reserve", 10000).at("reservations") == 2, "domain_mixed_controller_count");
+    check(reservation("cancel", 10000).at("reservations") == 1, "domain_primary_cancel_discarded_side_token");
+    direct.complete(token, true);
+    check(call("poll", cookie).at("reservations") == 0, "domain_side_completion_not_imported");
+    token = direct.reserve().at("reservation").get<uint64_t>();
+    auto fixed_recall = call("recall", cookie).at("recall_deadline_ms");
+    check(direct.inspect().at("recall_deadline_ms") == fixed_recall, "domain_recall_cutoff_not_forwarded");
+    direct.complete(token, true);
+    d = call("poll", cookie);
+    check(d.at("state") == "recalling" && d.at("recall_deadline_ms") == fixed_recall,
+        "domain_independent_completion_extended_recall");
+    direct.reserve();
+    check(call("return", cookie).at("reservations") == 0, "domain_return_kept_side_reservation");
+    bool disconnected = false;
+    try { direct.inspect(); } catch (const error &) { disconnected = true; }
+    check(disconnected, "domain_return_kept_side_channel");
+  }
+  bool invalidated = false;
+  try { native_delegation_reservation_channel stale_channel(capability); }
+  catch (const error &) { invalidated = true; }
+  check(invalidated, "domain_return_kept_capability"); call("forget", cookie);
+
+  d = call("acquire", "", 400); check(d.at("granted"), "domain_channel_cancel_acquire"); cookie = d.at("cookie");
+  {
+    native_delegation_reservation_channel direct(call("channel", cookie).at("reservation_capability"));
+    auto token = direct.reserve().at("reservation").get<uint64_t>();
+    std::this_thread::sleep_for(600ms);
+    direct.complete(token, false);
+    d = call("poll", cookie);
+    check(!d.at("granted") && d.at("state") == "expired" && d.at("reservations") == 0,
+        "domain_independent_cancel_not_expired");
+  }
+  writer = open((base / "root/space/cached").c_str(), O_WRONLY | O_NONBLOCK);
+  check(writer >= 0, "domain_independent_cancel_kept_native_guard"); close(writer); call("forget", cookie);
+
+  d = call("acquire", "", 400); check(d.at("granted"), "domain_channel_eof_acquire"); cookie = d.at("cookie");
+  auto eof_at = monotonic_ms();
+  {
+    native_delegation_reservation_channel direct(call("channel", cookie).at("reservation_capability"));
+    direct.reserve(); std::this_thread::sleep_for(600ms); eof_at = monotonic_ms();
+  }
+  limit = std::chrono::steady_clock::now() + 1s;
+  do { d = call("poll", cookie); if (d.at("reservations") == 0) break; std::this_thread::sleep_for(5ms); }
+  while (std::chrono::steady_clock::now() < limit);
+  check(d.at("granted") && d.at("reservations") == 0 && d.at("lease_expires_ms").get<int64_t>() >= eof_at + 5000,
+      "domain_independent_eof_extension_not_imported");
+  call("return", cookie); call("forget", cookie);
+  std::cout << "PASS " << base << " FILE-DOMAIN/independent-channel-publication-expiry-completion-EOF-return\n";
+
   d = call("acquire", "", 1000); check(d.at("granted"), "domain_revocation_acquire"); cookie = d.at("cookie");
   reservation("reserve", 1);
   cleanup = control("complete", cookie); cleanup["reservation"] = 1;
@@ -826,6 +913,14 @@ static void file_domain_suite(const fs::path &base) {
   catch (const error &e) { denied_io = std::string_view(e.what()) == "policy_revoked"; }
   check(denied_io, "domain_revoked_cleanup_authorized_data");
   auto deadline = call("poll", cookie).at("recall_deadline_ms");
+  auto revoked_channel_request = cleanup; revoked_channel_request["op"] = "channel";
+  {
+    native_delegation_reservation_channel direct(
+        store->dispatch("nfs_delegation", revoked_channel_request, ctx()).at("reservation_capability"));
+    auto token = direct.reserve().at("reservation").get<uint64_t>();
+    direct.complete(token, true);
+    check(call("poll", cookie).at("recall_deadline_ms") == deadline, "domain_revoked_channel_extended_recall");
+  }
   d = store->dispatch("nfs_delegation", cleanup, ctx());
   check(d.at("granted") && d.at("state") == "recalling" && d.at("reservations") == 0 &&
       d.at("recall_deadline_ms") == deadline, "domain_revoked_completion_changed_recall");

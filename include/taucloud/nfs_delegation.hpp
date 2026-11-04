@@ -13,9 +13,11 @@ private:
   int64_t period_, expires_, recall_until_ = 0;
   state state_ = state::active;
   uint32_t reservations_ = 0;
+  bool external_authority_ = false;
 public:
-  delegation_lifetime(int64_t time, int64_t period, int64_t remaining)
-      : period_(period), expires_(time + std::clamp<int64_t>(remaining, 0, period)) {}
+  delegation_lifetime(int64_t time, int64_t period, int64_t remaining, bool external_authority = false)
+      : period_(period), expires_(time + std::clamp<int64_t>(remaining, 0, period)),
+        external_authority_(external_authority) {}
   state status() const { return state_; }
   bool held() const { return state_ == state::active || state_ == state::recalling; }
   int64_t expires() const { return expires_; }
@@ -53,6 +55,27 @@ public:
       recall_until_ = recall_until_ ? std::min(recall_until_, recall_until) : recall_until;
     }
   }
+  // An independent controller may reserve or complete work after our last
+  // observation. Import its ACKs and never infer native expiry from a stale
+  // local lease/count. Only confirmed owner termination or explicit return
+  // can retire this mirror while its authority remains reachable.
+  void synchronize_owner(int64_t expires, int64_t recall_until, uint32_t reservations) {
+    if (!external_authority_ || !held()) return;
+    expires_ = expires;
+    reservations_ = reservations;
+    constrain(expires, recall_until);
+  }
+  void owner_lost(int64_t time) {
+    if (!external_authority_) return;
+    if (held()) {
+      // The owner conservatively retains unknown independent work at EOF.
+      // Bound our unavailable local fence without extending existing recall.
+      expires_ = std::max(expires_, time + period_);
+      recall(time);
+    }
+    external_authority_ = false;
+    expire(time);
+  }
   // A remote native authority may observe expiry/revocation first. Such an
   // observation can retire local state, never revive or renew it.
   void observe_terminal(state value) {
@@ -60,7 +83,7 @@ public:
       state_ = value;
   }
   void expire(int64_t time) {
-    if (!held()) return;
+    if (!held() || external_authority_) return;
     // A client lease expiring before the recall interval revokes all of that
     // client's state. Later renewals cannot resurrect this delegation.
     if (!reservations_ && time >= expires_ && (!recall_until_ || expires_ < recall_until_)) state_ = state::expired;

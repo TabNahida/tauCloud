@@ -28,7 +28,8 @@ public:
   // and reserves this delegation; it cannot acquire/release guards or do IO.
   json reservation_capability(uint64_t id);
   json complete(uint64_t id, uint64_t reservation, bool renew_lease);
-  void recall(uint64_t id);
+  // Optional original monotonic cutoff prevents IPC delay extending recall.
+  json recall(uint64_t id, int64_t deadline_ms = 0);
   void release(uint64_t id);
   // Diagnostics only; use a pidfd/verified process identity for signaling.
   int64_t process_id() const;

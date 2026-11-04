@@ -86,6 +86,34 @@ int main(int argc, char **argv) {
       check(!capacity.reserve(1002) && capacity.reservations() == 32);
       for (int i = 0; i < 32; ++i) check(capacity.complete(1003, false));
       check(capacity.reserve(1004) && capacity.expires() == 1000 + period);
+      delegation_lifetime mirror(1000, period, 10, true);
+      mirror.expire(1011);
+      check(mirror.held() && mirror.reservations() == 0);
+      mirror.synchronize_owner(1010, 0, 1);
+      check(mirror.held() && mirror.reservations() == 1 && mirror.protected_until() == INT64_MAX);
+      mirror.synchronize_owner(1012 + period, 0, 0);
+      check(mirror.expires() == 1012 + period && mirror.reservations() == 0);
+      mirror.recall(1013);
+      mirror.synchronize_owner(1020 + period, 1020 + period, 1);
+      check(mirror.recall_until() == 1013 + period && mirror.expires() == 1020 + period);
+      mirror.expire(1021 + period);
+      check(mirror.held()); // The authority, not a stale mirror, confirms release.
+      mirror.observe_terminal(state::revoked);
+      mirror.synchronize_owner(1030 + period, 0, 0);
+      check(!mirror.held() && mirror.status() == state::revoked);
+      delegation_lifetime lost(1000, period, 10, true);
+      lost.owner_lost(1011);
+      check(lost.held() && lost.recall_until() == 1011 + period);
+      lost.owner_lost(1012); lost.expire(1010 + period); check(lost.held());
+      lost.expire(1011 + period); check(lost.status() == state::revoked);
+      delegation_lifetime recalled(1000, period, 10, true);
+      recalled.recall(1011); recalled.owner_lost(1012);
+      check(recalled.recall_until() == 1011 + period);
+      recalled.expire(1011 + period); check(recalled.status() == state::revoked);
+      delegation_lifetime returned_mirror(1000, period, 10, true);
+      returned_mirror.returned(1011);
+      returned_mirror.synchronize_owner(1012 + period, 0, 1);
+      check(returned_mirror.status() == state::returned && returned_mirror.reservations() == 0);
     }
     std::cout << "PASS monotonic recall, expiry, return and non-resurrection boundaries\n";
 
@@ -146,6 +174,7 @@ int main(int argc, char **argv) {
     if (d.at("provider") == "local-primitive") {
       auto unsupported = control("reserve", cookie); unsupported["reservation"] = 1;
       rejects([&] { store->dispatch("nfs_delegation", unsupported, ctx()); }, "not_supported");
+      rejects([&] { call("channel", cookie); }, "not_supported");
       auto unchanged = call("poll", cookie);
       check(unchanged.at("reservations") == 0 && unchanged.at("lease_expires_ms") == d.at("lease_expires_ms"));
     }

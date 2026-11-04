@@ -293,7 +293,8 @@ struct native_delegation_owner::impl {
               }
             }
           } else {
-            require(request.id && request.period == 0 && (op == renew || request.remaining == 0), "invalid_request");
+            require(request.id && request.period == 0 &&
+                (op == renew || (op == recall ? request.remaining >= 0 : request.remaining == 0)), "invalid_request");
             auto found = records.find(request.id);
             require(found != records.end(), "stale_handle");
             auto &r = found->second;
@@ -329,7 +330,12 @@ struct native_delegation_owner::impl {
               require(request.remaining > accepted && request.remaining <= accepted + 3600000 &&
                   r.lifetime.renew(accepted, request.remaining - accepted), "stale_handle");
             }
-            else if (op == recall) r.lifetime.recall(clock());
+            else if (op == recall) {
+              r.lifetime.recall(clock());
+              if (request.remaining) r.lifetime.constrain(r.lifetime.expires(), request.remaining);
+              r.lifetime.expire(clock());
+              if (!r.lifetime.held()) { r.guard.reset(); r.file = native_file(); }
+            }
             else if (op == reserve) {
               require(pending < 512 && r.reservations.size() < 32 && next_reservation != UINT64_MAX,
                       "operation_limit");
@@ -535,13 +541,14 @@ json native_delegation_owner::complete(uint64_t id, uint64_t reservation, bool r
   (void)id; (void)reservation; (void)renew_lease; throw error("not_supported");
 #endif
 }
-void native_delegation_owner::recall(uint64_t id) {
+json native_delegation_owner::recall(uint64_t id, int64_t deadline_ms) {
 #ifdef __linux__
+  require(deadline_ms >= 0, "invalid_request");
   std::lock_guard lock(impl_->mutex);
-  impl::packet request; request.op = impl::recall; request.id = id;
-  impl_->exchange(request);
+  impl::packet request; request.op = impl::recall; request.id = id; request.remaining = deadline_ms;
+  return impl::snapshot(impl_->exchange(request));
 #else
-  (void)id; throw error("not_supported");
+  (void)id; (void)deadline_ms; throw error("not_supported");
 #endif
 }
 void native_delegation_owner::release(uint64_t id) {
