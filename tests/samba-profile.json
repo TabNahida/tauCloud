@@ -39,7 +39,17 @@
     "smb2.compound.invalid4",
     "smb2.create.leading-slash",
     "smb2.create.impersonation",
-    "smb2.rename",
+    "smb2.rename.simple",
+    "smb2.rename.simple_modtime",
+    "smb2.rename.simple_nodelete",
+    "smb2.rename.no_sharing",
+    "smb2.rename.no_share_delete_but_delete_access",
+    "smb2.rename.share_delete_no_delete_access",
+    "smb2.rename.no_share_delete_no_delete_access",
+    "smb2.rename.msword",
+    "smb2.rename.rename_dir_openfile",
+    "smb2.rename.rename_dir_bench",
+    "smb2.rename.close-full-information",
     "smb2.compound.invalid2",
     "smb2.session.two_logoff",
     "smb2.session.ntlmssp_bug14932",
@@ -91,6 +101,15 @@
     "smb2.notify.rmdir1",
     "smb2.notify.rmdir2",
     "smb2.notify.rmdir3",
-    "smb2.notify.rmdir4"
+    "smb2.notify.rmdir4",
+    "smb2.notify.invalid-reauth"
+  ],
+  "standard_differences": [
+    {
+      "selector": "smb2.rename.share_delete_and_delete_access",
+      "reason": "Samba 4.19.5 asserts the Windows 11 / Server 2022 and earlier destination-open SHARE_READ|SHARE_WRITE restriction. Current MS-FSA 2.1.5.15.12 uses READ|WRITE|DELETE, so this fixture succeeds rather than returning SHARING_VIOLATION. The full unmodified diagnostic remains recorded as failed, not passed.",
+      "source": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fsa/4e3695bd-7574-4f24-a223-b4679c065b63",
+      "product_note": 185
+    }
   ]
 }

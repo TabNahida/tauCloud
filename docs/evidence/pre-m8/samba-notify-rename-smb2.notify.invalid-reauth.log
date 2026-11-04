@@ -1,0 +1,8 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793772047
+time: 2026-11-04 06:00:47.779984
+test: invalid-reauth
+time: 2026-11-04 06:00:47.780084
+TESTING CHANGE NOTIFY FOLLOWED BY invalid REAUTH
+time: 2026-11-04 06:00:48.010749
+success: invalid-reauth

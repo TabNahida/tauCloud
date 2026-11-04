@@ -1,0 +1,10 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793772045
+time: 2026-11-04 06:00:45.977900
+test: mask-change
+time: 2026-11-04 06:00:45.978013
+TESTING CHANGE NOTIFY WITH MASK CHANGE
+time: 2026-11-04 06:00:46.747016
+failure: mask-change [
+(source4/torture/smb2/notify.c:829) Incorrect status NT_STATUS_DIRECTORY_NOT_EMPTY - should be NT_STATUS_OK
+]

@@ -1,0 +1,10 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793772046
+time: 2026-11-04 06:00:46.847212
+test: rec
+time: 2026-11-04 06:00:46.847309
+TESTING CHANGE NOTIFY WITH RECURSION
+time: 2026-11-04 06:00:47.644216
+failure: rec [
+(source4/torture/smb2/notify.c:634) Incorrect status NT_STATUS_DIRECTORY_NOT_EMPTY - should be NT_STATUS_OK
+]

@@ -66,6 +66,9 @@ def main():
     commands += [[sys.executable, 'tests/smb_notify_integration.py', '--bin', str(binary),
                   '--output', str(output.with_suffix('.smb-notify.json'))]
                  + (['--sanitizers'] if args.sanitizers else [])]
+    commands += [[sys.executable, 'tests/smb_rename_integration.py', '--bin', str(binary),
+                  '--output', str(output.with_suffix('.smb-rename.json'))]
+                 + (['--sanitizers'] if args.sanitizers else [])]
     commands += [[sys.executable, 'tests/smb_reauthentication.py', '--bin', str(binary),
                   '--output', str(output.with_suffix('.smb-reauth.json'))]
                  + (['--sanitizers'] if args.sanitizers else [])]

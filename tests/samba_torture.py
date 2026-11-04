@@ -21,10 +21,14 @@ def main():
                    help='Per-selector runtime; credit stress performs 8191 durable writes')
     p.add_argument('selectors', nargs='*', help='Defaults to the versioned bounded-profile regression selection')
     args = p.parse_args()
+    applicability = []
     if not args.selectors:
-        args.selectors = json.loads(Path(__file__).with_name('samba-profile.json').read_text())['selectors']
+        profile = json.loads(Path(__file__).with_name('samba-profile.json').read_text())
+        args.selectors = profile['selectors']
+        applicability = profile.get('standard_differences', [])
     args.output.parent.mkdir(parents=True, exist_ok=True)
     report = dict(host=platform.platform(), recorded_at=datetime.datetime.now(datetime.timezone.utc).isoformat(), tests=[])
+    report['standard_differences_not_counted_as_passes'] = applicability
     f = Fixture(args.bin, 1024 if args.sanitizers else 512)
     report["memory_limit_mib"] = 1024 if args.sanitizers else 512
     def services():

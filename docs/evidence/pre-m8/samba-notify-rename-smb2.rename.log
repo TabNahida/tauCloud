@@ -1,0 +1,122 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793772048
+time: 2026-11-04 06:00:48.137576
+progress: 12
+test: simple
+time: 2026-11-04 06:00:48.137749
+Creating base directory
+Creating test file
+Renaming test file
+Checking for new filename
+Closing test file
+Cleaning up
+time: 2026-11-04 06:00:48.411810
+success: simple
+test: simple_modtime
+time: 2026-11-04 06:00:48.411822
+Creating test file: file1.txt
+Waitig for 5 secs..
+Creating test file: file2.txt
+Renaming file1.txt --> tmp1.txt
+GetInfo of tmp1.txt
+Check if timestamps are good after rename(file1.txt --> tmp1.txt).
+Renaming file2.txt --> file1.txt
+GetInfo of file1.txt
+Check if timestamps are good after rename(file2.txt --> file1.txt).
+time: 2026-11-04 06:00:53.789921
+success: simple_modtime
+test: simple_nodelete
+time: 2026-11-04 06:00:53.789935
+Creating base directory
+Creating test file
+Renaming test file
+Closing test file
+Cleaning up
+time: 2026-11-04 06:00:54.042159
+success: simple_nodelete
+test: no_sharing
+time: 2026-11-04 06:00:54.042172
+Creating base directory
+Creating test file
+Renaming test file
+Checking for new filename
+Closing test file
+Cleaning up
+time: 2026-11-04 06:00:54.312590
+success: no_sharing
+test: share_delete_and_delete_access
+time: 2026-11-04 06:00:54.312602
+Creating base directory
+Opening parent directory
+Creating test file
+Renaming test file
+Cleaning up
+time: 2026-11-04 06:00:54.604921
+failure: share_delete_and_delete_access [
+(source4/torture/smb2/rename.c:413) Incorrect status NT_STATUS_OK - should be NT_STATUS_SHARING_VIOLATION
+]
+test: no_share_delete_but_delete_access
+time: 2026-11-04 06:00:54.604932
+Creating base directory
+Opening parent directory
+Creating test file
+Renaming test file
+Closing test file
+Closing directory
+Cleaning up
+time: 2026-11-04 06:00:54.890118
+success: no_share_delete_but_delete_access
+test: share_delete_no_delete_access
+time: 2026-11-04 06:00:54.890133
+Creating base directory
+Opening parent directory
+Creating test file
+Renaming test file
+Checking for new filename
+Closing test file
+Closing directory
+Cleaning up
+time: 2026-11-04 06:00:55.194961
+success: share_delete_no_delete_access
+test: no_share_delete_no_delete_access
+time: 2026-11-04 06:00:55.194974
+Creating base directory
+Opening parent directory
+Creating test file
+Renaming test file
+Closing test file
+Closing directory
+Cleaning up
+time: 2026-11-04 06:00:55.466900
+success: no_share_delete_no_delete_access
+test: msword
+time: 2026-11-04 06:00:55.466912
+Creating base directory
+Creating test file
+Opening parent directory
+Renaming test file
+Checking for new filename
+Closing test file
+Closing directory
+Cleaning up
+time: 2026-11-04 06:00:55.763987
+success: msword
+test: rename_dir_openfile
+time: 2026-11-04 06:00:55.764000
+Creating base directory
+Creating test file
+Renaming directory
+Closing directory
+Closing test file
+Cleaning up
+time: 2026-11-04 06:00:56.008765
+success: rename_dir_openfile
+test: rename_dir_bench
+time: 2026-11-04 06:00:56.008777
+rename_dirs_bench returned NT_STATUS_OK
+time: 2026-11-04 06:00:57.234143
+success: rename_dir_bench
+test: close-full-information
+time: 2026-11-04 06:00:57.234149
+time: 2026-11-04 06:01:00.447824
+success: close-full-information

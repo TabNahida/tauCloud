@@ -16,6 +16,8 @@ from smbprotocol.session import Session, SMB2SessionSetupRequest, SMB2SessionSet
 from smbprotocol.tree import TreeConnect
 from m5_integration import Fixture, create, denied, lock
 from m5_wire import authenticate, exchange, header, signed, status
+from smbprotocol.change_notify import SMB2ChangeNotifyRequest
+from smb_blocking_locks import pending
 
 
 def reauthenticate(session, username, password=None, protocol='ntlm', interim=None):
@@ -121,14 +123,23 @@ def main():
         passed('expired authority reports NETWORK_SESSION_EXPIRED and renews the same open after an intervening management login')
 
         for user, password in (('alice', 'WrongPassword-123'), ('bob', f.password)):
-            c, s, t = connect()
+            c, s, t = connect(encrypted=user == 'bob')
             h = create(t, 'failed-renewal', share=0); h.write(b'owner')
+            d = create(t, 'failed-renewal-watch-' + user, options=1)
+            q = SMB2ChangeNotifyRequest(); q['file_id'] = d.file_id
+            q['completion_filter'] = 3; q['output_buffer_length'] = 65536
+            request = c.send(q, s.session_id, t.tree_connect_id); pending(request)
             denied(lambda: reauthenticate(s, 'TAUCLOUD\\' + user, password), 0xc000006d)
+            denied(lambda: c.receive(request, timeout=10), 0x10b)
+            assert request.response['data'].get_value() == struct.pack('<HHI', 9, 0, 0)
+            assert request.response['flags'].get_value() & 2
+            assert request.response['credit_response'].get_value() == 0
+            if not s.encrypt_data: c.verify_signature(request.response, s.session_id, force=True)
             fresh, _, tree = connect()
             h2 = create(tree, 'failed-renewal', share=0, disposition=1)
             assert h2.read(0, 5) == b'owner'
             h2.close(); fresh.disconnect(); c.disconnect(close=False)
-        passed('wrong proof and different-user renewal fail, remove old session authority and release exclusive handles before the error reply')
+        passed('wrong proof and different-user renewal fail, release exclusive handles and complete signed/encrypted watches with NOTIFY_CLEANUP')
 
         c, s, t = connect(); h = create(t, 'revoked-renewal', share=0)
         f.api('smb/credentials', f.admin, dict(username='alice', password=f.password))

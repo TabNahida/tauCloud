@@ -494,7 +494,9 @@ struct client {
       co_await finish_lock(id, 0xc000006d);
     waiting.clear();
     for (const auto &[id, pending] : pending_notifications) waiting.push_back(id);
-    for (auto id : waiting) co_await finish_notify(id, 0xc000006d);
+    // Closing the session's opens completes their watches with cleanup,
+    // independently of the authentication error returned by SESSION_SETUP.
+    for (auto id : waiting) co_await finish_notify(id, 0x10b);
   }
   pace::task<json> operation(opened &h, std::string op, bool writing, json body = json::object()) {
     check(!h.pipe, 0xc00000bb);

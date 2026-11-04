@@ -1,0 +1,161 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793772227
+time: 2026-11-04 06:03:47.754001
+progress: 23
+test: valid-req
+time: 2026-11-04 06:03:47.754106
+TESTING VALIDITY OF CHANGE NOTIFY REQUEST
+time: 2026-11-04 06:03:47.936573
+failure: valid-req [
+(source4/torture/smb2/notify.c:122) wrong value for n.out.num_changes  0x2 should be 0x1
+]
+test: tcon
+time: 2026-11-04 06:03:47.936590
+TESTING SIMPLE CHANGE NOTIFY
+Testing notify mkdir
+Testing notify rmdir
+SIMPLE CHANGE NOTIFY OK
+TESTING WITH SECONDARY TCON
+tid1=1 tid2=2
+Testing notify mkdir
+Testing notify rmdir
+CHANGE NOTIFY WITH TCON OK
+Disconnecting secondary tree
+Testing notify mkdir
+Testing notify rmdir
+CHANGE NOTIFY WITH TDIS OK
+time: 2026-11-04 06:03:48.528682
+success: tcon
+test: dir
+time: 2026-11-04 06:03:48.528696
+TESTING CHANGE NOTIFY ON DIRECTORIES
+Testing notify cancel
+Testing notify mkdir
+Testing notify rmdir
+Testing notify mkdir - rmdir - mkdir - rmdir
+Testing buffered notify on create of 10 files
+Testing notify on unlink for the first file
+and now from the 1st notify
+(3rd notify) this notify will only see the 1st unlink
+Testing if a close() on the dir handle triggers the notify reply
+time: 2026-11-04 06:03:52.975681
+success: dir
+test: mask
+time: 2026-11-04 06:03:52.975693
+TESTING CHANGE NOTIFY COMPLETION FILTERS
+Testing mkdir
+Testing create file
+Testing unlink
+Testing rmdir
+WARNING!: ERROR: nchanges=1 action=3 expectedAction=1 filter=0x00000020
+
+time: 2026-11-04 06:04:25.613699
+failure: mask [
+(source4/torture/smb2/notify.c:1009) Incorrect status NT_STATUS_OK - should be NT_STATUS_CANCELLED
+]
+test: tdis
+time: 2026-11-04 06:04:25.613715
+TESTING CHANGE NOTIFY+CANCEL FOLLOWED BY TREE-DISCONNECT
+time: 2026-11-04 06:04:25.712457
+success: tdis
+test: tdis1
+time: 2026-11-04 06:04:25.712470
+TESTING CHANGE NOTIFY ASYNC FOLLOWED BY TREE-DISCONNECT
+time: 2026-11-04 06:04:25.808288
+success: tdis1
+test: mask-change
+time: 2026-11-04 06:04:25.808307
+TESTING CHANGE NOTIFY WITH MASK CHANGE
+time: 2026-11-04 06:04:26.588564
+failure: mask-change [
+(source4/torture/smb2/notify.c:829) Incorrect status NT_STATUS_DIRECTORY_NOT_EMPTY - should be NT_STATUS_OK
+]
+test: close
+time: 2026-11-04 06:04:26.588583
+TESTING CHANGE NOTIFY FOLLOWED BY ULOGOFF
+time: 2026-11-04 06:04:26.772498
+success: close
+test: logoff
+time: 2026-11-04 06:04:26.772510
+TESTING CHANGE NOTIFY FOLLOWED BY ULOGOFF
+time: 2026-11-04 06:04:26.887906
+success: logoff
+test: session-reconnect
+time: 2026-11-04 06:04:26.887917
+TESTING CHANGE NOTIFY FOLLOWED BY SESSION RECONNECT
+session setup failed: NT_STATUS_USER_SESSION_DELETED
+time: 2026-11-04 06:04:26.977294
+failure: session-reconnect [
+source4/torture/smb2/notify.c:1550: Expression `torture_smb2_session_setup(torture, tree1->session->transport, previous_session_id, torture, &session2)' failed: session setup with previous_session_id failed
+]
+test: invalid-reauth
+time: 2026-11-04 06:04:26.977301
+TESTING CHANGE NOTIFY FOLLOWED BY invalid REAUTH
+time: 2026-11-04 06:04:27.213567
+success: invalid-reauth
+test: tree
+time: 2026-11-04 06:04:27.213581
+TESTING NOTIFY FOR DIFFERENT DEPTHS
+time: 2026-11-04 06:04:28.405679
+failure: tree [
+(source4/torture/smb2/notify.c:2002) Incorrect status NT_STATUS_OBJECT_NAME_INVALID - should be NT_STATUS_OK
+]
+test: basedir
+time: 2026-11-04 06:04:28.405694
+TESTING CHANGE NOTIFY BASEDIR EVENTS
+time: 2026-11-04 06:04:29.062812
+success: basedir
+test: double
+time: 2026-11-04 06:04:29.062825
+TESTING CHANGE NOTIFY TWICE ON ONE DIRECTORY
+time: 2026-11-04 06:04:29.260847
+success: double
+test: file
+time: 2026-11-04 06:04:29.260860
+TESTING CHANGE NOTIFY ON FILES
+Testing if notifies on file handles are invalid (should be)
+time: 2026-11-04 06:04:29.414100
+success: file
+test: tcp
+time: 2026-11-04 06:04:29.414113
+TESTING CHANGE NOTIFY FOLLOWED BY TCP DISCONNECT
+time: 2026-11-04 06:04:29.734616
+success: tcp
+test: rec
+time: 2026-11-04 06:04:29.734636
+TESTING CHANGE NOTIFY WITH RECURSION
+time: 2026-11-04 06:04:30.544798
+failure: rec [
+(source4/torture/smb2/notify.c:634) Incorrect status NT_STATUS_DIRECTORY_NOT_EMPTY - should be NT_STATUS_OK
+]
+test: overflow
+time: 2026-11-04 06:04:30.544813
+TESTING CHANGE NOTIFY EVENT OVERFLOW
+Testing overflowed buffer notify on create of 100 files
+time: 2026-11-04 06:04:43.264476
+success: overflow
+test: rmdir1
+time: 2026-11-04 06:04:43.264489
+TESTING NOTIFY CANCEL FOR DELETED DIR
+time: 2026-11-04 06:04:43.412104
+success: rmdir1
+test: rmdir2
+time: 2026-11-04 06:04:43.412117
+TESTING NOTIFY CANCEL FOR DELETED DIR
+time: 2026-11-04 06:04:43.578265
+success: rmdir2
+test: rmdir3
+time: 2026-11-04 06:04:43.578278
+TESTING NOTIFY CANCEL FOR DELETED DIR
+time: 2026-11-04 06:04:43.731677
+success: rmdir3
+test: rmdir4
+time: 2026-11-04 06:04:43.731689
+TESTING NOTIFY CANCEL FOR DELETED DIR
+time: 2026-11-04 06:04:43.903845
+success: rmdir4
+test: handle-permissions
+time: 2026-11-04 06:04:43.903858
+TESTING CHANGE NOTIFY ON A HANDLE WITHOUT PERMISSIONS
+time: 2026-11-04 06:04:44.059511
+success: handle-permissions

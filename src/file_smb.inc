@@ -832,11 +832,11 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
       auto slash = p.rfind('/');
       return slash == std::string::npos ? std::string() : p.substr(0, slash);
     };
-    for (const auto &[other, x] : handles)
-      if (other != id && x.space == space && x.directory &&
-          (x.path == parent(path) || x.path == parent(to)))
-        require(x.protocol == "smb" && (!smb_categories(x.access) ||
-            (!(x.access & 0x10000) && (x.sharing & 4))), "sharing_violation");
+    // MS-FSA 2.1.5.15.12 opens the destination directory for ADD_FILE or
+    // ADD_SUBDIRECTORY with READ|WRITE|DELETE sharing. A source-directory
+    // open is not that destination open. Older Windows versions omitted
+    // SHARE_DELETE here (product note 185); do not impose that old restriction.
+    smb_sharing(space, parent(to), h.directory ? 4u : 2u, 7);
     if (h.directory)
       for (const auto &[other, x] : handles)
         require(x.space != space || x.path == path || !beneath(x.path, path), "forbidden");
