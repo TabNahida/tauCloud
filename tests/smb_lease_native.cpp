@@ -113,6 +113,39 @@ int main() {
       close(path, b);
       std::cout << "PASS shared native exclusion, own IO, compatible foreign opens, same-key CREATE during break and final-close lifetime\n";
 
+      {
+        const std::string path = "chained";
+        auto holder = open(path, client); write(path, holder, "cached");
+        auto cookie = acquire(path, holder).at("cookie");
+        auto overwrite = [&] {
+          return call("open", path, {{"access", 0x13019f}, {"sharing", 7},
+              {"disposition", 4}, {"options", 0x40}}).at("handle").get<std::string>();
+        };
+        rejects([&] { open(path, ""); }, "cache_break_pending");
+        auto first = poll(path, holder, cookie).at("notification").at("serial");
+        call("cache_sent", path, {{"handle", holder}, {"cookie", cookie}, {"serial", first}});
+        rejects(overwrite, "cache_break_pending");
+        auto state = ack(path, holder, cookie, 3);
+        auto body = decode_bytes(state.at("notification").at("body").get<std::string>());
+        check(get(body, 24, 4) == 3 && get(body, 28, 4) == 1 && get(body, 4, 4) == 1);
+        rejects(overwrite, "cache_break_pending");
+        rejects([&] { native.open("space/chained"); }, "locked");
+        check(ack(path, holder, cookie, 3).at("status") == 0xc00000d0u);
+        state = ack(path, holder, cookie, 1);
+        body = decode_bytes(state.at("notification").at("body").get<std::string>());
+        check(get(body, 24, 4) == 1 && get(body, 28, 4) == 0 && get(body, 4, 4) == 0);
+        rejects(overwrite, "cache_break_pending");
+        call("cache_sent", path, {{"handle", holder}, {"cookie", cookie}, {"serial", first}});
+        rejects(overwrite, "cache_break_pending");
+        call("cache_sent", path, {{"handle", holder}, {"cookie", cookie},
+            {"serial", state.at("notification").at("serial")}});
+        check(native.open("space/chained").read(0, 6) == "cached");
+        auto writer = overwrite();
+        check(native.open("space/chained").info().at("size") == 0);
+        close(path, writer); close(path, holder);
+        std::cout << "PASS chained recalls retain native exclusion through both ACKs and exact final notification delivery\n";
+      }
+
       // A cached close can remove an incompatible sharing reservation.
       auto h = open("sharing", client, 0x13019f, 1);
       cookie = acquire("sharing", h).at("cookie");

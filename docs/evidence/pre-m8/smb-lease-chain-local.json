@@ -1,0 +1,123 @@
+{
+  "recorded_at": "2026-11-04T17:39:02.045816+00:00",
+  "base_source": "7f741bc4a060abfc39e94ef943462835c17e9e80",
+  "status": "targeted-local-passed-full-suite-28-pass-8-fail-3-skip-remote-pending",
+  "scope": "Chained exclusive-to-shared recalls keep final invalidation separate from each notification. Full SMB/NFS remains unfinished.",
+  "sanitizers": "Linux Clang ASan/UBSan/LSan",
+  "source_sha256": {
+    "include/taucloud/smb_lease.hpp": "56eb4b3e3301609f0f5ce35c73baa089d658b5c3fc6d7d0ccac877132a17d348",
+    "src/smb_lease.cpp": "d73a509f8e0c1f8af33628166d509403e9d9f3214381d9353da0259536a2ab7f",
+    "tests/smb_lease_core.cpp": "9da9f97eea96ff49aa516832af007fc96817b970db1c6f5680a45bc5c74e9498",
+    "tests/smb_lease_native.cpp": "4efb8f767f9b05eb5392931dbe7bc2ba38dd0a3c1579f88d14e10537dc4b4991",
+    "tests/smb_lease_integration.py": "7f390da6a8a59550565793788b62a017130e47138406bd3dfa90ef6910e7756a",
+    ".github/workflows/smb-metadata.yml": "2649c8ea5d1c33c1faad1d3f10666cff0af26102ace1dcf94e3c219c64c3a764"
+  },
+  "core": {
+    "smb_lease": 3243,
+    "smb_lease_native": 73,
+    "M5": 12583
+  },
+  "reports": {
+    "taucloud-lease-chain-wire": {
+      "sha256": "fb62ebc65ca3b26f3e7c317b847f7e51d1b60cec1bcd770e6e6515ccb69d9b92",
+      "report": {
+        "status": "passed",
+        "recorded_at": "2026-11-04T17:33:48.940881+00:00",
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "checks": [
+          "210: v1 shared lease survives renewal, joins during recall, validates client/key/ACK state and coherently breaks RWH to RH to NONE",
+          "300: v2 shared lease survives renewal, joins during recall, validates client/key/ACK state and coherently breaks RWH to RH to NONE",
+          "302: v2 shared lease survives renewal, joins during recall, validates client/key/ACK state and coherently breaks RWH to RH to NONE",
+          "311: v2 shared lease survives renewal, joins during recall, validates client/key/ACK state and coherently breaks RWH to RH to NONE",
+          "same-client authenticated transport without an open routes the native recall ACK to the owning connection",
+          "R-only native invalidation delivers an encrypted no-ACK break before releasing exclusion",
+          "global key/name reservation covers NONE leases, rejects another path and is released after final close or failed CREATE",
+          "all eight v1/v2 requested state combinations return legal grants; H/W without READ succeeds with NONE",
+          "an original NONE member renews promoted shared authority after the promoting member closes",
+          "a conflicting lease prevents partial promotion of an existing R lease to RH when RWH was requested",
+          "malformed sizes, unknown state bits and duplicate lease contexts fail; reserved flags are ignored and v2 is ignored on SMB 2.1",
+          "the same LeaseKey under different client GUIDs identifies independent leases",
+          "unacknowledged native recall fences stale lease authority before admitting the native writer",
+          "metadata-only and write-only opens hold renewable RWH without gaining READ/WRITE rights; foreign leases recall to shared RH",
+          "a pre-existing metadata-only handle shares native identity with a later write-only leased handle without adding data access",
+          "READ_CONTROL, attribute and synchronize-only opens retain native exclusion without a data-cache recall",
+          "read-only-share metadata lease renews and ACKs without obtaining write authority or data access",
+          "210: incompatible sharing recalls only HANDLE (RWH to RW), preserves dirty writes on denial, then a compatible open recalls WRITE (RW to R)",
+          "300: incompatible sharing recalls only HANDLE (RWH to RW), preserves dirty writes on denial, then a compatible open recalls WRITE (RW to R)",
+          "302: incompatible sharing recalls only HANDLE (RWH to RW), preserves dirty writes on denial, then a compatible open recalls WRITE (RW to R)",
+          "311: incompatible sharing recalls only HANDLE (RWH to RW), preserves dirty writes on denial, then a compatible open recalls WRITE (RW to R)",
+          "210: queued overwrite chains RWH to RH to R to NONE, preserves same-key opens and dirty flush, and waits through both ACKs before truncating",
+          "300: queued overwrite chains RWH to RH to R to NONE, preserves same-key opens and dirty flush, and waits through both ACKs before truncating",
+          "302: queued overwrite chains RWH to RH to R to NONE, preserves same-key opens and dirty flush, and waits through both ACKs before truncating",
+          "311: queued overwrite chains RWH to RH to R to NONE, preserves same-key opens and dirty flush, and waits through both ACKs before truncating"
+        ]
+      }
+    },
+    "taucloud-lease-chain-samba": {
+      "sha256": "7af28dc48d13b052c6e3f3aeb5625f01cae345d0410f149ebda89100401fc90c",
+      "report": {
+        "status": "failed",
+        "recorded_at": "2026-11-04T17:33:37.938716+00:00",
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "tests": [
+          {
+            "selector": "smb2.lease.breaking3",
+            "status": "passed",
+            "returncode": 0,
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "taucloud-lease-chain-samba-smb2.lease.breaking3.log"
+          },
+          {
+            "selector": "smb2.lease.v2_breaking3",
+            "status": "failed",
+            "returncode": 1,
+            "counts": {
+              "success": 0,
+              "failure": 1,
+              "error": 0,
+              "skip": 0
+            },
+            "log": "taucloud-lease-chain-samba-smb2.lease.v2_breaking3.log"
+          }
+        ]
+      }
+    },
+    "taucloud-lease-chain-full": {
+      "sha256": "840d2f6a54990701398124a3ad935d0577c52a80b4e3e9fb53ebcb724e2d8c40",
+      "report": {
+        "status": "failed",
+        "recorded_at": "2026-11-04T17:35:21.988657+00:00",
+        "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "tests": [
+          {
+            "selector": "smb2.lease",
+            "status": "failed",
+            "returncode": 1,
+            "counts": {
+              "success": 28,
+              "failure": 8,
+              "error": 0,
+              "skip": 3
+            },
+            "log": "taucloud-lease-chain-full-smb2.lease.log"
+          }
+        ]
+      }
+    }
+  },
+  "v2_epoch_difference": {
+    "test": "smb2.lease.v2_breaking3",
+    "status": "failed",
+    "reason": "Original Samba 4.19.5 expects the legacy unchanged epoch on chained notifications; implementation follows current MS-SMB2 3.3.4.7 recommendation to increment each notification. Independent v2 wire and state tests verify increments.",
+    "reference": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/a64e55aa-1152-48e4-8206-edd96444e7f7"
+  },
+  "full_suite_log": {
+    "file": "smb-lease-full-chain.log",
+    "sha256": "1ad5b5c006b3eaaf77f8dcc27ba5f082f464810c9ed69b29d0381eb5fcb32a9c"
+  }
+}

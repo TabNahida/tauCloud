@@ -39,20 +39,21 @@ bool lease_state::promote(unsigned requested, unsigned available) {
   if (version_ == 2) ++epoch_;
   return true;
 }
-void lease_state::start_break() {
-  require(!pending_ && !breaking_ && target_ != state_, "invalid_device_state");
+void lease_state::start_break(unsigned next) {
+  require(!pending_ && !breaking_ && next != state_ && (next & state_) == next,
+          "invalid_device_state");
   auto current = state_;
   breaking_ = current != 1;
-  notified_target_ = target_;
+  notified_target_ = next;
   if (version_ == 2) ++epoch_;
-  pending_ = lease_break{++serial_, current, target_, epoch_, breaking_};
+  pending_ = lease_break{++serial_, current, next, epoch_, breaking_};
   // R -> NONE needs no ACK. Retain the old state/exclusion until sent().
 }
 void lease_state::recall(unsigned target) {
   require(valid_state(target) && target != 7, "invalid_request");
   target_ &= target;
   if (unsettled() || state_ == target_) return;
-  start_break();
+  start_break(target_);
 }
 void lease_state::sent(uint64_t serial, int64_t time, int64_t timeout) {
   require(time >= 0 && timeout > 0 && time <= std::numeric_limits<int64_t>::max() - timeout,
@@ -65,6 +66,7 @@ void lease_state::sent(uint64_t serial, int64_t time, int64_t timeout) {
 uint32_t lease_state::acknowledge(unsigned state) {
   if (!breaking_) return 0xc0000001; // STATUS_UNSUCCESSFUL
   if ((state & ~notified_target_) != 0) return 0xc00000d0; // REQUEST_NOT_ACCEPTED
+  auto previous = state_;
   state_ = state;
   breaking_ = false;
   pending_.reset();
@@ -72,7 +74,14 @@ uint32_t lease_state::acknowledge(unsigned state) {
   target_ &= state;
   // A second conflict may tighten the target while the first ACK is in
   // flight. Complete that ACK and send another break; never silently revoke.
-  if (state_ != target_) start_break();
+  if (state_ != target_) {
+    // Serialize a late data invalidation across an exclusive -> RH ACK:
+    // remove HANDLE with a further ACK, then invalidate READ without one.
+    // Keep the final NONE target separate from this intermediate notification
+    // so retries and stale send completions cannot skip the final invalidation.
+    auto next = (previous & 4) && state_ == 3 && target_ == 0 ? 1u : target_;
+    start_break(next);
+  }
   return 0;
 }
 bool lease_state::timed_out(int64_t time) const {

@@ -1,0 +1,149 @@
+{
+  "source_commit": "ceddb7b3bddb44abb2fcd8c90b22d1cd959b787d",
+  "run_url": "https://github.com/TabNahida/tauCloud/actions/runs/41875535433",
+  "scope": "17-group lease wire acceptance passes on GCC, Clang and MSVC; full Windows job fails native Set-Acl restoration. Root cause unresolved.",
+  "jobs": [
+    {
+      "id": 126733787366,
+      "name": "gcc metadata",
+      "status": "in_progress",
+      "conclusion": null,
+      "lease_steps": [
+        {
+          "name": "Run xmake f -y -c -p linux -a x86_64 -m release --m0=n --m1=y --toolchain=gcc --sanitizers=n",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10
+        },
+        {
+          "name": "SMB shared lease state, wire vectors and break transitions",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14
+        },
+        {
+          "name": "SMB shared lease native exclusion and file-domain authority",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15
+        },
+        {
+          "name": "SMB file lease CREATE, shared recall and cross-connection acknowledgments",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 16
+        },
+        {
+          "name": "Original Samba lease grants, upgrades, recalls and epochs",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 17
+        },
+        {
+          "name": "Full Samba lease diagnostic (known incomplete compatibility)",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 18
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": 126733787695,
+      "name": "msvc metadata",
+      "status": "in_progress",
+      "conclusion": null,
+      "lease_steps": [
+        {
+          "name": "Run xmake f -y -c -p windows -a x64 -m release --m0=n --m1=y --toolchain=msvc --sanitizers=n",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10
+        },
+        {
+          "name": "SMB shared lease state, wire vectors and break transitions",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14
+        },
+        {
+          "name": "SMB shared lease native exclusion and file-domain authority",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15
+        },
+        {
+          "name": "SMB file lease CREATE, shared recall and cross-connection acknowledgments",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 16
+        },
+        {
+          "name": "Original Samba lease grants, upgrades, recalls and epochs",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 17
+        },
+        {
+          "name": "Full Samba lease diagnostic (known incomplete compatibility)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 18
+        }
+      ],
+      "failures": [
+        {
+          "name": "Native Windows security descriptor operations",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 41
+        }
+      ]
+    },
+    {
+      "id": 126733787767,
+      "name": "clang metadata",
+      "status": "in_progress",
+      "conclusion": null,
+      "lease_steps": [
+        {
+          "name": "SMB shared lease state, wire vectors and break transitions",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14
+        },
+        {
+          "name": "SMB shared lease native exclusion and file-domain authority",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15
+        },
+        {
+          "name": "SMB file lease CREATE, shared recall and cross-connection acknowledgments",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 16
+        },
+        {
+          "name": "Original Samba lease grants, upgrades, recalls and epochs",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 17
+        },
+        {
+          "name": "Full Samba lease diagnostic (known incomplete compatibility)",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 18
+        }
+      ],
+      "failures": []
+    }
+  ],
+  "windows_native_security": {
+    "status": "failed",
+    "returncode": 1,
+    "stderr": "\u001b[31;1mSet-Acl: \u001b[0mC:\\Users\\runneradmin\\AppData\\Local\\Temp\\tc3-46aya3cu\\native-smb.ps1:49\u001b[0m\n\u001b[31;1m\u001b[0m\u001b[36;1mLine |\u001b[0m\n\u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m  49 | \u001b[0m     \u001b[36;1mSet-Acl -LiteralPath $path -AclObject $restore\u001b[0m\n\u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m     | \u001b[31;1m     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\u001b[0m\n\u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[31;1m\u001b[31;1m\u001b[36;1m     | \u001b[31;1mMethod failed with unexpected error code 59.\u001b[0m\n",
+    "smb_log": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793813463594}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"smb\",\"time\":1793813465628}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793813468212}\n{\"code\":\"not_found\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813471153}\n{\"code\":\"128\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813471153}\n{\"code\":\"3221225659\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793813471221}\n{\"code\":\"3221225659\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793813471237}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793813471300}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793813472663}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813473504}\n{\"code\":\"1048705\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813473505}\n{\"code\":\"2147483654\",\"event\":\"command_14\",\"role\":\"smb\",\"time\":1793813473883}\n{\"code\":\"privilege_not_held\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813474131}\n{\"code\":\"17694848\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813474131}\n{\"code\":\"privilege_not_held\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813474151}\n{\"code\":\"17694848\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813474151}\n{\"code\":\"forbidden\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813474564}\n{\"code\":\"1180054\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813474564}\n{\"code\":\"privilege_not_held\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813474658}\n{\"code\":\"17694848\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813474659}\n{\"code\":\"privilege_not_held\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813474674}\n{\"code\":\"17694848\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813474674}\n{\"code\":\"cache_break_pending\",\"event\":\"command_5\",\"role\":\"smb\",\"time\":1793813474786}\n{\"code\":\"131200\",\"event\":\"failed_create_access\",\"role\":\"smb\",\"time\":1793813474787}\n"
+  }
+}

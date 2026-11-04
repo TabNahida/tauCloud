@@ -87,15 +87,19 @@ ACKs use ClientGuid/LeaseKey, can arrive through another authenticated connectio
 and reauthorize the owning open before applying the file-domain transition.
 Cross-connection dispatch releases its own gate before waiting on a peer.
 
-Twenty-one independent wire groups pass locally under ASan/UBSan/LSan, including
+Twenty-five independent wire groups pass locally under ASan/UBSan/LSan, including
 four dialects, same-key joins during recall, client isolation, invalid ACKs,
 shared upgrades, native no-ACK invalidation, failed CREATE cleanup and timeout
-fencing. Updated state checks total 3,217; native checks total 62. See
-[current network evidence](evidence/pre-m8/smb-lease-sharing-local.json).
+fencing. Updated state checks total 3,243; native checks total 73. See
+[current network evidence](evidence/pre-m8/smb-lease-chain-local.json).
 The initial 13-group network step passes GCC/Clang/MSVC at `3450ec6`, while
 that run fails a Windows security/oplock regression after eight cases. Its
 root cause remains open ([remote evidence](evidence/pre-m8/smb-lease-wire-3450-remote.json)).
-The later metadata/sharing additions still await remote acceptance.
+The 17-group metadata version passes its wire step on all three platforms at
+`ceddb7b`; its Windows native redirector test fails while restoring the original
+DACL with Set-Acl (error 59), with the root cause still unresolved
+([remote evidence](evidence/pre-m8/smb-lease-metadata-ced-remote.json)).
+Sharing/chained-recall additions still await remote acceptance.
 
 Metadata-only and write-only opens can hold native-backed RWH without gaining
 READ_DATA or WRITE_DATA. Renewal and ACK use the open's actual authority,
@@ -133,7 +137,23 @@ three skipped. No test was edited. The final source is also checked with a
 strict eight-case selected regression, with all eight passing; five additional
 metadata/mixed-cache cases now pass and join the strict Actions selection; the full suite remains a separately labelled
 non-gating diagnostic in Actions, with its failure reports retained.
-Known remaining work includes sharing and chained recalls, notification connection selection,
+Queued overwrites during an exclusive-to-RH break now produce RH-to-R with an
+ACK, followed by R-to-NONE without one. Same-key CREATE remains live during
+each phase; invalid ACKs and stale delivery completions do not advance the
+state. Native exclusion remains held until the final notification is sent.
+Four-dialect network tests verify that the original open and overwrite stay
+pending through the intermediate ACK and that truncation occurs afterwards.
+The original Samba `breaking3` case passes; the full unmodified suite now
+reports **28 passed, eight failed and three skipped**
+([evidence](evidence/pre-m8/smb-lease-chain-local.json)). Samba 4.19.5 `v2_breaking3` still
+expects unchanged epochs for chained notifications; its failure is retained.
+The implementation increments v2 epochs on each notification following the
+current MS-SMB2 3.3.4.7 recommendation. Microsoft's
+[product-behavior note 249](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/a64e55aa-1152-48e4-8206-edd96444e7f7)
+documents the older Windows exception. The independent v2 tests check the
+incrementing behavior; the original test is neither changed nor counted as passed.
+
+Known remaining work includes nonblocking RH data invalidation, notification connection selection,
 rename/delete/recreate lifetime, timeout behavior that preserves usable opens,
 ADS and directory/parent leases.
 Durable handles and multichannel session binding remain separate open gates.

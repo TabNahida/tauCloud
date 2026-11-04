@@ -19,7 +19,7 @@ from smbprotocol.tree import TreeConnect
 from smbprotocol.open import Open
 from smbprotocol.create_contexts import SMB2CreateContextRequest
 from smbprotocol.structure import Structure, IntField, BytesField
-from m5_integration import Fixture, create, denied
+from m5_integration import Fixture, create, denied, query
 from smb_blocking_locks import pending
 from smb_oplock_integration import native_read, native_write
 
@@ -324,6 +324,42 @@ def main():
             assert contender.read(0, 10) == b'newer data'
             holder.close(); contender.close(); owner.disconnect(); contender_c.disconnect()
             passed(f'{dialect:x}: incompatible sharing recalls only HANDLE (RWH to RW), preserves dirty writes on denial, then a compatible open recalls WRITE (RW to R)')
+        for dialect in (0x210, 0x300, 0x302, 0x311):
+            version = 1 if dialect == 0x210 else 2
+            owner, os, ot, oq = connect(dialect)
+            peer, ps, pt, _ = connect(dialect)
+            key = uuid.uuid4().bytes; name = f'chained-recall-{dialect:x}'
+            holder, ctx = leased(ot, name, key, version=version, epoch=10)
+            response(ctx, key, 7, version, 11); holder.write(b'dirty data')
+            reader = Open(pt, name)
+            result = reader.create(2, 0x13019f, 0x80, 7, 1, 0x40, send=False)
+            read_request, read_receive = begin(reader, result)
+            assert oq.get(timeout=10) == (key, 7, 3, 0 if version == 1 else 12, 1, os.encrypt_data)
+            overwrite = Open(pt, name)
+            result = overwrite.create(2, 0x13019f, 0x80, 7, 4, 0x40, send=False)
+            write_request, write_receive = begin(overwrite, result)
+            join, ctx = leased(ot, name, key, version=version)
+            response(ctx, key, 7, version, 12, breaking=True); join.close()
+            assert oq.empty()
+            holder.write(b'flushed!!!'); holder.flush()
+            ack(owner, os, ot, key, 3)
+            assert oq.get(timeout=10) == (key, 3, 1, 0 if version == 1 else 13, 1, os.encrypt_data)
+            join, ctx = leased(ot, name, key, version=version)
+            response(ctx, key, 3, version, 13, breaking=True); join.close()
+            # The original open and overwrite remain pending through the
+            # second ACK; their native operations must not race cached reads.
+            pending(read_request); pending(write_request)
+            assert holder.read(0, 10) == b'flushed!!!'
+            denied(lambda: ack(owner, os, ot, key, 3), 0xc00000d0)
+            ack(owner, os, ot, key, 1)
+            assert oq.get(timeout=10) == (key, 1, 0, 0 if version == 1 else 14, 0, os.encrypt_data)
+            read_receive(read_request); write_receive(write_request)
+            assert struct.unpack_from('<Q', query(holder, 5), 8)[0] == 0
+            overwrite.write(b'after'); assert holder.read(0, 5) == b'after'
+            assert oq.empty()
+            for h in (reader, overwrite, holder): h.close()
+            owner.disconnect(); peer.disconnect()
+            passed(f'{dialect:x}: queued overwrite chains RWH to RH to R to NONE, preserves same-key opens and dirty flush, and waits through both ACKs before truncating')
         report['status'] = 'passed'
     except Exception:
         report['error'] = traceback.format_exc(); print(report['error'], flush=True)

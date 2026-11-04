@@ -91,6 +91,32 @@ int main() {
       racing.sent(last.serial, 102, 5000);
       check(racing.state() == 0 && !racing.unsettled());
     }
+    for (unsigned version : {1u, 2u}) {
+      lease_state chained(lease_request{key, {}, 7, version, 20});
+      chained.promote(7, 7); chained.recall(3);
+      auto first = *chained.pending();
+      chained.sent(first.serial, 100, 5000);
+      chained.recall(0); chained.recall(3);
+      check(!chained.pending() && chained.state() == 7);
+      check(chained.acknowledge(3) == 0);
+      auto second = *chained.pending();
+      check(second.current == 3 && second.target == 1 && second.acknowledgment);
+      check(second.epoch == (version == 2 ? 23 : 0));
+      check(get(chained.response(), 16, 4) == 3 && get(chained.response(), 20, 4) == 2);
+      chained.sent(first.serial, 101, 5000);
+      check(chained.pending()->serial == second.serial && chained.deadline() == 0);
+      chained.sent(second.serial, 102, 5000);
+      check(chained.acknowledge(3) == 0xc00000d0 && chained.deadline() == 5102);
+      check(chained.acknowledge(1) == 0);
+      auto final = *chained.pending();
+      check(final.current == 1 && final.target == 0 && !final.acknowledgment);
+      check(final.epoch == (version == 2 ? 24 : 0));
+      check(get(chained.acknowledgment_response(), 24, 4) == 1);
+      chained.sent(second.serial, 103, 5000);
+      check(chained.state() == 1 && chained.pending()->serial == final.serial);
+      chained.sent(final.serial, 104, 5000);
+      check(chained.state() == 0 && !chained.unsettled());
+    }
     // Exhaust every supported initial/target/ACK combination independently of
     // implementation branches. ACK may only remove bits of the notified target.
     for (unsigned version : {1u, 2u})

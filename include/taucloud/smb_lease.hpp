@@ -58,7 +58,7 @@ private:
   uint64_t serial_ = 0;
   int64_t deadline_ = 0;
   std::optional<lease_break> pending_;
-  void start_break();
+  void start_break(unsigned next);
 };
 // The integrating service must serialize all registry/state access. Names are canonical,
 // namespace-qualified identities, never just the basename of a wire path.
