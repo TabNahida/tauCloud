@@ -91,15 +91,19 @@ int64_t epoch(sqlite3 *db) {
   q.row();
   return q.integer(0);
 }
-std::string nfs_user(sqlite3 *db, const json &e, const json &cred) {
+std::string nfs_user(sqlite3 *db, const json &e, const json &cred, bool discovery = false) {
   require(e.at("enabled").get<bool>(), "forbidden");
   if (cred.value("auth", "") == "rpcsec-gss") {
-    require(e.at("trust") == "rpcsec-gss", "forbidden");
+    if (e.at("trust") != "rpcsec-gss") {
+      require(discovery, "wrong_security");
+      require(exists_user(db, e.at("anonymous")), "forbidden");
+      return e.at("anonymous");
+    }
     auto service = cred.at("service").get<uint32_t>();
     require(service >= 1 && service <= 3, "forbidden");
     const char *names[] = {"", "krb5", "krb5i", "krb5p"};
     const auto &allowed = e.at("security");
-    require(std::find(allowed.begin(), allowed.end(), names[service]) != allowed.end(), "wrong_security");
+    require(discovery || std::find(allowed.begin(), allowed.end(), names[service]) != allowed.end(), "wrong_security");
     auto principal = cred.at("principal").get<std::string>();
     require(e.at("principals").contains(principal), "forbidden");
     const auto &mapping = e.at("principals").at(principal);
@@ -108,7 +112,7 @@ std::string nfs_user(sqlite3 *db, const json &e, const json &cred) {
     require(!user.empty() && !group.empty() && exists_user(db, user) && member(db, user, group), "forbidden");
     return user;
   }
-  require(e.at("trust") == "loopback-auth-sys", "wrong_security");
+  require(discovery || e.at("trust") == "loopback-auth-sys", "wrong_security");
   auto uid = cred.at("uid").get<uint32_t>(), gid = cred.at("gid").get<uint32_t>();
   require(cred.at("groups").is_array() && cred.at("groups").size() <= 16, "forbidden");
   std::string user;
@@ -195,13 +199,15 @@ json policy_dispatch(sqlite3 *db, const config &c, const std::string &operation,
   }
   json who;
   json nfs_export;
+  bool discovery = operation == "nfs_authorize" && body.value("security_discovery", false);
+  require(!discovery || !body.value("write", false), "forbidden");
   if (operation == "nfs_authorize") {
     require(ctx.caller == "nfs" && body.value("peer", "") == "127.0.0.1", "forbidden");
     for (const auto &e : records(db, "nfs-exports"))
       if (e.at("id") == body.value("export", "") || e.at("uuid") == body.value("uuid", ""))
         nfs_export = e;
     require(!nfs_export.is_null(), "forbidden");
-    auto user = nfs_user(db, nfs_export, body.at("credential"));
+    auto user = nfs_user(db, nfs_export, body.at("credential"), discovery);
     who = {{"username", user}, {"role", "member"}, {"scope", "files"}, {"expires", now()+2000}};
   } else
     who = subject(db, body);
@@ -269,6 +275,7 @@ json policy_dispatch(sqlite3 *db, const config &c, const std::string &operation,
         {"epoch", epoch(db)}, {"expires", std::min<int64_t>(now() + 2000, who.at("expires"))},
         {"protocol", profile}};
     grant["access_based_enumeration"] = access_based;
+    if (discovery) grant["security_discovery"] = true;
     grant["groups"] = json::array();
     statement memberships(db,
                           "SELECT groupname FROM memberships WHERE username=? ORDER BY groupname");
@@ -278,7 +285,14 @@ json policy_dispatch(sqlite3 *db, const config &c, const std::string &operation,
     if (!nfs_export.is_null()) {
       grant["export"] = nfs_export;
       const auto &credential = body.at("credential");
-      if (credential.value("auth", "") == "rpcsec-gss") {
+      if (credential.value("auth", "") == "rpcsec-gss" && nfs_export.at("trust") != "rpcsec-gss") {
+        // An authenticated principal without a mapping on an AUTH_SYS export
+        // gets only the configured anonymous identity for security discovery.
+        require(discovery, "forbidden");
+        grant["nfs_uid"] = 65534;
+        grant["nfs_gid"] = 65534;
+        grant["groups"] = json::array();
+      } else if (credential.value("auth", "") == "rpcsec-gss") {
         const auto &mapping = nfs_export.at("principals").at(credential.at("principal").get<std::string>());
         grant["nfs_uid"] = mapping.at("uid");
         grant["nfs_gid"] = mapping.at("gid");

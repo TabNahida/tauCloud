@@ -27,6 +27,7 @@ on:
       - 'tests/m6_integration.py'
       - 'tests/m2_core.cpp'
       - 'tests/m5_core.cpp'
+      - 'tests/m7_core.cpp'
       - 'src/nfs_protocol.cpp'
       - 'src/nfs.cpp'
       - 'src/nfs_gss.inc'
@@ -97,6 +98,8 @@ jobs:
         run: python tests/smb_allocation_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/allocation.json
       - name: NFS attributes and native allocation
         run: python tests/nfs_attributes_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/nfs-attributes.json
+      - name: NFS file authority and security discovery isolation
+        run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_m7_tests${{ matrix.suffix }}
       - name: NFSv4 ACLs, mode and cross-protocol access
         run: python tests/nfs_acl_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/nfs-acl.json
       - name: NFS special modes and shared namespace permissions

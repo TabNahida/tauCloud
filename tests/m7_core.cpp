@@ -132,7 +132,7 @@ int main() {
     auto key = read_json(cfg.state / "ipc-keys.json").at("identity").get<std::string>();
     auto export_id = random_hex(16);
     auto call = [&](std::string op, std::string handle, json b = json::object(),
-                    std::string id = "") {
+                    std::string id = "", bool discovery = false) {
       json g = {
           {"actor", "alice"},
           {"root", storage},
@@ -148,6 +148,7 @@ int main() {
           {"groups", json::array({"unix"})},
           {"export",
            {{"uuid", export_id}, {"uids", {{"1000", "alice"}}}, {"gids", {{"1000", "unix"}}}}}};
+      if (discovery) { g["security_discovery"] = true; g["write"] = false; }
       g["signature"] = mac(key, g.dump());
       b["grant"] = g;
       b["op"] = op;
@@ -157,6 +158,12 @@ int main() {
     };
     auto dir = call("root", "").at("handle").get<std::string>();
     auto file = call("create", dir, {{"name", "data"}}).at("handle").get<std::string>();
+    auto discovery = call("security_stat", file, json::object(), "", true);
+    ok(discovery == json{{"handle", file}, {"directory", false}});
+    ok(call("security_lookup", dir, {{"name", "data"}}, "", true) == discovery);
+    for (const auto *operation : {"stat", "read", "write", "security_read", "create", "setattr"})
+      rejected([&] { call(operation, file, json::object(), "", true); }, "grant_denied");
+    rejected([&] { call("security_stat", file); }, "grant_denied");
     auto request = random_hex(16);
     json write = {{"offset", 0}, {"data", encode_bytes("hello")}};
     auto result = call("write", file, write, request);

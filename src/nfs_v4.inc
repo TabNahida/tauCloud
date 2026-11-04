@@ -1035,6 +1035,21 @@ std::string v4(const identity &who, reader &r) {
           check(!current_state.empty(), 10025);
           a["state"] = current_state;
         }
+        auto put_handle = [&](const std::string &handle) {
+          check(handle == pseudo || decode_bytes(handle).size() == 50, 10001);
+          size_t next = index + 1;
+          while (next < ops.size() && ops[next].at("op") == 32) ++next; // SAVEFH is transparent.
+          auto following = next == ops.size() ? 0u : ops[next].at("op").get<unsigned>();
+          bool discovery = !following || following == 22 || following == 23 || following == 24 ||
+              following == 31 || following == 15 || following == 16 || following == 33 || following == 52 ||
+              (following == 18 && ops[next].value("claim", 0u) == 0);
+          if (handle != pseudo) {
+            if (discovery) file(who, handle, "stat", json::object(), "", "", true);
+            else meta4(who, handle);
+          }
+          current = handle;
+          current_state.clear();
+        };
         if (op == 40) {
           auto flavors = a.at("callback_flavors").get<std::vector<uint32_t>>();
           check(std::find(flavors.begin(), flavors.end(), 6u) == flavors.end(), 2);
@@ -1044,23 +1059,20 @@ std::string v4(const identity &who, reader &r) {
         } else if (op == 54) {
           check(false, 22); // SET_SSV is invalid for the negotiated SP4_NONE.
         } else if (op == 24 || op == 23) {
-          current = pseudo;
-          current_state.clear();
+          put_handle(pseudo);
         } else if (op == 22) {
-          current = a.at("handle");
-          check(current == pseudo || decode_bytes(current).size() == 50, 10001);
-          current_state.clear();
-          meta4(who, current);
+          put_handle(a.at("handle"));
         } else if (op == 10) {
           meta4(who, current);
           body.opaque(decode_bytes(current));
         } else if (op == 32) {
-          meta4(who, current);
+          check(!current.empty(), 10020);
+          if (current != pseudo) file(who, current, "stat", json::object(), "", "", true);
           saved = current;
           saved_state = current_state;
         } else if (op == 31) {
           check(!saved.empty(), 10030);
-          current = saved;
+          put_handle(saved);
           current_state = saved_state;
         } else if (op == 15) {
           check(!current.empty(), 10020);
@@ -1074,9 +1086,9 @@ std::string v4(const identity &who, reader &r) {
         } else if (op == 16) {
           check(!current.empty(), 10020);
           check(current != pseudo, 2);
-          check(meta4(who, current).at("directory"), 20);
-          auto m = file(who, current, "parent");
+          auto m = file(who, current, "parent", json::object(), "", "", true);
           current = m.value("export_root", false) ? pseudo : m.at("handle").get<std::string>();
+          if (current != pseudo) meta4(who, current);
           current_state.clear();
         } else if (op == 17 || op == 37) {
           auto bits = a.at("attrs").at("bits").get<std::vector<uint32_t>>();
@@ -1122,22 +1134,24 @@ std::string v4(const identity &who, reader &r) {
           // or promising a callback. Modern clients can then use READDIR.
           body.u32(1).boolean(false); // GDD4_UNAVAIL, will_signal=false.
         } else if (op == 33 || op == 52) {
-          meta4(who, current);
+          check(!current.empty(), 10020);
           auto target = current;
           if (op == 52) {
             check(a.at("style").get<uint32_t>() <= 1);
             if (a.at("style") == 1) {
               check(current != pseudo, 2);
-              target = file(who, current, "parent").at("handle");
+              auto m = file(who, current, "parent", json::object(), "", "", true);
+              target = m.value("export_root", false) ? pseudo : m.at("handle").get<std::string>();
             }
+            else if (current != pseudo) file(who, current, "stat", json::object(), "", "", true);
           }
           else if (current == pseudo)
-            target = file(who, "", "root", json::object(), "", a.at("name")).at("handle");
+            target = file(who, "", "root", json::object(), "", a.at("name"), true).at("handle");
           else
-            target = file(who, current, "lookup", {{"name", a.at("name")}}).at("handle");
+            target = file(who, current, "lookup", {{"name", a.at("name")}}, "", "", true).at("handle");
           auto flavors = target == pseudo ?
               (cfg.nfs_gss_service.empty() ? json::array({"sys"}) : json::array({"sys", "krb5", "krb5i", "krb5p"})) :
-              security_flavors(who, target);
+              security_flavors(who, target, "", true);
           body.u32(uint32_t(flavors.size()));
           for (const auto &flavor : flavors) {
             if (flavor == "sys") body.u32(1);

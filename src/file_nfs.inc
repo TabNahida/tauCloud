@@ -479,19 +479,26 @@ nfs_object nfs_resolve(space_state &s, const json &g, const std::string &encoded
 json nfs_dispatch(const json &body, const call_context &ctx) {
   require(ctx.caller == "nfs", "forbidden");
   auto op = body.at("op").get<std::string>();
+  bool discovery = op == "security_stat" || op == "security_root" ||
+                   op == "security_lookup" || op == "security_parent";
+  if (discovery) op.erase(0, 9);
   bool mutation = op == "write" || op == "resize" || op == "create" || op == "mkdir" ||
                   op == "remove" || op == "rename" || op == "setattr";
   if (body.contains("mode"))
     require(number(body, "mode") <= 07777, "invalid_mode");
-  auto g = verify(body.at("grant"), mutation);
+  auto g = verify(body.at("grant"), mutation, false, discovery);
   require(g.at("protocol") == "nfs" && g.contains("export"), "forbidden");
   auto &s = attach(g, ctx);
   nfs_init();
   auto space = g.at("space").at("id").get<std::string>(), actor = g.at("actor").get<std::string>();
+  auto metadata = [&](json m) {
+    if (!discovery) return m;
+    return json{{"handle", m.at("handle")}, {"directory", m.at("directory")}};
+  };
   if (op == "root") {
     auto p = g.at("path").get<std::string>();
     auto f = nfs_open(s, p, true);
-    return nfs_meta(s, g, p, f);
+    return metadata(nfs_meta(s, g, p, f));
   }
   auto o = nfs_resolve(s, g, body.at("handle"), mutation || op == "commit", ctx);
   if (op == "lookup" || op == "list" || op == "create" || op == "mkdir" || op == "remove" ||
@@ -560,7 +567,7 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     return {{"acl", nfs_encode_acl(g, security_get(s, before))}};
   }
   if (op == "stat")
-    return nfs_meta(s, g, p, o.file);
+    return metadata(nfs_meta(s, g, p, o.file));
   if (op == "parent") {
     require(dir, "not_directory");
     auto prefix = g.at("path").get<std::string>();
@@ -570,7 +577,7 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     auto parent = slash == std::string::npos ? std::string() : p.substr(0, slash);
     require(beneath(parent, prefix), "forbidden");
     auto f = nfs_open(s, parent, true);
-    return nfs_meta(s, g, parent, f);
+    return metadata(nfs_meta(s, g, parent, f));
   }
   if (op == "lookup") {
     require(dir, "not_directory");
@@ -579,7 +586,7 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
     auto meta = dav_exists(s, child);
     require(meta.has_value(), "not_found");
     auto f = nfs_open(s, child, meta->at("directory"));
-    return nfs_meta(s, g, child, f);
+    return metadata(nfs_meta(s, g, child, f));
   }
   if (op == "list") {
     require(dir, "not_directory");

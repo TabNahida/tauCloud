@@ -139,10 +139,11 @@ struct file_store::impl {
     q.bind(4, resource);
     q.row();
   }
-  json verify(json grant, bool writing, bool cleanup = false) {
+  json verify(json grant, bool writing, bool cleanup = false, bool discovery = false) {
     auto signature = grant.at("signature").get<std::string>();
     grant.erase("signature");
     require(equal(signature, mac(key, grant.dump())), "grant_denied");
+    require(grant.value("security_discovery", false) == discovery && (!discovery || !writing), "grant_denied");
     if (!cleanup) {
       require(grant.at("expires").get<int64_t>() > now() &&
                   grant.at("expires").get<int64_t>() <= now() + 2500,

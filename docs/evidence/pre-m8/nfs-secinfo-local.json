@@ -1,0 +1,140 @@
+{
+  "recorded_at": "2026-11-04T03:58:55.012308+00:00",
+  "base_source": "96fb562",
+  "status": "passed",
+  "scope": "NFS security negotiation from disallowed GSS services and AUTH_SYS, signed discovery-capability isolation, replay reauthorization and disposable-KDC DNS isolation. Remote reacceptance remains pending.",
+  "files_sha256": {
+    "src/file_nfs.inc": "0375fe5f0fc81b66cec49ba700e8c34744d3263a5010799bd2d22208dcf985bb",
+    "src/files.cpp": "695a372c1bc006f2dcc3f6f29609e85a3dd1007f2f78a5c7689586b9b372df81",
+    "src/nfs_protocol.cpp": "89c6e39b710798e07e04281b50b3b7917a1092bb472a9fca77cf2ee7ac6918dc",
+    "src/nfs_v4.inc": "7a4970b857a1962ad1121622717143fc55da6bdf424a4dedf40c20f4cc5e5c7a",
+    "src/policy.cpp": "527326d896a18e6b1582587baf63ed181bbc4db992eda99994c864d95323c8c6",
+    "tests/m7_core.cpp": "77aa7bb453966b413d052312ab8dfbb9f0556038558732491f72b3a72d3f9d1f",
+    "tests/nfs_gss_integration.py": "a474fc58dd6cbbc2c1e3f70640e9069f14555f303bc959badd9dbc37897f87f7"
+  },
+  "local": {
+    "core": {
+      "checks": 77,
+      "status": "passed"
+    },
+    "gss": {
+      "status": "passed",
+      "checks": [
+        "real MIT tickets: mutual authentication and NFSv3/v4.1 read/write in krb5, krb5i and krb5p; AUTH_SYS downgrade denied; MOUNT and SECINFO advertise Kerberos",
+        "header/body MIC and encrypted-body tampering rejected; 64-entry replay window drops duplicates/old requests and accepts out-of-order requests; MAXSEQ and body sequence enforced",
+        "v3 duplicate mutation with fresh GSS sequence replays its result and rechecks revoked authority; context survives TCP reconnect; authenticated DESTROY invalidates the handle",
+        "SECINFO negotiates across disallowed weaker/stronger tuples and AUTH_SYS; bare/repeated/saved PUTFH and LOOKUPP obey WRONGSEC placement; discovery consumes FH, replays safely and enforces traversal ACLs",
+        "unmapped principals and wrong acceptor tickets denied; per-export privacy requirement prevents downgrade; existing contexts lose access after principal mapping revocation",
+        "unmodified pinned pynfs COMP1, CSESS1, OPEN1, OPEN30 and VF1r pass using krb5, krb5i and krb5p",
+        "atomic service-key rotation accepts newly issued tickets while established contexts continue; live group-membership revocation denies existing contexts",
+        "expired tickets and pre-restart context handles are rejected; fresh mutual authentication preserves access to stable file handles"
+      ],
+      "pynfs": {
+        "krb5": {
+          "errors": 0,
+          "failures": 0,
+          "name": "all",
+          "skipped": 261,
+          "tests": 266,
+          "time": 0.3019406795501709,
+          "timestamp": "2026-11-04 03:58:04.011568"
+        },
+        "krb5i": {
+          "errors": 0,
+          "failures": 0,
+          "name": "all",
+          "skipped": 261,
+          "tests": 266,
+          "time": 0.302736759185791,
+          "timestamp": "2026-11-04 03:58:04.429490"
+        },
+        "krb5p": {
+          "errors": 0,
+          "failures": 0,
+          "name": "all",
+          "skipped": 261,
+          "tests": 266,
+          "time": 0.3144550323486328,
+          "timestamp": "2026-11-04 03:58:04.855508"
+        }
+      }
+    },
+    "namespace": {
+      "status": "passed",
+      "checks": [
+        "paged pseudo-root READDIR exposes only enabled, mapped and authorized exports; returned handles match LOOKUP and LOOKUPP",
+        "root-squashed, unmapped and invalid-group identities cannot enumerate protected names; invalid attributes reject even in empty directories",
+        "READDIR validates reserved cookies, changed verifiers, exact maxcount and forward progress; pseudo-root change and SECINFO work",
+        "one session holds simultaneous OPENs in distinct exports and executes cross-export compounds without accepting mismatched stateids",
+        "cached compound replies reauthorize every touched export, including READ without OPEN; revocation prevents data replay while other exports remain usable",
+        "cached pseudo-root listings are fenced when export visibility changes and the next slot sequence still progresses",
+        "retargeting a share with the same export UUID cannot authorize a cached response from the old space"
+      ]
+    },
+    "discovery": {
+      "status": "passed",
+      "checks": [
+        "EXPORT and DUMP filter root-squashed/unmapped principals; duplicate MNT is idempotent",
+        "mount records survive reconnect; UMNT/UMNTALL affect only caller and preserve NFS filehandles",
+        "rpcbind DUMP/GETVERSADDR advertise implemented TCP services plus UDP NSM; older NLM versions remain absent",
+        "recognized unsupported file types return per-operation errors after successful SEQUENCE/PUTFH",
+        "BACKCHANNEL_CTL updates bounded callback configuration; unknown GSS, SP4_NONE SET_SSV and obsolete v4.0 operations return defined per-operation errors",
+        "optional pNFS/delegation/attribute operations are decoded and return NOTSUPP with their own operation number, not OP_ILLEGAL",
+        "export revocation immediately hides discovery and denies subsequent MNT"
+      ]
+    },
+    "acl": {
+      "status": "passed",
+      "checks": [
+        "NFSv3 mode is enforced, owner/group are mapped, nonowner chmod denied; NFSv4 advertises real ACL support",
+        "group mode checks use only verified AUTH_SYS groups; omitted groups and root-squashed groups cannot grant access",
+        "ACL+mode applies mode then ACL; named-user ACE roundtrips, READ_ACL is enforced and chmod masks named grants",
+        "invalid ACL principal and flags fail before truncation; empty ACL denies data and owner can recover WRITE_ACL",
+        "special/named groups and primary-group changes enforce the mapped trustee; opaque SMB SIDs roundtrip; execute-only NFS READ/OPEN/ACCESS works; invalid CREATE ACL leaves no object",
+        "directory ACL inheritance preserves OWNER@ and clears the acl-only inherited flag; ACL attributes larger than 4 KiB roundtrip",
+        "NFS chmod and ACL changes govern new SMB opens of the same object",
+        "shared ACLs, symbolic principals and derived mode survive complete service restart"
+      ]
+    },
+    "nfs": {
+      "status": "passed",
+      "checks": [
+        "TCP record fragmentation and MOUNT v3 with independent XDR codecs",
+        "unknown UID/GID/groups rejected; root squashed to explicitly unprivileged subject",
+        "root squash uses anonymous read rights, strips privileged groups and rejects writes/revoked rights",
+        "read-only TCP portmapper advertises NFS and does not advertise unsupported NLM version 3",
+        "trailing XDR rejected before WRITE; previously persisted bytes remain intact",
+        "v3 guarded CREATE, 64 KiB UNSTABLE upgraded to FILE_SYNC, READ, COMMIT, exact duplicate WRITE",
+        "MAC tamper rejected; file handle survives external rename and all-service restart; durable v3 replay and new write verifier",
+        "deleted/recreated path cannot revive an old file handle",
+        "v3 MKDIR, cross-directory RENAME, READDIRPLUS, REMOVE/RMDIR type separation",
+        "pynfs v4.1 EXCHANGE_ID/CREATE_SESSION/SEQUENCE, guarded OPEN, WRITE/READ, exact slot replay",
+        "false slot replay and foreign stateid rejected; GETATTR subset independently decoded",
+        "old sessions/stateids invalidated on reboot; persisted owner can reclaim OPEN during grace; CLOSE releases recovery record",
+        "unrelated client cannot reclaim another owner after restart",
+        "export disable revokes existing handles through fresh identity grants",
+        "offline metadata backup strips NFS enrollment and excludes persistent capability/recovery databases"
+      ],
+      "client": "linux-nfs/pynfs cd4701827a8261fedbfb4c6e39029fb9671321a6 generated NFSv3/v4.1 codecs",
+      "full_conformance": false,
+      "test_sha256": "776728f813a438821f2192343c36c2091afe975e5d2101b785516c08734b77a3",
+      "data_sha256": "7daca2095d0438260fa849183dfc67faa459fdf4936e1bc91eec6b281b27e4c2"
+    }
+  },
+  "remote_failure": {
+    "source": "23647207e2df1360d6c1bb543ef0c0ed45738f86",
+    "run": "https://github.com/TabNahida/tauCloud/actions/runs/41769000456",
+    "job": 126374029031,
+    "artifact": 13293564845,
+    "artifact_sha256": "e1ba5ad35333432782bcf32d40044b376d245594005ad9d695bf4a434a1fbe4e",
+    "status": "failed",
+    "completed_groups": [
+      "real MIT tickets: mutual authentication and NFSv3/v4.1 read/write in krb5, krb5i and krb5p; AUTH_SYS downgrade denied; MOUNT and SECINFO advertise Kerberos",
+      "header/body MIC and encrypted-body tampering rejected; 64-entry replay window drops duplicates/old requests and accepts out-of-order requests; MAXSEQ and body sequence enforced",
+      "v3 duplicate mutation with fresh GSS sequence replays its result and rechecks revoked authority; context survives TCP reconnect; authenticated DESTROY invalidates the handle",
+      "unmapped principals and wrong acceptor tickets denied; per-export privacy requirement prevents downgrade; existing contexts lose access after principal mapping revocation"
+    ],
+    "cause": "MIT hostbased name qualification inherited the hosted runner DNS search suffix and requested a nonexistent cross-realm krbtgt. The test realm now sets qualify_shortname to an empty string and an explicit localhost domain_realm. Original pynfs passes locally with LOCALDOMAIN=runner.example.invalid.",
+    "error": "Traceback (most recent call last):\n  File \"/home/runner/work/tauCloud/tauCloud/tests/nfs_gss_integration.py\", line 424, in main\n    assert output.exists(), output.with_suffix('.log').read_text()[-8000:]\n           ^^^^^^^^^^^^^^^\nAssertionError: /home/runner/work/tauCloud/tauCloud/build/pynfs/nfs4.1/nfs4commoncode.py:30: SyntaxWarning: invalid escape sequence '\\s'\n  code_str = '''\\\nINFO   :rpc.poll:got connection from ('127.0.0.1', 42758), assigned to fd=5\nINFO   :rpc.thread:Called connect(('localhost', 57589))\nINFO   :rpc.poll:Adding 6 generated by another thread\nInitialization failed, no tests run.\nPerhaps you need to use the --maketree option\nPerhaps you need to use the --secure option or configure server to allow connections from high ports\nTraceback (most recent call last):\n  File \"/home/runner/work/tauCloud/tauCloud/build/pynfs/nfs4.1/testserver.py\", line 374, in <module>\n    main()\n  File \"/home/runner/work/tauCloud/tauCloud/build/pynfs/nfs4.1/testserver.py\", line 330, in main\n    env = environment.Environment(opt)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/tauCloud/tauCloud/build/pynfs/nfs4.1/server41tests/environment.py\", line 131, in __init__\n    krb5_cred = AuthGss().init_cred(call, target=\"nfs@%s\" % opts.server)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/tauCloud/tauCloud/build/pynfs/rpc/security.py\", line 280, in init_cred\n    output_token = context.step(input_token)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/.local/lib/python3.12/site-packages/decorator/__init__.py\", line 247, in fun\n    return caller(func, *(extras + args), **kw)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/.local/lib/python3.12/site-packages/gssapi/_utils.py\", line 165, in check_last_err\n    return func(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/.local/lib/python3.12/site-packages/decorator/__init__.py\", line 247, in fun\n    return caller(func, *(extras + args), **kw)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/.local/lib/python3.12/site-packages/gssapi/_utils.py\", line 131, in catch_and_return_token\n    return func(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/.local/lib/python3.12/site-packages/gssapi/sec_contexts.py\", line 584, in step\n    return self._initiator_step(token=token)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/.local/lib/python3.12/site-packages/gssapi/sec_contexts.py\", line 606, in _initiator_step\n    res = rsec_contexts.init_sec_context(self._target_name, self._creds,\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"gssapi/raw/sec_contexts.pyx\", line 188, in gssapi.raw.sec_contexts.init_sec_context\ngssapi.raw.misc.GSSError: Major (851968): Unspecified GSS failure.  Minor code may provide more information, Minor (2529638919): Server krbtgt/F2OJKD3FCC4ERHEFXDW2YIZPSF.BX.INTERNAL.CLOUDAPP.NET@TAUCLOUD.TEST not found in Kerberos database\n\n"
+  }
+}

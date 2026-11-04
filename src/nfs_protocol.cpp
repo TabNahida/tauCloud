@@ -140,7 +140,7 @@ struct server::impl {
       bool write = false;
       std::string scope;
     };
-    std::map<std::string, export_access> exports;
+    std::map<std::pair<std::string, bool>, export_access> exports;
     std::string namespace_view;
   };
   replay_authority *recording_authority = nullptr;
@@ -152,7 +152,7 @@ struct server::impl {
     auto grant = call("identity", "nfs_authorize", body);
     if (recording_authority) {
       auto uuid = grant.at("export").at("uuid").get<std::string>();
-      auto &access = recording_authority->exports[uuid];
+      auto &access = recording_authority->exports[{uuid, body.value("security_discovery", false)}];
       access.write |= body.value("write", false);
       // Preserve the first scope if policy changes during a compound: a later
       // rebind of the same export UUID must not authorize old cached bytes.
@@ -167,8 +167,10 @@ struct server::impl {
       recording_authority->namespace_view = digest(view.at("exports").dump());
     return view;
   }
-  json security_flavors(const identity &who, const std::string &handle, const std::string &name = "") {
+  json security_flavors(const identity &who, const std::string &handle, const std::string &name = "",
+                        bool discovery = false) {
     json request = {{"peer", "127.0.0.1"}, {"credential", who.credential}, {"write", false}};
+    if (discovery) request["security_discovery"] = true;
     if (!name.empty()) request["export"] = name;
     else {
       auto raw = decode_bytes(handle);
@@ -182,8 +184,9 @@ struct server::impl {
     // Revalidate the reply's actual exports, including anonymous reads and
     // operations whose OPEN has since closed. Never execute a mutation twice.
     try {
-      for (const auto &[uuid, access] : authority.exports) {
-        auto grant = authorize({{"peer", "127.0.0.1"}, {"credential", who.credential}, {"uuid", uuid}, {"write", access.write}});
+      for (const auto &[key, access] : authority.exports) {
+        auto grant = authorize({{"peer", "127.0.0.1"}, {"credential", who.credential},
+                                {"uuid", key.first}, {"write", access.write}, {"security_discovery", key.second}});
         check(grant_scope(grant) == access.scope, 10008);
       }
       if (!authority.namespace_view.empty())
@@ -203,11 +206,13 @@ struct server::impl {
     start_nlm();
   }
   json file(const identity &who, const std::string &handle, std::string op,
-            json args = json::object(), std::string request = "", std::string export_name = "") {
+            json args = json::object(), std::string request = "", std::string export_name = "",
+            bool discovery = false) {
     json b = {{"peer", "127.0.0.1"},
               {"credential", who.credential},
               {"write", op == "write" || op == "resize" || op == "create" || op == "mkdir" ||
                             op == "remove" || op == "rename" || op == "setattr"}};
+    if (discovery) b["security_discovery"] = true;
     if (export_name.empty()) {
       auto raw = decode_bytes(handle);
       check(raw.size() == 50 && raw[0] == 1, 70);
@@ -269,7 +274,7 @@ struct server::impl {
                 throw error("nfs_locked");
     }
     args["grant"] = grant;
-    args["op"] = op;
+    args["op"] = discovery ? "security_" + op : op;
     args["handle"] = handle;
     if (!request.empty())
       args["request_id"] = request;

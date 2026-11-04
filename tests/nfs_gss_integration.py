@@ -48,8 +48,11 @@ class Kdc:
  dns_lookup_realm = false
  rdns = false
  dns_canonicalize_hostname = false
+ qualify_shortname = ""
  udp_preference_limit = 1
  clockskew = 1
+[domain_realm]
+ localhost = {REALM}
 [realms]
  {REALM} = {{
   kdc = 127.0.0.1:{port}
@@ -394,6 +397,56 @@ def main():
         assert strong.mount()[0] == 0
         strong.session()
         h = strong.root()
+        weak.session()
+        plain.session()
+        def flavors(c, operations, expected):
+            r = c.compound(operations)
+            assert r.status == 0, r
+            last = r.resarray[-1]
+            values = last.opsecinfo.resok4 if last.resop == 33 else last.opsecinfo_no_name.resok4
+            assert [(x.flavor, x.flavor_info.service if x.flavor == 6 else None) for x in values] == expected, values
+            return r
+        privacy = [(6, 3)]
+        flavors(weak, [op.putrootfh(), op.secinfo(b'nfs')], privacy)
+        flavors(plain, [op.putrootfh(), op.secinfo(b'nfs')], privacy)
+        flavors(weak, [op.putfh(h), op.secinfo_no_name(0)], privacy)
+        sequence = weak.seq
+        replay = weak.compound([op.putfh(h), op.secinfo_no_name(0)], seq=sequence)
+        assert replay.status == 0, replay
+        flavors(weak, [op.putfh(h), op.savefh(), op.putrootfh(), op.restorefh(), op.secinfo_no_name(0)], privacy)
+        flavors(weak, [op.putfh(h), op.secinfo_no_name(1)], [(1, None), (6, 1), (6, 2), (6, 3)])
+        assert weak.compound([op.putfh(h)]).status == 0
+        assert weak.compound([op.putfh(h), op.savefh()]).status == 0
+        r = weak.compound([op.putfh(h), op.secinfo_no_name(0), op.getattr([1])])
+        assert r.status == 10020 and r.resarray[-2].opsecinfo_no_name.status == 0, r
+        for c in (plain, weak):
+            r = c.compound([op.putfh(h), op.savefh(), op.getattr([1])])
+            assert r.status == 10016 and r.resarray[-1].resop == 22, r
+            r = c.compound([op.putfh(h), op.lookup(b'gss-3')])
+            assert r.status == 10016 and r.resarray[-1].resop == 15, r
+            r = c.compound([op.putfh(h), op.lookupp(), op.getfh()])
+            assert r.status == 0, r
+        from nfs_acl_integration import attrs, ZERO
+        from m7_integration import t4
+        r = strong.compound([op.putfh(h), op.create(t4.createtype4(2), b'sec-no-traverse', attrs(mode=0o700)), op.getfh()])
+        assert r.status == 0, r
+        no_traverse = r.resarray[-1].opgetfh.resok4.object
+        r = strong.compound([op.putfh(no_traverse), op.setattr(ZERO, attrs(mode=0o600))])
+        assert r.status == 0, r
+        r = weak.compound([op.putfh(no_traverse), op.secinfo(b'child')])
+        assert r.status == 13, r
+        r = weak.compound([op.putfh(no_traverse), op.secinfo_no_name(1)])
+        assert r.status == 13, r
+        export['security'] = ['krb5']
+        f.api('nfs-exports', f.admin, export)
+        flavors(strong, [op.putfh(h), op.secinfo_no_name(0)], [(6, 1)])
+        security_sequence = strong.seq
+        export['security'] = ['krb5p']
+        f.api('nfs-exports', f.admin, export)
+        r = strong.compound([op.putfh(h), op.secinfo_no_name(0)], seq=security_sequence)
+        assert r.status == 10008, r  # A cached old service list cannot survive a policy change.
+        flavors(strong, [op.putfh(h), op.secinfo_no_name(0)], privacy)
+        passed('SECINFO negotiates across disallowed weaker/stronger tuples and AUTH_SYS; bare/repeated/saved PUTFH and LOOKUPP obey WRONGSEC placement; discovery consumes FH, replays safely and enforces traversal ACLs')
         export['principals'] = {'unmapped@'+REALM: dict(uid=1000, gid=1000)}
         f.api('nfs-exports', f.admin, export)
         assert strong.v3('GETATTR', t3.GETATTR3args(t3.nfs_fh3(h)), 1).status == 13
@@ -404,7 +457,10 @@ def main():
 
         if args.pynfs:
             kdc.credentials()
-            env = dict(os.environ, KRB5CCNAME='FILE:' + str(kdc.last_cache))
+            # Hosted runners have a DNS search suffix. A hostbased GSS name
+            # must still target this isolated KDC's exact localhost principal.
+            env = dict(os.environ, KRB5CCNAME='FILE:' + str(kdc.last_cache),
+                       LOCALDOMAIN='runner.example.invalid')
             report['pynfs'] = {}
             for security in ('krb5', 'krb5i', 'krb5p'):
                 # Upstream names files with a seconds-resolution timestamp.
