@@ -1,0 +1,26 @@
+{
+  "recorded_at": "2026-11-04T16:17:36.464298+00:00",
+  "base_source": "ab57b78be5478719f43189dab69f87da471a3da3",
+  "status": "core-local-passed-network-integration-unfinished",
+  "scope": "Shared ClientGuid/LeaseKey registry, v1/v2 context/response codecs, native-authority-bounded promotion, break/ACK transitions, timeout signaling, send/ACK races, bounded lifecycle. No SMB leasing capability is advertised; this is not wire lease acceptance.",
+  "sanitizers": "Linux Clang ASan/UBSan/LSan",
+  "report": {
+    "checks": 3213,
+    "status": "passed"
+  },
+  "source_sha256": {
+    "include/taucloud/smb_lease.hpp": "0a607626e8b4969926043cb8f8684708750cd58f4322c5a881a5267247f612fd",
+    "src/smb_lease.cpp": "2f2a568d4d2be6e2d2fab3c86acddaf814975344ca328623d2ced56d3adee10e",
+    "tests/smb_lease_core.cpp": "f275feb0ce242abe29c3c2356e32246341232a3c0905ebb9a6d75b39bb591db0",
+    "xmake.lua": "c095fc41d42d2f0d4dac2a12b3b71285d7e9c3023ea3058cea9f0f0c945f4b4f",
+    ".github/workflows/smb-metadata.yml": "398825b6de828fe637a6092dd67855a29af81563594d10a19ebb992e4c90d0be"
+  },
+  "binary_sha256": "ef7adf031c80ef05bb03d24f3fb9dc61cccc0d1006c8b004e357bc72dd8653b2",
+  "remaining": [
+    "File-domain native exclusion and authority renewal by shared lease identity",
+    "SMB CREATE/ACK and notification transport integration",
+    "Directory/parent leases",
+    "Unmodified Samba and native client wire acceptance",
+    "Durable handles and multichannel session binding"
+  ]
+}
