@@ -1657,6 +1657,17 @@ struct client {
         }
         for (auto [id, code] : completed)
           co_await finish_notify(id, code, pending_notifications.at(id).data);
+        // Mutations on this connection have already reached the file domain.
+        // Complete ready notifications before accepting its next frame, so a
+        // later WRITE is buffered for the next request instead of being merged
+        // into the initial CREATE event by the periodic host-event poll.
+        std::vector<uint64_t> ready_notifications;
+        for (const auto &[id, pending] : pending_notifications)
+          ready_notifications.push_back(id);
+        for (auto id : ready_notifications) {
+          if (!socket.is_open()) break;
+          co_await poll_notification(id);
+        }
         if (logged_off) {
           // LOGOFF ends the session, not the transport. Keeping the connection
           // alive also prevents EOF racing the client's receipt of this reply.

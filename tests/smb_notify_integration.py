@@ -91,8 +91,16 @@ def run():
             denied(lambda: c.receive(req, timeout=10), 0xc0000120)
             req = notify(directory); directory.close()
             denied(lambda: c.receive(req, timeout=10), 0x10b)
+            directory = create(t, path, options=1, access=0x120089, disposition=1)
+            req = notify(directory, 9)
+            h = create(t, path + '/boundary'); h.write(b'written after create'); h.close()
+            assert events(c, req) == [(1, 'boundary')]
+            req = notify(directory, 9, interim=False)
+            assert events(c, req, asynchronous=False) == [(3, 'boundary')]
+            directory.close()
             c.disconnect()
         passed('SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup')
+        passed('four dialects complete pending creation before the next write and preserve that write for the next synchronous buffered notification')
 
         c, s, t = connect()
         d = create(t, 'fifo', options=1, access=0x120089)

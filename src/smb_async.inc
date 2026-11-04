@@ -122,6 +122,31 @@ pace::task<void> finish_notify(uint64_t async_id, uint32_t code, bytes data = {}
     response.replace(48, 16, signature(key, response, selected.signing));
   co_await send_packet(std::move(response), pending.encrypted);
 }
+// Caller holds the cooperative dispatch gate across all RPC suspension points.
+pace::task<void> poll_notification(uint64_t id) {
+  auto found = pending_notifications.find(id);
+  if (found == pending_notifications.end()) co_return;
+  // Only the oldest request on a handle can consume its buffered events.
+  bool first = true;
+  for (const auto &[other, pending] : pending_notifications)
+    if (other < id && pending.fid == found->second.fid) first = false;
+  if (!first) co_return;
+  uint32_t code = 0;
+  bool waiting = false;
+  bytes data;
+  auto limit = found->second.limit;
+  auto fid = found->second.fid;
+  try {
+    auto file = files.find(fid);
+    check(file != files.end(), 0xc0000128);
+    limit = std::min(limit, file->second.notify_capacity.value_or(limit));
+    auto result = co_await operation(file->second, "notify", false);
+    waiting = result.at("pending");
+    if (!waiting) data = notify_data(result, limit, code);
+  } catch (const status_error &e) { waiting = false; code = e.status; }
+    catch (const error &e) { waiting = false; code = status(e.what()); }
+  if (!waiting) co_await finish_notify(id, code, std::move(data));
+}
 pace::task<void> pump_notifications() {
   std::vector<uint64_t> ids;
   for (const auto &[id, pending] : pending_notifications) ids.push_back(id);
@@ -129,28 +154,7 @@ pace::task<void> pump_notifications() {
     while (dispatching && socket.is_open()) co_await s.io->sleep_for(1ms);
     if (!socket.is_open()) break;
     dispatch_guard guard(dispatching);
-    auto found = pending_notifications.find(id);
-    if (found == pending_notifications.end()) continue;
-    // Only the oldest request on a handle can consume its buffered events.
-    bool first = true;
-    for (const auto &[other, pending] : pending_notifications)
-      if (other < id && pending.fid == found->second.fid) first = false;
-    if (!first) continue;
-    uint32_t code = 0;
-    bool waiting = false;
-    bytes data;
-    auto limit = found->second.limit;
-    auto fid = found->second.fid;
-    try {
-      auto file = files.find(fid);
-      check(file != files.end(), 0xc0000128);
-      limit = std::min(limit, file->second.notify_capacity.value_or(limit));
-      auto result = co_await operation(file->second, "notify", false);
-      waiting = result.at("pending");
-      if (!waiting) data = notify_data(result, limit, code);
-    } catch (const status_error &e) { waiting = false; code = e.status; }
-      catch (const error &e) { waiting = false; code = status(e.what()); }
-    if (!waiting) co_await finish_notify(id, code, std::move(data));
+    co_await poll_notification(id);
   }
 }
 pace::task<void> pump_locks() {
