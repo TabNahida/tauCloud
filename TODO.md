@@ -142,8 +142,9 @@ Selected-profile acceptance: [M7 guide](docs/m7.md), [中文](docs/m7.zh-CN.md),
 
 Native cache exclusion now has a Linux lease / Windows RW-oplock adapter and
 actual blocking-open/flush/cancellation tests. The native core step passes
-GCC/Clang ASan+UBSan/MSVC at `4fe2b79`; subsequent protocol regression and
-network break/ACK coordination remain open. This foundation does not enable SMB caching or NFS delegations; see
+GCC/Clang ASan+UBSan/MSVC at `4fe2b79`, along with the complete targeted
+protocol matrix and Windows native NFS regression. Network break/ACK
+coordination remains open. This foundation does not enable SMB caching or NFS delegations; see
 [native cache coherence](docs/native-cache-coherence.md).
 
 The file-domain cache coordinator now adds acquisition cookies, authenticated
