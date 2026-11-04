@@ -3,23 +3,70 @@
 #include <taucloud/runtime/bounded_executor.hpp>
 #include <pace/tcp.hpp>
 #include <pace/udp.hpp>
-#include <set>
+#include <map>
+#include <deque>
 namespace tc {
 namespace {
+struct nfs_connection {
+  pace::tcp::stream socket;
+  std::deque<std::string> output;
+  size_t queued_bytes = 0;
+  bool writing = false;
+  explicit nfs_connection(pace::tcp::stream stream) : socket(std::move(stream)) {}
+};
 struct nfs_runtime {
   config cfg;
   std::shared_ptr<pace::io_context> io = std::make_shared<pace::io_context>();
   taucloud::bounded_executor pool{2, 16, 16 * nfs_detail::max_record};
   nfs_detail::server protocol;
   std::atomic<int> connections = 0;
-  std::set<pace::tcp::stream *> sockets;
+  std::map<std::string, std::shared_ptr<nfs_connection>> sockets;
+  void send(std::string connection, std::string packet);
   explicit nfs_runtime(const config &c)
       : cfg(c), protocol(c, [c](std::string target, std::string op, json body) {
           return rpc(c, "nfs", target, op, body);
         }, [c](uint32_t program, uint32_t version, uint32_t procedure, std::string body) {
           return nfs_detail::loopback_callback(c, program, version, procedure, body);
+        }, [this](std::string connection, std::string packet) {
+          send(std::move(connection), std::move(packet));
         }) {}
 };
+// One writer owns each stream. Reverse RPCs and ordinary replies cannot
+// interleave record headers or payloads, even while a client pipelines requests.
+pace::task<void> write_frames(nfs_runtime &s, std::shared_ptr<nfs_connection> c) {
+  try {
+    while (c->socket.is_open() && !c->output.empty()) {
+      auto packet = std::move(c->output.front());
+      c->output.pop_front();
+      nfs_detail::writer header;
+      header.u32(0x80000000u | uint32_t(packet.size()));
+      auto timer = s.io->call_after(5s, [c] { c->socket.close(); });
+      co_await c->socket.write_all(header.data + packet);
+      c->queued_bytes -= packet.size();
+    }
+  } catch (...) { c->socket.close(); }
+  c->writing = false;
+  if (!c->socket.is_open()) { c->output.clear(); c->queued_bytes = 0; }
+}
+void enqueue(nfs_runtime &s, const std::shared_ptr<nfs_connection> &c, std::string packet) {
+  if (!c->socket.is_open() || packet.empty()) return;
+  if (packet.size() > nfs_detail::max_record || c->output.size() >= 16 ||
+      c->queued_bytes + packet.size() > 4 * nfs_detail::max_record) {
+    c->socket.close(); return;
+  }
+  c->queued_bytes += packet.size();
+  c->output.push_back(std::move(packet));
+  if (!c->writing) {
+    c->writing = true;
+    s.io->spawn(write_frames(s, c));
+  }
+}
+void nfs_runtime::send(std::string connection, std::string packet) {
+  io->post([this, connection = std::move(connection), packet = std::move(packet)]() mutable {
+    auto found = sockets.find(connection);
+    if (found != sockets.end()) enqueue(*this, found->second, std::move(packet));
+  });
+}
 pace::task<std::string> process(nfs_runtime &s, std::string packet, std::string connection) {
   struct pending {
     std::string reply;
@@ -53,9 +100,11 @@ pace::task<std::string> process(nfs_runtime &s, std::string packet, std::string 
     std::rethrow_exception(p->failure);
   co_return p->reply;
 }
-pace::task<void> serve(nfs_runtime &s, pace::tcp::stream socket) {
-  s.sockets.insert(&socket);
+pace::task<void> serve(nfs_runtime &s, pace::tcp::stream stream) {
+  auto c = std::make_shared<nfs_connection>(std::move(stream));
+  auto &socket = c->socket;
   auto connection = random_hex(16);
+  s.sockets.emplace(connection, c);
   bool active = false;
   try {
     while (socket.is_open()) {
@@ -80,17 +129,13 @@ pace::task<void> serve(nfs_runtime &s, pace::tcp::stream socket) {
       auto response = co_await process(s, std::move(record.data), connection);
       active = true;
       if (response.empty()) continue; // RPCSEC_GSS replay window: silent discard.
-      require(response.size() <= nfs_detail::max_record, "response_limit");
-      nfs_detail::writer header;
-      header.u32(0x80000000u | uint32_t(response.size()));
-      auto timer = s.io->call_after(5s, [&socket] { socket.close(); });
-      co_await socket.write_all(header.data + response);
+      enqueue(s, c, std::move(response));
     }
   } catch (...) {
   }
   socket.close();
   s.protocol.disconnect(connection);
-  s.sockets.erase(&socket);
+  s.sockets.erase(connection);
   --s.connections;
 }
 pace::task<void> accept(nfs_runtime &s, pace::tcp::listener &listener, std::atomic_bool &stopping) {
@@ -181,8 +226,8 @@ int nfs(const config &c, const std::string &generation, std::atomic_bool &stoppi
   s.io->post([&] {
     listener.close();
     status_socket.close();
-    for (auto *socket : s.sockets)
-      socket->close();
+    for (const auto &[id, connection] : s.sockets)
+      connection->socket.close();
   });
   ipc.stop();
   auto deadline = now() + 7000;

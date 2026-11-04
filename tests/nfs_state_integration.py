@@ -10,7 +10,8 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--bin',type=Path,required=True)
     p.add_argument('--output',type=Path,required=True)
-    args=p.parse_args(); f,port=fixture(args.bin); clients=[];checks=[]
+    p.add_argument('--sanitizers',action='store_true')
+    args=p.parse_args(); f,port=fixture(args.bin,512 if args.sanitizers else 256); clients=[];checks=[]
     def connect(owner=None,reclaim=False):
         c=Client(port);clients.append(c);c.session(owner,reclaim=reclaim);return c
     def expect(c,operations,status=0):

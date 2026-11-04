@@ -26,3 +26,9 @@ The next lifecycle increment corrects failed-reauthentication cleanup and modern
 [Lifecycle evidence](evidence/pre-m8/smb-notify-lifecycle-local.json) records 17 successes and six failures in the complete unmodified suite, including every original failure log. It also records the independent encrypted rename matrix and signed/encrypted failed-renewal cleanup checks.
 
 Windows buffered-batch acceptance at `e5fe6ee` fails the ten-created-files sequence after the four-dialect lifecycle group passes. The native adapter previously consumed only one completed read; the follow-up drains up to 16 already-completed reads, including the Windows per-handle buffer between reads. [Failure and pending follow-up evidence](evidence/pre-m8/smb-notify-e5fe6ee-windows.json) preserves the exact assertion; Windows reacceptance is required before claiming this fixed.
+
+## Fixed-source follow-up acceptance
+
+The targeted GCC/Clang ASan+UBSan/MSVC matrix now passes at `c6bb261`: 14/14/12 independent notification groups, two modern-rename groups and six reauthentication groups on each platform, plus 12 unmodified Samba lifecycle cases on each Linux compiler ([evidence](evidence/pre-m8/smb-notify-c6bb261-remote.json)). This includes the previously failed Windows ten-event buffered batch. The separate full upstream notification diagnostic remains failed; its pending-child deletion, path traversal, session reconnect and event-mask failures remain open.
+
+Subsequent Clang runs at `bd6a2ad` and `6bf92f2` exposed an overly specific test expectation during policy revocation: an already-authorized poll can return ACCESS_DENIED after the file-domain epoch advances, while a later poll returns FILE_CLOSED. The corrected test accepts both denials, then requires the old handle to fail with FILE_CLOSED and a fresh exclusive read open to succeed. Local checks pass; remote reacceptance is pending ([failure and correction](evidence/pre-m8/smb-notify-revocation-race.json)).

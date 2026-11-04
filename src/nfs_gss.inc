@@ -21,7 +21,9 @@ std::string dispatch(std::string_view packet, std::string connection_id) {
     return writer().u32(xid).u32(1).u32(1).u32(1).u32(code).data;
   };
   try {
-    if (r.u32() != 0 || r.u32() != 2) return dispatch_plain(packet);
+    auto direction = r.u32();
+    if (direction == 1) { callback_reply(xid, r); return {}; }
+    if (direction != 0 || r.u32() != 2) return dispatch_plain(packet);
     auto program = r.u32(), version = r.u32(), procedure = r.u32();
     if (r.u32() != 6) return dispatch_plain(packet);
     if (cfg.nfs_gss_service.empty()) return denied(2);

@@ -1,0 +1,31 @@
+{
+  "recorded_at": "2026-11-04T06:41:57.490551+00:00",
+  "failed_source": "bd6a2ad6cd97547f0469c67be28058410950fd64",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41784596047",
+  "status": "failed-remote-test-corrected-locally",
+  "failure": "Clang notification revocation poll returned ACCESS_DENIED instead of test-only FILE_CLOSED expectation. GCC/MSVC jobs passed.",
+  "cause": "A notify poll authorized before the policy epoch update can reach the file service after revocation and fail grant validation; later polls reach the already-drained handle table and fail with FILE_CLOSED. Both deny events.",
+  "change": "Accept either in-flight denial, then require the old handle query to return FILE_CLOSED and a fresh exclusive read-only open to succeed. Production authorization behavior is unchanged.",
+  "test_sha256": "446a0e33582ea0d7dd44904b71bce9983c9a0ca8bb3929a2706fabadefaa60a0",
+  "local": {
+    "status": "passed",
+    "checks": [
+      "SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup",
+      "per-open first filter/watch-tree settings, FIFO completion and events buffered between requests",
+      "native host writes trigger recursive watches while nonrecursive watches ignore descendants",
+      "recursive watches stop observing moved-out subtrees and do not disclose queued outside names",
+      "SIZE filter ignores equal-length writes and reports actual growth",
+      "LAST_WRITE observes new-file writes even when native CREATE and WRITE are drained together",
+      "first per-open zero/short capacity persists, reopening restores capacity; NOTIFY_ENUM_DIR has no partial records; invalid-only filters stay pending and cancel cleanly",
+      "directory/list-access validation and persistent shared security descriptor changes generate SECURITY notifications",
+      "portable DOS attributes, creation-time and EA changes participate in native notification streams",
+      "initial CREATE metadata produces only ADDED; subsequent changes still produce MODIFIED",
+      "recursive descriptor exhaustion stays visibly overflowed across requests and releases all watches on close",
+      "delete-pending directories complete outstanding watches without waiting for last-handle deletion",
+      "TREE_DISCONNECT and LOGOFF finish pending notifications with NOTIFY_CLEANUP before releasing keys",
+      "policy revocation denies the pending poll, invalidates its old handle and permits a fresh exclusive read open without retained watch/sharing authority"
+    ]
+  },
+  "remote_reacceptance": "pending",
+  "raw_log": "smb-notify-bd6a2ad-clang-failure.log"
+}

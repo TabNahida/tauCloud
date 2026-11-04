@@ -1,0 +1,429 @@
+{
+  "recorded_at": "2026-11-04T06:37:11.702642+00:00",
+  "source": "c6bb2612dc107d7a6f5343ee147a8dd9024154f0",
+  "status": "passed",
+  "scope": "Targeted notification/modern-rename/failed-renewal cleanup matrix; full Samba notification diagnostic remains failed and full SMB/NFS is not complete.",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41783603188",
+  "jobs": {
+    "gcc": {
+      "id": 126420555552,
+      "status": "success",
+      "artifact": 13300364577,
+      "artifact_sha256": "4b9ccad4927ade3eba2bdaa400acd36db79bea1fac63130acccdf146f49f91f3",
+      "reports": {
+        "smb-notify.json": {
+          "status": "passed",
+          "checks": [
+            "SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup",
+            "per-open first filter/watch-tree settings, FIFO completion and events buffered between requests",
+            "native host writes trigger recursive watches while nonrecursive watches ignore descendants",
+            "recursive watches stop observing moved-out subtrees and do not disclose queued outside names",
+            "SIZE filter ignores equal-length writes and reports actual growth",
+            "LAST_WRITE observes new-file writes even when native CREATE and WRITE are drained together",
+            "first per-open zero/short capacity persists, reopening restores capacity; NOTIFY_ENUM_DIR has no partial records; invalid-only filters stay pending and cancel cleanly",
+            "directory/list-access validation and persistent shared security descriptor changes generate SECURITY notifications",
+            "portable DOS attributes, creation-time and EA changes participate in native notification streams",
+            "initial CREATE metadata produces only ADDED; subsequent changes still produce MODIFIED",
+            "recursive descriptor exhaustion stays visibly overflowed across requests and releases all watches on close",
+            "delete-pending directories complete outstanding watches without waiting for last-handle deletion",
+            "TREE_DISCONNECT and LOGOFF finish pending notifications with NOTIFY_CLEANUP before releasing keys",
+            "policy revocation closes native watches and completes outstanding requests without retaining old authority"
+          ],
+          "sha256": "5703b9c1050284f40d2ec14d96bc304a0c1879d6d13082fd7b7855253c7d4375"
+        },
+        "smb-rename.json": {
+          "status": "passed",
+          "checks": [
+            "32 file/directory and full/metadata-only parent combinations enforce destination WRITE sharing; parent DELETE rights and child share mode do not add obsolete restrictions",
+            "moving files/directories out of an exclusively opened source directory checks the destination rather than rejecting the source parent"
+          ],
+          "sha256": "ac766d7c13d1d213ae82eb5e95b37288b03ea84ca7b7befe3fc24e11c57dbc8d"
+        },
+        "smb-reauth.json": {
+          "status": "passed",
+          "checks": [
+            "SMB2.1/3.0/3.0.2/3.1.1 repeated signed/encrypted NTLM renewal preserves session ID, keys, opens and byte-range locks",
+            "expired authority reports NETWORK_SESSION_EXPIRED and renews the same open after an intervening management login",
+            "wrong proof and different-user renewal fail, release exclusive handles and complete signed/encrypted watches with NOTIFY_CLEANUP",
+            "fresh valid credentials cannot renew a revoked token or resurrect its exclusive open",
+            "LOGOFF during an incomplete renewal resets authentication state and permits a fresh encrypted session on the same transport",
+            "SESSION_SETUP for an unknown session does not abort another session's in-progress renewal or borrow its signing key"
+          ],
+          "sha256": "389cb23cbbaa06a5196ec84af10a5108ba732ce8af8cfcfb545c838f7e9ca07f"
+        },
+        "samba-notify.json": {
+          "status": "passed",
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+          "sha256": "fe987605f164b3c4f6a16bc98e7eebd70e28488cc3343d2c8ff40132da5f9b2a",
+          "tests": [
+            {
+              "selector": "smb2.notify.dir",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.dir.log"
+            },
+            {
+              "selector": "smb2.notify.tcon",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.tcon.log"
+            },
+            {
+              "selector": "smb2.notify.tdis1",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.tdis1.log"
+            },
+            {
+              "selector": "smb2.notify.close",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.close.log"
+            },
+            {
+              "selector": "smb2.notify.logoff",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.logoff.log"
+            },
+            {
+              "selector": "smb2.notify.file",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.file.log"
+            },
+            {
+              "selector": "smb2.notify.handle-permissions",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.handle-permissions.log"
+            },
+            {
+              "selector": "smb2.notify.rmdir1",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.rmdir1.log"
+            },
+            {
+              "selector": "smb2.notify.rmdir2",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.rmdir2.log"
+            },
+            {
+              "selector": "smb2.notify.rmdir3",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.rmdir3.log"
+            },
+            {
+              "selector": "smb2.notify.rmdir4",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.rmdir4.log"
+            },
+            {
+              "selector": "smb2.notify.invalid-reauth",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.invalid-reauth.log"
+            }
+          ]
+        }
+      }
+    },
+    "clang": {
+      "id": 126420555768,
+      "status": "success",
+      "artifact": 13300419723,
+      "artifact_sha256": "1fcad4190e38e6fd08045675eaf74d4262b47388e3b7f6427b8139f8895dd1db",
+      "reports": {
+        "smb-notify.json": {
+          "status": "passed",
+          "checks": [
+            "SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup",
+            "per-open first filter/watch-tree settings, FIFO completion and events buffered between requests",
+            "native host writes trigger recursive watches while nonrecursive watches ignore descendants",
+            "recursive watches stop observing moved-out subtrees and do not disclose queued outside names",
+            "SIZE filter ignores equal-length writes and reports actual growth",
+            "LAST_WRITE observes new-file writes even when native CREATE and WRITE are drained together",
+            "first per-open zero/short capacity persists, reopening restores capacity; NOTIFY_ENUM_DIR has no partial records; invalid-only filters stay pending and cancel cleanly",
+            "directory/list-access validation and persistent shared security descriptor changes generate SECURITY notifications",
+            "portable DOS attributes, creation-time and EA changes participate in native notification streams",
+            "initial CREATE metadata produces only ADDED; subsequent changes still produce MODIFIED",
+            "recursive descriptor exhaustion stays visibly overflowed across requests and releases all watches on close",
+            "delete-pending directories complete outstanding watches without waiting for last-handle deletion",
+            "TREE_DISCONNECT and LOGOFF finish pending notifications with NOTIFY_CLEANUP before releasing keys",
+            "policy revocation closes native watches and completes outstanding requests without retaining old authority"
+          ],
+          "sha256": "5703b9c1050284f40d2ec14d96bc304a0c1879d6d13082fd7b7855253c7d4375"
+        },
+        "smb-rename.json": {
+          "status": "passed",
+          "checks": [
+            "32 file/directory and full/metadata-only parent combinations enforce destination WRITE sharing; parent DELETE rights and child share mode do not add obsolete restrictions",
+            "moving files/directories out of an exclusively opened source directory checks the destination rather than rejecting the source parent"
+          ],
+          "sha256": "ac766d7c13d1d213ae82eb5e95b37288b03ea84ca7b7befe3fc24e11c57dbc8d"
+        },
+        "smb-reauth.json": {
+          "status": "passed",
+          "checks": [
+            "SMB2.1/3.0/3.0.2/3.1.1 repeated signed/encrypted NTLM renewal preserves session ID, keys, opens and byte-range locks",
+            "expired authority reports NETWORK_SESSION_EXPIRED and renews the same open after an intervening management login",
+            "wrong proof and different-user renewal fail, release exclusive handles and complete signed/encrypted watches with NOTIFY_CLEANUP",
+            "fresh valid credentials cannot renew a revoked token or resurrect its exclusive open",
+            "LOGOFF during an incomplete renewal resets authentication state and permits a fresh encrypted session on the same transport",
+            "SESSION_SETUP for an unknown session does not abort another session's in-progress renewal or borrow its signing key"
+          ],
+          "sha256": "389cb23cbbaa06a5196ec84af10a5108ba732ce8af8cfcfb545c838f7e9ca07f"
+        },
+        "samba-notify.json": {
+          "status": "passed",
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+          "sha256": "22b8481501b3e8dc26589abf152e4fdfe5bbfe3b2f5009d8a78f3a4d79de343e",
+          "tests": [
+            {
+              "selector": "smb2.notify.dir",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.dir.log"
+            },
+            {
+              "selector": "smb2.notify.tcon",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.tcon.log"
+            },
+            {
+              "selector": "smb2.notify.tdis1",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.tdis1.log"
+            },
+            {
+              "selector": "smb2.notify.close",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.close.log"
+            },
+            {
+              "selector": "smb2.notify.logoff",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.logoff.log"
+            },
+            {
+              "selector": "smb2.notify.file",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.file.log"
+            },
+            {
+              "selector": "smb2.notify.handle-permissions",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.handle-permissions.log"
+            },
+            {
+              "selector": "smb2.notify.rmdir1",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.rmdir1.log"
+            },
+            {
+              "selector": "smb2.notify.rmdir2",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.rmdir2.log"
+            },
+            {
+              "selector": "smb2.notify.rmdir3",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.rmdir3.log"
+            },
+            {
+              "selector": "smb2.notify.rmdir4",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.rmdir4.log"
+            },
+            {
+              "selector": "smb2.notify.invalid-reauth",
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.invalid-reauth.log"
+            }
+          ]
+        }
+      }
+    },
+    "msvc": {
+      "id": 126420555894,
+      "status": "success",
+      "artifact": 13300373904,
+      "artifact_sha256": "69bafcd042d428cc0551a4f9c02d74a5d5372e48561e5d2fd20e2063ee3d81b0",
+      "reports": {
+        "smb-notify.json": {
+          "status": "passed",
+          "checks": [
+            "SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup",
+            "per-open first filter/watch-tree settings, FIFO completion and events buffered between requests",
+            "native host writes trigger recursive watches while nonrecursive watches ignore descendants",
+            "SIZE filter ignores equal-length writes and reports actual growth",
+            "LAST_WRITE observes new-file writes even when native CREATE and WRITE are drained together",
+            "first per-open zero/short capacity persists, reopening restores capacity; NOTIFY_ENUM_DIR has no partial records; invalid-only filters stay pending and cancel cleanly",
+            "directory/list-access validation and persistent shared security descriptor changes generate SECURITY notifications",
+            "portable DOS attributes, creation-time and EA changes participate in native notification streams",
+            "initial CREATE metadata produces only ADDED; subsequent changes still produce MODIFIED",
+            "delete-pending directories complete outstanding watches without waiting for last-handle deletion",
+            "TREE_DISCONNECT and LOGOFF finish pending notifications with NOTIFY_CLEANUP before releasing keys",
+            "policy revocation closes native watches and completes outstanding requests without retaining old authority"
+          ],
+          "sha256": "238832dc6d0b0384f5c330e502cef588f3d0dfc7f2110c1aec69c80525c6e868"
+        },
+        "smb-rename.json": {
+          "status": "passed",
+          "checks": [
+            "32 file/directory and full/metadata-only parent combinations enforce destination WRITE sharing; parent DELETE rights and child share mode do not add obsolete restrictions",
+            "moving files/directories out of an exclusively opened source directory checks the destination rather than rejecting the source parent"
+          ],
+          "sha256": "9e6cbdb51e86874c237d1034d0f9cb6c07e460318b03e73816c50b76543c93b7"
+        },
+        "smb-reauth.json": {
+          "status": "passed",
+          "checks": [
+            "SMB2.1/3.0/3.0.2/3.1.1 repeated signed/encrypted NTLM renewal preserves session ID, keys, opens and byte-range locks",
+            "expired authority reports NETWORK_SESSION_EXPIRED and renews the same open after an intervening management login",
+            "wrong proof and different-user renewal fail, release exclusive handles and complete signed/encrypted watches with NOTIFY_CLEANUP",
+            "fresh valid credentials cannot renew a revoked token or resurrect its exclusive open",
+            "LOGOFF during an incomplete renewal resets authentication state and permits a fresh encrypted session on the same transport",
+            "SESSION_SETUP for an unknown session does not abort another session's in-progress renewal or borrow its signing key"
+          ],
+          "sha256": "adafa4be62ff4f6934c5f1badd9fb34c901b668b85e52a868992c5a101eaf4ee"
+        }
+      }
+    }
+  }
+}

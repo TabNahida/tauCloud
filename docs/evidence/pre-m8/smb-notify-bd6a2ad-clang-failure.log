@@ -1,0 +1,42 @@
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	﻿2026-11-04T06:27:23.8975320Z ##[group]Run python tests/smb_notify_integration.py --bin build/linux/x86_64/debug --sanitizers --output build/acceptance/smb-notify.json
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:23.8976754Z [36;1mpython tests/smb_notify_integration.py --bin build/linux/x86_64/debug --sanitizers --output build/acceptance/smb-notify.json[0m
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:23.8996980Z shell: /usr/bin/bash -e {0}
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:23.8997256Z env:
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:23.8997451Z   PYTHONUTF8: 1
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:23.8997673Z   PIP_BREAK_SYSTEM_PACKAGES: 1
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:23.8997923Z ##[endgroup]
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:38.9506137Z PASS SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:39.9576552Z PASS per-open first filter/watch-tree settings, FIFO completion and events buffered between requests
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:40.2984934Z PASS native host writes trigger recursive watches while nonrecursive watches ignore descendants
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:40.5377210Z PASS recursive watches stop observing moved-out subtrees and do not disclose queued outside names
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:40.9398856Z PASS SIZE filter ignores equal-length writes and reports actual growth
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:41.0142492Z PASS LAST_WRITE observes new-file writes even when native CREATE and WRITE are drained together
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:42.2357417Z PASS first per-open zero/short capacity persists, reopening restores capacity; NOTIFY_ENUM_DIR has no partial records; invalid-only filters stay pending and cancel cleanly
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:42.5006067Z PASS directory/list-access validation and persistent shared security descriptor changes generate SECURITY notifications
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:42.9717790Z PASS portable DOS attributes, creation-time and EA changes participate in native notification streams
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:43.1704417Z PASS initial CREATE metadata produces only ADDED; subsequent changes still produce MODIFIED
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:43.3082001Z PASS recursive descriptor exhaustion stays visibly overflowed across requests and releases all watches on close
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:43.4536994Z PASS delete-pending directories complete outstanding watches without waiting for last-handle deletion
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:43.6096386Z PASS TREE_DISCONNECT and LOGOFF finish pending notifications with NOTIFY_CLEANUP before releasing keys
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:43.6798139Z Traceback (most recent call last):
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:43.6799047Z   File "/home/runner/work/tauCloud/tauCloud/tests/m5_integration.py", line 61, in denied
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:43.6799822Z     try:fn()
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:43.6800158Z         ^^^^
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:43.6800885Z   File "/home/runner/work/tauCloud/tauCloud/tests/smb_notify_integration.py", line 258, in <lambda>
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:43.6801800Z     denied(lambda: c.receive(req, timeout=10), 0xc0000128)
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:43.6802406Z                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:43.6803266Z   File "/home/runner/.local/lib/python3.12/site-packages/smbprotocol/connection.py", line 1103, in receive
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:43.6804168Z     raise SMBResponseException(response)
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:43.6805949Z smbprotocol.exceptions.AccessDenied: Received unexpected status from the server: A process has requested access to an object but has not been granted those access rights. (3221225506) STATUS_ACCESS_DENIED: 0xc0000022
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:43.6807259Z 
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:43.6807543Z During handling of the above exception, another exception occurred:
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:43.6808464Z 
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:43.6808655Z Traceback (most recent call last):
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:43.6809539Z   File "/home/runner/work/tauCloud/tauCloud/tests/smb_notify_integration.py", line 258, in run
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:43.6810449Z     denied(lambda: c.receive(req, timeout=10), 0xc0000128)
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:43.6811270Z   File "/home/runner/work/tauCloud/tauCloud/tests/m5_integration.py", line 63, in denied
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:43.6812153Z     assert e.status in statuses,(hex(e.status),statuses);return
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:43.6812743Z            ^^^^^^^^^^^^^^^^^^^^
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:43.6813182Z AssertionError: ('0xc0000022', (3221225768,))
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:43.6814108Z 
+clang metadata	Native SMB directory notifications and asynchronous lifecycle	2026-11-04T06:27:44.6476743Z ##[error]Process completed with exit code 1.

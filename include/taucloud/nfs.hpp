@@ -33,6 +33,8 @@ struct record_decoder {
 using domain_call = std::function<json(std::string, std::string, json)>;
 // Only typed NLM/NSM messages to the single trusted loopback peer are permitted.
 using callback_call = std::function<std::string(uint32_t, uint32_t, uint32_t, std::string)>;
+// Reverse RPCs use only an already-bound transport, never a client-supplied address.
+using backchannel_send = std::function<void(std::string, std::string)>;
 std::string loopback_callback(const config &, uint32_t program, uint32_t version,
                               uint32_t procedure, const std::string &body);
 class server {
@@ -40,7 +42,7 @@ class server {
   std::unique_ptr<impl> impl_;
 
 public:
-  server(const config &, domain_call, callback_call = {});
+  server(const config &, domain_call, callback_call = {}, backchannel_send = {});
   ~server();
   std::string dispatch(std::string_view record, std::string connection = "test");
   void disconnect(const std::string &connection);

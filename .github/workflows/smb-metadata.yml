@@ -47,6 +47,9 @@ on:
       - 'tests/m7_core.cpp'
       - 'src/nfs_protocol.cpp'
       - 'src/nfs.cpp'
+      - 'src/nfs_backchannel.inc'
+      - 'include/taucloud/nfs.hpp'
+      - 'tests/nfs_backchannel_integration.py'
       - 'src/nfs_gss.inc'
       - 'src/gss.cpp'
       - 'include/taucloud/gss.hpp'
@@ -99,6 +102,8 @@ jobs:
         run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_m2_tests${{ matrix.suffix }}
       - name: SMB authority and failed CREATE cleanup
         run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_m5_tests${{ matrix.suffix }}
+      - name: NFSv4.1 reverse RPC transport and callback lifecycle
+        run: python tests/nfs_backchannel_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/nfs-backchannel.json
       - name: NFSv4.1 channel limits and CREATE_SESSION replay
         run: python tests/nfs_session_negotiation.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/nfs-session-negotiation.json
       - name: SMB session renewal and failure cleanup
@@ -149,6 +154,9 @@ jobs:
         run: |
           python scripts/prepare_pynfs.py
           python tests/nfs_gss_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} ${{ matrix.compiler == 'gcc' && '--native' || '' }} --pynfs build/pynfs/nfs4.1 --output build/acceptance/nfs-gss.json
+      - name: Unmodified pynfs callback program and RPC version
+        if: runner.os == 'Linux'
+        run: python tests/pynfs_acceptance.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/pynfs-backchannel.json CSESS20 CSESS21
       - name: SMB3 dialects and encrypted allocation
         run: |
           ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_m6_tests${{ matrix.suffix }}

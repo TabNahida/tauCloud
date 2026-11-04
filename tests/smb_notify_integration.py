@@ -255,9 +255,17 @@ def run():
 
         d = create(t, 'revoke-watch', options=1); req = notify(d)
         f.api('grants', f.admin, dict(space='smbdata', subject_type='user', subject='alice', rights='r'))
-        denied(lambda: c.receive(req, timeout=10), 0xc0000128)
+        # A poll already holding an older authorization grant can lose the
+        # epoch race and return ACCESS_DENIED; a later poll sees FILE_CLOSED.
+        # After the completed revocation, the old handle must be gone in either
+        # case, and an exclusive read open proves its sharing/watch is released.
+        denied(lambda: c.receive(req, timeout=10), 0xc0000128, 0xc0000022)
+        from m5_integration import query
+        denied(lambda: query(d, 5), 0xc0000128)
+        fresh = create(t, 'revoke-watch', access=0x120089, disposition=1, share=0, options=1)
+        fresh.close()
         c.disconnect(close=False)
-        passed('policy revocation closes native watches and completes outstanding requests without retaining old authority')
+        passed('policy revocation denies the pending poll, invalidates its old handle and permits a fresh exclusive read open without retained watch/sharing authority')
         report['status'] = 'passed'
     except Exception:
         report['error'] = traceback.format_exc(); print(report['error'], flush=True)

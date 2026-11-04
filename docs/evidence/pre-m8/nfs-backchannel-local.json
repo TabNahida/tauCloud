@@ -1,0 +1,142 @@
+{
+  "recorded_at": "2026-11-04T06:41:57.130020+00:00",
+  "base_source": "6bf92f2f67f98d89484c9bb1632d7918877da92f",
+  "status": "partial",
+  "scope": "TCP backchannel transport, CB_NULL and AUTH_NONE/AUTH_SYS lifecycle. CB_COMPOUND, delegation/recall and RPCSEC_GSS callbacks remain unfinished.",
+  "files_sha256": {
+    "include/taucloud/nfs.hpp": "02d3914cedf71317f3550c2484951add7f58e3bcafc3ee473a2da0003bad61c1",
+    "src/nfs.cpp": "7473d8636c63aef38e15a33dff730ced443fbae9a7ec07ec0c83e61b707a6bdf",
+    "src/nfs_protocol.cpp": "3f48e76bcb80588408a09daf694d01a12a87871146149dd07e9b6334790abf76",
+    "src/nfs_v4.inc": "7db9c9d2bc60824d187fde2407bb775d588c59aff7f12bac4d000c9befff98e7",
+    "src/nfs_gss.inc": "80b7fef7fecb96a03e56c1e53b902e9f8964d7abb681875b06365e6393de1ebf",
+    "src/nfs_backchannel.inc": "dc8a0536cf41aa76cc1fbc0cabfcf3f7769fc2d1febf715f95058e9df350500c",
+    "tests/nfs_backchannel_integration.py": "c95144a69a8b673a2d27386f431e99f1d3dc8c4d2c5cab5a39f6b45bceff8517",
+    "tests/nfs_state_integration.py": "72d17db4e9f2339e2fc747e8a7a17fea180bd8fb22e3347ec8a928aabc9d2b9d",
+    ".github/workflows/smb-metadata.yml": "c664a54de85c2b975ffd90db44295e292140890a0b849f3496967069c60cb200",
+    "scripts/run_m7.py": "755e157ed6cd87c1f48e15845123edbcee65f4f5c947cec40986f49fc6dffe10"
+  },
+  "sanitizers": "Clang ASan/UBSan including LeakSanitizer",
+  "standards": [
+    "https://www.rfc-editor.org/rfc/rfc8881.html#section-18.34",
+    "https://www.rfc-editor.org/rfc/rfc5662.html#section-2"
+  ],
+  "local": {
+    "core": {
+      "status": "passed",
+      "checks": 77
+    },
+    "independent": {
+      "status": "passed",
+      "checks": [
+        "CREATE_SESSION binds a bidirectional transport; CB_NULL uses the requested program/version and AUTH_NONE while forechannel RPC stays usable",
+        "probe replies are bound to their exact TCP connection and XID; cross-connection, duplicate and unknown replies cannot change path state",
+        "BACKCHANNEL_CTL changes program and invalidates old probes; malformed matched replies keep path down and idempotent rebinding reprobes it",
+        "cleared callback credentials and destroyed/recreated sessions cannot be validated by a stale probe response",
+        "BIND_CONN_TO_SESSION supports BACK and BACK_OR_BOTH on new transports, rejects invalid directions and changes to existing channel roles",
+        "AUTH_SYS CB_NULL carries the offered timestamp, machine name, UID/GID and supplementary groups exactly",
+        "five-second probe timeout ignores late success; rebind recovers the path without recreating the session",
+        "losing the only callback transport sets CB_PATH_DOWN on a surviving forechannel connection"
+      ],
+      "sanitizers": true
+    },
+    "nfs_operations": {
+      "status": "passed",
+      "checks": [
+        "TCP record fragmentation and MOUNT v3 with independent XDR codecs",
+        "unknown UID/GID/groups rejected; root squashed to explicitly unprivileged subject",
+        "root squash uses anonymous read rights, strips privileged groups and rejects writes/revoked rights",
+        "read-only TCP portmapper advertises NFS and does not advertise unsupported NLM version 3",
+        "trailing XDR rejected before WRITE; previously persisted bytes remain intact",
+        "v3 guarded CREATE, 64 KiB UNSTABLE upgraded to FILE_SYNC, READ, COMMIT, exact duplicate WRITE",
+        "MAC tamper rejected; file handle survives external rename and all-service restart; durable v3 replay and new write verifier",
+        "deleted/recreated path cannot revive an old file handle",
+        "v3 MKDIR, cross-directory RENAME, READDIRPLUS, REMOVE/RMDIR type separation",
+        "pynfs v4.1 EXCHANGE_ID/CREATE_SESSION/SEQUENCE, guarded OPEN, WRITE/READ, exact slot replay",
+        "false slot replay and foreign stateid rejected; GETATTR subset independently decoded",
+        "old sessions/stateids invalidated on reboot; persisted owner can reclaim OPEN during grace; CLOSE releases recovery record",
+        "unrelated client cannot reclaim another owner after restart",
+        "export disable revokes existing handles through fresh identity grants",
+        "offline metadata backup strips NFS enrollment and excludes persistent capability/recovery databases"
+      ],
+      "client": "linux-nfs/pynfs cd4701827a8261fedbfb4c6e39029fb9671321a6 generated NFSv3/v4.1 codecs",
+      "full_conformance": false,
+      "test_sha256": "776728f813a438821f2192343c36c2091afe975e5d2101b785516c08734b77a3",
+      "data_sha256": "7daca2095d0438260fa849183dfc67faa459fdf4936e1bc91eec6b281b27e4c2"
+    },
+    "discovery": {
+      "status": "passed",
+      "checks": [
+        "EXPORT and DUMP filter root-squashed/unmapped principals; duplicate MNT is idempotent",
+        "mount records survive reconnect; UMNT/UMNTALL affect only caller and preserve NFS filehandles",
+        "rpcbind DUMP/GETVERSADDR advertise implemented TCP services plus UDP NSM; older NLM versions remain absent",
+        "recognized unsupported file types return per-operation errors after successful SEQUENCE/PUTFH",
+        "BACKCHANNEL_CTL updates bounded callback configuration; unknown GSS, SP4_NONE SET_SSV and obsolete v4.0 operations return defined per-operation errors",
+        "optional pNFS/delegation/attribute operations are decoded and return NOTSUPP with their own operation number, not OP_ILLEGAL",
+        "AUTH_NONE negotiates through a separately scoped anonymous identity; no file access or AUTH_SYS reply reuse; anonymous policy revocation invalidates security replies",
+        "export revocation immediately hides discovery and denies subsequent MNT"
+      ]
+    },
+    "state": {
+      "status": "passed",
+      "checks": [
+        "BIND_CONN_TO_SESSION on a fresh connection, PUTPUBFH, TEST_STATEID old/current states, FREE_STATEID held/unlocked states and read-only OPEN_DOWNGRADE",
+        "one kernel-style session accepts multiple mapped users without sharing their open authority",
+        "exclusive lock conflicts, denied owner details, disjoint writes and CLOSE with held locks",
+        "partial unlock splits ranges and preserves neighboring conflicts",
+        "process restart persists split lock ranges; matching client reclaims OPEN and locks before RECLAIM_COMPLETE"
+      ]
+    },
+    "kerberos": {
+      "status": "passed",
+      "checks": [
+        "RPCSEC_GSS rejects Kerberos contexts without mutual authentication even though SMB uses separate channel protection",
+        "real MIT tickets: mutual authentication and NFSv3/v4.1 read/write in krb5, krb5i and krb5p; AUTH_SYS downgrade denied; MOUNT and SECINFO advertise Kerberos",
+        "header/body MIC and encrypted-body tampering rejected; 64-entry replay window drops duplicates/old requests and accepts out-of-order requests; MAXSEQ and body sequence enforced",
+        "v3 duplicate mutation with fresh GSS sequence replays its result and rechecks revoked authority; context survives TCP reconnect; authenticated DESTROY invalidates the handle",
+        "SECINFO negotiates across disallowed weaker/stronger tuples, AUTH_SYS and authorized anonymous discovery; bare/repeated/saved PUTFH and LOOKUPP obey WRONGSEC placement; discovery consumes FH, replays safely and enforces traversal ACLs",
+        "unmapped principals and wrong acceptor tickets denied; per-export privacy requirement prevents downgrade; existing contexts lose access after principal mapping revocation",
+        "atomic service-key rotation accepts newly issued tickets while established contexts continue; live group-membership revocation denies existing contexts",
+        "expired tickets and pre-restart context handles are rejected; fresh mutual authentication preserves access to stable file handles"
+      ]
+    }
+  },
+  "callback_version": {
+    "original": {
+      "tests": 266,
+      "skipped": 264,
+      "failures": 1,
+      "errors": 0,
+      "selected": [
+        {
+          "code": "CSESS21",
+          "status": "failed",
+          "message": "Expected cb version between 1 and 1, got 4"
+        },
+        {
+          "code": "CSESS20",
+          "status": "passed"
+        }
+      ]
+    },
+    "corrected": {
+      "tests": 266,
+      "skipped": 264,
+      "failures": 0,
+      "errors": 0,
+      "selected": [
+        {
+          "code": "CSESS21",
+          "status": "passed"
+        },
+        {
+          "code": "CSESS20",
+          "status": "passed"
+        }
+      ]
+    },
+    "reason": "RFC 8881 18.36.3 prose says RPC callback version 4, but RFC 5662 NFS4_CALLBACK XDR defines version 1. Unmodified pynfs rejects 4 and accepts 1. Implementation follows the wire XDR.",
+    "original_log": "pynfs-backchannel-version4.log",
+    "corrected_log": "pynfs-backchannel-version1.log"
+  },
+  "remote": "New independent and original pynfs tests are wired into GCC/Clang/MSVC Actions; pending for this source."
+}

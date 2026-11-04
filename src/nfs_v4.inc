@@ -22,6 +22,11 @@ struct session {
   std::set<std::string> connections;
   uint32_t callback_program = 0;
   std::vector<uint32_t> callback_flavors;
+  uint32_t callback_flavor = UINT32_MAX;
+  std::string callback_credential;
+  std::set<std::string> back_connections, callback_up;
+  uint32_t callback_request_limit = 0;
+
 };
 struct open_state {
   std::string session, fh, owner, recovery;
@@ -47,6 +52,7 @@ std::map<std::string, open_state> opens;
 std::map<std::string, lock_state> byte_locks;
 std::map<std::string, json> reclaim;
 int64_t grace_end = 0;
+#include "nfs_backchannel.inc"
 std::map<std::string, std::string> retained_sets;
 void reap_retained() {
   std::set<std::string> live;
@@ -98,6 +104,7 @@ void retire_client(uint64_t client) {
   client_ids.erase(client);
 }
 void expire() {
+  expire_callback_probes();
   nlm_expire();
   if (grace_end && now() >= grace_end) {
     for (auto &[id, b] : reclaim)
@@ -466,13 +473,14 @@ void put_channel(writer &w, const std::vector<uint32_t> &a) {
     w.u32(v);
   w.u32(0);
 }
-std::vector<uint32_t> callback_security(reader &r) {
+std::vector<uint32_t> callback_security(reader &r, json &a) {
   auto n = r.u32();
   if (n > 16) throw xdr_error();
   std::vector<uint32_t> flavors;
   for (uint32_t i = 0; i < n; ++i) {
     auto auth = r.u32();
     flavors.push_back(auth);
+    auto start = r.pos;
     if (auth == 1) {
       r.u32(); r.opaque(255); r.u32(); r.u32();
       auto groups = r.u32();
@@ -481,6 +489,8 @@ std::vector<uint32_t> callback_security(reader &r) {
     } else if (auth == 6) {
       r.u32(); r.opaque(1024); r.opaque(1024);
     } else if (auth != 0) throw xdr_error();
+    if (auth <= 1 && !a.contains("callback_auth"))
+      a["callback_auth"] = {{"flavor", auth}, {"credential", encode_bytes(r.data.substr(start, r.pos - start))}};
   }
   return flavors;
 }
@@ -512,12 +522,12 @@ json parse4(reader &r) {
     a["fore"] = channel(r);
     a["back"] = channel(r);
     a["callback_program"] = r.u32();
-    a["callback_flavors"] = callback_security(r);
+    a["callback_flavors"] = callback_security(r, a);
     break;
   }
   case 40:
     a["callback_program"] = r.u32();
-    a["callback_flavors"] = callback_security(r);
+    a["callback_flavors"] = callback_security(r, a);
     break;
   case 54:
     r.opaque(1024); r.opaque(1024);
@@ -931,7 +941,7 @@ std::string v4(const identity &who, reader &r) {
                   std::min(fore[5], 8u)};
           // RFC 8881 18.36.3: both channels may reduce buffer sizes, but the
           // backchannel must preserve the client's operation and slot counts.
-          // Returning these bounds does not grant a backchannel (csr_flags=0).
+          // These bounds alone do not grant a backchannel; binding is negotiated below.
           std::vector<uint32_t> back = {0, std::min(back_offer[1], 4096u),
               std::min(back_offer[2], 4096u), 0, back_offer[4], back_offer[5]};
           auto idstr = random_hex(16);
@@ -946,12 +956,18 @@ std::string v4(const identity &who, reader &r) {
           sessions.emplace(idstr, session{id, who.key, now() + 60000, std::vector<slot>(fore[5]), fore, {connection}});
           sessions.at(idstr).callback_program = a.at("callback_program");
           sessions.at(idstr).callback_flavors = a.at("callback_flavors").get<std::vector<uint32_t>>();
-          body.fixed(decode_bytes(idstr)).u32(seq).u32(0);
+          auto &created = sessions.at(idstr);
+          created.callback_request_limit = back[1];
+          configure_callback(created, a);
+          bool backchannel = (a.at("flags").get<uint32_t>() & 2) && callback_available(created);
+          if (backchannel) created.back_connections.insert(connection);
+          body.fixed(decode_bytes(idstr)).u32(seq).u32(backchannel ? 2 : 0);
           put_channel(body, fore);
           put_channel(body, back);
           c.create_hash = hash;
           c.create_reply = body.data;
           ++c.sequence;
+          if (backchannel) probe_callback(idstr, connection);
         }
       } else if (op == 53) {
         sid = a.at("session");
@@ -990,13 +1006,29 @@ std::string v4(const identity &who, reader &r) {
             .u32(n)
             .u32(uint32_t(s.slots.size() - 1))
             .u32(uint32_t(s.slots.size() - 1))
-            .u32(0);
+            .u32(callback_path_up(s.client) ? 0 : 1);
       } else if (op == 41) {
-        auto &s = session_check(a.at("session"));
-        check(s.connections.contains(connection) || s.connections.size() < 64, 10018);
-        s.connections.insert(connection);
-        check(!a.at("rdma").get<bool>() && a.at("dir").get<uint32_t>() != 2, 10004);
-        body.fixed(decode_bytes(a.at("session").get<std::string>())).u32(1).boolean(false);
+        auto id = a.at("session").get<std::string>();
+        auto &s = session_check(id);
+        auto requested = a.at("dir").get<uint32_t>();
+        check(requested == 1 || requested == 2 || requested == 3 || requested == 7);
+        check(!a.at("rdma").get<bool>(), 10004);
+        unsigned bound = (s.connections.contains(connection) ? 1 : 0) |
+                         (s.back_connections.contains(connection) ? 2 : 0);
+        if (bound) {
+          // Rebinding is idempotent; it cannot change existing channel roles.
+          check(requested == 3 ? (bound == 1 || bound == 3) :
+                requested == 7 ? (bound == 2 || bound == 3) : bound == requested);
+        } else {
+          bool back = requested != 1 && callback_available(s);
+          check(back || requested == 1 || requested == 3, 10004);
+          bound = requested == 2 ? 2 : back ? 3 : 1;
+          check(s.connections.size() + s.back_connections.size() < 64, 10018);
+          if (bound & 1) s.connections.insert(connection);
+          if (bound & 2) s.back_connections.insert(connection);
+        }
+        if ((bound & 2) && !s.callback_up.contains(connection)) probe_callback(id, connection);
+        body.fixed(decode_bytes(id)).u32(bound).boolean(false);
       } else if (op == 44) {
         auto target = a.at("session").get<std::string>();
         auto &s = session_check(target);
@@ -1060,6 +1092,9 @@ std::string v4(const identity &who, reader &r) {
           auto &s = sessions.at(sid);
           s.callback_program = a.at("callback_program");
           s.callback_flavors = std::move(flavors);
+          configure_callback(s, a);
+          s.callback_up.clear();
+          for (const auto &bound : s.back_connections) probe_callback(sid, bound);
         } else if (op == 54) {
           check(false, 22); // SET_SSV is invalid for the negotiated SP4_NONE.
         } else if (op == 24 || op == 23) {

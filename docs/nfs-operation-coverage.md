@@ -1,13 +1,13 @@
 # NFSv4.1 operation coverage
 
-This is an implementation and test map for the regular-file/directory AUTH_SYS profile. It is not a declaration of complete RFC 8881 conformance. The [RFC operation table](https://www.rfc-editor.org/rfc/rfc8881.html#section-17) is the source of the required/optional distinction. Linux RPCSEC_GSS authentication/integrity/privacy is now implemented and independently tested (see [Kerberos](nfs-kerberos.md)); SSV, backchannel callbacks, delegation and pNFS layouts remain unfinished.
+This is an implementation and test map for the regular-file/directory AUTH_SYS profile. It is not a declaration of complete RFC 8881 conformance. The [RFC operation table](https://www.rfc-editor.org/rfc/rfc8881.html#section-17) is the source of the required/optional distinction. Linux RPCSEC_GSS authentication/integrity/privacy is now implemented and independently tested (see [Kerberos](nfs-kerberos.md)); TCP backchannel binding and AUTH_NONE/AUTH_SYS CB_NULL probes are implemented; SSV, CB_COMPOUND, GSS callbacks, delegation and pNFS layouts remain unfinished.
 
 | Required operations | Implementation | Executable evidence |
 | --- | --- | --- |
 | EXCHANGE_ID, CREATE_SESSION, DESTROY_SESSION, DESTROY_CLIENTID | `src/nfs_v4.inc`, bounded clients/sessions and identity ownership | Upstream `exchange_id`, `create_session`, `destroy_session`, `destroy_clientid` cases in `pynfs-control.json`; `tests/m7_integration.py`, `tests/nfs_session_negotiation.py` (channel bounds and exact replay) |
 | SEQUENCE | Per-slot sequence/replay, bounded responses, principal-bound request identity and renewed authorization | Upstream `sequence`; `tests/nfs_namespace_integration.py`, `tests/nfs_state_integration.py` |
-| BIND_CONN_TO_SESSION | Fore-channel connection binding, SP4_NONE implicit binding | `tests/nfs_state_integration.py` binds a fresh TCP connection and uses the existing session |
-| BACKCHANNEL_CTL, SET_SSV | Bounded callback security configuration; unknown GSS handles return NOENT; SSV is INVAL for negotiated SP4_NONE | `tests/nfs_discovery_integration.py` |
+| BIND_CONN_TO_SESSION | Fore/back/both connection binding, idempotence and SP4_NONE implicit fore binding | `tests/nfs_state_integration.py`; `tests/nfs_backchannel_integration.py` verifies explicit roles, callback replies, reconfiguration and disconnect |
+| BACKCHANNEL_CTL, SET_SSV | Bounded callback security/program reconfiguration with new probes; unknown GSS handles return NOENT; SSV is INVAL for negotiated SP4_NONE | `tests/nfs_discovery_integration.py` |
 | PUTFH, PUTROOTFH, PUTPUBFH, GETFH, SAVEFH, RESTOREFH | Validated opaque handles and saved/current filehandle/stateid | `tests/m7_integration.py`, `tests/nfs_state_integration.py`; upstream PUTFH and current-stateid cases |
 | LOOKUP, LOOKUPP, ACCESS, GETATTR | Authorized pseudo-root, exports, parents, shared descriptor mode/ACL and policy access intersection | `tests/nfs_namespace_integration.py`, `tests/nfs_attributes_integration.py`; upstream namespace profile |
 | VERIFY, NVERIFY | Attribute comparison with explicit unsupported/write-only attribute errors | Upstream regular-file/directory profile and VF1r |
