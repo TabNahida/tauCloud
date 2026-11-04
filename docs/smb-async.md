@@ -75,3 +75,11 @@ A dedicated Linux Actions job now runs real Kerberos CIFS mounts directly after
 build, in addition to the full metadata matrix. Native reacceptance on this
 change is pending. macOS SMB still fails at `ed77b4d`; its NFSv3 client passes.
 No full native-client compatibility is claimed from the independent-client tests.
+
+The retained [macOS result](evidence/pre-m8/macos-ed77-native-failure.json) fails
+during the first payload write with EBADF/STATUS_FILE_CLOSED, rather than the
+previous rename framing error. Its metadata artifact was byte-truncated into
+invalid JSON and mixed different connections' message IDs. The harness now
+retains the complete 512-frame-bounded metadata document and labels connection
+numbers and opaque CREATE/CLOSE/IO FileIds. It still omits authentication blobs,
+keys and file data. This improves diagnosis; the macOS defect is not yet fixed.

@@ -189,7 +189,10 @@ f.unlink();p.rmdir();print(hashlib.sha256(data).hexdigest())
             except Exception:pass
         if 'ssh' in locals():
             for source in ('fixture.log','server.log','smb-metadata.json'):
-                try:(a.output.parent/('mac-'+source)).write_text(run(ssh+['tail -c 65536 work/'+source]))
+                # The relay already bounds metadata to 512 frames. Byte-tail
+                # truncation corrupts JSON and discards initial CREATE replies.
+                command = 'cat' if source == 'smb-metadata.json' else 'tail -c 65536'
+                try:(a.output.parent/('mac-'+source)).write_text(run(ssh+[command+' work/'+source]))
                 except Exception:pass
         for proc in reversed(processes):
             proc.terminate()

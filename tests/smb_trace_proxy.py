@@ -6,7 +6,7 @@ import time
 
 class HeaderProxy:
     def __init__(self, target):
-        self.target=target;self.trace=[];self.stop=threading.Event();self.sockets=[]
+        self.target=target;self.trace=[];self.stop=threading.Event();self.sockets=[];self.next_connection=0
         self.listener=socket.socket();self.listener.bind(('127.0.0.1',0));self.listener.listen(8)
         self.port=self.listener.getsockname()[1]
         self.thread=threading.Thread(target=self.accept,daemon=True);self.thread.start()
@@ -18,7 +18,8 @@ class HeaderProxy:
             if len(buf)<size+4:return
             frame=bytes(buf[4:4+size]);del buf[:4+size]
             if len(self.trace)>=512:continue
-            item=dict(direction=direction,size=size,magic=frame[:4].hex(),time=time.monotonic())
+            item=dict(direction=direction,size=size,magic=frame[:4].hex(),time=time.monotonic(),
+                      connection=ntlm_state['connection'])
             if frame[:4]==b'\xfeSMB' and len(frame)>=64:
                 # Keep actual receive boundaries and every compound header.
                 # Looking only at the first command hides a pending suffix.
@@ -33,6 +34,17 @@ class HeaderProxy:
                                message_id=int.from_bytes(part[24:32],'little'),next_command=next_command)
                     if direction=='response':entry['status']=hex(int.from_bytes(part[8:12],'little'))
                     if flags&2:entry['async_id']=int.from_bytes(part[32:40],'little')
+                    # Opaque file IDs correlate CREATE/CLOSE/IO across compounds
+                    # and connections without retaining any payload or key.
+                    command = entry['command']
+                    fid_at = None
+                    if direction == 'request':
+                        fid_at = {6:72, 7:72, 8:80, 9:80, 10:72, 11:72,
+                                  14:72, 15:72, 16:88, 17:80}.get(command)
+                    elif command == 5 and entry.get('status') == '0x0':
+                        fid_at = 128
+                    if fid_at is not None and entry['size'] >= fid_at + 16:
+                        entry['file_id'] = part[fid_at:fid_at+16].hex()
                     item['segments'].append(entry)
                     if not next_command or next_command<64 or next_command%8 or next_command>=len(part):break
                     offset+=next_command
@@ -110,13 +122,14 @@ class HeaderProxy:
                 client,_=self.listener.accept()
                 upstream=socket.create_connection(('127.0.0.1',self.target),timeout=10)
                 self.sockets.extend([client,upstream])
-                threading.Thread(target=self.relay,args=(client,upstream),daemon=True).start()
+                self.next_connection += 1
+                threading.Thread(target=self.relay,args=(client,upstream,self.next_connection),daemon=True).start()
             except OSError:
                 if not self.stop.is_set():self.trace.append(dict(error='relay_accept_failed'))
                 break
 
-    def relay(self,client,upstream):
-        buffers={client:bytearray(),upstream:bytearray()};ntlm_state={}
+    def relay(self,client,upstream,connection):
+        buffers={client:bytearray(),upstream:bytearray()};ntlm_state={'connection':connection}
         try:
             while not self.stop.is_set():
                 for src in select.select([client,upstream],[],[],0.2)[0]:

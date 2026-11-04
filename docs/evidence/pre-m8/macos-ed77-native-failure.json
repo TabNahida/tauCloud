@@ -1,0 +1,19 @@
+{
+  "status": "failed",
+  "url": "https://github.com/TabNahida/tauCloud/actions/runs/41917606115",
+  "source_commit": "ed77b4d05570932b3a1f8f16de63f0b727b4b42e",
+  "client_host": "macOS-15.7.9-x86_64-i386-64bit-Mach-O",
+  "profiles": [
+    {
+      "name": "macos-native-smb",
+      "status": "failed",
+      "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\n    with f.open('wb') as out:out.write(data);out.flush();os.fsync(out.fileno())\n                             ~~~~~~~~~^^^^^^\nOSError: [Errno 9] Bad file descriptor\n"
+    },
+    {
+      "name": "macos-native-nfs3",
+      "status": "passed"
+    }
+  ],
+  "observation": "SMB write receives STATUS_FILE_CLOSED; NFSv3 native IO passes. The metadata artifact was byte-truncated and combined multiple connections without IDs.",
+  "followup": "Keep complete bounded metadata JSON and annotate transport connection plus opaque FileIds for CREATE/CLOSE/IO; native rerun required."
+}
