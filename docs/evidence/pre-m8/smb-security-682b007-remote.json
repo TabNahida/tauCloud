@@ -1,0 +1,1645 @@
+{
+  "recorded_at": "2026-11-04T06:16:39.813596+00:00",
+  "source": "682b00718efc15aabd09e9b0e2734334e1861956",
+  "status": "passed",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41781608474",
+  "scope": "Targeted SMB/NFS metadata/security regression only, not full protocol conformance. This source predates buffered notifications, modern rename and failed-renewal notification cleanup.",
+  "jobs": {
+    "gcc": {
+      "id": 126414200389,
+      "status": "success",
+      "artifact": 13300570755,
+      "artifact_sha256": "bbdeca25780009530a4c90719072c98a7467c192deb77f3ea6ff86fb32ff941e",
+      "reports": {
+        "blocking-locks.json": {
+          "sha256": "7ab6ffa37771ea91153f4075c20182e1e505e3eea8cc960deb39da06673dcdba",
+          "status": "passed",
+          "checks": [
+            "210: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+            "210: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+            "210: cross-connection FIFO for conflicts and queued writer fairness",
+            "210: CLOSE cancels waiting requests and releases held ranges to another connection",
+            "300: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+            "300: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+            "300: cross-connection FIFO for conflicts and queued writer fairness",
+            "300: CLOSE cancels waiting requests and releases held ranges to another connection",
+            "302: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+            "302: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+            "302: cross-connection FIFO for conflicts and queued writer fairness",
+            "302: CLOSE cancels waiting requests and releases held ranges to another connection",
+            "311: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+            "311: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+            "311: cross-connection FIFO for conflicts and queued writer fairness",
+            "311: CLOSE cancels waiting requests and releases held ranges to another connection",
+            "compound LOCK/ECHO and LOCK/CLOSE preserve interim/final ordering and connection progress",
+            "TREE_DISCONNECT cancels pending locks before removing the tree",
+            "session teardown cancels pending locks before discarding signing and encryption keys",
+            "peer disconnect removes a pending waiter before granting the next connection",
+            "holder disconnect releases locks and wakes the surviving client",
+            "32 concurrent CANCEL/unlock races produce one final result and no leaked lock or duplicate response",
+            "16 concurrent CLOSE/unlock races produce one final result and release every acquired range",
+            "bounded pending requests return INSUFFICIENT_RESOURCES and all cancelled capacity is reusable",
+            "credential revocation drains all session locks before its final reply, without transport teardown",
+            "a frame started before idle expiry retains its independent five-second body deadline",
+            "pending lock survives 65 seconds without client traffic; normal idle expiry resumes after its final response"
+          ],
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39"
+        },
+        "metadata.json": {
+          "sha256": "86962dee9b9fce3e3d247cacf16c3f2f881e7b3e8f9850e64b88163fc2db70a8",
+          "status": "passed",
+          "checks": [
+            "CREATE/QUERY/SET persistent DOS attributes, zero/no-change and NORMAL semantics; readonly open/delete checks and granted-handle authority",
+            "four independent timestamps, native mtime, zero/no-change, per-handle explicit/-1 freeze and -2 re-enable; invalid times reject before attribute mutation",
+            "binary extended attributes on CREATE/QUERY/SET, case-insensitive updates, deletion, restart, NEED_EA and access rights; malformed chains reject atomically",
+            "attributes follow native object across rename/restart, directory invariants hold, replacement object does not inherit stale metadata",
+            "per-open mode CREATE/QUERY/SET and FileAllInformation agreement, write-through writes, independent handles, invalid synchronous/immutable modes and SMB2 ignored synchronous CREATE flags",
+            "EA cursor paging, restart, single-entry and explicit indexes, independent opens, bounded whole-entry overflow and undersized-buffer retries",
+            "selected-name EA queries preserve request order and scan cursor, ignore index/restart, match case-insensitively, return absent names, bound output and reject malformed chains without cursor changes",
+            "MxAc maximal access uses fresh policy and readonly restrictions, supports optional change-time comparison and chained QFid replies, rejects malformed/duplicate contexts before mutation",
+            "EA writes atomically update change time/archive while respecting frozen timestamps; exact 65531-byte aggregate limit and standard invalid-name/list statuses"
+          ]
+        },
+        "allocation.json": {
+          "sha256": "285527f362a3a8b1b45ffbc5d92063866ab797a902aa74ec21b1f4db70d1094e",
+          "status": "passed",
+          "checks": [
+            "schema v4 migration preserves a pre-v5 backup before adding durable reservations",
+            "native space allocation preserves EOF, charges quota once, rejects over-quota growth before mutation and enforces WRITE_DATA",
+            "durable logical quota survives restart while allocation reports native close-time trimming; EOF extension consumes reservations; shrink and deletion release quota",
+            "AlSi CREATE/overwrite preallocation preserves zero EOF, charges durable quota, ignores existing opens/directories, validates context shape and fails over-quota before namespace/data mutation"
+          ]
+        },
+        "nfs-acl.json": {
+          "sha256": "f2ff14446675f0a470a09759cc8d41dd4916e5a0fae4b8abd5a04b7c3fb2dcdb",
+          "status": "passed",
+          "checks": [
+            "NFSv3 mode is enforced, owner/group are mapped, nonowner chmod denied; NFSv4 advertises real ACL support",
+            "group mode checks use only verified AUTH_SYS groups; omitted groups and root-squashed groups cannot grant access",
+            "ACL+mode applies mode then ACL; named-user ACE roundtrips, READ_ACL is enforced and chmod masks named grants",
+            "invalid ACL principal and flags fail before truncation; empty ACL denies data and owner can recover WRITE_ACL",
+            "special/named groups and primary-group changes enforce the mapped trustee; opaque SMB SIDs roundtrip; execute-only NFS READ/OPEN/ACCESS works; invalid CREATE ACL leaves no object",
+            "directory ACL inheritance preserves OWNER@ and clears the acl-only inherited flag; ACL attributes larger than 4 KiB roundtrip",
+            "NFS chmod and ACL changes govern new SMB opens of the same object",
+            "shared ACLs, symbolic principals and derived mode survive complete service restart"
+          ]
+        },
+        "nfs-attributes.json": {
+          "sha256": "d23a0e9c884d7688792d4f2a629375e41d458108a8f4f3a009e6b438e33b1529",
+          "status": "passed",
+          "checks": [
+            "v3 CREATE preserves mode, mapped ownership and explicit atime/mtime on native handles",
+            "v3 ctime differs from preserved mtime and advances for mode-only metadata changes across export aliases",
+            "v4 SETATTR updates aliases consistently; GETATTR rejects write-only time attributes",
+            "durable change counters detect equal-size writes with restored mtime, share alias state and return real namespace change_info; reads do not advance them",
+            "v3 used and v4 space_used match independent native allocation for empty, small, sparse/extended and truncated files, separately from logical size",
+            "paged v4 READDIR skips reserved cookies 1/2 and resumes without duplicate or missing entries",
+            "mode/ownership and exact timestamps survive server restart through stable alias handles"
+          ]
+        },
+        "nfs-discovery.json": {
+          "sha256": "9c966f2cddb3be26474dc3d8c6514dc9a2c86081149215b8fcc120e7c1f07930",
+          "status": "passed",
+          "checks": [
+            "EXPORT and DUMP filter root-squashed/unmapped principals; duplicate MNT is idempotent",
+            "mount records survive reconnect; UMNT/UMNTALL affect only caller and preserve NFS filehandles",
+            "rpcbind DUMP/GETVERSADDR advertise implemented TCP services plus UDP NSM; older NLM versions remain absent",
+            "recognized unsupported file types return per-operation errors after successful SEQUENCE/PUTFH",
+            "BACKCHANNEL_CTL updates bounded callback configuration; unknown GSS, SP4_NONE SET_SSV and obsolete v4.0 operations return defined per-operation errors",
+            "optional pNFS/delegation/attribute operations are decoded and return NOTSUPP with their own operation number, not OP_ILLEGAL",
+            "AUTH_NONE negotiates through a separately scoped anonymous identity; no file access or AUTH_SYS reply reuse; anonymous policy revocation invalidates security replies",
+            "export revocation immediately hides discovery and denies subsequent MNT"
+          ]
+        },
+        "nfs-gss.json": {
+          "sha256": "1e5c736dab6bfa03e18bcb50a2c2dc4bebca112df5e4bc709e7bb8d421e753c4",
+          "status": "passed",
+          "checks": [
+            "RPCSEC_GSS rejects Kerberos contexts without mutual authentication even though SMB uses separate channel protection",
+            "real MIT tickets: mutual authentication and NFSv3/v4.1 read/write in krb5, krb5i and krb5p; AUTH_SYS downgrade denied; MOUNT and SECINFO advertise Kerberos",
+            "header/body MIC and encrypted-body tampering rejected; 64-entry replay window drops duplicates/old requests and accepts out-of-order requests; MAXSEQ and body sequence enforced",
+            "v3 duplicate mutation with fresh GSS sequence replays its result and rechecks revoked authority; context survives TCP reconnect; authenticated DESTROY invalidates the handle",
+            "SECINFO negotiates across disallowed weaker/stronger tuples, AUTH_SYS and authorized anonymous discovery; bare/repeated/saved PUTFH and LOOKUPP obey WRONGSEC placement; discovery consumes FH, replays safely and enforces traversal ACLs",
+            "unmapped principals and wrong acceptor tickets denied; per-export privacy requirement prevents downgrade; existing contexts lose access after principal mapping revocation",
+            "unmodified pinned pynfs COMP1, CSESS1, OPEN1, OPEN30 and VF1r pass using krb5, krb5i and krb5p",
+            "atomic service-key rotation accepts newly issued tickets while established contexts continue; live group-membership revocation denies existing contexts",
+            "expired tickets and pre-restart context handles are rejected; fresh mutual authentication preserves access to stable file handles",
+            "unmodified Linux kernel NFSv4.1 mounts and file roundtrips pass with krb5, krb5i and krb5p"
+          ],
+          "native": {
+            "status": "passed",
+            "profiles": [
+              {
+                "service": "krb5",
+                "status": "passed",
+                "checks": [
+                  "native kernel mount",
+                  "256 KiB write/fsync/read",
+                  "mapped owner",
+                  "rename/overwrite/truncate",
+                  "directory enumeration/unlink/rmdir"
+                ]
+              },
+              {
+                "service": "krb5i",
+                "status": "passed",
+                "checks": [
+                  "native kernel mount",
+                  "256 KiB write/fsync/read",
+                  "mapped owner",
+                  "rename/overwrite/truncate",
+                  "directory enumeration/unlink/rmdir"
+                ]
+              },
+              {
+                "service": "krb5p",
+                "status": "passed",
+                "checks": [
+                  "native kernel mount",
+                  "256 KiB write/fsync/read",
+                  "mapped owner",
+                  "rename/overwrite/truncate",
+                  "directory enumeration/unlink/rmdir"
+                ]
+              }
+            ]
+          },
+          "pynfs": {
+            "krb5": {
+              "errors": 0,
+              "failures": 0,
+              "skipped": 261,
+              "tests": 266
+            },
+            "krb5i": {
+              "errors": 0,
+              "failures": 0,
+              "skipped": 261,
+              "tests": 266
+            },
+            "krb5p": {
+              "errors": 0,
+              "failures": 0,
+              "skipped": 261,
+              "tests": 266
+            }
+          }
+        },
+        "nfs-gss.krb5.json": {
+          "sha256": "4074dc7ea3f29999a0f45d50af8e1b8e19a5d53cc4324ddd4f9a8090cd77bb78",
+          "errors": 0,
+          "failures": 0,
+          "skipped": 261,
+          "tests": 266,
+          "executed_codes": [
+            "VF1r",
+            "OPEN1",
+            "OPEN30",
+            "CSESS1",
+            "COMP1"
+          ]
+        },
+        "nfs-gss.krb5i.json": {
+          "sha256": "39aad5bede0119d66f19bd45cc512ca95d9eeaf4a534cf44ee02711c17e6090d",
+          "errors": 0,
+          "failures": 0,
+          "skipped": 261,
+          "tests": 266,
+          "executed_codes": [
+            "VF1r",
+            "OPEN1",
+            "OPEN30",
+            "CSESS1",
+            "COMP1"
+          ]
+        },
+        "nfs-gss.krb5p.json": {
+          "sha256": "261745f634a118d726836432df82f680328c0275621c71f576f5189baa5e7cfd",
+          "errors": 0,
+          "failures": 0,
+          "skipped": 261,
+          "tests": 266,
+          "executed_codes": [
+            "VF1r",
+            "OPEN1",
+            "OPEN30",
+            "CSESS1",
+            "COMP1"
+          ]
+        },
+        "nfs-mode.json": {
+          "sha256": "c7c393e259ba9e347c28a59e9a8952084f3a4b5733e3c1041571c20a8c803acd",
+          "status": "passed",
+          "checks": [
+            "v3 special mode creation and v4 masked updates preserve unmasked bits; high-only masks preserve exact ACL bytes; combined masked mode applies before ACL",
+            "undefined mode bits, conflicting mode attributes and masked mode in CREATE/OPEN/GETATTR/VERIFY reject without creation",
+            "NFS data writes, truncation and ownership setters clear file set-ID bits",
+            "setgid directories transmit the exact parent GID alias and directory setgid to nonmember creators; explicit setgid requires verified group membership",
+            "sticky directories reject foreign unlink, rename and replacement while permitting the object owner",
+            "encrypted SMB writes clear NFS set-ID bits; SMB disposition and rename cannot bypass NFS sticky directories",
+            "staged DAV replacement clears set-ID; removing sticky restores unlink; special modes and inherited GID aliases persist through complete restart"
+          ]
+        },
+        "samba-acls-restore.json": {
+          "sha256": "73cea83a4f4ee096f26e419a1dacc9a3eaa484a65d6aa28588f6d2229deeaf84",
+          "status": "passed",
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+          "tests": [
+            {
+              "selector": "smb2.acls",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 14,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-restore-smb2.acls.log"
+            }
+          ]
+        },
+        "samba-acls.json": {
+          "sha256": "c579fb76eef0bf4feed1324e0104f1c44ae6325997d8abebe12d0070c94bdcf8",
+          "status": "passed",
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+          "tests": [
+            {
+              "selector": "smb2.acls.CREATOR",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.CREATOR.log"
+            },
+            {
+              "selector": "smb2.acls.GENERIC",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.GENERIC.log"
+            },
+            {
+              "selector": "smb2.acls.OWNER",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.OWNER.log"
+            },
+            {
+              "selector": "smb2.acls.INHERITANCE",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.INHERITANCE.log"
+            },
+            {
+              "selector": "smb2.acls.INHERITFLAGS",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.INHERITFLAGS.log"
+            },
+            {
+              "selector": "smb2.acls.DYNAMIC",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.DYNAMIC.log"
+            },
+            {
+              "selector": "smb2.acls.ACCESSBASED",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.ACCESSBASED.log"
+            },
+            {
+              "selector": "smb2.acls.OWNER-RIGHTS",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.OWNER-RIGHTS.log"
+            },
+            {
+              "selector": "smb2.acls.OWNER-RIGHTS-DENY",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.OWNER-RIGHTS-DENY.log"
+            },
+            {
+              "selector": "smb2.acls.OWNER-RIGHTS-DENY1",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.OWNER-RIGHTS-DENY1.log"
+            },
+            {
+              "selector": "smb2.acls.DENY1",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.DENY1.log"
+            },
+            {
+              "selector": "smb2.acls.MXAC-NOT-GRANTED",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.MXAC-NOT-GRANTED.log"
+            },
+            {
+              "selector": "smb2.acls.OVERWRITE_READ_ONLY_FILE",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.OVERWRITE_READ_ONLY_FILE.log"
+            }
+          ]
+        },
+        "samba-async.json": {
+          "sha256": "f2af67a501f0dec782fb2486cdac6fabe269d6c2ca60ec01d53a08afae34ac7b",
+          "status": "passed",
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+          "tests": [
+            {
+              "selector": "smb2.lock.async",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-async-smb2.lock.async.log"
+            },
+            {
+              "selector": "smb2.lock.cancel",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-async-smb2.lock.cancel.log"
+            },
+            {
+              "selector": "smb2.lock.cancel-tdis",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-async-smb2.lock.cancel-tdis.log"
+            },
+            {
+              "selector": "smb2.lock.cancel-logoff",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-async-smb2.lock.cancel-logoff.log"
+            }
+          ]
+        },
+        "samba-notify.json": {
+          "sha256": "373fd7a9652b1663b0ced0233d79dbe6216e380a8c258b7f1679a14e4c0d55ba",
+          "status": "passed",
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+          "tests": [
+            {
+              "selector": "smb2.notify.tdis1",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.tdis1.log"
+            },
+            {
+              "selector": "smb2.notify.close",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.close.log"
+            },
+            {
+              "selector": "smb2.notify.logoff",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.logoff.log"
+            },
+            {
+              "selector": "smb2.notify.file",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.file.log"
+            },
+            {
+              "selector": "smb2.notify.handle-permissions",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.handle-permissions.log"
+            },
+            {
+              "selector": "smb2.notify.rmdir1",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.rmdir1.log"
+            },
+            {
+              "selector": "smb2.notify.rmdir2",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.rmdir2.log"
+            },
+            {
+              "selector": "smb2.notify.rmdir3",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.rmdir3.log"
+            },
+            {
+              "selector": "smb2.notify.rmdir4",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.rmdir4.log"
+            }
+          ]
+        },
+        "security.json": {
+          "sha256": "dd45337a08ad53b6e347d596a30caeb0fa5492b307a42f3ac0cc1d89a4c5cdef",
+          "status": "passed",
+          "checks": [
+            "schema 5 migration backs up each file authority before adding persistent security descriptors",
+            "self-relative owner/group/DACL query, requested sections, required buffer size and READ_CONTROL/WRITE_DAC/SACL boundaries",
+            "ordered deny/allow access checks, MAXIMUM_ALLOWED and explicit-right intersection; existing handles retain granted rights",
+            "SMB denial enforced by NFSv3 READ/ACCESS, NFSv4 ACCESS, core API and WebDAV readonly aliases",
+            "ACE order, empty versus NULL DACL, implicit owner rights and OWNER RIGHTS SID",
+            "malformed offsets, overlaps, truncation and unsupported ACEs rejected atomically; ownership cannot be assigned to another user",
+            "file/directory inheritance with CREATOR OWNER substitution and multi-generation propagation; ACL follows rename",
+            "SecD CREATE persists protected initial ACL, validates ownership and rejects duplicate/malformed contexts before mutation",
+            "group ACE enforcement and membership revocation use freshly signed identity grants",
+            "schema 6 durability across process restart; replacement object receives fresh owner and ACL",
+            "NFS writer publication still enforces file DACL; WRITE and chmod cannot bypass SMB restrictions",
+            "DAV writer cannot bypass ACL; staged PUT retains restrictions, recursive COPY checks descendants and inherits destination ACL through private staging parents",
+            "DAV LOCK on unmapped URL checks parent create rights and persists inherited DACL"
+          ]
+        },
+        "smb-gss.json": {
+          "sha256": "a5e092f2f2feb4ef1951d864170a4141d0fa13bfdfd55ca473bbc9da9b766758",
+          "status": "passed",
+          "checks": [
+            "principal mappings require administrator authority and reject ambiguous duplicate principal bindings",
+            "real Kerberos and SPNEGO negotiate authenticate SMB2.1/3.0/3.0.2/3.1.1; independent client validates signing and AES encryption during write/read/flush/rename/truncate/delete",
+            "AES-256-CCM/GCM derive from the complete 32-byte Kerberos key with independent signed setup, encrypted I/O and renewal checks for Kerberos/SPNEGO",
+            "unmodified Samba smbclient requires Kerberos and verifies 1 MiB signed SMB2.1 and encrypted SMB3.1.1 roundtrips",
+            "unmapped principals, tickets for another acceptor and modified authenticators fail without NTLM or guest fallback",
+            "independent raw Kerberos verifies mutual AP-REP and final SMB2 HMAC; replaying the same AP-REQ on a fresh transport is rejected",
+            "Kerberos without GSS mutual authentication still verifies SMB2 SESSION_SETUP signing and signed file I/O; replay remains rejected",
+            "fresh Kerberos and SPNEGO renew all SMB2/3 dialects with unchanged signing/cipher keys and live file handles",
+            "renewal cannot switch to another Kerberos principal mapped to the same account or revive a revoked mapping token; failures release exclusive opens",
+            "live principal mapping revocation terminates existing file authority and new logins; explicit reenable admits fresh authentication",
+            "atomic cifs keytab rotation admits fresh tickets while existing signed/encrypted sessions remain valid",
+            "ticket lifetime bounds SMB authority; Kerberos is independent of NTLM enrollment and existing mandatory-MIC NTLM authentication still works",
+            "native Linux kernel CIFS uses Kerberos for signed SMB2.1 and encrypted SMB3.0/3.0.2/3.1.1 roundtrips"
+          ],
+          "native": {
+            "status": "passed",
+            "profiles": [
+              {
+                "dialect": "2.1",
+                "security": "krb5",
+                "status": "passed",
+                "checks": [
+                  "kernel CIFS Kerberos mount",
+                  "mandatory signing",
+                  "1 MiB write/fsync/read",
+                  "rename/overwrite/truncate/enumerate/delete"
+                ]
+              },
+              {
+                "dialect": "3.0",
+                "security": "krb5",
+                "status": "passed",
+                "checks": [
+                  "kernel CIFS Kerberos mount",
+                  "required SMB3 encryption",
+                  "1 MiB write/fsync/read",
+                  "rename/overwrite/truncate/enumerate/delete"
+                ]
+              },
+              {
+                "dialect": "3.02",
+                "security": "krb5",
+                "status": "passed",
+                "checks": [
+                  "kernel CIFS Kerberos mount",
+                  "required SMB3 encryption",
+                  "1 MiB write/fsync/read",
+                  "rename/overwrite/truncate/enumerate/delete"
+                ]
+              },
+              {
+                "dialect": "3.1.1",
+                "security": "krb5",
+                "status": "passed",
+                "checks": [
+                  "kernel CIFS Kerberos mount",
+                  "required SMB3 encryption",
+                  "1 MiB write/fsync/read",
+                  "rename/overwrite/truncate/enumerate/delete"
+                ]
+              }
+            ]
+          }
+        },
+        "smb-notify.json": {
+          "sha256": "762e5a71f1a775ae581f7833006a61d741cb3a71d4c7dabfe2cb5a3c970c44eb",
+          "status": "passed",
+          "checks": [
+            "SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup",
+            "per-open first filter/watch-tree settings, FIFO completion and events buffered between requests",
+            "native host writes trigger recursive watches while nonrecursive watches ignore descendants",
+            "recursive watches stop observing moved-out subtrees and do not disclose queued outside names",
+            "SIZE filter ignores equal-length writes and reports actual growth",
+            "LAST_WRITE observes new-file writes even when native CREATE and WRITE are drained together",
+            "first per-open zero/short capacity persists, reopening restores capacity; NOTIFY_ENUM_DIR has no partial records; invalid-only filters stay pending and cancel cleanly",
+            "directory/list-access validation and persistent shared security descriptor changes generate SECURITY notifications",
+            "portable DOS attributes, creation-time and EA changes participate in native notification streams",
+            "recursive descriptor exhaustion stays visibly overflowed across requests and releases all watches on close",
+            "delete-pending directories complete outstanding watches without waiting for last-handle deletion",
+            "TREE_DISCONNECT and LOGOFF finish pending notifications with NOTIFY_CLEANUP before releasing keys",
+            "policy revocation closes native watches and completes outstanding requests without retaining old authority"
+          ]
+        },
+        "smb-owner.json": {
+          "sha256": "f93206f6ca8f8cb8e24e30ffa21feaf028af94d99ac1a49105363c45216e4552",
+          "status": "passed",
+          "checks": [
+            "admin-only scoped ownership assignment; take overrides denied WRITE_OWNER and MAXIMUM_ALLOWED only, allows self ownership and denies arbitrary SIDs",
+            "restore accepts valid arbitrary owner/group SIDs atomically and overrides WRITE_OWNER only with backup intent; it cannot bypass data/WRITE_DAC/SACL rights, readonly shares or its configured space",
+            "SecD restores initial owner/group and resolves inherited CREATOR OWNER/GROUP against those identities, with or without an explicit DACL",
+            "authority revocation drains old privileged handles; fresh ordinary handles cannot restore, and explicitly restored authority persists across service restart"
+          ]
+        },
+        "smb-reauth.json": {
+          "sha256": "2e78bb2311d8601604159a5fb9b2d752b43751d4dbb0597a287f550223ce46f2",
+          "status": "passed",
+          "checks": [
+            "SMB2.1/3.0/3.0.2/3.1.1 repeated signed/encrypted NTLM renewal preserves session ID, keys, opens and byte-range locks",
+            "expired authority reports NETWORK_SESSION_EXPIRED and renews the same open after an intervening management login",
+            "wrong proof and different-user renewal fail, remove old session authority and release exclusive handles before the error reply",
+            "fresh valid credentials cannot renew a revoked token or resurrect its exclusive open",
+            "LOGOFF during an incomplete renewal resets authentication state and permits a fresh encrypted session on the same transport",
+            "SESSION_SETUP for an unknown session does not abort another session's in-progress renewal or borrow its signing key"
+          ]
+        },
+        "smb-signing.json": {
+          "sha256": "6ee57955843ab8808a574bf81e67f898a3fdcf9ff8b8ea9c8bfa3f0a57cc8a7f",
+          "status": "passed",
+          "checks": [
+            "HMAC-SHA256/CMAC/GMAC-only offers authenticate, verify signed I/O and preserve the key and open across same-session renewal",
+            "each negotiated algorithm signs asynchronous notifications and supports CANCEL before/after STATUS_PENDING",
+            "independent raw signatures verify SESSION_SETUP/ECHO responses for all algorithms and duplicate request MIDs disconnect",
+            "GMAC rejects response/CANCEL nonce substitution, CMAC substitution and payload/tag tampering before dispatch"
+          ]
+        },
+        "smb3.json": {
+          "sha256": "4fd7eb8a28b13ce8c03150bb3a3bea6fb55d4c99fef4bfff82109b9548396279",
+          "status": "passed",
+          "checks": [
+            "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+            "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+            "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+            "0x300 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "0x302 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "0x311 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+            "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+            "AES-256-CCM/GCM-only offers use 32-byte directional keys, verified encrypted file I/O and same-handle NTLM renewal",
+            "leases and durable handles are not granted; durable reconnect explicitly unsupported; encrypted change notification cancels asynchronously; multichannel absent",
+            "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+            "unknown signing IDs select the required CMAC default; unsupported cipher/hash and malformed contexts fail without dialect fallback",
+            "independent AES-128/256 CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+            "AES-256-CCM/GCM reject modified tags, nonces, plaintext lengths, session IDs and ciphertext",
+            "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+            "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+            "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+          ],
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39"
+        }
+      }
+    },
+    "clang": {
+      "id": 126414200274,
+      "status": "success",
+      "artifact": 13300505997,
+      "artifact_sha256": "d76ea0b799dcec84e2a561d9531e76004ee9bdad439809721fa6dd53bb522054",
+      "reports": {
+        "allocation.json": {
+          "sha256": "285527f362a3a8b1b45ffbc5d92063866ab797a902aa74ec21b1f4db70d1094e",
+          "status": "passed",
+          "checks": [
+            "schema v4 migration preserves a pre-v5 backup before adding durable reservations",
+            "native space allocation preserves EOF, charges quota once, rejects over-quota growth before mutation and enforces WRITE_DATA",
+            "durable logical quota survives restart while allocation reports native close-time trimming; EOF extension consumes reservations; shrink and deletion release quota",
+            "AlSi CREATE/overwrite preallocation preserves zero EOF, charges durable quota, ignores existing opens/directories, validates context shape and fails over-quota before namespace/data mutation"
+          ]
+        },
+        "blocking-locks.json": {
+          "sha256": "1f2d477f22296f360e28d2eb46c549307d786b14c7b468a23c724e86f2b0f896",
+          "status": "passed",
+          "checks": [
+            "210: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+            "210: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+            "210: cross-connection FIFO for conflicts and queued writer fairness",
+            "210: CLOSE cancels waiting requests and releases held ranges to another connection",
+            "300: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+            "300: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+            "300: cross-connection FIFO for conflicts and queued writer fairness",
+            "300: CLOSE cancels waiting requests and releases held ranges to another connection",
+            "302: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+            "302: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+            "302: cross-connection FIFO for conflicts and queued writer fairness",
+            "302: CLOSE cancels waiting requests and releases held ranges to another connection",
+            "311: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+            "311: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+            "311: cross-connection FIFO for conflicts and queued writer fairness",
+            "311: CLOSE cancels waiting requests and releases held ranges to another connection",
+            "compound LOCK/ECHO and LOCK/CLOSE preserve interim/final ordering and connection progress",
+            "TREE_DISCONNECT cancels pending locks before removing the tree",
+            "session teardown cancels pending locks before discarding signing and encryption keys",
+            "peer disconnect removes a pending waiter before granting the next connection",
+            "holder disconnect releases locks and wakes the surviving client",
+            "32 concurrent CANCEL/unlock races produce one final result and no leaked lock or duplicate response",
+            "16 concurrent CLOSE/unlock races produce one final result and release every acquired range",
+            "bounded pending requests return INSUFFICIENT_RESOURCES and all cancelled capacity is reusable",
+            "credential revocation drains all session locks before its final reply, without transport teardown"
+          ],
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39"
+        },
+        "metadata.json": {
+          "sha256": "86962dee9b9fce3e3d247cacf16c3f2f881e7b3e8f9850e64b88163fc2db70a8",
+          "status": "passed",
+          "checks": [
+            "CREATE/QUERY/SET persistent DOS attributes, zero/no-change and NORMAL semantics; readonly open/delete checks and granted-handle authority",
+            "four independent timestamps, native mtime, zero/no-change, per-handle explicit/-1 freeze and -2 re-enable; invalid times reject before attribute mutation",
+            "binary extended attributes on CREATE/QUERY/SET, case-insensitive updates, deletion, restart, NEED_EA and access rights; malformed chains reject atomically",
+            "attributes follow native object across rename/restart, directory invariants hold, replacement object does not inherit stale metadata",
+            "per-open mode CREATE/QUERY/SET and FileAllInformation agreement, write-through writes, independent handles, invalid synchronous/immutable modes and SMB2 ignored synchronous CREATE flags",
+            "EA cursor paging, restart, single-entry and explicit indexes, independent opens, bounded whole-entry overflow and undersized-buffer retries",
+            "selected-name EA queries preserve request order and scan cursor, ignore index/restart, match case-insensitively, return absent names, bound output and reject malformed chains without cursor changes",
+            "MxAc maximal access uses fresh policy and readonly restrictions, supports optional change-time comparison and chained QFid replies, rejects malformed/duplicate contexts before mutation",
+            "EA writes atomically update change time/archive while respecting frozen timestamps; exact 65531-byte aggregate limit and standard invalid-name/list statuses"
+          ]
+        },
+        "nfs-acl.json": {
+          "sha256": "f2ff14446675f0a470a09759cc8d41dd4916e5a0fae4b8abd5a04b7c3fb2dcdb",
+          "status": "passed",
+          "checks": [
+            "NFSv3 mode is enforced, owner/group are mapped, nonowner chmod denied; NFSv4 advertises real ACL support",
+            "group mode checks use only verified AUTH_SYS groups; omitted groups and root-squashed groups cannot grant access",
+            "ACL+mode applies mode then ACL; named-user ACE roundtrips, READ_ACL is enforced and chmod masks named grants",
+            "invalid ACL principal and flags fail before truncation; empty ACL denies data and owner can recover WRITE_ACL",
+            "special/named groups and primary-group changes enforce the mapped trustee; opaque SMB SIDs roundtrip; execute-only NFS READ/OPEN/ACCESS works; invalid CREATE ACL leaves no object",
+            "directory ACL inheritance preserves OWNER@ and clears the acl-only inherited flag; ACL attributes larger than 4 KiB roundtrip",
+            "NFS chmod and ACL changes govern new SMB opens of the same object",
+            "shared ACLs, symbolic principals and derived mode survive complete service restart"
+          ]
+        },
+        "nfs-attributes.json": {
+          "sha256": "be360ff0a2b42e618aee4ffb1f5918b0b0d17d941f12cd3549177ef733a67303",
+          "status": "passed",
+          "checks": [
+            "v3 CREATE preserves mode, mapped ownership and explicit atime/mtime on native handles",
+            "v3 ctime differs from preserved mtime and advances for mode-only metadata changes across export aliases",
+            "v4 SETATTR updates aliases consistently; GETATTR rejects write-only time attributes",
+            "durable change counters detect equal-size writes with restored mtime, share alias state and return real namespace change_info; reads do not advance them",
+            "v3 used and v4 space_used match independent native allocation for empty, small, sparse/extended and truncated files, separately from logical size",
+            "paged v4 READDIR skips reserved cookies 1/2 and resumes without duplicate or missing entries",
+            "mode/ownership and exact timestamps survive server restart through stable alias handles"
+          ]
+        },
+        "nfs-discovery.json": {
+          "sha256": "9c966f2cddb3be26474dc3d8c6514dc9a2c86081149215b8fcc120e7c1f07930",
+          "status": "passed",
+          "checks": [
+            "EXPORT and DUMP filter root-squashed/unmapped principals; duplicate MNT is idempotent",
+            "mount records survive reconnect; UMNT/UMNTALL affect only caller and preserve NFS filehandles",
+            "rpcbind DUMP/GETVERSADDR advertise implemented TCP services plus UDP NSM; older NLM versions remain absent",
+            "recognized unsupported file types return per-operation errors after successful SEQUENCE/PUTFH",
+            "BACKCHANNEL_CTL updates bounded callback configuration; unknown GSS, SP4_NONE SET_SSV and obsolete v4.0 operations return defined per-operation errors",
+            "optional pNFS/delegation/attribute operations are decoded and return NOTSUPP with their own operation number, not OP_ILLEGAL",
+            "AUTH_NONE negotiates through a separately scoped anonymous identity; no file access or AUTH_SYS reply reuse; anonymous policy revocation invalidates security replies",
+            "export revocation immediately hides discovery and denies subsequent MNT"
+          ]
+        },
+        "nfs-gss.json": {
+          "sha256": "e6ba31c9572b68d1c83f9b1893ee02af89dcb197631b54b2715b452534a5b98c",
+          "status": "passed",
+          "checks": [
+            "RPCSEC_GSS rejects Kerberos contexts without mutual authentication even though SMB uses separate channel protection",
+            "real MIT tickets: mutual authentication and NFSv3/v4.1 read/write in krb5, krb5i and krb5p; AUTH_SYS downgrade denied; MOUNT and SECINFO advertise Kerberos",
+            "header/body MIC and encrypted-body tampering rejected; 64-entry replay window drops duplicates/old requests and accepts out-of-order requests; MAXSEQ and body sequence enforced",
+            "v3 duplicate mutation with fresh GSS sequence replays its result and rechecks revoked authority; context survives TCP reconnect; authenticated DESTROY invalidates the handle",
+            "SECINFO negotiates across disallowed weaker/stronger tuples, AUTH_SYS and authorized anonymous discovery; bare/repeated/saved PUTFH and LOOKUPP obey WRONGSEC placement; discovery consumes FH, replays safely and enforces traversal ACLs",
+            "unmapped principals and wrong acceptor tickets denied; per-export privacy requirement prevents downgrade; existing contexts lose access after principal mapping revocation",
+            "unmodified pinned pynfs COMP1, CSESS1, OPEN1, OPEN30 and VF1r pass using krb5, krb5i and krb5p",
+            "atomic service-key rotation accepts newly issued tickets while established contexts continue; live group-membership revocation denies existing contexts",
+            "expired tickets and pre-restart context handles are rejected; fresh mutual authentication preserves access to stable file handles"
+          ],
+          "pynfs": {
+            "krb5": {
+              "errors": 0,
+              "failures": 0,
+              "skipped": 261,
+              "tests": 266
+            },
+            "krb5i": {
+              "errors": 0,
+              "failures": 0,
+              "skipped": 261,
+              "tests": 266
+            },
+            "krb5p": {
+              "errors": 0,
+              "failures": 0,
+              "skipped": 261,
+              "tests": 266
+            }
+          }
+        },
+        "nfs-gss.krb5.json": {
+          "sha256": "ec1ed29db4a4b888a3ecd920582624bc87485dac0b9a0eed45b6e3c9ddde56fb",
+          "errors": 0,
+          "failures": 0,
+          "skipped": 261,
+          "tests": 266,
+          "executed_codes": [
+            "VF1r",
+            "OPEN1",
+            "OPEN30",
+            "CSESS1",
+            "COMP1"
+          ]
+        },
+        "nfs-gss.krb5i.json": {
+          "sha256": "80c166e87d876f2f2ea8482968af5033184b5c6e00f61eb1479ffda4a1ec6ea0",
+          "errors": 0,
+          "failures": 0,
+          "skipped": 261,
+          "tests": 266,
+          "executed_codes": [
+            "VF1r",
+            "OPEN1",
+            "OPEN30",
+            "CSESS1",
+            "COMP1"
+          ]
+        },
+        "nfs-gss.krb5p.json": {
+          "sha256": "b649c711ed7e1490bd16e8841e5698e6ae7c7366a4a286537013d63c7b966506",
+          "errors": 0,
+          "failures": 0,
+          "skipped": 261,
+          "tests": 266,
+          "executed_codes": [
+            "VF1r",
+            "OPEN1",
+            "OPEN30",
+            "CSESS1",
+            "COMP1"
+          ]
+        },
+        "nfs-mode.json": {
+          "sha256": "c7c393e259ba9e347c28a59e9a8952084f3a4b5733e3c1041571c20a8c803acd",
+          "status": "passed",
+          "checks": [
+            "v3 special mode creation and v4 masked updates preserve unmasked bits; high-only masks preserve exact ACL bytes; combined masked mode applies before ACL",
+            "undefined mode bits, conflicting mode attributes and masked mode in CREATE/OPEN/GETATTR/VERIFY reject without creation",
+            "NFS data writes, truncation and ownership setters clear file set-ID bits",
+            "setgid directories transmit the exact parent GID alias and directory setgid to nonmember creators; explicit setgid requires verified group membership",
+            "sticky directories reject foreign unlink, rename and replacement while permitting the object owner",
+            "encrypted SMB writes clear NFS set-ID bits; SMB disposition and rename cannot bypass NFS sticky directories",
+            "staged DAV replacement clears set-ID; removing sticky restores unlink; special modes and inherited GID aliases persist through complete restart"
+          ]
+        },
+        "samba-acls-restore.json": {
+          "sha256": "9c6e4a75b11ae858359ec58fc1bddfaf3bb014796dc21ef3deadc910f077c38a",
+          "status": "passed",
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+          "tests": [
+            {
+              "selector": "smb2.acls",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 14,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-restore-smb2.acls.log"
+            }
+          ]
+        },
+        "samba-acls.json": {
+          "sha256": "acf53996f09a78a1518f333ab532f93a7e27e9590d890ba18045b20ff1863c21",
+          "status": "passed",
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+          "tests": [
+            {
+              "selector": "smb2.acls.CREATOR",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.CREATOR.log"
+            },
+            {
+              "selector": "smb2.acls.GENERIC",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.GENERIC.log"
+            },
+            {
+              "selector": "smb2.acls.OWNER",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.OWNER.log"
+            },
+            {
+              "selector": "smb2.acls.INHERITANCE",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.INHERITANCE.log"
+            },
+            {
+              "selector": "smb2.acls.INHERITFLAGS",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.INHERITFLAGS.log"
+            },
+            {
+              "selector": "smb2.acls.DYNAMIC",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.DYNAMIC.log"
+            },
+            {
+              "selector": "smb2.acls.ACCESSBASED",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.ACCESSBASED.log"
+            },
+            {
+              "selector": "smb2.acls.OWNER-RIGHTS",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.OWNER-RIGHTS.log"
+            },
+            {
+              "selector": "smb2.acls.OWNER-RIGHTS-DENY",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.OWNER-RIGHTS-DENY.log"
+            },
+            {
+              "selector": "smb2.acls.OWNER-RIGHTS-DENY1",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.OWNER-RIGHTS-DENY1.log"
+            },
+            {
+              "selector": "smb2.acls.DENY1",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.DENY1.log"
+            },
+            {
+              "selector": "smb2.acls.MXAC-NOT-GRANTED",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.MXAC-NOT-GRANTED.log"
+            },
+            {
+              "selector": "smb2.acls.OVERWRITE_READ_ONLY_FILE",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-acls-smb2.acls.OVERWRITE_READ_ONLY_FILE.log"
+            }
+          ]
+        },
+        "samba-async.json": {
+          "sha256": "654778908b68352a19e58b8ce7e7df9f71906358fcb6168b71036b73ebed436a",
+          "status": "passed",
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+          "tests": [
+            {
+              "selector": "smb2.lock.async",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-async-smb2.lock.async.log"
+            },
+            {
+              "selector": "smb2.lock.cancel",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-async-smb2.lock.cancel.log"
+            },
+            {
+              "selector": "smb2.lock.cancel-tdis",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-async-smb2.lock.cancel-tdis.log"
+            },
+            {
+              "selector": "smb2.lock.cancel-logoff",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-async-smb2.lock.cancel-logoff.log"
+            }
+          ]
+        },
+        "samba-notify.json": {
+          "sha256": "a4c4e43ac77cd51f8c589a2ce9da9dcc61138aad44030b100e7e19b077dcb0ed",
+          "status": "passed",
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+          "tests": [
+            {
+              "selector": "smb2.notify.tdis1",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.tdis1.log"
+            },
+            {
+              "selector": "smb2.notify.close",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.close.log"
+            },
+            {
+              "selector": "smb2.notify.logoff",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.logoff.log"
+            },
+            {
+              "selector": "smb2.notify.file",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.file.log"
+            },
+            {
+              "selector": "smb2.notify.handle-permissions",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.handle-permissions.log"
+            },
+            {
+              "selector": "smb2.notify.rmdir1",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.rmdir1.log"
+            },
+            {
+              "selector": "smb2.notify.rmdir2",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.rmdir2.log"
+            },
+            {
+              "selector": "smb2.notify.rmdir3",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.rmdir3.log"
+            },
+            {
+              "selector": "smb2.notify.rmdir4",
+              "returncode": 0,
+              "status": "passed",
+              "counts": {
+                "success": 1,
+                "failure": 0,
+                "error": 0,
+                "skip": 0
+              },
+              "log": "samba-notify-smb2.notify.rmdir4.log"
+            }
+          ]
+        },
+        "security.json": {
+          "sha256": "dd45337a08ad53b6e347d596a30caeb0fa5492b307a42f3ac0cc1d89a4c5cdef",
+          "status": "passed",
+          "checks": [
+            "schema 5 migration backs up each file authority before adding persistent security descriptors",
+            "self-relative owner/group/DACL query, requested sections, required buffer size and READ_CONTROL/WRITE_DAC/SACL boundaries",
+            "ordered deny/allow access checks, MAXIMUM_ALLOWED and explicit-right intersection; existing handles retain granted rights",
+            "SMB denial enforced by NFSv3 READ/ACCESS, NFSv4 ACCESS, core API and WebDAV readonly aliases",
+            "ACE order, empty versus NULL DACL, implicit owner rights and OWNER RIGHTS SID",
+            "malformed offsets, overlaps, truncation and unsupported ACEs rejected atomically; ownership cannot be assigned to another user",
+            "file/directory inheritance with CREATOR OWNER substitution and multi-generation propagation; ACL follows rename",
+            "SecD CREATE persists protected initial ACL, validates ownership and rejects duplicate/malformed contexts before mutation",
+            "group ACE enforcement and membership revocation use freshly signed identity grants",
+            "schema 6 durability across process restart; replacement object receives fresh owner and ACL",
+            "NFS writer publication still enforces file DACL; WRITE and chmod cannot bypass SMB restrictions",
+            "DAV writer cannot bypass ACL; staged PUT retains restrictions, recursive COPY checks descendants and inherits destination ACL through private staging parents",
+            "DAV LOCK on unmapped URL checks parent create rights and persists inherited DACL"
+          ]
+        },
+        "smb-gss.json": {
+          "sha256": "fa796b4ae258aaeeb0faa6104b4f1552b4d1b2e89939bcee10cd01ce505a9386",
+          "status": "passed",
+          "checks": [
+            "principal mappings require administrator authority and reject ambiguous duplicate principal bindings",
+            "real Kerberos and SPNEGO negotiate authenticate SMB2.1/3.0/3.0.2/3.1.1; independent client validates signing and AES encryption during write/read/flush/rename/truncate/delete",
+            "AES-256-CCM/GCM derive from the complete 32-byte Kerberos key with independent signed setup, encrypted I/O and renewal checks for Kerberos/SPNEGO",
+            "unmodified Samba smbclient requires Kerberos and verifies 1 MiB signed SMB2.1 and encrypted SMB3.1.1 roundtrips",
+            "unmapped principals, tickets for another acceptor and modified authenticators fail without NTLM or guest fallback",
+            "independent raw Kerberos verifies mutual AP-REP and final SMB2 HMAC; replaying the same AP-REQ on a fresh transport is rejected",
+            "Kerberos without GSS mutual authentication still verifies SMB2 SESSION_SETUP signing and signed file I/O; replay remains rejected",
+            "fresh Kerberos and SPNEGO renew all SMB2/3 dialects with unchanged signing/cipher keys and live file handles",
+            "renewal cannot switch to another Kerberos principal mapped to the same account or revive a revoked mapping token; failures release exclusive opens",
+            "live principal mapping revocation terminates existing file authority and new logins; explicit reenable admits fresh authentication",
+            "atomic cifs keytab rotation admits fresh tickets while existing signed/encrypted sessions remain valid",
+            "ticket lifetime bounds SMB authority; Kerberos is independent of NTLM enrollment and existing mandatory-MIC NTLM authentication still works"
+          ]
+        },
+        "smb-notify.json": {
+          "sha256": "762e5a71f1a775ae581f7833006a61d741cb3a71d4c7dabfe2cb5a3c970c44eb",
+          "status": "passed",
+          "checks": [
+            "SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup",
+            "per-open first filter/watch-tree settings, FIFO completion and events buffered between requests",
+            "native host writes trigger recursive watches while nonrecursive watches ignore descendants",
+            "recursive watches stop observing moved-out subtrees and do not disclose queued outside names",
+            "SIZE filter ignores equal-length writes and reports actual growth",
+            "LAST_WRITE observes new-file writes even when native CREATE and WRITE are drained together",
+            "first per-open zero/short capacity persists, reopening restores capacity; NOTIFY_ENUM_DIR has no partial records; invalid-only filters stay pending and cancel cleanly",
+            "directory/list-access validation and persistent shared security descriptor changes generate SECURITY notifications",
+            "portable DOS attributes, creation-time and EA changes participate in native notification streams",
+            "recursive descriptor exhaustion stays visibly overflowed across requests and releases all watches on close",
+            "delete-pending directories complete outstanding watches without waiting for last-handle deletion",
+            "TREE_DISCONNECT and LOGOFF finish pending notifications with NOTIFY_CLEANUP before releasing keys",
+            "policy revocation closes native watches and completes outstanding requests without retaining old authority"
+          ]
+        },
+        "smb-owner.json": {
+          "sha256": "f93206f6ca8f8cb8e24e30ffa21feaf028af94d99ac1a49105363c45216e4552",
+          "status": "passed",
+          "checks": [
+            "admin-only scoped ownership assignment; take overrides denied WRITE_OWNER and MAXIMUM_ALLOWED only, allows self ownership and denies arbitrary SIDs",
+            "restore accepts valid arbitrary owner/group SIDs atomically and overrides WRITE_OWNER only with backup intent; it cannot bypass data/WRITE_DAC/SACL rights, readonly shares or its configured space",
+            "SecD restores initial owner/group and resolves inherited CREATOR OWNER/GROUP against those identities, with or without an explicit DACL",
+            "authority revocation drains old privileged handles; fresh ordinary handles cannot restore, and explicitly restored authority persists across service restart"
+          ]
+        },
+        "smb-reauth.json": {
+          "sha256": "2e78bb2311d8601604159a5fb9b2d752b43751d4dbb0597a287f550223ce46f2",
+          "status": "passed",
+          "checks": [
+            "SMB2.1/3.0/3.0.2/3.1.1 repeated signed/encrypted NTLM renewal preserves session ID, keys, opens and byte-range locks",
+            "expired authority reports NETWORK_SESSION_EXPIRED and renews the same open after an intervening management login",
+            "wrong proof and different-user renewal fail, remove old session authority and release exclusive handles before the error reply",
+            "fresh valid credentials cannot renew a revoked token or resurrect its exclusive open",
+            "LOGOFF during an incomplete renewal resets authentication state and permits a fresh encrypted session on the same transport",
+            "SESSION_SETUP for an unknown session does not abort another session's in-progress renewal or borrow its signing key"
+          ]
+        },
+        "smb-signing.json": {
+          "sha256": "6ee57955843ab8808a574bf81e67f898a3fdcf9ff8b8ea9c8bfa3f0a57cc8a7f",
+          "status": "passed",
+          "checks": [
+            "HMAC-SHA256/CMAC/GMAC-only offers authenticate, verify signed I/O and preserve the key and open across same-session renewal",
+            "each negotiated algorithm signs asynchronous notifications and supports CANCEL before/after STATUS_PENDING",
+            "independent raw signatures verify SESSION_SETUP/ECHO responses for all algorithms and duplicate request MIDs disconnect",
+            "GMAC rejects response/CANCEL nonce substitution, CMAC substitution and payload/tag tampering before dispatch"
+          ]
+        },
+        "smb3.json": {
+          "sha256": "b3d0842f81b74fe58b598e07b84521004ac708ab7ef341a29ec478230f20eb46",
+          "status": "passed",
+          "checks": [
+            "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+            "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+            "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+            "0x300 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "0x302 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "0x311 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+            "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+            "AES-256-CCM/GCM-only offers use 32-byte directional keys, verified encrypted file I/O and same-handle NTLM renewal",
+            "leases and durable handles are not granted; durable reconnect explicitly unsupported; encrypted change notification cancels asynchronously; multichannel absent",
+            "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+            "unknown signing IDs select the required CMAC default; unsupported cipher/hash and malformed contexts fail without dialect fallback",
+            "independent AES-128/256 CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+            "AES-256-CCM/GCM reject modified tags, nonces, plaintext lengths, session IDs and ciphertext",
+            "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+            "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+            "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+          ],
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39"
+        }
+      }
+    },
+    "msvc": {
+      "id": 126414200162,
+      "status": "success",
+      "artifact": 13300230211,
+      "artifact_sha256": "706d2a46eeb403d347b752a9e3c3710d4fc7bae2bcef4a32c13355ba0e768536",
+      "reports": {
+        "allocation.json": {
+          "sha256": "21aff4cdf17283c9b78c9c3b349528a6769444446909fdad7b342ff347499b4d",
+          "status": "passed",
+          "checks": [
+            "schema v4 migration preserves a pre-v5 backup before adding durable reservations",
+            "native space allocation preserves EOF, charges quota once, rejects over-quota growth before mutation and enforces WRITE_DATA",
+            "durable logical quota survives restart while allocation reports native close-time trimming; EOF extension consumes reservations; shrink and deletion release quota",
+            "AlSi CREATE/overwrite preallocation preserves zero EOF, charges durable quota, ignores existing opens/directories, validates context shape and fails over-quota before namespace/data mutation"
+          ]
+        },
+        "blocking-locks.json": {
+          "sha256": "3e0c208f5b797b63f2993b1f99b958985671052e8ede3076cb71822737a1ae72",
+          "status": "passed",
+          "checks": [
+            "210: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+            "210: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+            "210: cross-connection FIFO for conflicts and queued writer fairness",
+            "210: CLOSE cancels waiting requests and releases held ranges to another connection",
+            "300: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+            "300: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+            "300: cross-connection FIFO for conflicts and queued writer fairness",
+            "300: CLOSE cancels waiting requests and releases held ranges to another connection",
+            "302: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+            "302: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+            "302: cross-connection FIFO for conflicts and queued writer fairness",
+            "302: CLOSE cancels waiting requests and releases held ranges to another connection",
+            "311: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+            "311: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+            "311: cross-connection FIFO for conflicts and queued writer fairness",
+            "311: CLOSE cancels waiting requests and releases held ranges to another connection",
+            "compound LOCK/ECHO and LOCK/CLOSE preserve interim/final ordering and connection progress",
+            "TREE_DISCONNECT cancels pending locks before removing the tree",
+            "session teardown cancels pending locks before discarding signing and encryption keys",
+            "peer disconnect removes a pending waiter before granting the next connection",
+            "holder disconnect releases locks and wakes the surviving client",
+            "32 concurrent CANCEL/unlock races produce one final result and no leaked lock or duplicate response",
+            "16 concurrent CLOSE/unlock races produce one final result and release every acquired range",
+            "bounded pending requests return INSUFFICIENT_RESOURCES and all cancelled capacity is reusable",
+            "credential revocation drains all session locks before its final reply, without transport teardown"
+          ],
+          "host": "Windows-2025Server-10.0.26100-SP0"
+        },
+        "metadata.json": {
+          "sha256": "74c5ae47060f0a2d5835475a9949f919d978ab88b4337b8c02e37975a53d3cee",
+          "status": "passed",
+          "checks": [
+            "CREATE/QUERY/SET persistent DOS attributes, zero/no-change and NORMAL semantics; readonly open/delete checks and granted-handle authority",
+            "four independent timestamps, native mtime, zero/no-change, per-handle explicit/-1 freeze and -2 re-enable; invalid times reject before attribute mutation",
+            "binary extended attributes on CREATE/QUERY/SET, case-insensitive updates, deletion, restart, NEED_EA and access rights; malformed chains reject atomically",
+            "attributes follow native object across rename/restart, directory invariants hold, replacement object does not inherit stale metadata",
+            "per-open mode CREATE/QUERY/SET and FileAllInformation agreement, write-through writes, independent handles, invalid synchronous/immutable modes and SMB2 ignored synchronous CREATE flags",
+            "EA cursor paging, restart, single-entry and explicit indexes, independent opens, bounded whole-entry overflow and undersized-buffer retries",
+            "selected-name EA queries preserve request order and scan cursor, ignore index/restart, match case-insensitively, return absent names, bound output and reject malformed chains without cursor changes",
+            "MxAc maximal access uses fresh policy and readonly restrictions, supports optional change-time comparison and chained QFid replies, rejects malformed/duplicate contexts before mutation",
+            "EA writes atomically update change time/archive while respecting frozen timestamps; exact 65531-byte aggregate limit and standard invalid-name/list statuses"
+          ]
+        },
+        "nfs-acl.json": {
+          "sha256": "26aba51056739c73be4ab500764fbda2b26392ff8c0648f1778e37ae6546a2f9",
+          "status": "passed",
+          "checks": [
+            "NFSv3 mode is enforced, owner/group are mapped, nonowner chmod denied; NFSv4 advertises real ACL support",
+            "group mode checks use only verified AUTH_SYS groups; omitted groups and root-squashed groups cannot grant access",
+            "ACL+mode applies mode then ACL; named-user ACE roundtrips, READ_ACL is enforced and chmod masks named grants",
+            "invalid ACL principal and flags fail before truncation; empty ACL denies data and owner can recover WRITE_ACL",
+            "special/named groups and primary-group changes enforce the mapped trustee; opaque SMB SIDs roundtrip; execute-only NFS READ/OPEN/ACCESS works; invalid CREATE ACL leaves no object",
+            "directory ACL inheritance preserves OWNER@ and clears the acl-only inherited flag; ACL attributes larger than 4 KiB roundtrip",
+            "NFS chmod and ACL changes govern new SMB opens of the same object",
+            "shared ACLs, symbolic principals and derived mode survive complete service restart"
+          ]
+        },
+        "nfs-attributes.json": {
+          "sha256": "b397bb3f8d3b8d3b4b82366013fc1ac064c1b699fe6cf97ec51edf0f7ce2129e",
+          "status": "passed",
+          "checks": [
+            "v3 CREATE preserves mode, mapped ownership and explicit atime/mtime on native handles",
+            "v3 ctime differs from preserved mtime and advances for mode-only metadata changes across export aliases",
+            "v4 SETATTR updates aliases consistently; GETATTR rejects write-only time attributes",
+            "durable change counters detect equal-size writes with restored mtime, share alias state and return real namespace change_info; reads do not advance them",
+            "v3 used and v4 space_used match independent native allocation for empty, small, sparse/extended and truncated files, separately from logical size",
+            "paged v4 READDIR skips reserved cookies 1/2 and resumes without duplicate or missing entries",
+            "mode/ownership and exact timestamps survive server restart through stable alias handles"
+          ]
+        },
+        "nfs-discovery.json": {
+          "sha256": "51e253f5be7bb07fa3b1700b9ed6f1c14ef8ad8cef261652c28484cedcd2f6de",
+          "status": "passed",
+          "checks": [
+            "EXPORT and DUMP filter root-squashed/unmapped principals; duplicate MNT is idempotent",
+            "mount records survive reconnect; UMNT/UMNTALL affect only caller and preserve NFS filehandles",
+            "rpcbind DUMP/GETVERSADDR advertise implemented TCP services plus UDP NSM; older NLM versions remain absent",
+            "recognized unsupported file types return per-operation errors after successful SEQUENCE/PUTFH",
+            "BACKCHANNEL_CTL updates bounded callback configuration; unknown GSS, SP4_NONE SET_SSV and obsolete v4.0 operations return defined per-operation errors",
+            "optional pNFS/delegation/attribute operations are decoded and return NOTSUPP with their own operation number, not OP_ILLEGAL",
+            "AUTH_NONE negotiates through a separately scoped anonymous identity; no file access or AUTH_SYS reply reuse; anonymous policy revocation invalidates security replies",
+            "export revocation immediately hides discovery and denies subsequent MNT"
+          ]
+        },
+        "nfs-mode.json": {
+          "sha256": "192ccfb16acd7a21a65b2777aa2b96fcd091f5ce9cd6ca11310e6485a6b79f86",
+          "status": "passed",
+          "checks": [
+            "v3 special mode creation and v4 masked updates preserve unmasked bits; high-only masks preserve exact ACL bytes; combined masked mode applies before ACL",
+            "undefined mode bits, conflicting mode attributes and masked mode in CREATE/OPEN/GETATTR/VERIFY reject without creation",
+            "NFS data writes, truncation and ownership setters clear file set-ID bits",
+            "setgid directories transmit the exact parent GID alias and directory setgid to nonmember creators; explicit setgid requires verified group membership",
+            "sticky directories reject foreign unlink, rename and replacement while permitting the object owner",
+            "encrypted SMB writes clear NFS set-ID bits; SMB disposition and rename cannot bypass NFS sticky directories",
+            "staged DAV replacement clears set-ID; removing sticky restores unlink; special modes and inherited GID aliases persist through complete restart"
+          ]
+        },
+        "security.json": {
+          "sha256": "b0af8192c6378cc56478660a1ea4d1deed7d766784f7b2d1d55e9e02537d55a2",
+          "status": "passed",
+          "checks": [
+            "schema 5 migration backs up each file authority before adding persistent security descriptors",
+            "self-relative owner/group/DACL query, requested sections, required buffer size and READ_CONTROL/WRITE_DAC/SACL boundaries",
+            "ordered deny/allow access checks, MAXIMUM_ALLOWED and explicit-right intersection; existing handles retain granted rights",
+            "SMB denial enforced by NFSv3 READ/ACCESS, NFSv4 ACCESS, core API and WebDAV readonly aliases",
+            "ACE order, empty versus NULL DACL, implicit owner rights and OWNER RIGHTS SID",
+            "malformed offsets, overlaps, truncation and unsupported ACEs rejected atomically; ownership cannot be assigned to another user",
+            "file/directory inheritance with CREATOR OWNER substitution and multi-generation propagation; ACL follows rename",
+            "SecD CREATE persists protected initial ACL, validates ownership and rejects duplicate/malformed contexts before mutation",
+            "group ACE enforcement and membership revocation use freshly signed identity grants",
+            "schema 6 durability across process restart; replacement object receives fresh owner and ACL",
+            "NFS writer publication still enforces file DACL; WRITE and chmod cannot bypass SMB restrictions",
+            "DAV writer cannot bypass ACL; staged PUT retains restrictions, recursive COPY checks descendants and inherits destination ACL through private staging parents",
+            "DAV LOCK on unmapped URL checks parent create rights and persists inherited DACL"
+          ]
+        },
+        "smb-notify.json": {
+          "sha256": "c1b98e5ac4d4f4a92774ee8f8e65cb092ec6776bd78ebab0d4a598f043b83e5e",
+          "status": "passed",
+          "checks": [
+            "SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup",
+            "per-open first filter/watch-tree settings, FIFO completion and events buffered between requests",
+            "native host writes trigger recursive watches while nonrecursive watches ignore descendants",
+            "SIZE filter ignores equal-length writes and reports actual growth",
+            "LAST_WRITE observes new-file writes even when native CREATE and WRITE are drained together",
+            "first per-open zero/short capacity persists, reopening restores capacity; NOTIFY_ENUM_DIR has no partial records; invalid-only filters stay pending and cancel cleanly",
+            "directory/list-access validation and persistent shared security descriptor changes generate SECURITY notifications",
+            "portable DOS attributes, creation-time and EA changes participate in native notification streams",
+            "delete-pending directories complete outstanding watches without waiting for last-handle deletion",
+            "TREE_DISCONNECT and LOGOFF finish pending notifications with NOTIFY_CLEANUP before releasing keys",
+            "policy revocation closes native watches and completes outstanding requests without retaining old authority"
+          ]
+        },
+        "smb-owner.json": {
+          "sha256": "3b81cdfe411224a0ebd4d237a645ffde9883684aa2eeb5903cf59254c1205b24",
+          "status": "passed",
+          "checks": [
+            "admin-only scoped ownership assignment; take overrides denied WRITE_OWNER and MAXIMUM_ALLOWED only, allows self ownership and denies arbitrary SIDs",
+            "restore accepts valid arbitrary owner/group SIDs atomically and overrides WRITE_OWNER only with backup intent; it cannot bypass data/WRITE_DAC/SACL rights, readonly shares or its configured space",
+            "SecD restores initial owner/group and resolves inherited CREATOR OWNER/GROUP against those identities, with or without an explicit DACL",
+            "authority revocation drains old privileged handles; fresh ordinary handles cannot restore, and explicitly restored authority persists across service restart"
+          ]
+        },
+        "smb-reauth.json": {
+          "sha256": "a2b216e32ac93aaca1e17269ebbe58490e343689fa43fa841bac5c19b0c81a82",
+          "status": "passed",
+          "checks": [
+            "SMB2.1/3.0/3.0.2/3.1.1 repeated signed/encrypted NTLM renewal preserves session ID, keys, opens and byte-range locks",
+            "expired authority reports NETWORK_SESSION_EXPIRED and renews the same open after an intervening management login",
+            "wrong proof and different-user renewal fail, remove old session authority and release exclusive handles before the error reply",
+            "fresh valid credentials cannot renew a revoked token or resurrect its exclusive open",
+            "LOGOFF during an incomplete renewal resets authentication state and permits a fresh encrypted session on the same transport",
+            "SESSION_SETUP for an unknown session does not abort another session's in-progress renewal or borrow its signing key"
+          ]
+        },
+        "smb-signing.json": {
+          "sha256": "a9e01e9a9b9a618b6d3239747bb8006cbb654c377b9cce820bb5fc60b3a09c7f",
+          "status": "passed",
+          "checks": [
+            "HMAC-SHA256/CMAC/GMAC-only offers authenticate, verify signed I/O and preserve the key and open across same-session renewal",
+            "each negotiated algorithm signs asynchronous notifications and supports CANCEL before/after STATUS_PENDING",
+            "independent raw signatures verify SESSION_SETUP/ECHO responses for all algorithms and duplicate request MIDs disconnect",
+            "GMAC rejects response/CANCEL nonce substitution, CMAC substitution and payload/tag tampering before dispatch"
+          ]
+        },
+        "smb3.json": {
+          "sha256": "f078c62aa73a2fbc249bd4be717dfe2ab383ddf54d31793493140cd3123ebec0",
+          "status": "passed",
+          "checks": [
+            "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+            "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+            "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+            "0x300 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "0x302 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "0x311 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+            "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+            "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+            "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+            "AES-256-CCM/GCM-only offers use 32-byte directional keys, verified encrypted file I/O and same-handle NTLM renewal",
+            "leases and durable handles are not granted; durable reconnect explicitly unsupported; encrypted change notification cancels asynchronously; multichannel absent",
+            "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+            "unknown signing IDs select the required CMAC default; unsupported cipher/hash and malformed contexts fail without dialect fallback",
+            "independent AES-128/256 CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+            "AES-256-CCM/GCM reject modified tags, nonces, plaintext lengths, session IDs and ciphertext",
+            "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+            "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+            "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+          ],
+          "host": "Windows-2025Server-10.0.26100-SP0"
+        },
+        "windows-native-security.json": {
+          "sha256": "d51021a6f04bfbad589c83027c60d78d7763af352ecf9020594bef7ac954ad47",
+          "status": "passed",
+          "host": "Windows-2025Server-10.0.26100-SP0"
+        }
+      }
+    }
+  }
+}

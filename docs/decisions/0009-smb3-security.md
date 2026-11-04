@@ -23,3 +23,7 @@ The expanded user goal supersedes the earlier notification rejection: CHANGE_NOT
 ## Full-compatibility extension — 2026-11-04 signing
 
 The expanded implementation now negotiates GMAC, CMAC and HMAC-SHA256 for SMB 3.1.1. Missing or non-overlapping signing offers select the mandatory CMAC fallback. Independent primitive, signed client, nonce separation, cancellation and Kerberos checks pass locally under Clang ASan/UBSan. Remote acceptance is pending; encryption negotiation without a common cipher and other full-compatibility gates remain open.
+
+## Full-compatibility extension — 2026-11-04 cipher-free negotiation
+
+Targeted signing, AES-256 and Linux Kerberos checks now pass the GCC/Clang ASan+UBSan/MSVC matrix at `682b007` ([evidence](../evidence/pre-m8/smb-security-682b007-remote.json)). The subsequent negotiation change allows signed SMB3.1.1 sessions without a common cipher: omit the response encryption context when absent in the request, otherwise select cipher zero. Unnegotiated encrypted transforms and unsigned commands remain rejected. Missing preauthentication returns INVALID_PARAMETER; only specified singleton context types reject duplicates, while ignored contexts may repeat. Local core and independent client tests pass; remote acceptance for this follow-up is pending. Other full-compatibility gates remain open.

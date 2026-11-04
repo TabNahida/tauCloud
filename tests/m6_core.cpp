@@ -165,10 +165,50 @@ int main() {
       n.accept(offer, guid);
       ok(n.dialect == 0x311 && n.cipher == cipher);
     }
+    {
+      auto absent = p.substr(0, 126);
+      put(absent, 96, 1, 2);
+      auto accepted = n.accept(absent, guid);
+      ok(n.cipher == 0 && n.signing == 1 && get(accepted, 6, 2) == 1);
+      auto unknown = p;
+      put(unknown, 138, 0xfffe, 2);
+      put(unknown, 140, 0xffff, 2);
+      accepted = n.accept(unknown, guid);
+      auto offset = get(accepted, 60, 4) - 64;
+      auto cipher_context = (offset + 8 + get(accepted, offset + 2, 2) + 7) / 8 * 8;
+      ok(n.cipher == 0 && get(accepted, cipher_context, 2) == 2 &&
+         get(accepted, cipher_context + 8, 2) == 1 && get(accepted, cipher_context + 10, 2) == 0);
+      for (unsigned type : {5u, 6u, 0x82u, 0xffffu}) {
+        auto repeated = p;
+        repeated.resize(160, '\0');
+        bytes extra(8, '\0');
+        put(extra, 0, type, 2);
+        repeated += extra + extra;
+        put(repeated, 96, 5, 2);
+        n.accept(repeated, guid);
+        ok(n.cipher == 2 && n.signing == 1);
+      }
+      for (unsigned type : {1u, 2u, 3u, 7u, 8u}) {
+        auto repeated = p;
+        repeated.resize(160, '\0');
+        bytes extra(8, '\0');
+        put(extra, 0, type, 2);
+        repeated += extra + extra;
+        put(repeated, 96, 5, 2);
+        rejected([&] { n.accept(repeated, guid); });
+      }
+      auto missing_hash = p;
+      put(missing_hash, 112, 5, 2);
+      rejected([&] { n.accept(missing_hash, guid); });
+      auto ignored_cipher = p;
+      put(ignored_cipher, 128, 0x82, 2);
+      n.accept(ignored_cipher, guid);
+      ok(n.cipher == 0);
+    }
     rejected([&] { n.validate(n.client_info, guid); });
     for (size_t i = 0; i < p.size(); ++i)
       rejected([&] { n.accept(std::string_view(p).substr(0, i), guid); });
-    for (auto offset : {92, 96, 112, 114, 116, 120, 124, 128, 130}) {
+    for (auto offset : {92, 96, 112, 114, 116, 120, 124, 130}) {
       auto bad = p;
       bad[offset] ^= 0x80;
       rejected([&] { n.accept(bad, guid); });

@@ -167,13 +167,17 @@ bytes negotiation::accept(std::string_view p, std::string_view guid, bool kerber
     for (size_t i = 0; i < n; ++i) {
       auto type = static_cast<unsigned>(get(p, off, 2));
       auto size = get(p, off + 2, 2);
-      require(get(p, off + 4, 4) == 0 && off + 8 <= p.size() && size <= p.size() - off - 8 &&
-                  !found.contains(type),
+      require(get(p, off + 4, 4) == 0 && off + 8 <= p.size() && size <= p.size() - off - 8,
               "invalid_packet");
-      found.emplace(type, p.substr(off + 8, size));
+      // Only singleton contexts named by MS-SMB2 3.3.5.4 reject duplicates.
+      // NETNAME and unsupported/unknown contexts are ignored, even repeated.
+      if (type == 1 || type == 2 || type == 3 || type == 7 || type == 8) {
+        require(!found.contains(type), "invalid_packet");
+        found.emplace(type, p.substr(off + 8, size));
+      }
       off = (off + 8 + size + 7) / 8 * 8;
     }
-    require(found.contains(1) && found.contains(2), "not_supported");
+    require(found.contains(1), "invalid_packet");
     auto &hashes = found.at(1);
     auto hashes_count = get(hashes, 0, 2), salt_size = get(hashes, 2, 2);
     require(hashes_count > 0 && hashes_count <= 64 &&
@@ -191,12 +195,12 @@ bytes negotiation::accept(std::string_view p, std::string_view guid, bool kerber
         match |= get(data, 2 + 2 * i, 2) == value;
       return match;
     };
-    for (auto candidate : {2u, 1u, 4u, 3u})
-      if (supports(found.at(2), candidate)) {
-        cipher = candidate;
-        break;
-      }
-    require(cipher != 0, "not_supported");
+    if (found.contains(2))
+      for (auto candidate : {2u, 1u, 4u, 3u})
+        if (supports(found.at(2), candidate)) {
+          cipher = candidate;
+          break;
+        }
     if (found.contains(8)) {
       // MS-SMB2 3.3.5.4 specifies CMAC when the offer has no supported ID.
       for (auto candidate : {2u, 1u, 0u}) {
@@ -212,8 +216,12 @@ bytes negotiation::accept(std::string_view p, std::string_view guid, bool kerber
     add(1, hashes_response + decode_bytes(random_hex(32)));
     bytes alg(4, '\0');
     put(alg, 0, 1, 2);
-    put(alg, 2, cipher, 2);
-    add(2, alg);
+    if (found.contains(2)) {
+      // An offered context with no common cipher gets an explicit zero;
+      // an absent context gets no encryption response context.
+      put(alg, 2, cipher, 2);
+      add(2, alg);
+    }
     if (found.contains(8)) {
       put(alg, 2, signing, 2);
       add(8, alg);

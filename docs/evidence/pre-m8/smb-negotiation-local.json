@@ -1,0 +1,53 @@
+{
+  "recorded_at": "2026-11-04T06:17:46.841878+00:00",
+  "base_source": "c6bb2612dc107d7a6f5343ee147a8dd9024154f0",
+  "status": "passed-local-remote-pending",
+  "scope": "SMB3.1.1 cipher-free negotiation and ignored contexts; not full SMB/NFS completion",
+  "files_sha256": {
+    "src/smb3.cpp": "f852921d5a1b3c726390dbaf9a1b2f5847fcbf5c3f9a8c3aa7e4e8a39a0c57ad",
+    "tests/m6_core.cpp": "5fedc91d236d7a0afc05e7fae2cf18feeec803da45775dddd380eaa27d698c86",
+    "tests/m6_integration.py": "27d8ec3b83d89a104b1c1e738ab7614a5475ba0ab014e615456970332c0185e4"
+  },
+  "standard": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/b39f253e-4963-40df-8dff-2f9040ebbeb1",
+  "core": {
+    "status": "passed",
+    "checks": 1137
+  },
+  "client": {
+    "status": "passed",
+    "checks": [
+      "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+      "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+      "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+      "0x300 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+      "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+      "0x302 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+      "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+      "0x311 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+      "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+      "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+      "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+      "AES-256-CCM/GCM-only offers use 32-byte directional keys, verified encrypted file I/O and same-handle NTLM renewal",
+      "leases and durable handles are not granted; durable reconnect explicitly unsupported; encrypted change notification cancels asynchronously; multichannel absent",
+      "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+      "absent encryption context is omitted from reply; no common cipher selects zero; CMAC/GMAC authenticated signed file I/O works without cipher fallback",
+      "cipher-free sessions reject unsigned commands and unnegotiated AES-GCM transforms even with correctly derived keys",
+      "repeated ignored NETNAME/transport/unknown contexts are accepted; missing mandatory preauthentication context returns INVALID_PARAMETER",
+      "unknown signing IDs select CMAC and unknown ciphers select zero; unsupported hash and malformed contexts fail without dialect fallback",
+      "independent AES-128/256 CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+      "AES-256-CCM/GCM reject modified tags, nonces, plaintext lengths, session IDs and ciphertext",
+      "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+      "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+      "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+    ],
+    "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+    "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "authentication_provider": "pyspnego NTLM",
+    "large_mib": 1,
+    "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+    "port": 53307,
+    "sanitizers": true
+  },
+  "sanitizers": "Clang ASan/UBSan including LeakSanitizer",
+  "remote": "Existing SMB metadata compatibility workflow runs the expanded core and M6 client tests on GCC/Clang/MSVC; pending for this source."
+}

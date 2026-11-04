@@ -8,7 +8,7 @@ from m1_integration import wait
 from smbprotocol.connection import Connection
 from smbprotocol.session import Session
 from smbprotocol.tree import TreeConnect
-from smbprotocol.open import Open, ImpersonationLevel, SMB2CreateRequest, SMB2WriteRequest
+from smbprotocol.open import Open, ImpersonationLevel, SMB2CreateRequest, SMB2WriteRequest, SMB2ReadRequest, SMB2CloseRequest
 from smbprotocol.file_info import FileAttributes, FileDispositionInformation, FileRenameInformation, FileEndOfFileInformation
 from smbprotocol.structure import Structure, IntField
 from smbprotocol.ioctl import SMB2IOCTLRequest
@@ -34,8 +34,11 @@ def negotiate_packet(dialect=0x311, signing=1, cipher=2, hash_id=1):
     body = struct.pack('<HHHHI16sIHH',36,len(dialects),3,0,0x40,uuid.uuid4().bytes,0,0,0)
     p = bytearray(header(0)+body+b''.join(struct.pack('<H',d) for d in dialects))
     if dialect == 0x311:
-        p += bytes(-len(p)%8); struct.pack_into('<IH',p,92,len(p),3)
-        for i,(kind,data) in enumerate([(1,struct.pack('<HHH',1,0,hash_id)),(2,struct.pack('<HH',1,cipher)),(8,struct.pack('<HH',1,signing))]):
+        contexts = [(1,struct.pack('<HHH',1,0,hash_id))]
+        if cipher is not None: contexts.append((2,struct.pack('<HH',1,cipher)))
+        if signing is not None: contexts.append((8,struct.pack('<HH',1,signing)))
+        p += bytes(-len(p)%8); struct.pack_into('<IH',p,92,len(p),len(contexts))
+        for i,(kind,data) in enumerate(contexts):
             if i: p += bytes(-len(p)%8)
             p += struct.pack('<HHI',kind,len(data),0)+data
     return bytes(p)
@@ -80,7 +83,7 @@ def wire_auth(port,password,user,dialect=0x311,alter_transcript=False,bootstrap=
         transcript=hashlib.sha512(transcript+req).digest()
         derive=lambda label,context,length=16:Session._smb3kdf(None,ctx.session_key,label+b'\0',context,length=length)
         if dialect==0x311:
-            signing=derive(b'SMBSigningKey',transcript);sending=derive(b'SMBC2SCipherKey',transcript,32 if cipher>=3 else 16);receiving=derive(b'SMBS2CCipherKey',transcript,32 if cipher>=3 else 16)
+            signing=derive(b'SMBSigningKey',transcript);sending=derive(b'SMBC2SCipherKey',transcript,32 if cipher in (3,4) else 16);receiving=derive(b'SMBS2CCipherKey',transcript,32 if cipher in (3,4) else 16)
         else:
             signing=derive(b'SMB2AESCMAC',b'SmbSign\0');sending=derive(b'SMB2AESCCM',b'ServerIn \0');receiving=derive(b'SMB2AESCCM',b'ServerOut\0')
         assert (sign(resp,signing,signing_algorithm)[48:64]==resp[48:64]) != alter_transcript
@@ -281,13 +284,64 @@ def run(args):
         lock(h,(0,3,0x12));denied(lambda:other.write(b'bad'),0xc0000054);lock(h,(0,3,4));other.write(b'old');assert h.read(0,3)==b'old';other.close();h.close()
         legacy.disconnect(close=False);mixed.disconnect(close=False)
         passed('SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks')
+        # A missing encryption context and a zero selected cipher have distinct
+        # wire representations. Both still permit authenticated, signed I/O.
+        for cipher,algorithm in ((None,1),(0,2),(0xffff,1)):
+            with socket.create_connection(('127.0.0.1',f.smbport),timeout=10) as probe:
+                response=exchange(probe,negotiate_packet(cipher=cipher,signing=algorithm))
+                assert status(response)==0 and struct.unpack_from('<H',response,68)[0]==0x311
+                count=struct.unpack_from('<H',response,70)[0];offset=struct.unpack_from('<I',response,124)[0];contexts={}
+                for _ in range(count):
+                    kind,size,reserved=struct.unpack_from('<HHI',response,offset)
+                    assert reserved==0 and kind not in contexts and offset+8+size<=len(response)
+                    contexts[kind]=response[offset+8:offset+8+size];offset=(offset+8+size+7)&~7
+                assert contexts[8]==struct.pack('<HH',1,algorithm)
+                if cipher is None:assert 2 not in contexts
+                else:assert contexts[2]==struct.pack('<HH',1,0)
+                assert not struct.unpack_from('<I',response,88)[0]&0x40
+            sock,sid,key,_,_,_=wire_auth(f.smbport,f.password,'alice',cipher=cipher,signing_algorithm=algorithm)
+            try:
+                def signed_exchange(command,mid,body,tid=0):
+                    response=exchange(sock,sign(header(command,mid,sid,tid,flags=8)+body,key,algorithm))
+                    assert status(response)==0 and struct.unpack_from('<I',response,16)[0]&8
+                    assert sign(response,key,algorithm)[48:64]==response[48:64]
+                    return response
+                unc=r'\\127.0.0.1\smb'.encode('utf-16-le')
+                response=signed_exchange(3,3,struct.pack('<HHHH',9,0,72,len(unc))+unc)
+                tid=struct.unpack_from('<I',response,36)[0]
+                request=SMB2CreateRequest();request['impersonation_level']=2;request['desired_access']=0x13019f
+                request['file_attributes']=0x80;request['share_access']=7;request['create_disposition']=3;request['create_options']=0x40
+                request['buffer_path']=('no-cipher-'+str(cipher)).encode('utf-16-le')
+                fid=signed_exchange(5,4,request.pack(),tid)[128:144]
+                payload=b'signed without a negotiated cipher'
+                request=SMB2WriteRequest();request['file_id']=fid;request['buffer']=payload
+                response=signed_exchange(9,5,request.pack(),tid);assert struct.unpack_from('<I',response,68)[0]==len(payload)
+                request=SMB2ReadRequest();request['file_id']=fid;request['length']=len(payload)
+                response=signed_exchange(8,6,request.pack(),tid);offset=response[66];size=struct.unpack_from('<I',response,68)[0]
+                assert response[offset:offset+size]==payload
+                request=SMB2CloseRequest();request['file_id']=fid;signed_exchange(6,7,request.pack(),tid)
+            finally:sock.close()
+        passed('absent encryption context is omitted from reply; no common cipher selects zero; CMAC/GMAC authenticated signed file I/O works without cipher fallback')
+        for cipher in (None,0xffff):
+            for mode in ('unsigned','encrypted'):
+                sock,sid,key,ek,_,_=wire_auth(f.smbport,f.password,user(),cipher=cipher)
+                echo=header(13,3,sid)+struct.pack('<HH',4,0)
+                rejected_connection(sock,echo if mode=='unsigned' else encrypted(echo,ek,sid))
+        passed('cipher-free sessions reject unsigned commands and unnegotiated AES-GCM transforms even with correctly derived keys')
+        for kind in (5,6,0x82,0xffff):
+            packet=bytearray(negotiate_packet());packet+=bytes(-len(packet)%8)
+            packet+=struct.pack('<HHI',kind,0,0)*2;struct.pack_into('<H',packet,96,5)
+            with socket.create_connection(('127.0.0.1',f.smbport),timeout=10) as probe:assert status(exchange(probe,packet))==0
+        packet=bytearray(negotiate_packet());struct.pack_into('<H',packet,112,5)
+        with socket.create_connection(('127.0.0.1',f.smbport),timeout=10) as probe:assert status(exchange(probe,packet))==0xc000000d
+        passed('repeated ignored NETNAME/transport/unknown contexts are accepted; missing mandatory preauthentication context returns INVALID_PARAMETER')
         # Hostile negotiation contexts, before credential access.
-        for packet,expected in [(negotiate_packet(signing=3),0),(negotiate_packet(cipher=5),0xc00000bb),(negotiate_packet(hash_id=2),0xc05d0000)]:
+        for packet,expected in [(negotiate_packet(signing=3),0),(negotiate_packet(cipher=5),0),(negotiate_packet(hash_id=2),0xc05d0000)]:
             with socket.create_connection(('127.0.0.1',f.smbport),timeout=10) as sock:assert status(exchange(sock,packet))==expected
         for field,value in [(92,100),(96,17)]:
             bad=bytearray(negotiate_packet());struct.pack_into('<I' if field==92 else '<H',bad,field,value)
             with socket.create_connection(('127.0.0.1',f.smbport),timeout=10) as sock:assert status(exchange(sock,bad))==0xc000000d
-        passed('unknown signing IDs select the required CMAC default; unsupported cipher/hash and malformed contexts fail without dialect fallback')
+        passed('unknown signing IDs select CMAC and unknown ciphers select zero; unsupported hash and malformed contexts fail without dialect fallback')
         for dialect,cipher in [(0x300,1),(0x302,1),(0x311,2),(0x311,3),(0x311,4)]:
             sock,sid,sk,ek,dk,_=wire_auth(f.smbport,f.password,user(),dialect,cipher=cipher)
             echo=header(13,3,sid)+struct.pack('<HH',4,0);packet=encrypted(echo,ek,sid,cipher)
