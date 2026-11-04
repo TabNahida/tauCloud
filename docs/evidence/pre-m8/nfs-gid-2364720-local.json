@@ -1,0 +1,28 @@
+{
+  "source": "23647207e2df1360d6c1bb543ef0c0ed45738f86",
+  "recorded_at": "2026-11-04T03:45:06.403375+00:00",
+  "status": "passed",
+  "scope": "Exact parent numeric GID alias inheritance for files/directories, including nonmember creation and restart. Native remote reacceptance pending.",
+  "before_source": "b48b41f0c2e38b5003f3e755d13e7f2b316f79df",
+  "before": {
+    "status": "failed",
+    "checks": [
+      "v3 special mode creation and v4 masked updates preserve unmasked bits; high-only masks preserve exact ACL bytes; combined masked mode applies before ACL",
+      "undefined mode bits, conflicting mode attributes and masked mode in CREATE/OPEN/GETATTR/VERIFY reject without creation",
+      "NFS data writes, truncation and ownership setters clear file set-ID bits"
+    ],
+    "error": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/tests/nfs_mode_integration.py\", line 163, in main\n    assert (stat(bob, child).uid, stat(bob, child).gid, stat(bob, child).mode) == (1001, 1000, 0o660)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+  },
+  "after": {
+    "status": "passed",
+    "checks": [
+      "v3 special mode creation and v4 masked updates preserve unmasked bits; high-only masks preserve exact ACL bytes; combined masked mode applies before ACL",
+      "undefined mode bits, conflicting mode attributes and masked mode in CREATE/OPEN/GETATTR/VERIFY reject without creation",
+      "NFS data writes, truncation and ownership setters clear file set-ID bits",
+      "setgid directories transmit the exact parent GID alias and directory setgid to nonmember creators; explicit setgid requires verified group membership",
+      "sticky directories reject foreign unlink, rename and replacement while permitting the object owner",
+      "encrypted SMB writes clear NFS set-ID bits; SMB disposition and rename cannot bypass NFS sticky directories",
+      "staged DAV replacement clears set-ID; removing sticky restores unlink; special modes and inherited GID aliases persist through complete restart"
+    ]
+  }
+}
