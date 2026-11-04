@@ -1,0 +1,77 @@
+{
+  "source_commit": "e3ede07ea8b11ad1f0cd262ab9c4dac96b4fd71b",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41886268208",
+  "job": 126771439741,
+  "artifact": 13352930605,
+  "status": "passed",
+  "host": "Windows-2025Server-10.0.26100-SP0",
+  "client": "Windows native SMB redirector",
+  "connection": {
+    "ServerName": "127.0.0.1",
+    "ShareName": "smb",
+    "Dialect": "3.1.1",
+    "Encrypted": true,
+    "Signed": false
+  },
+  "security": "native Get-Acl/Set-Acl, SID roundtrip, deny write and preserve read",
+  "payload_sha256": "631B84027D6B9E52B539C4E8373622D23032DFADC64D60AF87339C9037E4F769",
+  "lease_events": [
+    {
+      "ack_required": 1,
+      "command": 18,
+      "connection": "f96a75fa02227ca1",
+      "current": 7,
+      "encrypted": false,
+      "epoch": 2,
+      "flags": 1,
+      "lease_key": "1f110952ee32fa93",
+      "message": "18446744073709551615",
+      "outbound": true,
+      "session": 0,
+      "size": 108,
+      "status": 0,
+      "structure": 44,
+      "target": 3,
+      "tree": 0,
+      "time": 1793817030168
+    },
+    {
+      "command": 18,
+      "connection": "f96a75fa02227ca1",
+      "encrypted": true,
+      "flags": 16,
+      "lease_key": "1f110952ee32fa93",
+      "message": 124,
+      "outbound": false,
+      "session": "2008293284555187573",
+      "size": 100,
+      "state": 3,
+      "structure": 36,
+      "tree": 2,
+      "time": 1793817030201
+    },
+    {
+      "command": 18,
+      "connection": "f96a75fa02227ca1",
+      "encrypted": true,
+      "flags": 1,
+      "lease_key": "1f110952ee32fa93",
+      "message": 124,
+      "outbound": true,
+      "session": "2008293284555187573",
+      "size": 100,
+      "state": 3,
+      "status": 0,
+      "structure": 36,
+      "tree": 2,
+      "time": 1793817030221
+    }
+  ],
+  "checks": [
+    "Native Windows redirector encrypted 1 MiB write/flush/SHA-256 readback, rename/truncate/enumerate/delete",
+    "Native Get-Acl/Set-Acl, SID roundtrip, deny write while preserving read, original descriptor restoration",
+    "Sessionless plaintext lease break followed by encrypted client ACK and encrypted successful ACK response"
+  ],
+  "previous_failure": "smb-native-lease-transform-e3-remote.json",
+  "limitation": "Native fixture passes at this fixed commit. Later connection-routing changes require separate acceptance. Full SMB/NFS remains incomplete."
+}

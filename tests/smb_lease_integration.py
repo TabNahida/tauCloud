@@ -210,6 +210,35 @@ def main():
             c.disconnect(); peer.disconnect()
             passed(f'{dialect:x}: rename preserves own lease/epoch, waits for foreign HANDLE ACK before publishing path, and disposition/DELETE_ON_CLOSE recall HANDLE while preserving READ until last close')
 
+        for dialect in (0x210, 0x300, 0x302, 0x311):
+            version = 1 if dialect == 0x210 else 2
+            guid = uuid.uuid4()
+            unauth = Connection(guid, '127.0.0.1', f.smbport, require_signing=True)
+            clients.append(unauth); unauth.connect(dialect=dialect, timeout=10)
+            uq = queue.Queue(); capture_breaks(unauth, uq)
+            first, first_session, first_tree, first_queue = connect(dialect, guid)
+            owner, owner_session, owner_tree, owner_queue = connect(dialect, guid)
+            foreign, fs, ft, fq = connect(dialect)
+            key = uuid.uuid4().bytes; name = f'first-connection-{dialect:x}'
+            h, ctx = leased(owner_tree, name, key, version=version)
+            response(ctx, key, 7, version, 1)
+            other, result = leased(ft, name, uuid.uuid4().bytes, state=0, version=version, send=False)
+            request, receive = begin(other, result)
+            assert first_queue.get(timeout=10) == (key, 7, 3, 0 if version == 1 else 2, 1, False)
+            assert owner_queue.empty() and uq.empty() and fq.empty()
+            ack(first, first_session, first_tree, key, 3); receive(request)
+            first.disconnect()
+            msg, receive_write = other.write(b'after-close', send=False)
+            request = foreign.send(msg, fs.session_id, ft.tree_connect_id)
+            pending(request)
+            assert owner_queue.get(timeout=10) == (key, 3, 0, 0 if version == 1 else 3, 1, False)
+            ack(owner, owner_session, owner_tree, key, 0)
+            assert receive_write(request) == 11 and h.read(0, 11) == b'after-close'
+            assert uq.empty() and fq.empty()
+            h.close(); other.close()
+            for connection in (unauth, owner, foreign): connection.disconnect()
+            passed(f'{dialect:x}: lease notification selects the first available authenticated ClientGuid transport without a member open, excludes unauthenticated/foreign peers and falls back after disconnect')
+
         c, s, t, q = connect(); peer, ps, pt, pq = connect(0x311, c.client_guid, q)
         key = uuid.uuid4().bytes
         h, ctx = leased(t, 'cross-ack', key); response(ctx, key, 7, epoch=1)

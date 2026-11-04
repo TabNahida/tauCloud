@@ -132,6 +132,12 @@ struct dispatch_guard {
   ~dispatch_guard() { busy = false; }
 };
 pace::task<void> send_packet(bytes output, bool encrypted) {
+  // A sessionless lease notification may arrive from another connection's
+  // cache pump while this dispatcher is awaiting RPC. Serialize complete
+  // transport frames independently of session/command dispatch ownership.
+  while (writing && socket.is_open()) co_await s.io->sleep_for(1ms);
+  check(socket.is_open(), 0xc000020c);
+  dispatch_guard write_guard(writing);
   trace_packet(output, true, encrypted);
   if (encrypted) {
     check(nonce_counter < 65536);

@@ -19,6 +19,7 @@ struct smb_state {
   taucloud::bounded_executor pool{4, 32, 32 * ipc_frame_size};
   std::atomic<int> connections = 0;
   std::set<client *> clients;
+  uint64_t next_connection_order = 0;
   bytes guid = decode_bytes(random_hex(16));
   lease_registry leases;
   std::map<std::string, uint64_t> lease_sends;
@@ -539,10 +540,12 @@ struct client : session_state, std::enable_shared_from_this<client> {
   bytes negotiate_transcript = bytes(64, '\0');
   std::map<uint64_t, session_state> sessions;
   uint64_t next_async_id = 1, executing_command = 0;
-  bool dispatching = false, pump_done = false, watchdog_done = false;
+  bool dispatching = false, writing = false, pump_done = false, watchdog_done = false;
   int64_t last_activity = now();
   std::string trace_id;
+  uint64_t connection_order;
   client(smb_state &state, pace::tcp::stream tcp) : s(state), socket(std::move(tcp)) {
+    connection_order = ++s.next_connection_order;
     socket.set_no_delay();
     if (auto value = std::getenv("TAUCLOUD_SMB_TRACE"); value && std::string_view(value) == "1")
       trace_id = random_hex(8);

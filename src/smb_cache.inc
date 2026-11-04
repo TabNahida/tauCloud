@@ -109,6 +109,33 @@ pace::task<bytes> acknowledge_lease(bytes key, unsigned state) {
   if (failure) std::rethrow_exception(failure);
   co_return result;
 }
+pace::task<bool> send_lease_notification(const bytes &packet, const bytes &guid) {
+  // Lease keys belong to ClientGuid, not to the session/open which polled the
+  // file worker. MS-SMB2 3.3.4.7 selects the first available connection, even
+  // when that transport has no member of this lease. Keep admission order;
+  // pointer order and poll scheduling must not decide the destination.
+  std::vector<std::shared_ptr<client>> candidates;
+  for (auto *candidate : s.clients)
+    if (candidate->socket.is_open() && !candidate->ending && candidate->has_authenticated() &&
+        candidate->selected.client_info.size() >= 20 &&
+        candidate->selected.client_info.substr(4, 16) == guid)
+      candidates.push_back(candidate->shared_from_this());
+  std::sort(candidates.begin(), candidates.end(), [](const auto &a, const auto &b) {
+    return a->connection_order < b->connection_order;
+  });
+  for (auto &target : candidates) {
+    if (!socket.is_open()) co_return false;
+    if (!target->socket.is_open() || target->ending || !target->has_authenticated()) continue;
+    try {
+      // No session selection/key access is needed for this plaintext packet.
+      // The transport write gate serializes its frame without waiting for a
+      // peer's command gate (which may itself be waiting for this recall).
+      co_await target->send_packet(packet, false);
+      co_return true;
+    } catch (...) { target->close(); }
+  }
+  co_return false;
+}
 // The caller owns the connection gate, including all RPC and send suspensions.
 pace::task<void> poll_caches_locked() {
   auto saved_session = session;
@@ -159,7 +186,10 @@ pace::task<void> poll_caches_locked() {
           // when the inner and transform SessionIds differ. ACKs and ordinary
           // responses still use the authenticated session's signing/encryption.
           response += decode_bytes(state.at("notification").at("body").get<std::string>());
-          co_await send_packet(std::move(response), false);
+          if (!(co_await send_lease_notification(response, h.lease->client))) {
+            close();
+            co_return;
+          }
           request["serial"] = serial;
           auto sent = co_await operation(h, "cache_sent", bool(h.access & 6), request);
           h.lease_state = sent.at("state");

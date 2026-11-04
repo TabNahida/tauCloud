@@ -1,5 +1,15 @@
 # M5/M7 selected-profile acceptance — 2026-10-31
 
+[Connection routing acceptance](smb-lease-connection-local.json) passes 38 lease
+wire groups and improves the complete original suite to 33 passed / 3 failed /
+3 skipped. It preserves the initial dispatch-busy routing failure and an
+unexplained classic authority-watchdog timeout; the same binary passes all
+32 classic groups in an isolated diagnostic rerun. [Windows native acceptance
+at e3ede07](smb-native-lease-e3ede07-remote.json) passes encrypted IO and original
+ACL restoration, with a plaintext sessionless break and encrypted ACK/response
+visible in the trace. This proves the earlier SessionId transform correction;
+the later connection-routing change still requires its own remote acceptance.
+
 The [lease namespace/notification increment](smb-lease-namespace-local.json)
 passes 34 wire groups, 103 native checks, 3,271 state checks, 32 classic groups,
 12 security/cache groups and 12,583 M5 checks locally. The [full original lease

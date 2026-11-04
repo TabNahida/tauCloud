@@ -95,11 +95,11 @@ ACKs use ClientGuid/LeaseKey, can arrive through another authenticated connectio
 and reauthorize the owning open before applying the file-domain transition.
 Cross-connection dispatch releases its own gate before waiting on a peer.
 
-Thirty-four independent wire groups pass locally under ASan/UBSan/LSan, including
+Thirty-eight independent wire groups pass locally under ASan/UBSan/LSan, including
 four dialects, same-key joins during recall, client isolation, invalid ACKs,
 shared upgrades, native no-ACK invalidation, failed CREATE cleanup and timeout
 fencing. Updated state checks total 3,271; native checks total 103. See
-[current network evidence](evidence/pre-m8/smb-lease-namespace-local.json).
+[current network evidence](evidence/pre-m8/smb-lease-connection-local.json).
 The initial 13-group network step passes GCC/Clang/MSVC at `3450ec6`, while
 that run fails a Windows security/oplock regression after eight cases. Its
 root cause remains open ([remote evidence](evidence/pre-m8/smb-lease-wire-3450-remote.json)).
@@ -196,8 +196,8 @@ lease suite reports **29 passed, seven failed and three skipped**
 See [MS-FSA RH break processing](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fsa/306239fb-cb60-49fe-b293-df4d1a5f757a)
 and [MS-SMB2 acknowledgment timers](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/0a2c6b57-693a-4a48-a90d-0a48735674e9).
 
-Known remaining work includes notification connection selection,
-delete/recreate/reconnect lifetime, other cache timeout paths that preserve usable opens,
+Known remaining work includes delete/recreate/reconnect lifetime,
+other cache timeout paths that preserve usable opens,
 ADS and directory/parent leases.
 Durable handles and multichannel session binding remain separate open gates.
 
@@ -214,7 +214,24 @@ Final local acceptance passes 34 lease wire groups, 103 native checks, 3,271
 state checks, 32 classic oplock groups and 12 security/oplock groups, alongside
 12,583 M5 checks. The complete original lease suite is **32 passed, four failed,
 three skipped**. [Evidence](evidence/pre-m8/smb-lease-namespace-local.json) retains
-all failures/skips; Windows native and compiler-matrix acceptance is pending.
+all failures/skips; the broader compiler-matrix acceptance is pending.
+
+Windows Server 2025 native encrypted IO and ACL restoration now pass at
+`e3ede07`; the trace records a plaintext sessionless lease notification followed
+by an encrypted ACK and encrypted successful ACK response
+([fixed-source evidence](evidence/pre-m8/smb-native-lease-e3ede07-remote.json)).
+
+Notification routing now uses the first live authenticated connection for the
+ClientGuid in admission order, including a transport with no open for that key.
+Unauthenticated and foreign-GUID peers are excluded; closing the first connection
+selects the next one. A per-transport write gate serializes complete frames
+without acquiring the destination's command gate. Skipping a connection merely
+because it was dispatching caused an intermittent original `v2_complex1` failure;
+the initial failing full-suite log is retained. Final full-suite acceptance is
+**33 passed, three failed, three skipped**, with 38 independent wire groups.
+See [routing evidence](evidence/pre-m8/smb-lease-connection-local.json). The
+remaining failures are ADS, the legacy chained epoch expectation and dirty-cache
+timeout open preservation. Routing changes still require remote acceptance.
 
 The implementation follows Microsoft's [lease object-store rules](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/d8df943d-6ad7-4b30-9f58-96ae90fc6204),
 [per-lease state](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/212eb853-7e50-4608-877e-22d42e0664f3),
