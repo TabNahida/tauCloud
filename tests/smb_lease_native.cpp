@@ -132,15 +132,27 @@ int main() {
       check(call("cache_poll", "mixed", {{"handle", classic}, {"cookie", classic_cookie}}).at("break_level") == 1);
       call("cache_ack", "mixed", {{"handle", classic}, {"cookie", classic_cookie}, {"level", 1}});
       h = open("mixed", client); cookie = acquire("mixed", h).at("cookie");
-      check(poll("mixed", h, cookie).at("state") == 3);
+      // MS-FSA denies HANDLE caching when another open has a classic oplock.
+      check(poll("mixed", h, cookie).at("state") == 1);
       rejects([&] { write("mixed", classic, "new"); }, "cache_break_pending");
       check(poll("mixed", h, cookie).at("breaking"));
       call("cache_ack", "mixed", {{"handle", classic}, {"cookie", classic_cookie}, {"level", 0}});
       rejects([&] { native.open("space/mixed"); }, "locked");
-      ack("mixed", h, cookie); write("mixed", classic, "new");
+      auto read_break = poll("mixed", h, cookie);
+      check(!read_break.at("ack_required").get<bool>());
+      call("cache_sent", "mixed", {{"handle", h}, {"cookie", cookie},
+          {"serial", read_break.at("notification").at("serial")}});
+      write("mixed", classic, "new");
       close("mixed", classic); close("mixed", h);
       check(native.open("space/mixed").read(0, 3) == "new");
       std::cout << "PASS classic Level II and lease grants retain independent authority over one native guard\n";
+
+      h = open("handle-cache", client);
+      cookie = acquire("handle-cache", h, 3).at("cookie");
+      classic = open("handle-cache", "");
+      check(!call("cache_acquire", "handle-cache", {{"handle", classic}, {"level", 8}}).at("granted").get<bool>());
+      check(poll("handle-cache", h, cookie).at("state") == 3);
+      close("handle-cache", classic); close("handle-cache", h);
 
       h = open("expiry", client); auto sibling = open("expiry", client);
       cookie = acquire("expiry", h).at("cookie");

@@ -66,9 +66,9 @@ def lease_context(key, state=7, version=2, epoch=0, flags=0):
     return c
 
 
-def leased(t, name, key, state=7, version=2, epoch=0, send=True, disposition=3, access=0x13019f):
+def leased(t, name, key, state=7, version=2, epoch=0, send=True, disposition=3, access=0x13019f, share=7):
     h = Open(t, name)
-    result = h.create(2, access, 0x80, 7, disposition, 0x40, oplock_level=255,
+    result = h.create(2, access, 0x80, share, disposition, 0x40, oplock_level=255,
                       create_contexts=[lease_context(key, state, version, epoch)], send=send)
     return h, result
 
@@ -244,6 +244,61 @@ def main():
         fresh = create(ot, 'unacknowledged-lease', disposition=1)
         assert fresh.read(0, 8) == b'current!'; fresh.close()
         passed('unacknowledged native recall fences stale lease authority before admitting the native writer')
+        for access in (0x80, 0x20000, 2):
+            name = f'lease-rights-{access:x}'
+            seed = create(t, name); seed.write(b'initial'); seed.close()
+            key = uuid.uuid4().bytes
+            h, ctx = leased(t, name, key, access=access, disposition=1)
+            response(ctx, key, 7, epoch=1)
+            denied(lambda: h.read(0, 7), 0xc0000022)
+            if access != 2: denied(lambda: h.write(b'forbidden'), 0xc0000022)
+            else: h.write(b'updated')
+            # Same-key access remains per-open, including a more capable sibling.
+            sibling, ctx = leased(pt, name, key, state=0)
+            response(ctx, key, 7, epoch=1)
+            assert sibling.read(0, 7) == (b'updated' if access == 2 else b'initial')
+            sibling.close(); time.sleep(2.6)
+            contender, result = leased(ot, name, uuid.uuid4().bytes, send=False)
+            request, receive = begin(contender, result)
+            assert q.get(timeout=10) == (key, 7, 3, 2, 1, True)
+            ack(c, s, t, key, 3)
+            contexts = receive(request)
+            assert contexts[0]['lease_state'].get_value() == 3
+            contender.close(); h.close()
+        passed('metadata-only and write-only opens hold renewable RWH without gaining READ/WRITE rights; foreign leases recall to shared RH')
+
+        seed = create(t, 'stat-first'); seed.close()
+        stat = create(t, 'stat-first', access=0x80, disposition=1)
+        key = uuid.uuid4().bytes
+        writer, ctx = leased(pt, 'stat-first', key, access=2, disposition=1)
+        response(ctx, key, 7, epoch=1); writer.write(b'limited')
+        denied(lambda: stat.read(0, 7), 0xc0000022)
+        denied(lambda: writer.read(0, 7), 0xc0000022)
+        writer.close(); stat.close()
+        passed('a pre-existing metadata-only handle shares native identity with a later write-only leased handle without adding data access')
+
+        key = uuid.uuid4().bytes
+        h, ctx = leased(t, 'stat-access', key)
+        for access in (0x80, 0x100, 0x20000, 0x100000):
+            stat = create(pt, 'stat-access', access=access, share=0, disposition=1)
+            stat.close()
+        assert q.empty(); h.close()
+        passed('READ_CONTROL, attribute and synchronize-only opens retain native exclusion without a data-cache recall')
+
+        f.api('shares', f.admin, dict(id='lease-read', space='smbdata', exposures={'smb':'r'}))
+        seed = create(t, 'policy-read-lease'); seed.write(b'policy'); seed.close()
+        readonly = TreeConnect(s, r'\\127.0.0.1\lease-read'); readonly.connect()
+        key = uuid.uuid4().bytes
+        h, ctx = leased(readonly, 'policy-read-lease', key, access=0x80, disposition=1)
+        response(ctx, key, 7, epoch=1); time.sleep(2.6)
+        denied(lambda: h.read(0, 6), 0xc0000022)
+        denied(lambda: h.write(b'forbidden'), 0xc0000022)
+        with ThreadPoolExecutor() as pool:
+            read = pool.submit(native_read, f.root/'smbdata/policy-read-lease')
+            assert q.get(timeout=10) == (key, 7, 0, 2, 1, True)
+            ack(c, s, readonly, key, 0); assert read.result(timeout=10) == b'policy'
+        h.close(); readonly.disconnect()
+        passed('read-only-share metadata lease renews and ACKs without obtaining write authority or data access')
         report['status'] = 'passed'
     except Exception:
         report['error'] = traceback.format_exc(); print(report['error'], flush=True)

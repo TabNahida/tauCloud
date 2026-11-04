@@ -68,8 +68,8 @@ rights; a reused key cannot silently move to another file or namespace.
 
 `taucloud_smb_lease_native_tests` exercises actual native exclusion, shared
 opens, legacy-cache coexistence, permission isolation, expiry, NFS read/write
-coherence and delivery boundaries. The current local result is 58 checks in
-seven scenarios, alongside the updated 3,214 state checks; see
+coherence and delivery boundaries. The initial file-domain integration passed
+58 checks in seven scenarios, alongside 3,214 state checks; see
 [file-domain evidence](evidence/pre-m8/smb-lease-domain-local.json).
 The native and state steps pass GCC/Clang/MSVC at `c45d5f2`; the whole jobs
 were still running when recorded ([remote evidence](evidence/pre-m8/smb-lease-domain-c45-remote.json)).
@@ -88,20 +88,39 @@ ACKs use ClientGuid/LeaseKey, can arrive through another authenticated connectio
 and reauthorize the owning open before applying the file-domain transition.
 Cross-connection dispatch releases its own gate before waiting on a peer.
 
-Thirteen independent wire groups pass locally under ASan/UBSan/LSan, including
+Seventeen independent wire groups pass locally under ASan/UBSan/LSan, including
 four dialects, same-key joins during recall, client isolation, invalid ACKs,
 shared upgrades, native no-ACK invalidation, failed CREATE cleanup and timeout
-fencing. Updated state checks total 3,217; native checks remain 58. See
+fencing. Updated state checks total 3,217; native checks total 61. See
 [network evidence](evidence/pre-m8/smb-lease-wire-local.json). Cross-platform
 network acceptance is scheduled in Actions and is not yet established.
+
+Metadata-only and write-only opens can hold native-backed RWH without gaining
+READ_DATA or WRITE_DATA. Renewal and ACK use the open's actual authority,
+including read-only shares. READ_CONTROL joins the attribute/SYNCHRONIZE stat
+access mask: these opens retain the pinned description and do not recall data
+caches merely to query metadata. An initial metadata-only open pins an RW native
+description when permitted so a later write-only lease can share that object;
+the logical rights of both handles remain unchanged. A foreign data open or
+cache prevents WRITE caching. Classic oplocks prevent a new HANDLE lease, and
+an existing HANDLE lease prevents new classic oplocks. Read-only lease/native
+exclusion can still coexist with Level II.
+
+All four original Samba statopen cases and its bidirectional oplock/lease
+matrix pass, alongside 17 independent wire groups, 61 native checks, 12 security
+and oplock regression groups and 12,583 M5 checks; see
+[metadata lease evidence](evidence/pre-m8/smb-lease-metadata-local.json).
+The full unmodified lease suite on this source now reports **26 passed,
+10 failed, three skipped**, up from 19/17/3 before the two correction rounds.
+These are local results; their remote acceptance remains pending.
 
 The first full unmodified Samba lease run on the network integration snapshot
 (before the partial-promotion correction) reports 19 passed, 17 failed and
 three skipped. No test was edited. The final source is also checked with a
-strict eight-case selected regression, with all eight passing; the full suite remains a separately labelled
+strict eight-case selected regression, with all eight passing; five additional
+metadata/mixed-cache cases now pass and join the strict Actions selection; the full suite remains a separately labelled
 non-gating diagnostic in Actions, with its failure reports retained.
-Known remaining work includes metadata-only lease grants, mixed classic/lease
-HANDLE rules, sharing and chained recalls, notification connection selection,
+Known remaining work includes sharing and chained recalls, notification connection selection,
 rename/delete/recreate lifetime, timeout behavior that preserves usable opens,
 ADS and directory/parent leases.
 Durable handles and multichannel session binding remain separate open gates.

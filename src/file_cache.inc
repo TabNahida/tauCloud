@@ -132,13 +132,17 @@ json lease_cache_dispatch(const std::string &op, const json &body, const json &g
     // H/W without READ is not a supported lease combination. CREATE still
     // succeeds with NONE, as required by the lease object-store rules.
     auto available = (requested & 1) ? requested : 0;
-    if (!(h.access & 1)) available = 0;
-    if (!h.writable || !grant.at("write").get<bool>()) available &= ~4u;
+    // Cache rights describe coherence, not file access. A metadata-only or
+    // write-only open may hold RWH; READ/WRITE still check its own granted
+    // rights on every operation. Native exclusion must be obtained below.
     std::shared_ptr<native_cache_guard> guard = group->guard;
     for (const auto &[id, other] : handles) {
       if (other.space != h.space || other.path != h.path || other.lease_cache_state == group) continue;
-      if (other.protocol != "smb" || (other.access & 0x27)) available &= ~4u;
+      if (other.protocol != "smb" || (other.access & ~0x00120180u)) available &= ~4u;
       if (!other.cache) continue;
+      // A foreign cache prevents WRITE even if its member only has metadata
+      // access. Legacy oplocks also prevent a new HANDLE-caching lease.
+      available &= other.lease_cache_state ? ~4u : ~6u;
       bool compatible = other.lease_cache_state
           ? !(other.lease_cache_state->state.state() & 4) && !other.lease_cache_state->state.unsettled()
           : other.cache_level == 1 && !other.cache_break_until;
@@ -209,7 +213,7 @@ json cache_dispatch(const std::string &op, const json &body, const json &grant, 
         // Joining read caching never upgrades another holder's authority and
         // cannot join a group whose invalidation is already in progress.
         bool shared = held.lease_cache_state
-            ? !(held.lease_cache_state->state.state() & 4) && !held.lease_cache_state->state.unsettled()
+            ? !(held.lease_cache_state->state.state() & 6) && !held.lease_cache_state->state.unsettled()
             : held.cache_level == 1 && !held.cache_break_until;
         if (!shared) return cache_snapshot(h);
         require(held.file.info().at("object") == h.file.info().at("object"), "object_replaced");

@@ -421,7 +421,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
     bool data_open = (requested_lease || requested_cache == 1 || requested_cache == 8 || requested_cache == 9) && (access & 1);
     bool preserving_data = disposition == 1 || disposition == 3;
     bool preserving_open = preserving_data && !(options & 0x1000);
-    bool attribute_open = !body.value("maximum", false) && !(access & ~0x00100180u);
+    bool attribute_open = !body.value("maximum", false) && !(access & ~0x00120180u);
     bool shared_read_open = false;
     bool needs_write_handle = false;
     // All cached-path opens can inspect the pinned object's security metadata
@@ -616,10 +616,10 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
           file = held.file.retain(); retained = true; break;
         }
         if (!retained) {
-          // A read-only logical lease open may later gain a writable sibling.
+          // A logical lease or metadata-only open may gain a writable sibling.
           // Pin an RW native description when possible, while keeping all
           // granted SMB rights and every mutation check strictly per open.
-          if (requested_lease && !truncate && !(access & 6)) {
+          if ((requested_lease || attribute_open) && !truncate && !(access & 6)) {
             try { file = s.directory.open(path, false, false, true); }
             catch (const error &e) {
               if (std::string_view(e.what()) != "forbidden") throw;
