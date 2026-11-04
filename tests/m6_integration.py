@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """SMB3 independent-client interop and adversarial wire tests, disposable loopback only."""
-import argparse, hashlib, hmac, json, os, platform, signal, socket, struct, subprocess, sys, uuid
+import argparse, hashlib, hmac, json, os, platform, signal, socket, struct, subprocess, sys, traceback, uuid
 from pathlib import Path
 from m5_integration import Fixture, create, denied, lock, setinfo, query
 from m5_wire import header, exchange, rejected_connection, shares, status
@@ -128,6 +128,7 @@ def fatal_compound(f, user, share, local_path):
 
 def run(args):
     f=Fixture(args.bin,512 if args.sanitizers else 256);checks=[];clients=[];index=0
+    report=dict(status='failed',checks=checks)
     def passed(text):checks.append(text);print('PASS '+text,flush=True)
     def user():
         nonlocal index
@@ -153,7 +154,12 @@ def run(args):
         sock.close()
         old,old_sid,*_=wire_auth(f.smbport,f.password,'alice')
         new,sid,key,_,_,_=wire_auth(f.smbport,f.password,'alice',previous_session=old_sid)
-        assert old.recv(1)==b'';old.close()
+        # PreviousSessionId retires only that session; the transport can carry
+        # independent sessions and must remain usable (MS-SMB2 3.3.5.5.2).
+        response=exchange(old,header(13,3,old_sid)+struct.pack('<HH',4,0))
+        assert status(response)==0xc0000203 and not struct.unpack_from('<I',response,16)[0]&8
+        assert status(exchange(old,header(13,4,0)+struct.pack('<HH',4,0)))==0
+        old.close()
         assert status(exchange(new,sign(header(13,3,sid,flags=8)+struct.pack('<HH',4,0),key)))==0
         new.close()
         sock,sid,key,_,_,_=wire_auth(f.smbport,f.password,'alice')
@@ -395,15 +401,21 @@ def run(args):
         h=create(t,'shared',disposition=1);assert h.read(0,3)==b'old';h.close()
         passed('SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys')
         report=dict(status='passed',checks=checks,client='smbprotocol 1.15.0 / pyspnego 0.12.4',host=platform.platform(),authentication_provider='Windows SSPI (sspilib)' if os.name=='nt' else 'pyspnego NTLM',large_mib=args.large_mib,sha256=digest.hexdigest(),port=f.smbport,sanitizers=args.sanitizers)
-        if args.output:Path(args.output).parent.mkdir(parents=True,exist_ok=True);Path(args.output).write_text(json.dumps(report,indent=2)+'\n')
         print(json.dumps(report))
     except Exception:
+        report['error']=traceback.format_exc()
         print((f.base/'supervisor.log').read_text()[-6000:],file=sys.stderr);raise
     finally:
         for c in clients:
             try:c.disconnect(close=False)
             except Exception:pass
-        f.close()
+        try:f.close()
+        except Exception:
+            report['status']='failed';report['cleanup_error']=traceback.format_exc();raise
+        finally:
+            if args.output:
+                Path(args.output).parent.mkdir(parents=True,exist_ok=True)
+                Path(args.output).write_text(json.dumps(report,indent=2)+'\n')
 
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--bin',required=True);p.add_argument('--large-mib',type=int,default=1);p.add_argument('--output');p.add_argument('--sanitizers',action='store_true');run(p.parse_args())

@@ -18,6 +18,7 @@ on:
       - 'tests/smb_multisession.py'
       - 'tests/smb_paths.py'
       - 'tests/smb_notify_reuse.py'
+      - 'tests/smb_notify_peers.py'
       - 'tests/smb_blocking_locks.py'
       - 'tests/samba-profile.json'
       - 'src/file_smb.inc'
@@ -130,6 +131,8 @@ jobs:
         run: python tests/smb_paths.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/smb-paths.json
       - name: SMB recursive notification directory reuse
         run: python tests/smb_notify_reuse.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/smb-notify-reuse.json
+      - name: SMB cross-transport notification ordering and reciprocal writers
+        run: python tests/smb_notify_peers.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/smb-notify-peers.json
       - name: Persistent ACLs and cross-protocol permission checks
         run: python tests/smb_security_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/security.json
       - name: SMB3.1.1 negotiated signing and GMAC nonce domains

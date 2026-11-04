@@ -1,0 +1,247 @@
+{
+  "recorded_at": "2026-11-04T09:40:20.298740+00:00",
+  "base_source": "a4addca1609bbcc7f6bcedd9478c1cf5745424ee",
+  "status": "partial",
+  "scope": "Complete ready peer notifications before the writer reads another frame; preserve reciprocal writer and subscriber teardown progress.",
+  "sanitizers": "Clang ASan/UBSan including LeakSanitizer",
+  "files_sha256": {
+    "src/smb.cpp": "c8a99354272c75a87610b05248a393483be88c22153dab1e6257de080002818d",
+    "src/smb_sessions.inc": "1c4252d90e21530395415a7277b066fdffe8ecdc8a3f842062d173b30f7ea22d",
+    "tests/smb_notify_peers.py": "85f04b7dd4b8f23ae37fe6dcf8699a7414da978854d2fd531cf3a8cdae1c727b",
+    "tests/m6_integration.py": "f7c8f26b63bc2a61eb4276654007797f4aec7f2942fd0d0fcd3f245fd093c1bf",
+    "tests/samba_torture.py": "3b53850808f887c88754552904734aef23de049149867d9128602f06c052eddc",
+    ".github/workflows/smb-metadata.yml": "fe9b80baab3e99d01c726c9bdba701f0b1b89b5ff7ac5d1d28c78483d2673f2e"
+  },
+  "before": {
+    "status": "failed",
+    "checks": [],
+    "error": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/tests/smb_notify_peers.py\", line 51, in main\n    assert result == [(3, 'a')], (i, result)\n           ^^^^^^^^^^^^^^^^^^^^\nAssertionError: (2, [(3, 'a'), (3, 'b')])\n"
+  },
+  "local": {
+    "peers": {
+      "status": "passed",
+      "checks": [
+        "twenty back-to-back signed mutation pairs complete separate encrypted pending notifications on another transport without merging later frames",
+        "twelve reciprocal signed/encrypted mutation rounds finish both transports and retain per-open FIFO without a cooperative-gate deadlock",
+        "subscriber disconnect during four concurrent mutation pairs preserves the writer and safely retires transport snapshots"
+      ]
+    },
+    "notifications": {
+      "status": "passed",
+      "checks": [
+        "SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup",
+        "four dialects complete pending creation before the next write and preserve that write for the next synchronous buffered notification",
+        "per-open first filter/watch-tree settings, FIFO completion and events buffered between requests",
+        "internal reconciliation, recursive watch installation and empty-directory checks preserve access time while real host directory reads remain observable",
+        "native host writes trigger recursive watches while nonrecursive watches ignore descendants",
+        "rapid service-created recursive subtrees retain every ordered directory/file event between requests without requiring a rescan",
+        "recursive file/directory cross-parent moves report REMOVED/ADDED, same-parent renames report OLD/NEW and moved subtrees retain native coverage",
+        "events buffered across service operations remain byte-bounded, overflow without a partial batch and resume from fresh changes",
+        "recursive watches stop observing moved-out subtrees and do not disclose queued outside names",
+        "SIZE filter ignores equal-length writes and reports actual growth",
+        "LAST_WRITE observes new-file writes even when native CREATE and WRITE are drained together",
+        "first per-open zero/short capacity persists, reopening restores capacity; NOTIFY_ENUM_DIR has no partial records; invalid-only filters stay pending and cancel cleanly",
+        "directory/list-access validation and persistent shared security descriptor changes generate SECURITY notifications",
+        "portable DOS attributes, creation-time and EA changes participate in native notification streams",
+        "initial CREATE metadata produces only ADDED; subsequent changes still produce MODIFIED",
+        "recursive descriptor exhaustion stays visibly overflowed across requests and releases all watches on close",
+        "delete-pending directories complete outstanding watches without waiting for last-handle deletion",
+        "TREE_DISCONNECT and LOGOFF finish pending notifications with NOTIFY_CLEANUP before releasing keys",
+        "policy revocation denies the pending poll, invalidates its old handle and permits a fresh exclusive read open without retained watch/sharing authority"
+      ]
+    },
+    "locks": {
+      "status": "passed",
+      "checks": [
+        "210: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+        "210: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+        "210: cross-connection FIFO for conflicts and queued writer fairness",
+        "210: CLOSE cancels waiting requests and releases held ranges to another connection",
+        "300: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+        "300: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+        "300: cross-connection FIFO for conflicts and queued writer fairness",
+        "300: CLOSE cancels waiting requests and releases held ranges to another connection",
+        "302: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+        "302: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+        "302: cross-connection FIFO for conflicts and queued writer fairness",
+        "302: CLOSE cancels waiting requests and releases held ranges to another connection",
+        "311: pending async ID, live same-connection ECHO/LOCK, unlock wakes waiter, final credits and granted exclusion",
+        "311: async-ID and MessageId CANCEL, unknown CANCEL, no ghost lock or credit loss",
+        "311: cross-connection FIFO for conflicts and queued writer fairness",
+        "311: CLOSE cancels waiting requests and releases held ranges to another connection",
+        "compound LOCK/ECHO and LOCK/CLOSE preserve interim/final ordering and connection progress",
+        "TREE_DISCONNECT cancels pending locks before removing the tree",
+        "session teardown cancels pending locks before discarding signing and encryption keys",
+        "peer disconnect removes a pending waiter before granting the next connection",
+        "holder disconnect releases locks and wakes the surviving client",
+        "32 concurrent CANCEL/unlock races produce one final result and no leaked lock or duplicate response",
+        "16 concurrent CLOSE/unlock races produce one final result and release every acquired range",
+        "bounded pending requests return INSUFFICIENT_RESOURCES and all cancelled capacity is reusable",
+        "credential revocation drains all session locks before its final reply, without transport teardown"
+      ]
+    },
+    "multisession": {
+      "status": "passed",
+      "checks": [
+        "four dialects multiplex independent signing/encryption, scoped tree/file IDs, shared locks and rename across inactive opens; LOGOFF preserves the other session and its pending watch",
+        "interleaved SMB3.1.1 authentication exchanges retain separate preauthentication transcripts and independently verified encryption keys",
+        "failed new authentication preserves established sessions; valid different-user authentication cannot replace a guessed PreviousSessionId",
+        "same-transport replacement authenticates first, completes old watches under old keys and releases old exclusive opens while another session survives",
+        "cross-transport replacement drains only the matching old session and keeps its transport and unrelated sessions usable",
+        "four simultaneous reciprocal replacement races complete without holding transport gates in a cycle, and both new encrypted sessions remain usable",
+        "abrupt transport loss releases every session and all exclusive opens, including the inactive context",
+        "known-session requests signed or encrypted with a different session key are rejected at the transport boundary",
+        "sixteen-session transport bound rejects excess authentication without damaging peers; LOGOFF and expired abandoned handshakes release capacity"
+      ]
+    },
+    "smb3": {
+      "status": "passed",
+      "checks": [
+        "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+        "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+        "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+        "0x300 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+        "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+        "0x302 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+        "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+        "0x311 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+        "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+        "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+        "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+        "AES-256-CCM/GCM-only offers use 32-byte directional keys, verified encrypted file I/O and same-handle NTLM renewal",
+        "leases and durable handles are not granted; durable reconnect explicitly unsupported; encrypted change notification cancels asynchronously; multichannel absent",
+        "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+        "absent encryption context is omitted from reply; no common cipher selects zero; CMAC/GMAC authenticated signed file I/O works without cipher fallback",
+        "cipher-free sessions reject unsigned commands and unnegotiated AES-GCM transforms even with correctly derived keys",
+        "repeated ignored NETNAME/transport/unknown contexts are accepted; missing mandatory preauthentication context returns INVALID_PARAMETER",
+        "unknown signing IDs select CMAC and unknown ciphers select zero; unsupported hash and malformed contexts fail without dialect fallback",
+        "independent AES-128/256 CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+        "AES-256-CCM/GCM reject modified tags, nonces, plaintext lengths, session IDs and ciphertext",
+        "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+        "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+        "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+      ],
+      "sanitizers": true
+    },
+    "repeated_original_mask_change": {
+      "status": "passed",
+      "tests": [
+        {
+          "selector": "smb2.notify.mask-change",
+          "status": "passed",
+          "counts": {
+            "success": 1,
+            "failure": 0,
+            "error": 0,
+            "skip": 0
+          },
+          "returncode": 0,
+          "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793784938\ntime: 2026-11-04 09:35:38.858760\ntest: mask-change\ntime: 2026-11-04 09:35:38.858851\nTESTING CHANGE NOTIFY WITH MASK CHANGE\ntime: 2026-11-04 09:35:39.870283\nsuccess: mask-change\n"
+        },
+        {
+          "selector": "smb2.notify.mask-change",
+          "status": "passed",
+          "counts": {
+            "success": 1,
+            "failure": 0,
+            "error": 0,
+            "skip": 0
+          },
+          "returncode": 0,
+          "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793784939\ntime: 2026-11-04 09:35:39.997316\ntest: mask-change\ntime: 2026-11-04 09:35:39.997417\nTESTING CHANGE NOTIFY WITH MASK CHANGE\ntime: 2026-11-04 09:35:41.233309\nsuccess: mask-change\n"
+        },
+        {
+          "selector": "smb2.notify.mask-change",
+          "status": "passed",
+          "counts": {
+            "success": 1,
+            "failure": 0,
+            "error": 0,
+            "skip": 0
+          },
+          "returncode": 0,
+          "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793784941\ntime: 2026-11-04 09:35:41.344691\ntest: mask-change\ntime: 2026-11-04 09:35:41.344788\nTESTING CHANGE NOTIFY WITH MASK CHANGE\ntime: 2026-11-04 09:35:42.562437\nsuccess: mask-change\n"
+        },
+        {
+          "selector": "smb2.notify.mask-change",
+          "status": "passed",
+          "counts": {
+            "success": 1,
+            "failure": 0,
+            "error": 0,
+            "skip": 0
+          },
+          "returncode": 0,
+          "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793784942\ntime: 2026-11-04 09:35:42.671552\ntest: mask-change\ntime: 2026-11-04 09:35:42.671676\nTESTING CHANGE NOTIFY WITH MASK CHANGE\ntime: 2026-11-04 09:35:43.878427\nsuccess: mask-change\n"
+        },
+        {
+          "selector": "smb2.notify.mask-change",
+          "status": "passed",
+          "counts": {
+            "success": 1,
+            "failure": 0,
+            "error": 0,
+            "skip": 0
+          },
+          "returncode": 0,
+          "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793784944\ntime: 2026-11-04 09:35:44.043280\ntest: mask-change\ntime: 2026-11-04 09:35:44.043400\nTESTING CHANGE NOTIFY WITH MASK CHANGE\ntime: 2026-11-04 09:35:45.188066\nsuccess: mask-change\n"
+        },
+        {
+          "selector": "smb2.notify.mask-change",
+          "status": "passed",
+          "counts": {
+            "success": 1,
+            "failure": 0,
+            "error": 0,
+            "skip": 0
+          },
+          "returncode": 0,
+          "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793784945\ntime: 2026-11-04 09:35:45.319423\ntest: mask-change\ntime: 2026-11-04 09:35:45.319553\nTESTING CHANGE NOTIFY WITH MASK CHANGE\ntime: 2026-11-04 09:35:46.487645\nsuccess: mask-change\n"
+        },
+        {
+          "selector": "smb2.notify.mask-change",
+          "status": "passed",
+          "counts": {
+            "success": 1,
+            "failure": 0,
+            "error": 0,
+            "skip": 0
+          },
+          "returncode": 0,
+          "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793784946\ntime: 2026-11-04 09:35:46.593872\ntest: mask-change\ntime: 2026-11-04 09:35:46.594003\nTESTING CHANGE NOTIFY WITH MASK CHANGE\ntime: 2026-11-04 09:35:47.772060\nsuccess: mask-change\n"
+        },
+        {
+          "selector": "smb2.notify.mask-change",
+          "status": "passed",
+          "counts": {
+            "success": 1,
+            "failure": 0,
+            "error": 0,
+            "skip": 0
+          },
+          "returncode": 0,
+          "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793784947\ntime: 2026-11-04 09:35:47.865406\ntest: mask-change\ntime: 2026-11-04 09:35:47.865530\nTESTING CHANGE NOTIFY WITH MASK CHANGE\ntime: 2026-11-04 09:35:49.000477\nsuccess: mask-change\n"
+        }
+      ]
+    },
+    "full_original_notifications": {
+      "status": "passed",
+      "tests": [
+        {
+          "selector": "smb2.notify",
+          "status": "passed",
+          "counts": {
+            "success": 23,
+            "failure": 0,
+            "error": 0,
+            "skip": 0
+          },
+          "returncode": 0,
+          "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793784997\ntime: 2026-11-04 09:36:37.235078\nprogress: 23\ntest: valid-req\ntime: 2026-11-04 09:36:37.235169\nTESTING VALIDITY OF CHANGE NOTIFY REQUEST\ntime: 2026-11-04 09:36:37.894288\nsuccess: valid-req\ntest: tcon\ntime: 2026-11-04 09:36:37.894299\nTESTING SIMPLE CHANGE NOTIFY\nTesting notify mkdir\nTesting notify rmdir\nSIMPLE CHANGE NOTIFY OK\nTESTING WITH SECONDARY TCON\ntid1=1 tid2=2\nTesting notify mkdir\nTesting notify rmdir\nCHANGE NOTIFY WITH TCON OK\nDisconnecting secondary tree\nTesting notify mkdir\nTesting notify rmdir\nCHANGE NOTIFY WITH TDIS OK\ntime: 2026-11-04 09:36:38.560958\nsuccess: tcon\ntest: dir\ntime: 2026-11-04 09:36:38.560975\nTESTING CHANGE NOTIFY ON DIRECTORIES\nTesting notify cancel\nTesting notify mkdir\nTesting notify rmdir\nTesting notify mkdir - rmdir - mkdir - rmdir\nTesting buffered notify on create of 10 files\nTesting notify on unlink for the first file\nand now from the 1st notify\n(3rd notify) this notify will only see the 1st unlink\nTesting if a close() on the dir handle triggers the notify reply\ntime: 2026-11-04 09:36:43.242996\nsuccess: dir\ntest: mask\ntime: 2026-11-04 09:36:43.243012\nTESTING CHANGE NOTIFY COMPLETION FILTERS\nTesting mkdir\nTesting create file\nTesting unlink\nTesting rmdir\nTesting rename file\nTesting rename dir\nTesting set path attribute\nTesting set path write time\nTesting set file create time\nTesting set file access time\nTesting set file change time\nTesting write\ntime: 2026-11-04 09:38:57.111882\nsuccess: mask\ntest: tdis\ntime: 2026-11-04 09:38:57.111899\nTESTING CHANGE NOTIFY+CANCEL FOLLOWED BY TREE-DISCONNECT\ntime: 2026-11-04 09:38:57.224518\nsuccess: tdis\ntest: tdis1\ntime: 2026-11-04 09:38:57.224532\nTESTING CHANGE NOTIFY ASYNC FOLLOWED BY TREE-DISCONNECT\ntime: 2026-11-04 09:38:57.320328\nsuccess: tdis1\ntest: mask-change\ntime: 2026-11-04 09:38:57.320342\nTESTING CHANGE NOTIFY WITH MASK CHANGE\ntime: 2026-11-04 09:38:58.198578\nsuccess: mask-change\ntest: close\ntime: 2026-11-04 09:38:58.198592\nTESTING CHANGE NOTIFY FOLLOWED BY ULOGOFF\ntime: 2026-11-04 09:38:58.394918\nsuccess: close\ntest: logoff\ntime: 2026-11-04 09:38:58.394932\nTESTING CHANGE NOTIFY FOLLOWED BY ULOGOFF\ntime: 2026-11-04 09:38:58.501791\nsuccess: logoff\ntest: session-reconnect\ntime: 2026-11-04 09:38:58.501810\nTESTING CHANGE NOTIFY FOLLOWED BY SESSION RECONNECT\ntime: 2026-11-04 09:38:58.645909\nsuccess: session-reconnect\ntest: invalid-reauth\ntime: 2026-11-04 09:38:58.645922\nTESTING CHANGE NOTIFY FOLLOWED BY invalid REAUTH\ntime: 2026-11-04 09:38:58.879884\nsuccess: invalid-reauth\ntest: tree\ntime: 2026-11-04 09:38:58.879899\nTESTING NOTIFY FOR DIFFERENT DEPTHS\ntook 0.1631 seconds to propagate all events\ntime: 2026-11-04 09:39:02.139506\nsuccess: tree\ntest: basedir\ntime: 2026-11-04 09:39:02.139521\nTESTING CHANGE NOTIFY BASEDIR EVENTS\ntime: 2026-11-04 09:39:02.680690\nsuccess: basedir\ntest: double\ntime: 2026-11-04 09:39:02.680704\nTESTING CHANGE NOTIFY TWICE ON ONE DIRECTORY\ntime: 2026-11-04 09:39:02.874186\nsuccess: double\ntest: file\ntime: 2026-11-04 09:39:02.874199\nTESTING CHANGE NOTIFY ON FILES\nTesting if notifies on file handles are invalid (should be)\ntime: 2026-11-04 09:39:03.029879\nsuccess: file\ntest: tcp\ntime: 2026-11-04 09:39:03.029892\nTESTING CHANGE NOTIFY FOLLOWED BY TCP DISCONNECT\ntime: 2026-11-04 09:39:03.355490\nsuccess: tcp\ntest: rec\ntime: 2026-11-04 09:39:03.355506\nTESTING CHANGE NOTIFY WITH RECURSION\ntime: 2026-11-04 09:39:04.152142\nsuccess: rec\ntest: overflow\ntime: 2026-11-04 09:39:04.152157\nTESTING CHANGE NOTIFY EVENT OVERFLOW\nTesting overflowed buffer notify on create of 100 files\ntime: 2026-11-04 09:39:17.866296\nsuccess: overflow\ntest: rmdir1\ntime: 2026-11-04 09:39:17.866314\nTESTING NOTIFY CANCEL FOR DELETED DIR\ntime: 2026-11-04 09:39:18.032696\nsuccess: rmdir1\ntest: rmdir2\ntime: 2026-11-04 09:39:18.032709\nTESTING NOTIFY CANCEL FOR DELETED DIR\ntime: 2026-11-04 09:39:18.188248\nsuccess: rmdir2\ntest: rmdir3\ntime: 2026-11-04 09:39:18.188262\nTESTING NOTIFY CANCEL FOR DELETED DIR\ntime: 2026-11-04 09:39:18.368780\nsuccess: rmdir3\ntest: rmdir4\ntime: 2026-11-04 09:39:18.368793\nTESTING NOTIFY CANCEL FOR DELETED DIR\ntime: 2026-11-04 09:39:18.548523\nsuccess: rmdir4\ntest: handle-permissions\ntime: 2026-11-04 09:39:18.548538\nTESTING CHANGE NOTIFY ON A HANDLE WITHOUT PERMISSIONS\ntime: 2026-11-04 09:39:18.709908\nsuccess: handle-permissions\n"
+        }
+      ]
+    }
+  },
+  "remote_acceptance": "pending for this increment",
+  "remaining": "Full SMB/NFS feature gates remain open. Source-specific GCC, Clang and MSVC reacceptance is required, including the previously failed GCC notification ordering scenario."
+}

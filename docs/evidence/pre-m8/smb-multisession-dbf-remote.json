@@ -1,0 +1,723 @@
+{
+  "source": "dbf71eaaddfc85cf96070a0393326531a8824ee8",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41806128416",
+  "recorded_at": "2026-11-04T09:41:52.105136+00:00",
+  "status": "failed",
+  "matrix_snapshot": {
+    "clang metadata": {
+      "status": "completed",
+      "conclusion": "failure",
+      "failed_steps": [
+        "SMB3 dialects and encrypted allocation"
+      ]
+    },
+    "msvc metadata": {
+      "status": "completed",
+      "conclusion": "failure",
+      "failed_steps": [
+        "SMB3 dialects and encrypted allocation"
+      ]
+    },
+    "gcc metadata": {
+      "status": "completed",
+      "conclusion": "failure",
+      "failed_steps": [
+        "SMB3 dialects and encrypted allocation"
+      ]
+    }
+  },
+  "platforms": {
+    "gcc": {
+      "artifact_id": 13310657813,
+      "artifact_sha256": "df6d2720b1ab2293dfc8bc2aad65295086ec39f1306b3d135669d5e6b9cf83b6",
+      "reports": {
+        "smb-multisession.json": {
+          "sha256": "bb47908539ebe4cc6ab65f394a7c942df569ec1db50c318b6020f4417ba3cc4d",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "four dialects multiplex independent signing/encryption, scoped tree/file IDs, shared locks and rename across inactive opens; LOGOFF preserves the other session and its pending watch",
+              "interleaved SMB3.1.1 authentication exchanges retain separate preauthentication transcripts and independently verified encryption keys",
+              "failed new authentication preserves established sessions; valid different-user authentication cannot replace a guessed PreviousSessionId",
+              "same-transport replacement authenticates first, completes old watches under old keys and releases old exclusive opens while another session survives",
+              "cross-transport replacement drains only the matching old session and keeps its transport and unrelated sessions usable",
+              "four simultaneous reciprocal replacement races complete without holding transport gates in a cycle, and both new encrypted sessions remain usable",
+              "abrupt transport loss releases every session and all exclusive opens, including the inactive context",
+              "known-session requests signed or encrypted with a different session key are rejected at the transport boundary",
+              "sixteen-session transport bound rejects excess authentication without damaging peers; LOGOFF and expired abandoned handshakes release capacity"
+            ]
+          }
+        },
+        "smb-reauth.json": {
+          "sha256": "389cb23cbbaa06a5196ec84af10a5108ba732ce8af8cfcfb545c838f7e9ca07f",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "SMB2.1/3.0/3.0.2/3.1.1 repeated signed/encrypted NTLM renewal preserves session ID, keys, opens and byte-range locks",
+              "expired authority reports NETWORK_SESSION_EXPIRED and renews the same open after an intervening management login",
+              "wrong proof and different-user renewal fail, release exclusive handles and complete signed/encrypted watches with NOTIFY_CLEANUP",
+              "fresh valid credentials cannot renew a revoked token or resurrect its exclusive open",
+              "LOGOFF during an incomplete renewal resets authentication state and permits a fresh encrypted session on the same transport",
+              "SESSION_SETUP for an unknown session does not abort another session's in-progress renewal or borrow its signing key"
+            ]
+          }
+        },
+        "smb-notify.json": {
+          "sha256": "bf5f2c50edc37468b77b5c220c2d5988eb07dadfbc1dc9b2fd189f5535d0b6af",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup",
+              "four dialects complete pending creation before the next write and preserve that write for the next synchronous buffered notification",
+              "per-open first filter/watch-tree settings, FIFO completion and events buffered between requests",
+              "internal reconciliation, recursive watch installation and empty-directory checks preserve access time while real host directory reads remain observable",
+              "native host writes trigger recursive watches while nonrecursive watches ignore descendants",
+              "rapid service-created recursive subtrees retain every ordered directory/file event between requests without requiring a rescan",
+              "recursive file/directory cross-parent moves report REMOVED/ADDED, same-parent renames report OLD/NEW and moved subtrees retain native coverage",
+              "events buffered across service operations remain byte-bounded, overflow without a partial batch and resume from fresh changes",
+              "recursive watches stop observing moved-out subtrees and do not disclose queued outside names",
+              "SIZE filter ignores equal-length writes and reports actual growth",
+              "LAST_WRITE observes new-file writes even when native CREATE and WRITE are drained together",
+              "first per-open zero/short capacity persists, reopening restores capacity; NOTIFY_ENUM_DIR has no partial records; invalid-only filters stay pending and cancel cleanly",
+              "directory/list-access validation and persistent shared security descriptor changes generate SECURITY notifications",
+              "portable DOS attributes, creation-time and EA changes participate in native notification streams",
+              "initial CREATE metadata produces only ADDED; subsequent changes still produce MODIFIED",
+              "recursive descriptor exhaustion stays visibly overflowed across requests and releases all watches on close",
+              "delete-pending directories complete outstanding watches without waiting for last-handle deletion",
+              "TREE_DISCONNECT and LOGOFF finish pending notifications with NOTIFY_CLEANUP before releasing keys",
+              "policy revocation denies the pending poll, invalidates its old handle and permits a fresh exclusive read open without retained watch/sharing authority"
+            ]
+          }
+        },
+        "samba-notify.json": {
+          "sha256": "7f5e564265a9ec7c0019006f954af14c8aac433435eae1d2e3583a1fea030255",
+          "result": {
+            "status": "passed",
+            "tests": [
+              {
+                "selector": "smb2.notify.dir",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.tcon",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.tdis1",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.close",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.logoff",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.file",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.handle-permissions",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rmdir1",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rmdir2",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rmdir3",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rmdir4",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.invalid-reauth",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rec",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.mask-change",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.mask",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.valid-req",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.tdis",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.basedir",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.double",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.tcp",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.overflow",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.session-reconnect",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              }
+            ]
+          }
+        }
+      }
+    },
+    "msvc": {
+      "artifact_id": 13310213960,
+      "artifact_sha256": "851b577eb1c7a94900dcbe6b61d82f28137f20f46ccb3b2d0e6165ef3b5707a2",
+      "reports": {
+        "smb-multisession.json": {
+          "sha256": "fc41a4c543f2e7a3e132411c10ace965967bc2d4eb6b65f1ec2f4341656db8ac",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "four dialects multiplex independent signing/encryption, scoped tree/file IDs, shared locks and rename across inactive opens; LOGOFF preserves the other session and its pending watch",
+              "interleaved SMB3.1.1 authentication exchanges retain separate preauthentication transcripts and independently verified encryption keys",
+              "failed new authentication preserves established sessions; valid different-user authentication cannot replace a guessed PreviousSessionId",
+              "same-transport replacement authenticates first, completes old watches under old keys and releases old exclusive opens while another session survives",
+              "cross-transport replacement drains only the matching old session and keeps its transport and unrelated sessions usable",
+              "four simultaneous reciprocal replacement races complete without holding transport gates in a cycle, and both new encrypted sessions remain usable",
+              "abrupt transport loss releases every session and all exclusive opens, including the inactive context",
+              "known-session requests signed or encrypted with a different session key are rejected at the transport boundary",
+              "sixteen-session transport bound rejects excess authentication without damaging peers; LOGOFF and expired abandoned handshakes release capacity"
+            ]
+          }
+        },
+        "smb-reauth.json": {
+          "sha256": "adafa4be62ff4f6934c5f1badd9fb34c901b668b85e52a868992c5a101eaf4ee",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "SMB2.1/3.0/3.0.2/3.1.1 repeated signed/encrypted NTLM renewal preserves session ID, keys, opens and byte-range locks",
+              "expired authority reports NETWORK_SESSION_EXPIRED and renews the same open after an intervening management login",
+              "wrong proof and different-user renewal fail, release exclusive handles and complete signed/encrypted watches with NOTIFY_CLEANUP",
+              "fresh valid credentials cannot renew a revoked token or resurrect its exclusive open",
+              "LOGOFF during an incomplete renewal resets authentication state and permits a fresh encrypted session on the same transport",
+              "SESSION_SETUP for an unknown session does not abort another session's in-progress renewal or borrow its signing key"
+            ]
+          }
+        },
+        "smb-notify.json": {
+          "sha256": "86981bf78366dc512256e899164d03fc01d2f95b83c277524c6d5703e43fae25",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup",
+              "four dialects complete pending creation before the next write and preserve that write for the next synchronous buffered notification",
+              "per-open first filter/watch-tree settings, FIFO completion and events buffered between requests",
+              "native host writes trigger recursive watches while nonrecursive watches ignore descendants",
+              "rapid service-created recursive subtrees retain every ordered directory/file event between requests without requiring a rescan",
+              "recursive file/directory cross-parent moves report REMOVED/ADDED, same-parent renames report OLD/NEW and moved subtrees retain native coverage",
+              "events buffered across service operations remain byte-bounded, overflow without a partial batch and resume from fresh changes",
+              "SIZE filter ignores equal-length writes and reports actual growth",
+              "LAST_WRITE observes new-file writes even when native CREATE and WRITE are drained together",
+              "first per-open zero/short capacity persists, reopening restores capacity; NOTIFY_ENUM_DIR has no partial records; invalid-only filters stay pending and cancel cleanly",
+              "directory/list-access validation and persistent shared security descriptor changes generate SECURITY notifications",
+              "portable DOS attributes, creation-time and EA changes participate in native notification streams",
+              "initial CREATE metadata produces only ADDED; subsequent changes still produce MODIFIED",
+              "delete-pending directories complete outstanding watches without waiting for last-handle deletion",
+              "TREE_DISCONNECT and LOGOFF finish pending notifications with NOTIFY_CLEANUP before releasing keys",
+              "policy revocation denies the pending poll, invalidates its old handle and permits a fresh exclusive read open without retained watch/sharing authority"
+            ]
+          }
+        }
+      }
+    },
+    "clang": {
+      "artifact_id": 13311760550,
+      "artifact_sha256": "61c96047ca1400e4d2ea54e3b1bee2e4fb10e1ae359d46366538806616dd4ceb",
+      "reports": {
+        "smb-multisession.json": {
+          "sha256": "bb47908539ebe4cc6ab65f394a7c942df569ec1db50c318b6020f4417ba3cc4d",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "four dialects multiplex independent signing/encryption, scoped tree/file IDs, shared locks and rename across inactive opens; LOGOFF preserves the other session and its pending watch",
+              "interleaved SMB3.1.1 authentication exchanges retain separate preauthentication transcripts and independently verified encryption keys",
+              "failed new authentication preserves established sessions; valid different-user authentication cannot replace a guessed PreviousSessionId",
+              "same-transport replacement authenticates first, completes old watches under old keys and releases old exclusive opens while another session survives",
+              "cross-transport replacement drains only the matching old session and keeps its transport and unrelated sessions usable",
+              "four simultaneous reciprocal replacement races complete without holding transport gates in a cycle, and both new encrypted sessions remain usable",
+              "abrupt transport loss releases every session and all exclusive opens, including the inactive context",
+              "known-session requests signed or encrypted with a different session key are rejected at the transport boundary",
+              "sixteen-session transport bound rejects excess authentication without damaging peers; LOGOFF and expired abandoned handshakes release capacity"
+            ]
+          }
+        },
+        "smb-reauth.json": {
+          "sha256": "389cb23cbbaa06a5196ec84af10a5108ba732ce8af8cfcfb545c838f7e9ca07f",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "SMB2.1/3.0/3.0.2/3.1.1 repeated signed/encrypted NTLM renewal preserves session ID, keys, opens and byte-range locks",
+              "expired authority reports NETWORK_SESSION_EXPIRED and renews the same open after an intervening management login",
+              "wrong proof and different-user renewal fail, release exclusive handles and complete signed/encrypted watches with NOTIFY_CLEANUP",
+              "fresh valid credentials cannot renew a revoked token or resurrect its exclusive open",
+              "LOGOFF during an incomplete renewal resets authentication state and permits a fresh encrypted session on the same transport",
+              "SESSION_SETUP for an unknown session does not abort another session's in-progress renewal or borrow its signing key"
+            ]
+          }
+        },
+        "smb-notify.json": {
+          "sha256": "bf5f2c50edc37468b77b5c220c2d5988eb07dadfbc1dc9b2fd189f5535d0b6af",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup",
+              "four dialects complete pending creation before the next write and preserve that write for the next synchronous buffered notification",
+              "per-open first filter/watch-tree settings, FIFO completion and events buffered between requests",
+              "internal reconciliation, recursive watch installation and empty-directory checks preserve access time while real host directory reads remain observable",
+              "native host writes trigger recursive watches while nonrecursive watches ignore descendants",
+              "rapid service-created recursive subtrees retain every ordered directory/file event between requests without requiring a rescan",
+              "recursive file/directory cross-parent moves report REMOVED/ADDED, same-parent renames report OLD/NEW and moved subtrees retain native coverage",
+              "events buffered across service operations remain byte-bounded, overflow without a partial batch and resume from fresh changes",
+              "recursive watches stop observing moved-out subtrees and do not disclose queued outside names",
+              "SIZE filter ignores equal-length writes and reports actual growth",
+              "LAST_WRITE observes new-file writes even when native CREATE and WRITE are drained together",
+              "first per-open zero/short capacity persists, reopening restores capacity; NOTIFY_ENUM_DIR has no partial records; invalid-only filters stay pending and cancel cleanly",
+              "directory/list-access validation and persistent shared security descriptor changes generate SECURITY notifications",
+              "portable DOS attributes, creation-time and EA changes participate in native notification streams",
+              "initial CREATE metadata produces only ADDED; subsequent changes still produce MODIFIED",
+              "recursive descriptor exhaustion stays visibly overflowed across requests and releases all watches on close",
+              "delete-pending directories complete outstanding watches without waiting for last-handle deletion",
+              "TREE_DISCONNECT and LOGOFF finish pending notifications with NOTIFY_CLEANUP before releasing keys",
+              "policy revocation denies the pending poll, invalidates its old handle and permits a fresh exclusive read open without retained watch/sharing authority"
+            ]
+          }
+        },
+        "samba-notify.json": {
+          "sha256": "b5ee8733ccd430f3f48e872ba319a65c97250222608fb8547922b14831315ae0",
+          "result": {
+            "status": "passed",
+            "tests": [
+              {
+                "selector": "smb2.notify.dir",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.tcon",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.tdis1",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.close",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.logoff",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.file",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.handle-permissions",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rmdir1",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rmdir2",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rmdir3",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rmdir4",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.invalid-reauth",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.rec",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.mask-change",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.mask",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.valid-req",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.tdis",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.basedir",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.double",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.tcp",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.overflow",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              },
+              {
+                "selector": "smb2.notify.session-reconnect",
+                "status": "passed",
+                "counts": {
+                  "success": 1,
+                  "failure": 0,
+                  "error": 0,
+                  "skip": 0
+                },
+                "returncode": 0
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "msvc_failure_log": "2026-11-04T09:32:50.2040126Z Traceback (most recent call last):\n2026-11-04T09:32:50.2040735Z   File \"D:\\a\\tauCloud\\tauCloud\\tests\\m6_integration.py\", line 409, in <module>\n2026-11-04T09:32:50.2044455Z     p=argparse.ArgumentParser();p.add_argument('--bin',required=True);p.add_argument('--large-mib',type=int,default=1);p.add_argument('--output');p.add_argument('--sanitizers',action='store_true');run(p.parse_args())\n2026-11-04T09:32:50.2046699Z                                                                                                                                                                                                      ^^^^^^^^^^^^^^^^^^^\n2026-11-04T09:32:50.2047671Z   File \"D:\\a\\tauCloud\\tauCloud\\tests\\m6_integration.py\", line 156, in run\n2026-11-04T09:32:50.2048342Z     assert old.recv(1)==b'';old.close()\n2026-11-04T09:32:50.2048791Z            ^^^^^^^^^^^\n2026-11-04T09:32:50.2049102Z TimeoutError: timed out\n2026-11-04T09:32:50.3301282Z ##[error]Process completed with exit code 1.",
+  "diagnosis": "The legacy SMB3 test demanded EOF on the old transport after PreviousSessionId replacement. Session multiplexing correctly retains that transport. The same assertion times out locally. The corrected raw-wire test requires USER_SESSION_DELETED for the old session, an unsigned reply without its retired key, and successful connection-level ECHO on the surviving transport; all 23 SMB3 groups now pass locally. This is not a remote rerun pass.",
+  "all_failed_steps_log": "clang metadata\tSMB3 dialects and encrypted allocation\t\ufeff2026-11-04T09:40:34.1824510Z ##[group]Run ./build/linux/x86_64/debug/taucloud_m6_tests\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:34.1824999Z \u001b[36;1m./build/linux/x86_64/debug/taucloud_m6_tests\u001b[0m\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:34.1825673Z \u001b[36;1mpython tests/m6_integration.py --bin build/linux/x86_64/debug --large-mib 1 --sanitizers --output build/acceptance/smb3.json\u001b[0m\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:34.1846203Z shell: /usr/bin/bash -e {0}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:34.1846459Z env:\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:34.1846651Z   PYTHONUTF8: 1\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:34.1846885Z   PIP_BREAK_SYSTEM_PACKAGES: 1\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:34.1847133Z ##[endgroup]\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:34.2444420Z {\"checks\":1137,\"milestone\":\"M6\",\"status\":\"passed\"}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:47.7761376Z PASS NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8537956Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793785234514}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8538797Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793785234549}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8539385Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793785234654}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8539985Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793785234759}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8540517Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793785234863}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8541032Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793785234966}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8541559Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793785235064}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8542092Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793785235163}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8542620Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793785235269}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8543182Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793785235373}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8544013Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793785235475}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8544532Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793785235591}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8545037Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793785235684}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8545535Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793785235790}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8546030Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793785235895}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8546516Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793785236113}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8546958Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"api\",\"time\":1793785243235}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8547407Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"nfs\",\"time\":1793785243321}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8547857Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"smb\",\"time\":1793785243365}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8548300Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"ftp\",\"time\":1793785243409}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8548759Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"webdav\",\"time\":1793785243454}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8549233Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"helper\",\"time\":1793785243518}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8549731Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"storage_admin\",\"time\":1793785243562}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8550235Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"updater\",\"time\":1793785243606}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8550719Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"monitor\",\"time\":1793785243651}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8551537Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"protocol\",\"time\":1793785243695}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8552024Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_3\",\"time\":1793785243739}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8552502Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_2\",\"time\":1793785243783}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8552973Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_1\",\"time\":1793785243827}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8553441Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file\",\"time\":1793785243872}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8554068Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"identity\",\"time\":1793785243916}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8554578Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"supervisor\",\"time\":1793785243940}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8555087Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793785244029}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8555584Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793785244062}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8556317Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793785244175}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8556747Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793785244280}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8557127Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793785244384}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8557510Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793785244491}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8557907Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793785244581}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8558303Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793785244688}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8558698Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793785244789}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8559122Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793785244893}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8559535Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793785244997}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8559916Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793785245115}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8560307Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793785245207}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8560670Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793785245346}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8561044Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793785245413}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8561411Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793785245631}\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:57.8561644Z \nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:58.7514628Z Traceback (most recent call last):\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:58.7515838Z   File \"/home/runner/work/tauCloud/tauCloud/tests/m6_integration.py\", line 409, in <module>\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:58.7518543Z     p=argparse.ArgumentParser();p.add_argument('--bin',required=True);p.add_argument('--large-mib',type=int,default=1);p.add_argument('--output');p.add_argument('--sanitizers',action='store_true');run(p.parse_args())\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:58.7521444Z                                                                                                                                                                                                      ^^^^^^^^^^^^^^^^^^^\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:58.7522826Z   File \"/home/runner/work/tauCloud/tauCloud/tests/m6_integration.py\", line 156, in run\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:58.7523427Z     assert old.recv(1)==b'';old.close()\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:58.7524086Z            ^^^^^^^^^^^\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:58.7524367Z TimeoutError: timed out\nclang metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:40:58.7819006Z ##[error]Process completed with exit code 1.\nmsvc metadata\tSMB3 dialects and encrypted allocation\t\ufeff2026-11-04T09:32:30.5942829Z ##[group]Run ./build/windows/x64/release/taucloud_m6_tests.exe\nmsvc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:32:30.5943442Z \u001b[36;1m./build/windows/x64/release/taucloud_m6_tests.exe\u001b[0m\nmsvc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:32:30.5944078Z \u001b[36;1mpython tests/m6_integration.py --bin build/windows/x64/release --large-mib 1  --output build/acceptance/smb3.json\u001b[0m\nmsvc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:32:30.6012531Z shell: C:\\Program Files\\PowerShell\\7\\pwsh.EXE -command \". '{0}'\"\nmsvc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:32:30.6012891Z env:\nmsvc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:32:30.6013065Z   PYTHONUTF8: 1\nmsvc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:32:30.6013267Z   PIP_BREAK_SYSTEM_PACKAGES: 1\nmsvc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:32:30.6013492Z ##[endgroup]\nmsvc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:32:30.8976442Z {\"checks\":1137,\"milestone\":\"M6\",\"status\":\"passed\"}\nmsvc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:32:38.8016408Z PASS NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192\nmsvc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:32:48.9434863Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793784751188}\nmsvc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:32:48.9435724Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"supervisor\",\"time\":1793784755647}\nmsvc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:32:48.9436541Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793784755833}\nmsvc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:32:48.9437014Z \nmsvc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:32:50.2040084Z Traceback (most recent call last):\nmsvc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:32:50.2040731Z   File \"D:\\a\\tauCloud\\tauCloud\\tests\\m6_integration.py\", line 409, in <module>\nmsvc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:32:50.2044433Z     p=argparse.ArgumentParser();p.add_argument('--bin',required=True);p.add_argument('--large-mib',type=int,default=1);p.add_argument('--output');p.add_argument('--sanitizers',action='store_true');run(p.parse_args())\nmsvc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:32:50.2046686Z                                                                                                                                                                                                      ^^^^^^^^^^^^^^^^^^^\nmsvc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:32:50.2047666Z   File \"D:\\a\\tauCloud\\tauCloud\\tests\\m6_integration.py\", line 156, in run\nmsvc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:32:50.2048338Z     assert old.recv(1)==b'';old.close()\nmsvc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:32:50.2048751Z            ^^^^^^^^^^^\nmsvc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:32:50.2049099Z TimeoutError: timed out\nmsvc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:32:50.3301256Z ##[error]Process completed with exit code 1.\ngcc metadata\tSMB3 dialects and encrypted allocation\t\ufeff2026-11-04T09:37:16.5405407Z ##[group]Run ./build/linux/x86_64/release/taucloud_m6_tests\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:16.5405880Z \u001b[36;1m./build/linux/x86_64/release/taucloud_m6_tests\u001b[0m\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:16.5406485Z \u001b[36;1mpython tests/m6_integration.py --bin build/linux/x86_64/release --large-mib 1  --output build/acceptance/smb3.json\u001b[0m\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:16.5428856Z shell: /usr/bin/bash -e {0}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:16.5429111Z env:\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:16.5429302Z   PYTHONUTF8: 1\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:16.5429524Z   PIP_BREAK_SYSTEM_PACKAGES: 1\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:16.5429769Z ##[endgroup]\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:16.5569951Z {\"checks\":1137,\"milestone\":\"M6\",\"status\":\"passed\"}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:27.3296806Z PASS NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3651534Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793785036741}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3652643Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793785036751}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3653226Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793785036852}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3654076Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793785036954}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3654702Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793785037057}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3655416Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793785037159}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3656081Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793785037258}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3656604Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793785037360}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3657112Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793785037462}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3657656Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793785037564}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3658216Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793785037667}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3658729Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793785037771}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3659224Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793785037870}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3659724Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793785037972}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3660197Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793785038074}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3660667Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793785038281}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3661138Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"api\",\"time\":1793785043536}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3661622Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"nfs\",\"time\":1793785043617}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3662408Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"smb\",\"time\":1793785043658}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3662888Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"ftp\",\"time\":1793785043699}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3663378Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"webdav\",\"time\":1793785043739}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3663887Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"helper\",\"time\":1793785043780}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3664418Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"storage_admin\",\"time\":1793785043821}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3664962Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"updater\",\"time\":1793785043862}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3665487Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"monitor\",\"time\":1793785043903}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3665895Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"protocol\",\"time\":1793785043943}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3666316Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_3\",\"time\":1793785043984}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3666719Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_2\",\"time\":1793785044025}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3667098Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file_1\",\"time\":1793785044066}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3667471Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"file\",\"time\":1793785044106}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3667852Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"identity\",\"time\":1793785044147}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3668398Z {\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"supervisor\",\"time\":1793785044169}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3668808Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793785044228}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3669207Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"identity\",\"time\":1793785044236}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3669880Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"file\",\"time\":1793785044341}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3670263Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_1\",\"time\":1793785044443}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3670645Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_2\",\"time\":1793785044545}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3671021Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"file_3\",\"time\":1793785044648}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3671413Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"protocol\",\"time\":1793785044745}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3671806Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"monitor\",\"time\":1793785044847}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3672454Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"updater\",\"time\":1793785044949}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3672859Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"storage_admin\",\"time\":1793785045051}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3673269Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"helper\",\"time\":1793785045153}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3673652Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"webdav\",\"time\":1793785045258}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3674025Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"ftp\",\"time\":1793785045357}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3674567Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"smb\",\"time\":1793785045469}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3699176Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"nfs\",\"time\":1793785045562}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3699991Z {\"code\":\"ok\",\"event\":\"started\",\"role\":\"api\",\"time\":1793785045769}\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:37.3700447Z \ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:38.1274922Z Traceback (most recent call last):\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:38.1276419Z   File \"/home/runner/work/tauCloud/tauCloud/tests/m6_integration.py\", line 409, in <module>\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:38.1279300Z     p=argparse.ArgumentParser();p.add_argument('--bin',required=True);p.add_argument('--large-mib',type=int,default=1);p.add_argument('--output');p.add_argument('--sanitizers',action='store_true');run(p.parse_args())\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:38.1280763Z                                                                                                                                                                                                      ^^^^^^^^^^^^^^^^^^^\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:38.1281652Z   File \"/home/runner/work/tauCloud/tauCloud/tests/m6_integration.py\", line 156, in run\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:38.1282606Z     assert old.recv(1)==b'';old.close()\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:38.1282953Z            ^^^^^^^^^^^\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:38.1283236Z TimeoutError: timed out\ngcc metadata\tSMB3 dialects and encrypted allocation\t2026-11-04T09:37:38.1568939Z ##[error]Process completed with exit code 1.\n"
+}

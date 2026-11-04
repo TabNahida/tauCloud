@@ -516,6 +516,12 @@ struct client : session_state, std::enable_shared_from_this<client> {
       if (!context.pending_locks.empty() || !context.pending_notifications.empty()) return true;
     return false;
   }
+  bool has_notifications() const {
+    if (!pending_notifications.empty()) return true;
+    for (const auto &[id, context] : sessions)
+      if (!context.pending_notifications.empty()) return true;
+    return false;
+  }
   bool has_authenticated() const {
     if (authenticated) return true;
     for (const auto &[id, context] : sessions) if (context.authenticated) return true;
@@ -1755,6 +1761,14 @@ struct client : session_state, std::enable_shared_from_this<client> {
         if (encrypted) check(select_session(encrypted_session));
         if (!output.empty()) co_await send_packet(std::move(output), encrypted);
         co_await complete_frame_notifications();
+        // A later frame on this writer must not overtake a ready notification
+        // on another transport. All stateful cleanup can also mutate files.
+        bool mutation = std::any_of(requests.begin(), requests.end(), [](std::string_view request) {
+          auto command = get(request, 12, 2);
+          return command == 1 || command == 2 || command == 4 || command == 5 ||
+                 command == 6 || command == 9 || command == 17;
+        });
+        if (mutation) co_await complete_peer_notifications();
 
       }
     } catch (const status_error &e) {

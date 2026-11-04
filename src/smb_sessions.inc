@@ -78,3 +78,38 @@ pace::task<void> complete_frame_notifications() {
   }
   prune_sessions();
 }
+pace::task<void> complete_peer_notifications() {
+  std::vector<std::shared_ptr<client>> peers;
+  for (auto *connection : s.clients)
+    if (connection != this && connection->has_notifications())
+      peers.push_back(connection->shared_from_this());
+  if (peers.empty()) co_return;
+  // The frame and its local finals have already left the socket. Release our
+  // gate while polling peers: simultaneous writers must never hold their own
+  // gates while waiting on each other. The read coroutine remains here until
+  // all ready peer requests have been examined, before reading our next frame.
+  dispatching = false;
+  for (const auto &peer : peers) {
+    try {
+      while (peer->dispatching && peer->socket.is_open()) co_await s.io->sleep_for(1ms);
+      if (!peer->socket.is_open() || peer->ending) continue;
+      dispatch_guard guard(peer->dispatching);
+      for (auto sid : peer->session_ids()) {
+        if (!peer->select_session(sid)) continue;
+        std::vector<uint64_t> ids;
+        for (const auto &[id, pending] : peer->pending_notifications)
+          if (pending.announced) ids.push_back(id);
+        for (auto id : ids) {
+          if (!peer->socket.is_open()) break;
+          co_await peer->poll_notification(id);
+        }
+      }
+    } catch (...) {
+      // A slow/disconnected/revoked subscriber must not invalidate the writer.
+      // The peer's normal teardown drains its opens and notification state.
+      peer->close();
+    }
+  }
+  while (dispatching) co_await s.io->sleep_for(1ms);
+  dispatching = true;
+}

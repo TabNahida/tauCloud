@@ -65,6 +65,9 @@ def main():
     commands += [[sys.executable, 'tests/smb_notify_reuse.py', '--bin', str(binary),
                   '--output', str(output.with_suffix('.smb-notify-reuse.json'))]
                  + (['--sanitizers'] if args.sanitizers else [])]
+    commands += [[sys.executable, 'tests/smb_notify_peers.py', '--bin', str(binary),
+                  '--output', str(output.with_suffix('.smb-notify-peers.json'))]
+                 + (['--sanitizers'] if args.sanitizers else [])]
     commands += [[sys.executable, 'tests/smb_rename_metadata.py', '--bin', str(binary),
                   '--output', str(output.with_suffix('.smb-rename-metadata.json'))]
                  + (['--sanitizers'] if args.sanitizers else [])]

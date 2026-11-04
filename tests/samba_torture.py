@@ -51,8 +51,11 @@ def main():
         credentials.chmod(0o600)
         config = f.base / 'smb.conf'
         config.write_text('[global]\nclient min protocol = SMB2_10\nclient max protocol = SMB3_11\nclient signing = required\n')
+        repetitions = {}
         for selector in args.selectors:
-            log = args.output.parent / (args.output.stem + '-' + selector + '.log')
+            repetitions[selector] = repetitions.get(selector, 0) + 1
+            suffix = '' if repetitions[selector] == 1 else '-' + str(repetitions[selector])
+            log = args.output.parent / (args.output.stem + '-' + selector + suffix + '.log')
             cmd = [args.client, '//127.0.0.1/smb', '-p', str(f.smbport), '-A', str(credentials),
                    '-s', str(config), '--use-kerberos=off', '--maximum-runtime='+str(args.timeout), selector]
             before = services()
