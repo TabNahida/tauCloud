@@ -1,13 +1,5 @@
 // RFC 2203 authentication envelope. The ordinary NFS dispatcher sees verified
 // plaintext only; every accepted reply (including RPC errors) is authenticated.
-struct gss_session {
-  std::unique_ptr<gss_context> context;
-  std::string principal;
-  uint32_t program = 0, version = 0, highest = 0;
-  uint64_t seen = 0;
-  std::chrono::steady_clock::time_point expires;
-};
-std::map<std::string, gss_session> gss_sessions;
 void gss_expire() {
   auto time = std::chrono::steady_clock::now();
   std::erase_if(gss_sessions, [&](const auto &entry) { return entry.second.expires <= time; });
@@ -69,7 +61,9 @@ std::string dispatch(std::string_view packet, std::string connection_id) {
         entry.principal = accepted.principal;
         entry.expires = std::chrono::steady_clock::now() +
             std::chrono::seconds(std::min(accepted.lifetime, 3600u));
-        reply.u32(6).opaque(entry.context->sign(writer().u32(64).data));
+        auto verifier = entry.context->sign(writer().u32(64).data);
+        entry.mic_size = static_cast<uint32_t>(verifier.size());
+        reply.u32(6).opaque(verifier);
       } else reply.u32(0).opaque("");
       if (accepted.major != 0 && accepted.major != 1) {
         gss_sessions.erase(found);

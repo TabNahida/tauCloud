@@ -13,6 +13,11 @@ struct slot {
   bool pending = false;
   replay_authority authority;
 };
+struct callback_gss {
+  std::string server_handle, client_handle;
+  uint32_t service;
+  bool operator==(const callback_gss &) const = default;
+};
 struct session {
   uint64_t client;
   std::string principal;
@@ -24,6 +29,8 @@ struct session {
   std::vector<uint32_t> callback_flavors;
   uint32_t callback_flavor = UINT32_MAX;
   std::string callback_credential;
+  std::vector<callback_gss> callback_contexts;
+  bool callback_gss_configured = false;
   std::set<std::string> back_connections, callback_up, callback_ready;
   uint32_t callback_request_limit = 0, callback_response_limit = 0;
   uint32_t callback_slots = 0, callback_sequence = 1;
@@ -498,7 +505,10 @@ std::vector<uint32_t> callback_security(reader &r, json &a) {
       if (groups > 16) throw xdr_error();
       for (uint32_t j = 0; j < groups; ++j) r.u32();
     } else if (auth == 6) {
-      r.u32(); r.opaque(1024); r.opaque(1024);
+      auto service = r.u32();
+      auto server = r.opaque(1024), client = r.opaque(1024);
+      a["callback_gss"].push_back({{"service", service}, {"server", encode_bytes(server)},
+                                   {"client", encode_bytes(client)}});
     } else if (auth != 0) throw xdr_error();
     if (auth <= 1 && !a.contains("callback_auth"))
       a["callback_auth"] = {{"flavor", auth}, {"credential", encode_bytes(r.data.substr(start, r.pos - start))}};
@@ -955,6 +965,8 @@ std::string v4(const identity &who, reader &r) {
           // These bounds alone do not grant a backchannel; binding is negotiated below.
           std::vector<uint32_t> back = {0, std::min(back_offer[1], 4096u),
               std::min(back_offer[2], 4096u), 0, back_offer[4], back_offer[5]};
+          session prepared{id, who.key, now() + 60000, std::vector<slot>(fore[5]), fore, {connection}};
+          configure_callback(prepared, a); // Validate every handle before replacing client state.
           auto idstr = random_hex(16);
           if (c.replaces) {
             if (!sid.empty() && sessions.at(sid).client == c.replaces) {
@@ -964,7 +976,7 @@ std::string v4(const identity &who, reader &r) {
             retire_client(c.replaces);
             c.replaces = 0;
           }
-          sessions.emplace(idstr, session{id, who.key, now() + 60000, std::vector<slot>(fore[5]), fore, {connection}});
+          sessions.emplace(idstr, std::move(prepared));
           sessions.at(idstr).callback_program = a.at("callback_program");
           sessions.at(idstr).callback_flavors = a.at("callback_flavors").get<std::vector<uint32_t>>();
           auto &created = sessions.at(idstr);
@@ -972,7 +984,6 @@ std::string v4(const identity &who, reader &r) {
           created.callback_response_limit = back[2];
           created.callback_slots = back[5];
           created.callback_operations = back[4];
-          configure_callback(created, a);
           bool backchannel = (a.at("flags").get<uint32_t>() & 2) && callback_available(created);
           if (backchannel) created.back_connections.insert(connection);
           body.fixed(decode_bytes(idstr)).u32(seq).u32(backchannel ? 2 : 0);
@@ -1020,7 +1031,7 @@ std::string v4(const identity &who, reader &r) {
             .u32(n)
             .u32(uint32_t(s.slots.size() - 1))
             .u32(uint32_t(s.slots.size() - 1))
-            .u32((callback_path_up(s.client) ? 0 : 1) |
+            .u32((callback_path_up(s.client) ? 0 : 1) | callback_gss_flags(s) |
                  (s.callback_unresolved && s.back_connections.empty() ? 0x200 : 0));
       } else if (op == 41) {
         auto id = a.at("session").get<std::string>();
@@ -1103,11 +1114,10 @@ std::string v4(const identity &who, reader &r) {
         };
         if (op == 40) {
           auto flavors = a.at("callback_flavors").get<std::vector<uint32_t>>();
-          check(std::find(flavors.begin(), flavors.end(), 6u) == flavors.end(), 2);
           auto &s = sessions.at(sid);
+          configure_callback(s, a); // Atomic: invalid additions preserve the old channel.
           s.callback_program = a.at("callback_program");
           s.callback_flavors = std::move(flavors);
-          configure_callback(s, a);
           ++s.callback_generation;
           s.callback_up.clear();
           s.callback_ready.clear();

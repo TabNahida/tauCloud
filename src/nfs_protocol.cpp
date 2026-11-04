@@ -541,6 +541,7 @@ struct server::impl {
       post3(w, json());
     return w.data;
   }
+#include "nfs_gss_state.inc"
 #include "nfs_v4.inc"
 #include "nfs_nlm.inc"
   std::string dispatch_plain(std::string_view packet, const identity *authenticated = nullptr) {

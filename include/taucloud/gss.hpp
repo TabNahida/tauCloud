@@ -16,6 +16,7 @@ public:
   std::string session_key();
   std::string sign(std::string_view message);
   bool verify(std::string_view message, std::string_view token);
+  uint32_t wrap_size_limit(uint32_t token_limit);
   std::string wrap(std::string_view message);
   std::string unwrap(std::string_view token);
 };

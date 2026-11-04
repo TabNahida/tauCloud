@@ -121,6 +121,13 @@ bool gss_context::verify(std::string_view message, std::string_view token) {
   return gss_verify_mic(&minor, impl_->context, &in, &signature, &qop) == GSS_S_COMPLETE &&
          qop == GSS_C_QOP_DEFAULT;
 }
+uint32_t gss_context::wrap_size_limit(uint32_t token_limit) {
+  require(impl_->complete, "gss_context");
+  OM_uint32 minor, maximum;
+  require(gss_wrap_size_limit(&minor, impl_->context, 1, GSS_C_QOP_DEFAULT,
+                             token_limit, &maximum) == GSS_S_COMPLETE, "gss_context");
+  return maximum;
+}
 std::string gss_context::wrap(std::string_view message) {
   require(impl_->complete, "gss_context");
   auto in = input(message);
@@ -152,6 +159,7 @@ std::string gss_context::session_key() { throw error("gss_unavailable"); }
 gss_context::result gss_context::accept(std::string_view) { throw error("gss_unavailable"); }
 std::string gss_context::sign(std::string_view) { throw error("gss_unavailable"); }
 bool gss_context::verify(std::string_view, std::string_view) { return false; }
+uint32_t gss_context::wrap_size_limit(uint32_t) { throw error("gss_unavailable"); }
 std::string gss_context::wrap(std::string_view) { throw error("gss_unavailable"); }
 std::string gss_context::unwrap(std::string_view) { throw error("gss_unavailable"); }
 }

@@ -61,6 +61,8 @@ on:
       - 'tests/nfs_notify_lock_integration.py'
       - 'src/nfs_locks.inc'
       - 'src/nfs_gss.inc'
+      - 'src/nfs_gss_state.inc'
+      - 'tests/nfs_gss_backchannel.py'
       - 'src/gss.cpp'
       - 'include/taucloud/gss.hpp'
       - 'include/taucloud/core.hpp'
@@ -181,6 +183,9 @@ jobs:
         run: |
           python scripts/prepare_pynfs.py
           python tests/nfs_gss_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} ${{ matrix.compiler == 'gcc' && '--native' || '' }} --pynfs build/pynfs/nfs4.1 --output build/acceptance/nfs-gss.json
+      - name: NFS Kerberos callback integrity, privacy and lifecycle
+        if: runner.os == 'Linux'
+        run: python tests/nfs_gss_backchannel.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/nfs-gss-backchannel.json
       - name: Unmodified pynfs callback program and RPC version
         if: runner.os == 'Linux'
         run: python tests/pynfs_acceptance.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --output build/acceptance/pynfs-backchannel.json CSESS20 CSESS21

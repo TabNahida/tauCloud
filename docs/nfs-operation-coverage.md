@@ -1,6 +1,6 @@
 # NFSv4.1 operation coverage
 
-This is an implementation and test map for the regular-file/directory AUTH_SYS profile. It is not a declaration of complete RFC 8881 conformance. The [RFC operation table](https://www.rfc-editor.org/rfc/rfc8881.html#section-17) is the source of the required/optional distinction. Linux RPCSEC_GSS authentication/integrity/privacy is now implemented and independently tested (see [Kerberos](nfs-kerberos.md)); TCP backchannel binding, AUTH_NONE/AUTH_SYS CB_NULL and CB_COMPOUND/CB_SEQUENCE probes and CB_NOTIFY_LOCK hints with slot replay are implemented; SSV, other callback operations, GSS callbacks, delegation and pNFS layouts remain unfinished.
+This is an implementation and test map for the regular-file/directory AUTH_SYS profile. It is not a declaration of complete RFC 8881 conformance. The [RFC operation table](https://www.rfc-editor.org/rfc/rfc8881.html#section-17) is the source of the required/optional distinction. Linux RPCSEC_GSS authentication/integrity/privacy is now implemented and independently tested (see [Kerberos](nfs-kerberos.md)); TCP backchannel binding, AUTH_NONE/AUTH_SYS CB_NULL and CB_COMPOUND/CB_SEQUENCE probes and CB_NOTIFY_LOCK hints with slot replay are implemented; Linux GSS protection of those callbacks is implemented with real-KDC local acceptance; remote acceptance is pending. SSV, other callback operations, Windows GSS, delegation and pNFS layouts remain unfinished.
 
 | Required operations | Implementation | Executable evidence |
 | --- | --- | --- |

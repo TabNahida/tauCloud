@@ -114,8 +114,8 @@ void notify_lock_waiters() {
       const auto &s = entry.second;
       return s.client == candidate.client && s.expires > now() && callback_available(s) &&
              !s.callback_up.empty() && !s.callback_unresolved && s.callback_extra.empty() &&
-             s.callback_operations >= 2 && s.callback_response_limit >= 84 &&
-             96 + s.callback_credential.size() + operation.data.size() + waiter.references.size() - 4 <= s.callback_request_limit;
+             s.callback_operations >= 2 &&
+             callback_fits(s, operation.data.size() + waiter.references.size() - 4, 8);
     });
     if (target == sessions.end() || callback_probes.size() >= 128) { ++it; continue; }
     if (!budget) return;
