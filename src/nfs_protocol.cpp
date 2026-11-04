@@ -125,6 +125,7 @@ struct server::impl {
   domain_call call;
   callback_call callback;
   backchannel_send send_backchannel;
+  backchannel_close close_backchannel;
   database db;
   std::mutex mutex;
   std::string connection;
@@ -196,8 +197,9 @@ struct server::impl {
       check(false, 10008);
     }
   }
-  impl(const config &c, domain_call f, callback_call cb, backchannel_send bc)
+  impl(const config &c, domain_call f, callback_call cb, backchannel_send bc, backchannel_close close)
       : cfg(c), call(std::move(f)), callback(std::move(cb)), send_backchannel(std::move(bc)),
+        close_backchannel(std::move(close)),
         db(c.state / "nfs.db") {
     // Fail startup if an explicitly configured acceptor cannot load its keys.
     if (!c.nfs_gss_service.empty()) gss_context credentials(c.nfs_gss_service, c.nfs_gss_keytab);
@@ -791,8 +793,8 @@ struct server::impl {
   }
 #include "nfs_gss.inc"
 };
-server::server(const config &c, domain_call f, callback_call cb, backchannel_send bc)
-    : impl_(std::make_unique<impl>(c, std::move(f), std::move(cb), std::move(bc))) {}
+server::server(const config &c, domain_call f, callback_call cb, backchannel_send bc, backchannel_close close)
+    : impl_(std::make_unique<impl>(c, std::move(f), std::move(cb), std::move(bc), std::move(close))) {}
 server::~server() = default;
 std::string server::dispatch(std::string_view record, std::string connection) {
   return impl_->dispatch(record, std::move(connection));
@@ -806,6 +808,7 @@ void server::disconnect(const std::string &connection) {
     session.callback_ready.erase(connection);
   }
   std::erase_if(impl_->callback_probes, [&](const auto &p) { return p.second.connection == connection; });
+  impl_->callback_closing.erase(connection);
 }
 void server::maintenance() {
   std::lock_guard guard(impl_->mutex);

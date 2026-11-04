@@ -28,6 +28,7 @@ struct session {
   uint32_t callback_request_limit = 0, callback_response_limit = 0;
   uint32_t callback_slots = 0, callback_sequence = 1;
   bool callback_unresolved = false;
+  uint64_t callback_generation = 0;
 
 };
 struct open_state {
@@ -1098,6 +1099,7 @@ std::string v4(const identity &who, reader &r) {
           s.callback_program = a.at("callback_program");
           s.callback_flavors = std::move(flavors);
           configure_callback(s, a);
+          ++s.callback_generation;
           s.callback_up.clear();
           s.callback_ready.clear();
           for (const auto &bound : s.back_connections) probe_callback(sid, bound);

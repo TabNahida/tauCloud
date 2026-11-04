@@ -29,6 +29,11 @@ struct nfs_runtime {
           return nfs_detail::loopback_callback(c, program, version, procedure, body);
         }, [this](std::string connection, std::string packet) {
           send(std::move(connection), std::move(packet));
+        }, [this](std::string connection) {
+          io->post([this, connection = std::move(connection)] {
+            auto found = sockets.find(connection);
+            if (found != sockets.end()) found->second->socket.close();
+          });
         }) {}
 };
 // One writer owns each stream. Reverse RPCs and ordinary replies cannot

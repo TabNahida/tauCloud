@@ -4,8 +4,10 @@ struct callback_probe {
   int64_t deadline;
   bool compound = false;
   uint32_t sequence = 0;
+  uint64_t generation = 0;
 };
 std::map<uint32_t, callback_probe> callback_probes;
+std::set<std::string> callback_closing;
 uint32_t callback_xid = static_cast<uint32_t>(hex64(random_hex(8)));
 void configure_callback(session &s, const json &a) {
   s.callback_flavor = UINT32_MAX;
@@ -41,7 +43,8 @@ void send_callback_probe(const std::string &id, const std::string &bound, bool c
     call.opaque("").u32(1).u32(0).u32(1).u32(11).fixed(decode_bytes(id))
         .u32(s.callback_sequence).u32(0).u32(0).boolean(false).u32(0);
   }
-  callback_probes.emplace(callback_xid, callback_probe{id, bound, now() + 5000, compound, s.callback_sequence});
+  callback_probes.emplace(callback_xid, callback_probe{id, bound, now() + 5000, compound,
+                                                     s.callback_sequence, s.callback_generation});
   send_backchannel(bound, std::move(call.data));
 }
 void sequence_callback(const std::string &id) {
@@ -52,11 +55,18 @@ void sequence_callback(const std::string &id) {
   for (const auto &[xid, p] : callback_probes)
     if (p.session == id && p.compound) return;
   for (const auto &bound : s.callback_ready) {
-    if (!s.callback_up.contains(bound)) {
+    if (!s.callback_up.contains(bound) && !callback_closing.contains(bound)) {
       send_callback_probe(id, bound, true);
       return;
     }
   }
+}
+void disconnect_callback(const std::string &bound) {
+  for (auto &[id, s] : sessions) {
+    s.callback_up.erase(bound);
+    s.callback_ready.erase(bound);
+  }
+  if (callback_closing.insert(bound).second && close_backchannel) close_backchannel(bound);
 }
 void expire_callback_probes() {
   std::erase_if(callback_probes, [&](const auto &item) {
@@ -64,6 +74,12 @@ void expire_callback_probes() {
     auto found = sessions.find(probe.session);
     if (found == sessions.end()) return true;
     if (probe.deadline > now()) return false;
+    if (probe.compound) {
+      // RFC 8881 2.10.6.2 prohibits retry on a live original transport.
+      // Keep the slot occupied until disconnect() confirms that it is gone.
+      disconnect_callback(probe.connection);
+      return false;
+    }
     found->second.callback_up.erase(probe.connection);
     found->second.callback_ready.erase(probe.connection);
     return true;
@@ -72,14 +88,14 @@ void expire_callback_probes() {
 }
 void probe_callback(const std::string &id, const std::string &bound) {
   auto &s = sessions.at(id);
-  // BACKCHANNEL_CTL replaces security/program. Invalidate before scheduling
-  // another request, even when no usable credentials remain.
+  // CB_NULL has no session slot. It can be replaced, but an outstanding
+  // CB_COMPOUND must finish (or its transport disconnect) before slot reuse.
   std::erase_if(callback_probes, [&](const auto &p) {
-    return p.second.session == id && p.second.connection == bound;
+    return !p.second.compound && p.second.session == id && p.second.connection == bound;
   });
   s.callback_up.erase(bound);
   s.callback_ready.erase(bound);
-  if (!callback_available(s) || callback_probes.size() >= 128) return;
+  if (!callback_available(s) || callback_probes.size() >= 128 || callback_closing.contains(bound)) return;
   send_callback_probe(id, bound, false);
 }
 void callback_reply(uint32_t xid, reader &r) {
@@ -87,12 +103,18 @@ void callback_reply(uint32_t xid, reader &r) {
   // Unknown, late, duplicate and wrong-transport replies have no effect.
   if (found == callback_probes.end() || found->second.connection != connection) return;
   auto probe = found->second;
-  callback_probes.erase(found);
   auto current = sessions.find(probe.session);
-  if (current == sessions.end() || !current->second.back_connections.contains(connection)) return;
+  if (current == sessions.end() || !current->second.back_connections.contains(connection)) {
+    callback_probes.erase(found);
+    return;
+  }
+  if (callback_closing.contains(connection)) return;
   auto &s = current->second;
-  s.callback_up.erase(connection);
-  s.callback_ready.erase(connection);
+  bool current_config = probe.generation == s.callback_generation;
+  if (current_config) {
+    s.callback_up.erase(connection);
+    s.callback_ready.erase(connection);
+  }
   bool valid = false;
   try {
     if (probe.deadline > now() && r.data.size() <= s.callback_response_limit &&
@@ -113,12 +135,19 @@ void callback_reply(uint32_t xid, reader &r) {
       valid = true;
     }
   } catch (const xdr_error &) { }
+  if (!valid && probe.compound) {
+    // An invalid result leaves execution uncertain. Disconnect before any
+    // retry, preserving the exact sequence even if BIND/BACKCHANNEL_CTL races.
+    disconnect_callback(connection);
+    return;
+  }
+  callback_probes.erase(found);
   if (valid) {
-    s.callback_ready.insert(connection);
+    if (current_config) s.callback_ready.insert(connection);
     if (probe.compound) {
       ++s.callback_sequence; // Unsigned wraparound is part of the protocol.
       s.callback_unresolved = false;
-      s.callback_up.insert(connection);
+      if (current_config) s.callback_up.insert(connection);
       s.expires = now() + 60000;
       client_ids.at(s.client).expires = s.expires;
     }

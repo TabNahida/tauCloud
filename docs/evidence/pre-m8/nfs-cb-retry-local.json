@@ -1,0 +1,97 @@
+{
+  "recorded_at": "2026-11-04T07:10:33.819485+00:00",
+  "base_source": "337bec935c9e7e154684ea26040e39034024593a",
+  "status": "partial",
+  "scope": "Correct NFS backchannel retry gating: original transport must be confirmed disconnected before retry, including timeout, malformed replies, BIND and BACKCHANNEL_CTL races. Callback configuration generations separate request completion from current-path validation.",
+  "supersedes": "The live-original-transport retry behavior in nfs-cb-sequence-local.json is incorrect despite passing its original tests. This correction preserves those historical results and replaces the invalid expectation.",
+  "standard": "https://www.rfc-editor.org/rfc/rfc8881.html#section-2.10.6.2",
+  "files_sha256": {
+    "include/taucloud/nfs.hpp": "e947ea2e6112134568529684388712ede1338b94f5cba62ba753e321a40aa4ff",
+    "src/nfs.cpp": "ee364fde8eccbeb63cc5980b7b167c9c0202c81c6e9ee1dde8ba800e5d8c78f5",
+    "src/nfs_protocol.cpp": "ecc6862114483ef830af0c6aab2dba375000b962c9aa3b647edeb4222e0d1d63",
+    "src/nfs_v4.inc": "3328de2fd6306eb60aea88aa21f95bdaf8741c985d91818e184b908e2c67c934",
+    "src/nfs_backchannel.inc": "758a2bdf9555f19e7a35ffcbc215320e45f682b176e9aefd6681c74d98e0476d",
+    "tests/m7_core.cpp": "4e14a918116bba875d0f9180b49a048908a51d3921fde5810cc8e2db52c2e749",
+    "tests/nfs_backchannel_integration.py": "1a96138e868dd313f6ff1c990b9f7dc1a99c2c3350a0d73ca6e8d57a8ea9ca60"
+  },
+  "local": {
+    "sanitizers": "Clang ASan/UBSan including LeakSanitizer",
+    "core": {
+      "status": "passed",
+      "checks": 98,
+      "new_coverage": "Injected asynchronous close request remains unconfirmed: no retry is sent until server.disconnect is called; retry then preserves the CB_COMPOUND body exactly."
+    },
+    "network": {
+      "status": "passed",
+      "checks": [
+        "CREATE_SESSION binds a bidirectional transport; CB_NULL uses the requested program/version and AUTH_NONE while forechannel RPC stays usable",
+        "probe replies are bound to their exact TCP connection and XID; cross-connection, duplicate and unknown replies cannot change path state",
+        "BACKCHANNEL_CTL changes program and invalidates old probes; malformed matched replies keep path down and idempotent rebinding reprobes it",
+        "cleared callback credentials and destroyed/recreated sessions cannot be validated by a stale probe response",
+        "BIND_CONN_TO_SESSION supports BACK and BACK_OR_BOTH on new transports, rejects invalid directions and changes to existing channel roles",
+        "AUTH_SYS CB_NULL carries the offered timestamp, machine name, UID/GID and supplementary groups exactly",
+        "five-second probe timeout ignores late success; rebind recovers the path without recreating the session",
+        "losing the only callback transport sets CB_PATH_DOWN on a surviving forechannel connection",
+        "CB_NULL success alone does not validate the sequenced backchannel; CB_SEQUENCE success on the wrong transport is ignored",
+        "truncated/trailing XDR, bad status/tag/count/op/session/sequence/slot and CB_SEQUENCE errors close the transport before exact retry; only a valid reply advances the slot",
+        "successful CB_SEQUENCE advances exactly once; BACKCHANNEL_CTL retains the session sequence and ignores old duplicate replies",
+        "BIND and callback program replacement never retry an outstanding CB_COMPOUND on a live transport; its original reply releases the slot without validating the new program",
+        "completion of a callback issued before credential removal advances its slot but cannot resurrect the disabled backchannel",
+        "CB_COMPOUND timeout closes the original transport before retry; stale RPC replies on the replacement cannot complete the unresolved slot",
+        "one callback slot serializes multiple bound paths; transport loss retries the unresolved request on another bound connection",
+        "loss of the only backchannel with an unanswered CB_COMPOUND reports CB_PATH_DOWN_SESSION; binding a replacement clears that flag and preserves the pending sequence",
+        "client-advertised slot growth beyond CREATE_SESSION and shrink back to zero are accepted without allocation or increasing callback concurrency",
+        "destroying and recreating a session starts a distinct callback slot at sequence one; old CB_COMPOUND success cannot validate it",
+        "UINT32_MAX offered callback slots require only slot zero; AUTH_SYS credentials must fit the negotiated complete CB_COMPOUND request size"
+      ],
+      "sanitizers": true
+    },
+    "regression": {
+      "status": "passed",
+      "checks": [
+        "TCP record fragmentation and MOUNT v3 with independent XDR codecs",
+        "unknown UID/GID/groups rejected; root squashed to explicitly unprivileged subject",
+        "root squash uses anonymous read rights, strips privileged groups and rejects writes/revoked rights",
+        "read-only TCP portmapper advertises NFS and does not advertise unsupported NLM version 3",
+        "trailing XDR rejected before WRITE; previously persisted bytes remain intact",
+        "v3 guarded CREATE, 64 KiB UNSTABLE upgraded to FILE_SYNC, READ, COMMIT, exact duplicate WRITE",
+        "MAC tamper rejected; file handle survives external rename and all-service restart; durable v3 replay and new write verifier",
+        "deleted/recreated path cannot revive an old file handle",
+        "v3 MKDIR, cross-directory RENAME, READDIRPLUS, REMOVE/RMDIR type separation",
+        "pynfs v4.1 EXCHANGE_ID/CREATE_SESSION/SEQUENCE, guarded OPEN, WRITE/READ, exact slot replay",
+        "false slot replay and foreign stateid rejected; GETATTR subset independently decoded",
+        "old sessions/stateids invalidated on reboot; persisted owner can reclaim OPEN during grace; CLOSE releases recovery record",
+        "unrelated client cannot reclaim another owner after restart",
+        "export disable revokes existing handles through fresh identity grants",
+        "offline metadata backup strips NFS enrollment and excludes persistent capability/recovery databases"
+      ],
+      "client": "linux-nfs/pynfs cd4701827a8261fedbfb4c6e39029fb9671321a6 generated NFSv3/v4.1 codecs",
+      "full_conformance": false,
+      "test_sha256": "776728f813a438821f2192343c36c2091afe975e5d2101b785516c08734b77a3",
+      "data_sha256": "7daca2095d0438260fa849183dfc67faa459fdf4936e1bc91eec6b281b27e4c2"
+    },
+    "pynfs": {
+      "tests": 266,
+      "skipped": 264,
+      "failures": 0,
+      "errors": 0
+    },
+    "pynfs_selected": [
+      "CSESS20",
+      "CSESS21"
+    ]
+  },
+  "remote": {
+    "status": "pending",
+    "workflow": "smb-metadata.yml",
+    "platforms": [
+      "GCC",
+      "Clang ASan/UBSan",
+      "MSVC"
+    ]
+  },
+  "remaining": [
+    "CB_NOTIFY_LOCK, CB_RECALL and other callback operations are not yet implemented.",
+    "Delegation authority, RPCSEC_GSS callbacks and full SMB/NFS conformance remain incomplete."
+  ]
+}

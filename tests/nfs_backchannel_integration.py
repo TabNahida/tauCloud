@@ -3,6 +3,7 @@
 import argparse
 import json
 import struct
+import socket
 import time
 import uuid
 from pathlib import Path
@@ -32,6 +33,23 @@ class CallbackClient(Client):
     def acknowledge_sequence(self, index=-1, body=None):
         xid, request, result = self.sequences[index]
         self.acknowledge(xid, result if body is None else body)
+
+    def wait_closed(self):
+        self.sock.settimeout(8)
+        assert self.sock.recv(1) == b'', 'server sent another RPC before disconnecting'
+        self.close()
+
+    def reconnect(self):
+        self.sock = socket.create_connection(('127.0.0.1', self.port), timeout=10)
+        r = self.compound([op.bind_conn_to_session(self.sid, 3, False)], False)
+        assert r.status == 0, r
+
+    def sequence_count(self, count):
+        for _ in range(50):
+            self.flags()
+            if len(self.sequences) == count: return
+            time.sleep(.02)
+        raise AssertionError(('callback count', count, len(self.sequences)))
 
     def receive_sequence(self, xid, r):
         start = r.get_position()
@@ -223,14 +241,14 @@ def run(args):
         # A well-formed CB_SEQUENCE error also leaves the slot unchanged.
         malformed.append(struct.pack('>5I', 10008, 0, 1, 11, 10008))
         for bad in malformed:
-            q.acknowledge_sequence(body=bad); q.path(False)
-            r = q.compound([op.bind_conn_to_session(q.sid, 3, False)], False); assert r.status == 0, r
-            q.path(False)
+            q.acknowledge_sequence(body=bad); q.wait_closed()
+            count = len(q.sequences)
+            q.reconnect(); q.sequence_count(count + 1); q.path(False)
             assert q.sequences[-1][1] == original, 'failed reply advanced or changed the callback'
         q.acknowledge_sequence(); q.path(True)
         old_reply = q.sequences[-1]
         q.acknowledge(old_reply[0], old_reply[2]); q.path(True)
-        passed('truncated/trailing XDR, bad status/tag/count/op/session/sequence/slot and valid CB_SEQUENCE errors preserve the exact pending request; only a valid reply advances it')
+        passed('truncated/trailing XDR, bad status/tag/count/op/session/sequence/slot and CB_SEQUENCE errors close the transport before exact retry; only a valid reply advances the slot')
 
         r = q.compound([op.backchannel_ctl(q.program, [t4.callback_sec_parms4(0)])]); assert r.status == 0, r
         q.path(False)
@@ -242,20 +260,40 @@ def run(args):
         q.program += 1
         r = q.compound([op.backchannel_ctl(q.program, [t4.callback_sec_parms4(0)])]); assert r.status == 0, r
         q.path(False); unresolved = q.sequences[-1]
+        pending_count = len(q.sequences)
         q.program += 1
         r = q.compound([op.backchannel_ctl(q.program, [t4.callback_sec_parms4(0)])]); assert r.status == 0, r
-        q.path(False); assert q.sequences[-1][1] == unresolved[1]
-        q.acknowledge(unresolved[0], unresolved[2]); q.path(False)
+        q.path(False); assert len(q.sequences) == pending_count
+        for _ in range(5):
+            r = q.compound([op.bind_conn_to_session(q.sid, 3, False)], False); assert r.status == 0, r
+            q.path(False)
+            assert len(q.sequences) == pending_count, 'retried a request on its live original transport'
+        # Completion of the old program's RPC releases the slot, but cannot
+        # validate the new callback configuration. A new probe uses seq + 1.
+        q.acknowledge(unresolved[0], unresolved[2]); q.sequence_count(pending_count + 1); q.path(False)
+        assert struct.unpack_from('>I', q.sequences[-1][1], 36)[0] == struct.unpack_from('>I', unresolved[1], 36)[0] + 1
         q.acknowledge_sequence(); q.path(True)
-        passed('callback program replacement cancels the old RPC XID while replaying the unresolved CB_COMPOUND with the same session slot and sequence')
+        passed('BIND and callback program replacement never retry an outstanding CB_COMPOUND on a live transport; its original reply releases the slot without validating the new program')
+
+        credentials = client(); credentials.hold_sequence = True; credentials.establish(); credentials.path(False)
+        pending = credentials.sequences[-1]
+        r = credentials.compound([op.backchannel_ctl(credentials.program, [])]); assert r.status == 0, r
+        credentials.acknowledge(pending[0], pending[2]); credentials.path(False)
+        assert len(credentials.sequences) == 1
+        r = credentials.compound([op.backchannel_ctl(credentials.program, [t4.callback_sec_parms4(0)])]); assert r.status == 0, r
+        credentials.sequence_count(2); credentials.path(False)
+        assert struct.unpack_from('>I', credentials.sequences[-1][1], 36)[0] == 2
+        credentials.acknowledge_sequence(); credentials.path(True)
+        passed('completion of a callback issued before credential removal advances its slot but cannot resurrect the disabled backchannel')
 
         r = q.compound([op.backchannel_ctl(q.program, [t4.callback_sec_parms4(0)])]); assert r.status == 0, r
         q.path(False); expired = q.sequences[-1]; time.sleep(5.2)
-        q.acknowledge_sequence(); q.path(False)
-        r = q.compound([op.bind_conn_to_session(q.sid, 3, False)], False); assert r.status == 0, r
-        q.path(False); assert q.sequences[-1][1] == expired[1]
+        q.wait_closed(); count = len(q.sequences)
+        q.reconnect(); q.sequence_count(count + 1); q.path(False)
+        assert q.sequences[-1][1] == expired[1]
+        q.acknowledge(expired[0], expired[2]); q.path(False)
         q.acknowledge_sequence(); q.path(True)
-        passed('CB_COMPOUND timeout ignores late success and rebinding replays the exact unresolved sequence')
+        passed('CB_COMPOUND timeout closes the original transport before retry; stale RPC replies on the replacement cannot complete the unresolved slot')
 
         r = q.compound([op.backchannel_ctl(q.program, [t4.callback_sec_parms4(0)])]); assert r.status == 0, r
         q.path(False); lost = q.sequences[-1]

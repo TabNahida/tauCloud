@@ -1,0 +1,315 @@
+{
+  "recorded_at": "2026-11-04T07:09:26.413349+00:00",
+  "source": "1e92b0d2a232b4faff373b4735e7c6f3a74325ca",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41787449068",
+  "status": "passed",
+  "scope": "Targeted metadata workflow: CB_NULL transport lifecycle, CREATE_SESSION channel limits, SMB notification revocation cleanup and SMB3 cipher-free negotiation. Does not cover the later CB_SEQUENCE/retry changes or full SMB/NFS conformance.",
+  "platforms": {
+    "gcc": {
+      "artifact_id": 13301903956,
+      "artifact_sha256": "e1d8be6c257a244329103da52dd17557e0dc40b961549fa5ab71a7ea5db37497",
+      "reports": {
+        "nfs-backchannel.json": {
+          "sha256": "59f6222ae406dbb6535ed342c4509aa0b9119d9f96bd8818decc534e3f32e24f",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "CREATE_SESSION binds a bidirectional transport; CB_NULL uses the requested program/version and AUTH_NONE while forechannel RPC stays usable",
+              "probe replies are bound to their exact TCP connection and XID; cross-connection, duplicate and unknown replies cannot change path state",
+              "BACKCHANNEL_CTL changes program and invalidates old probes; malformed matched replies keep path down and idempotent rebinding reprobes it",
+              "cleared callback credentials and destroyed/recreated sessions cannot be validated by a stale probe response",
+              "BIND_CONN_TO_SESSION supports BACK and BACK_OR_BOTH on new transports, rejects invalid directions and changes to existing channel roles",
+              "AUTH_SYS CB_NULL carries the offered timestamp, machine name, UID/GID and supplementary groups exactly",
+              "five-second probe timeout ignores late success; rebind recovers the path without recreating the session",
+              "losing the only callback transport sets CB_PATH_DOWN on a surviving forechannel connection"
+            ],
+            "sanitizers": false
+          }
+        },
+        "nfs-session-negotiation.json": {
+          "sha256": "abe8f29f7914bdddf454f6678979f5d0e8e77ceadc9f9836f41a8ac0ec2ac73e",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "four backchannel offers preserve operation/concurrency counts and never increase buffer/RDMA limits; forechannel stays bounded",
+              "CREATE_SESSION retries preserve the original negotiated session; subsequent SEQUENCE/GETFH and explicit destruction work"
+            ],
+            "sanitizers": false
+          }
+        },
+        "smb-notify.json": {
+          "sha256": "7f65aa03f50407df28b099feef8e0821b6112644a6f3875fceffb91844ac9517",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup",
+              "per-open first filter/watch-tree settings, FIFO completion and events buffered between requests",
+              "native host writes trigger recursive watches while nonrecursive watches ignore descendants",
+              "recursive watches stop observing moved-out subtrees and do not disclose queued outside names",
+              "SIZE filter ignores equal-length writes and reports actual growth",
+              "LAST_WRITE observes new-file writes even when native CREATE and WRITE are drained together",
+              "first per-open zero/short capacity persists, reopening restores capacity; NOTIFY_ENUM_DIR has no partial records; invalid-only filters stay pending and cancel cleanly",
+              "directory/list-access validation and persistent shared security descriptor changes generate SECURITY notifications",
+              "portable DOS attributes, creation-time and EA changes participate in native notification streams",
+              "initial CREATE metadata produces only ADDED; subsequent changes still produce MODIFIED",
+              "recursive descriptor exhaustion stays visibly overflowed across requests and releases all watches on close",
+              "delete-pending directories complete outstanding watches without waiting for last-handle deletion",
+              "TREE_DISCONNECT and LOGOFF finish pending notifications with NOTIFY_CLEANUP before releasing keys",
+              "policy revocation denies the pending poll, invalidates its old handle and permits a fresh exclusive read open without retained watch/sharing authority"
+            ]
+          }
+        },
+        "smb3.json": {
+          "sha256": "59d522c4fbb8fbede628028277747faaccdf8de00603a98df47e3d20d9019326",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+              "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+              "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+              "0x300 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+              "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+              "0x302 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+              "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+              "0x311 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+              "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+              "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+              "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+              "AES-256-CCM/GCM-only offers use 32-byte directional keys, verified encrypted file I/O and same-handle NTLM renewal",
+              "leases and durable handles are not granted; durable reconnect explicitly unsupported; encrypted change notification cancels asynchronously; multichannel absent",
+              "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+              "absent encryption context is omitted from reply; no common cipher selects zero; CMAC/GMAC authenticated signed file I/O works without cipher fallback",
+              "cipher-free sessions reject unsigned commands and unnegotiated AES-GCM transforms even with correctly derived keys",
+              "repeated ignored NETNAME/transport/unknown contexts are accepted; missing mandatory preauthentication context returns INVALID_PARAMETER",
+              "unknown signing IDs select CMAC and unknown ciphers select zero; unsupported hash and malformed contexts fail without dialect fallback",
+              "independent AES-128/256 CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+              "AES-256-CCM/GCM reject modified tags, nonces, plaintext lengths, session IDs and ciphertext",
+              "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+              "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+              "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+            ],
+            "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+            "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+            "authentication_provider": "pyspnego NTLM",
+            "large_mib": 1,
+            "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+            "port": 47227,
+            "sanitizers": false
+          }
+        },
+        "pynfs-backchannel.json": {
+          "sha256": "a849f2a650191eb591121d9dc285e7118de87ff1cb29789f8ef84a6dff91ca18",
+          "result": {
+            "tests": 266,
+            "skipped": 264,
+            "failures": 0,
+            "errors": 0
+          },
+          "selected": [
+            "CSESS20",
+            "CSESS21"
+          ]
+        }
+      }
+    },
+    "clang": {
+      "artifact_id": 13302781460,
+      "artifact_sha256": "6340fb82279c853527b77f5311a89ed4e0a4993bd26507403ba9b1277beed97c",
+      "reports": {
+        "nfs-backchannel.json": {
+          "sha256": "7786db55bd9906d914c94326f5d27ba1bbdd7843a7c972ba3efac64c1806dcaa",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "CREATE_SESSION binds a bidirectional transport; CB_NULL uses the requested program/version and AUTH_NONE while forechannel RPC stays usable",
+              "probe replies are bound to their exact TCP connection and XID; cross-connection, duplicate and unknown replies cannot change path state",
+              "BACKCHANNEL_CTL changes program and invalidates old probes; malformed matched replies keep path down and idempotent rebinding reprobes it",
+              "cleared callback credentials and destroyed/recreated sessions cannot be validated by a stale probe response",
+              "BIND_CONN_TO_SESSION supports BACK and BACK_OR_BOTH on new transports, rejects invalid directions and changes to existing channel roles",
+              "AUTH_SYS CB_NULL carries the offered timestamp, machine name, UID/GID and supplementary groups exactly",
+              "five-second probe timeout ignores late success; rebind recovers the path without recreating the session",
+              "losing the only callback transport sets CB_PATH_DOWN on a surviving forechannel connection"
+            ],
+            "sanitizers": true
+          }
+        },
+        "nfs-session-negotiation.json": {
+          "sha256": "4d3b8de16562a97d86aaf2648cb262abfdfc2233a2645051e5b43f0679b62eb0",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "four backchannel offers preserve operation/concurrency counts and never increase buffer/RDMA limits; forechannel stays bounded",
+              "CREATE_SESSION retries preserve the original negotiated session; subsequent SEQUENCE/GETFH and explicit destruction work"
+            ],
+            "sanitizers": true
+          }
+        },
+        "smb-notify.json": {
+          "sha256": "7f65aa03f50407df28b099feef8e0821b6112644a6f3875fceffb91844ac9517",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup",
+              "per-open first filter/watch-tree settings, FIFO completion and events buffered between requests",
+              "native host writes trigger recursive watches while nonrecursive watches ignore descendants",
+              "recursive watches stop observing moved-out subtrees and do not disclose queued outside names",
+              "SIZE filter ignores equal-length writes and reports actual growth",
+              "LAST_WRITE observes new-file writes even when native CREATE and WRITE are drained together",
+              "first per-open zero/short capacity persists, reopening restores capacity; NOTIFY_ENUM_DIR has no partial records; invalid-only filters stay pending and cancel cleanly",
+              "directory/list-access validation and persistent shared security descriptor changes generate SECURITY notifications",
+              "portable DOS attributes, creation-time and EA changes participate in native notification streams",
+              "initial CREATE metadata produces only ADDED; subsequent changes still produce MODIFIED",
+              "recursive descriptor exhaustion stays visibly overflowed across requests and releases all watches on close",
+              "delete-pending directories complete outstanding watches without waiting for last-handle deletion",
+              "TREE_DISCONNECT and LOGOFF finish pending notifications with NOTIFY_CLEANUP before releasing keys",
+              "policy revocation denies the pending poll, invalidates its old handle and permits a fresh exclusive read open without retained watch/sharing authority"
+            ]
+          }
+        },
+        "smb3.json": {
+          "sha256": "b8fd3f67a4ba66aabb9f59d8a5b5d37e00b8e5599593847e92d51476b93ce5c0",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+              "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+              "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+              "0x300 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+              "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+              "0x302 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+              "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+              "0x311 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+              "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+              "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+              "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+              "AES-256-CCM/GCM-only offers use 32-byte directional keys, verified encrypted file I/O and same-handle NTLM renewal",
+              "leases and durable handles are not granted; durable reconnect explicitly unsupported; encrypted change notification cancels asynchronously; multichannel absent",
+              "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+              "absent encryption context is omitted from reply; no common cipher selects zero; CMAC/GMAC authenticated signed file I/O works without cipher fallback",
+              "cipher-free sessions reject unsigned commands and unnegotiated AES-GCM transforms even with correctly derived keys",
+              "repeated ignored NETNAME/transport/unknown contexts are accepted; missing mandatory preauthentication context returns INVALID_PARAMETER",
+              "unknown signing IDs select CMAC and unknown ciphers select zero; unsupported hash and malformed contexts fail without dialect fallback",
+              "independent AES-128/256 CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+              "AES-256-CCM/GCM reject modified tags, nonces, plaintext lengths, session IDs and ciphertext",
+              "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+              "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+              "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+            ],
+            "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+            "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+            "authentication_provider": "pyspnego NTLM",
+            "large_mib": 1,
+            "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+            "port": 45313,
+            "sanitizers": true
+          }
+        },
+        "pynfs-backchannel.json": {
+          "sha256": "d2fd331ecb23d11f621224aeff92fb3696afdee4a315aed65507d056b5fa153c",
+          "result": {
+            "tests": 266,
+            "skipped": 264,
+            "failures": 0,
+            "errors": 0
+          },
+          "selected": [
+            "CSESS20",
+            "CSESS21"
+          ]
+        }
+      }
+    },
+    "msvc": {
+      "artifact_id": 13301814799,
+      "artifact_sha256": "4eebce673b35fee1b61ff2957107fbf02dbf5957b88cbfa8fd0fc4e7897755ca",
+      "reports": {
+        "nfs-backchannel.json": {
+          "sha256": "c9795f1187bd1798a68e38494bf1a0af1ccbd236dcbf2849b71a5aef7bf05b53",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "CREATE_SESSION binds a bidirectional transport; CB_NULL uses the requested program/version and AUTH_NONE while forechannel RPC stays usable",
+              "probe replies are bound to their exact TCP connection and XID; cross-connection, duplicate and unknown replies cannot change path state",
+              "BACKCHANNEL_CTL changes program and invalidates old probes; malformed matched replies keep path down and idempotent rebinding reprobes it",
+              "cleared callback credentials and destroyed/recreated sessions cannot be validated by a stale probe response",
+              "BIND_CONN_TO_SESSION supports BACK and BACK_OR_BOTH on new transports, rejects invalid directions and changes to existing channel roles",
+              "AUTH_SYS CB_NULL carries the offered timestamp, machine name, UID/GID and supplementary groups exactly",
+              "five-second probe timeout ignores late success; rebind recovers the path without recreating the session",
+              "losing the only callback transport sets CB_PATH_DOWN on a surviving forechannel connection"
+            ],
+            "sanitizers": false
+          }
+        },
+        "nfs-session-negotiation.json": {
+          "sha256": "514b44af62038a5c422f7dee264440c44dcea37adf4465cb2411719b916c4b3b",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "four backchannel offers preserve operation/concurrency counts and never increase buffer/RDMA limits; forechannel stays bounded",
+              "CREATE_SESSION retries preserve the original negotiated session; subsequent SEQUENCE/GETFH and explicit destruction work"
+            ],
+            "sanitizers": false
+          }
+        },
+        "smb-notify.json": {
+          "sha256": "63efec31337248a1405f7e3501be396d0e258a902b6744f7c8c901795d3686cc",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "SMB2.1/3.0/3.0.2/3.1.1 signed/encrypted asynchronous create/rename/delete, live ECHO, CANCEL and CLOSE cleanup",
+              "per-open first filter/watch-tree settings, FIFO completion and events buffered between requests",
+              "native host writes trigger recursive watches while nonrecursive watches ignore descendants",
+              "SIZE filter ignores equal-length writes and reports actual growth",
+              "LAST_WRITE observes new-file writes even when native CREATE and WRITE are drained together",
+              "first per-open zero/short capacity persists, reopening restores capacity; NOTIFY_ENUM_DIR has no partial records; invalid-only filters stay pending and cancel cleanly",
+              "directory/list-access validation and persistent shared security descriptor changes generate SECURITY notifications",
+              "portable DOS attributes, creation-time and EA changes participate in native notification streams",
+              "initial CREATE metadata produces only ADDED; subsequent changes still produce MODIFIED",
+              "delete-pending directories complete outstanding watches without waiting for last-handle deletion",
+              "TREE_DISCONNECT and LOGOFF finish pending notifications with NOTIFY_CLEANUP before releasing keys",
+              "policy revocation denies the pending poll, invalidates its old handle and permits a fresh exclusive read open without retained watch/sharing authority"
+            ]
+          }
+        },
+        "smb3.json": {
+          "sha256": "780308470f705c4c8ad9b2b5636dbc8c0b79e470671f91033f9b14186c9c0eec",
+          "result": {
+            "status": "passed",
+            "checks": [
+              "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+              "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+              "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+              "0x300 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+              "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+              "0x302 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+              "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+              "0x311 negotiated signed login and operations; validate-negotiate for 3.0/3.0.2",
+              "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+              "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+              "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+              "AES-256-CCM/GCM-only offers use 32-byte directional keys, verified encrypted file I/O and same-handle NTLM renewal",
+              "leases and durable handles are not granted; durable reconnect explicitly unsupported; encrypted change notification cancels asynchronously; multichannel absent",
+              "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+              "absent encryption context is omitted from reply; no common cipher selects zero; CMAC/GMAC authenticated signed file I/O works without cipher fallback",
+              "cipher-free sessions reject unsigned commands and unnegotiated AES-GCM transforms even with correctly derived keys",
+              "repeated ignored NETNAME/transport/unknown contexts are accepted; missing mandatory preauthentication context returns INVALID_PARAMETER",
+              "unknown signing IDs select CMAC and unknown ciphers select zero; unsupported hash and malformed contexts fail without dialect fallback",
+              "independent AES-128/256 CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+              "AES-256-CCM/GCM reject modified tags, nonces, plaintext lengths, session IDs and ciphertext",
+              "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+              "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+              "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+            ],
+            "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+            "host": "Windows-2025Server-10.0.26100-SP0",
+            "authentication_provider": "Windows SSPI (sspilib)",
+            "large_mib": 1,
+            "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+            "port": 53810,
+            "sanitizers": false
+          }
+        }
+      }
+    }
+  }
+}

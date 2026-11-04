@@ -118,6 +118,73 @@ int main() {
       rejected([&] { config::load(cfg.state); }, "invalid_config");
     }
     write_json(cfg.state / "config.json", original);
+    {
+      // Model an asynchronous close that has been requested but not yet
+      // completed. A new backchannel must not receive a retry in this gap.
+      std::vector<std::pair<std::string, std::string>> callbacks;
+      std::vector<std::string> closes;
+      server protocol(cfg, [](auto, auto, auto) { return json::object(); }, {},
+                      [&](auto connection, auto packet) { callbacks.emplace_back(connection, packet); },
+                      [&](auto connection) { closes.push_back(connection); });
+      uint32_t xid = 100;
+      auto compound = [&](writer operation, const std::string &connection) {
+        writer request;
+        request.u32(++xid).u32(0).u32(2).u32(100003).u32(4).u32(1)
+            .u32(0).opaque("").u32(0).opaque("")
+            .opaque("").u32(1).u32(1).fixed(operation.data);
+        auto response = protocol.dispatch(request.data, connection);
+        reader result(response);
+        ok(result.u32() == xid && result.u32() == 1 && result.u32() == 0 &&
+           result.u32() == 0 && result.opaque().empty() && result.u32() == 0);
+        ok(result.u32() == 0 && result.opaque().empty() && result.u32() == 1);
+        result.u32();
+        ok(result.u32() == 0);
+        return response.substr(result.pos);
+      };
+      auto exchanged = compound(writer().u32(42).fixed("12345678").opaque("callback-close-race")
+                                    .u32(0).u32(0).u32(0), "one");
+      reader exchange(exchanged);
+      auto client = exchange.u64();
+      auto create_sequence = exchange.u32();
+      writer create;
+      create.u32(43).u64(client).u32(create_sequence).u32(2);
+      for (int i = 0; i < 2; ++i)
+        create.u32(0).u32(4096).u32(4096).u32(0).u32(16).u32(4).u32(0);
+      create.u32(0x40000004).u32(1).u32(0);
+      auto created = compound(create, "one");
+      reader session_result(created);
+      auto session = session_result.fixed(16);
+      auto reply = [&](const std::pair<std::string, std::string> &call, std::string body = "") {
+        reader request(call.second);
+        writer result;
+        result.u32(request.u32()).u32(1).u32(0).u32(0).opaque("").u32(0).fixed(body);
+        ok(protocol.dispatch(result.data, call.first).empty());
+      };
+      ok(callbacks.size() == 1);
+      auto null = callbacks.back();
+      reply(null);
+      ok(callbacks.size() == 2);
+      auto original_request = callbacks.back();
+      compound(writer().u32(41).fixed(session).u32(2).boolean(false), "two");
+      null = callbacks.back();
+      reply(null);
+      ok(callbacks.size() == 3);
+      reply(original_request, "bad reply");
+      ok(closes == std::vector<std::string>{"one"});
+      protocol.maintenance();
+      ok(callbacks.size() == 3); // A close request is not proof of disconnection.
+      protocol.disconnect("one");
+      protocol.maintenance();
+      ok(callbacks.size() == 4 && callbacks.back().first == "two");
+      ok(callbacks.back().second.substr(40) == original_request.second.substr(40));
+      auto retried = callbacks.back();
+      writer completed;
+      completed.u32(0).opaque("").u32(1).u32(11).u32(0).fixed(session)
+          .u32(1).u32(0).u32(0).u32(0);
+      reply(retried, completed.data);
+      protocol.maintenance();
+      ok(callbacks.size() == 4 && closes.size() == 1);
+    }
     fs::create_directories(root / "files");
     auto storage = inspect_root(root / "files");
     storage["id"] = "data";
