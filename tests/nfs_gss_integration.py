@@ -312,6 +312,17 @@ def main():
         plain = Client(port)
         clients.append(plain)
         assert plain.mount()[0] == 13
+        # SMB can protect its own channel after one-leg ticket authentication;
+        # RPCSEC_GSS still needs GSS mutual authentication and message services.
+        weak = client()
+        ctx = gssapi.SecurityContext(name=gssapi.Name(SERVICE, gssapi.NameType.kerberos_principal),
+            creds=creds, mech=gssapi.MechType.kerberos, usage='initiate', flags=[gssapi.RequirementFlag.replay_detection])
+        token = ctx.step()
+        weak.xid += 1
+        credential = uints(1, 1, 0, 0) + opaque(b'')
+        packet = uints(weak.xid, 0, 2, 100003, 4, 0, 6) + opaque(credential) + uints(0, 0) + opaque(token)
+        reject(weak, packet, 'denied', 2)
+        passed('RPCSEC_GSS rejects Kerberos contexts without mutual authentication even though SMB uses separate channel protection')
         for service in (1, 2, 3):
             c = client(service)
             status, root = c.mount()

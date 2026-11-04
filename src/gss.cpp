@@ -42,9 +42,11 @@ struct gss_context::impl {
 gss_context::gss_context(const std::string &service, const std::string &keytab, purpose use)
     : impl_(std::make_unique<impl>()) {
   bool spnego = use == purpose::smb;
-  // SMB encrypts with its own derived keys, not GSS wrap. Samba's SMB2
-  // initiator legitimately requests integrity/mutual auth without GSS privacy.
-  if (spnego) impl_->required_flags &= ~GSS_C_CONF_FLAG;
+  // SMB authenticates the peer with the ticket and protects the channel using
+  // the resulting session key. Linux cifs.upcall legitimately requests neither
+  // GSS message protection nor AP-REP; its GSS checksum flags are zero. Keep
+  // RPCSEC_GSS's mutual/integrity/privacy requirements separate from SMB.
+  if (spnego) impl_->required_flags = 0;
   name target;
   auto text = input(service);
   OM_uint32 minor;

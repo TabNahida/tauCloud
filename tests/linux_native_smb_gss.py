@@ -22,10 +22,11 @@ def exercise(fixture, kdc, host, output, report):
     base.mkdir()
     mount = base / 'mount'
     mount.mkdir()
-    cache = base / 'root.ccache'
-    run(['sudo', '-n', 'install', '-m', '600', str(kdc.last_cache), str(cache)])
-    # UID 0 upcalls intentionally ignore KRB5CCNAME. Use an isolated config and
-    # cache, selected only by a host-specific request-key rule for this fixture.
+    cache = base / 'client.ccache'
+    shutil.copyfile(kdc.last_cache, cache)
+    cache.chmod(0o600)
+    # cifs.upcall drops DAC override capabilities. Use the actual credential
+    # owner so the private config/cache remain readable after the uid change.
     config = base / 'krb5.conf'
     config.write_text((kdc.base / 'krb5.conf').read_text().replace(
         '[libdefaults]', '[libdefaults]\n default_ccache_name = FILE:' + str(cache), 1))
@@ -56,7 +57,7 @@ p.unlink();d.rmdir()
         for dialect in ('2.1', '3.0', '3.02', '3.1.1'):
             profile = dict(dialect=dialect, security='krb5', status='failed')
             report['profiles'].append(profile)
-            options = f'ip=127.0.0.1,port={fixture.smbport},vers={dialect},sec=krb5,sign,cruid=0,cache=none,nosharesock,soft'
+            options = f'ip=127.0.0.1,port={fixture.smbport},vers={dialect},sec=krb5,sign,cruid={os.getuid()},cache=none,nosharesock,soft'
             if dialect != '2.1':
                 options += ',seal'
             try:

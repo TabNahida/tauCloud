@@ -167,6 +167,34 @@ def main():
         c.disconnect()
         passed('independent raw Kerberos verifies mutual AP-REP and final SMB2 HMAC; replaying the same AP-REQ on a fresh transport is rejected')
 
+        # Exercise a real one-leg ticket without GSS mutual auth. Python GSSAPI
+        # substitutes default flags for an empty set, so request replay only.
+        # The remote cifs.upcall check additionally exercises exact zero flags.
+        ctx = gssapi.SecurityContext(name=gssapi.Name(SERVICE, name_type=gssapi.NameType.kerberos_principal),
+            creds=credentials, mech=gssapi.MechType.kerberos, usage='initiate', flags=[gssapi.RequirementFlag.replay_detection])
+        token = ctx.step(None)
+        assert ctx.complete and gssapi.RequirementFlag.mutual_authentication not in ctx.actual_flags
+        key = gssapi.raw.inquire_sec_context_by_oid(ctx, gssapi.OID.from_int_seq('1.2.840.113554.1.2.2.5.5'))[0][:16].ljust(16, b'\0')
+        c = connection(0x210)
+        request = SMB2SessionSetupRequest(); request['security_mode'] = c.client_security_mode; request['buffer'] = token
+        response = c.receive(c.send(request))
+        packet = response.pack()
+        assert int.from_bytes(packet[16:20], 'little') & 8
+        assert hmac.new(key, packet[:48] + bytes(16) + packet[64:], hashlib.sha256).digest()[:16] == packet[48:64]
+        s = Session(c, require_encryption=False)
+        s.session_id = response['session_id'].get_value()
+        s.session_key = s.signing_key = s.application_key = key
+        s._connected = True; s.encrypt_data = False
+        c.session_table[s.session_id] = s
+        t = TreeConnect(s, '\\\\' + HOST + '\\smb'); t.connect()
+        h = create(t, 'gss-no-flags'); h.write(b'SMB protects this channel')
+        assert h.read(0, 25) == b'SMB protects this channel'
+        h.close(); c.disconnect()
+        c = connection(0x210)
+        denied(lambda: c.receive(c.send(request)), 0xc000006d)
+        c.disconnect()
+        passed('Kerberos without GSS mutual authentication still verifies SMB2 SESSION_SETUP signing and signed file I/O; replay remains rejected')
+
         for dialect, encrypted in ((0x210, False), (0x300, True), (0x302, True), (0x311, False), (0x311, True)):
             c, s, tree = connect(dialect, encrypted)
             h = create(tree, f'kerberos-renew-{dialect}-{encrypted}'); h.write(b'renew')
