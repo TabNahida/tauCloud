@@ -8,7 +8,7 @@ struct dispatch_guard {
 pace::task<void> send_packet(bytes output, bool encrypted) {
   if (encrypted) {
     check(nonce_counter < 65536);
-    bytes nonce = nonce_prefix.substr(0, selected.cipher == 1 ? 3 : 4) + bytes(8, '\0');
+    bytes nonce = nonce_prefix.substr(0, selected.cipher == 1 || selected.cipher == 3 ? 3 : 4) + bytes(8, '\0');
     put(nonce, nonce.size() - 8, ++nonce_counter, 8);
     output = encrypt(encryption_key, selected.cipher, session, nonce, output);
   }

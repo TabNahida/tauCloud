@@ -1,0 +1,90 @@
+{
+  "recorded_at": "2026-11-04T05:07:13.061041+00:00",
+  "base_source": "20f40ae8f2854e1a77ff97cad59225ecbcd88705",
+  "status": "passed",
+  "scope": "SMB 3.1.1 AES-256-CCM/GCM negotiation, full authentication-key derivation and authenticated transforms; not full protocol conformance. Remote acceptance pending.",
+  "files_sha256": {
+    "include/taucloud/smb.hpp": "c21fe90b489749ca1286bca214e417b35cb7c13e2e6773b852fcd57fd8dadca9",
+    "src/smb.cpp": "5efb62ab2600fc61ca87a053a10105d967fe862a803313e8cb145ac57e83428d",
+    "src/smb3.cpp": "dc0248b499ff5235f3e83f316388696c492ef0649c44628c2f204899fd5c9d3b",
+    "src/smb_async.inc": "bb20975ecd444f59c3e3b648d2b270e6d1e4a4e8eea10b533d6a27b0d60066c7",
+    "tests/m6_core.cpp": "24e603788a72f2e74f6dda8afc908c0adb1460b584c87f1dc8adde043b5e4b2f",
+    "tests/m6_integration.py": "50c08b2c95837e160298ab82d19c7b6ed11b3aac9bb412855b01e4b9f2940a83",
+    "tests/smb_gss_integration.py": "223daf58f0844d174c8ceee171ea688e6ce888acdee551682783fef7b2d8704e",
+    ".github/workflows/smb-metadata.yml": "612152800d33bb856299d40b512440ef56114347706ad696b52a5efd29cfc1ae"
+  },
+  "core": {
+    "checks": 793,
+    "status": "passed"
+  },
+  "smb3": {
+    "status": "passed",
+    "checks": [
+      "NEGOTIATE respects requested credits, grants one when zero was requested and caps the window at 8192",
+      "bounded credit window tolerates delayed sequence IDs across 128 requests and still rejects replay",
+      "SMB-style wildcard bootstrap preserves SMB3.1.1 preauth/signing; SMB1-only, malformed and repeated probes rejected",
+      "0x300 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+      "0x300 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+      "0x302 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+      "0x302 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+      "0x311 AES-CMAC signed login and operations; validate-negotiate for 3.0/3.0.2",
+      "0x311 encrypted AlSi/ExtA/MxAc/QFid contexts and selected EAs, Unicode IO, metadata, rename/delete, compound, srvsvc and 1 MiB SHA-256 stream",
+      "LOGOFF preserves the transport for a fresh encrypted session; short name queries return required length without disconnecting",
+      "default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work",
+      "AES-256-CCM/GCM-only offers use 32-byte directional keys, verified encrypted file I/O and same-handle NTLM renewal",
+      "leases and durable handles are not granted; durable reconnect and change notifications explicitly unsupported; multichannel absent",
+      "SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks",
+      "unsupported signing/cipher/hash and malformed contexts fail without dialect fallback",
+      "independent AES-128/256 CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect",
+      "AES-256-CCM/GCM reject modified tags, nonces, plaintext lengths, session IDs and ciphertext",
+      "tampered tags/ciphertext/AAD/session/size/nonce/signatures, unsigned requests, altered preauth chain, reused nonce and invalid validate-negotiate disconnect",
+      "fatal negotiate validation stops subsequent unrelated compound WRITE; exclusive-open cleanup barrier confirms unchanged file",
+      "SMB worker crash closes old sessions, recovers delete intent, preserves other workers and permits encrypted reconnect with new keys"
+    ],
+    "client": "smbprotocol 1.15.0 / pyspnego 0.12.4",
+    "host": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "authentication_provider": "pyspnego NTLM",
+    "large_mib": 1,
+    "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83",
+    "port": 35803,
+    "sanitizers": false
+  },
+  "kerberos": {
+    "status": "passed",
+    "checks": [
+      "principal mappings require administrator authority and reject ambiguous duplicate principal bindings",
+      "real Kerberos and SPNEGO negotiate authenticate SMB2.1/3.0/3.0.2/3.1.1; independent client validates signing and AES encryption during write/read/flush/rename/truncate/delete",
+      "AES-256-CCM/GCM derive from the complete 32-byte Kerberos key with independent signed setup, encrypted I/O and renewal checks for Kerberos/SPNEGO",
+      "unmodified Samba smbclient requires Kerberos and verifies 1 MiB signed SMB2.1 and encrypted SMB3.1.1 roundtrips",
+      "unmapped principals, tickets for another acceptor and modified authenticators fail without NTLM or guest fallback",
+      "independent raw Kerberos verifies mutual AP-REP and final SMB2 HMAC; replaying the same AP-REQ on a fresh transport is rejected",
+      "Kerberos without GSS mutual authentication still verifies SMB2 SESSION_SETUP signing and signed file I/O; replay remains rejected",
+      "fresh Kerberos and SPNEGO renew all SMB2/3 dialects with unchanged signing/cipher keys and live file handles",
+      "renewal cannot switch to another Kerberos principal mapped to the same account or revive a revoked mapping token; failures release exclusive opens",
+      "live principal mapping revocation terminates existing file authority and new logins; explicit reenable admits fresh authentication",
+      "atomic cifs keytab rotation admits fresh tickets while existing signed/encrypted sessions remain valid",
+      "ticket lifetime bounds SMB authority; Kerberos is independent of NTLM enrollment and existing mandatory-MIC NTLM authentication still works"
+    ],
+    "active_profile": {
+      "protocol": "negotiate",
+      "dialect": "0x311",
+      "encrypted": true
+    },
+    "samba": [
+      {
+        "dialect": "SMB2_10",
+        "protection": "sign",
+        "returncode": 0,
+        "stdout": "",
+        "stderr": "putting file /tmp/tc3-6k_tfdeq/source as \\samba-kerberos (4047.4 kb/s) (average 4047.4 kb/s)\ngetting file \\samba-kerberos of size 1048576 as /tmp/tc3-6k_tfdeq/download (12962.0 KiloBytes/sec) (average 12962.0 KiloBytes/sec)\n"
+      },
+      {
+        "dialect": "SMB3_11",
+        "protection": "encrypt",
+        "returncode": 0,
+        "stdout": "",
+        "stderr": "putting file /tmp/tc3-6k_tfdeq/source as \\samba-kerberos (4063.5 kb/s) (average 4063.5 kb/s)\ngetting file \\samba-kerberos of size 1048576 as /tmp/tc3-6k_tfdeq/download (12962.0 KiloBytes/sec) (average 12962.0 KiloBytes/sec)\n"
+      }
+    ]
+  }
+}

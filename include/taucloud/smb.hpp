@@ -11,7 +11,7 @@ bytes hmac(std::string_view key, std::string_view data, bool sha256 = false);
 bytes signature(std::string_view key, bytes packet, bool smb3 = false);
 bytes cmac(std::string_view key, std::string_view data);
 bytes preauth(std::string_view previous, std::string_view packet);
-bytes kdf(std::string_view key, std::string_view label, std::string_view context);
+bytes kdf(std::string_view key, std::string_view label, std::string_view context, size_t length = 16);
 bytes encrypt(std::string_view key, unsigned cipher, uint64_t session, std::string_view nonce,
               std::string_view plain);
 bytes decrypt(std::string_view key, unsigned cipher, uint64_t session, std::string_view packet);

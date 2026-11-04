@@ -65,17 +65,17 @@ def main():
             os.environ['KRB5CCNAME'] = 'FILE:' + str(kdc.last_cache)
             return credentials
 
-        def connection(dialect=0x311):
+        def connection(dialect=0x311, ciphers=None):
             c = Connection(uuid.uuid4(), '127.0.0.1', f.smbport, require_signing=True)
             connections.append(c)
-            c.connect(dialect=dialect, timeout=10)
+            c.connect(dialect=dialect, timeout=10, preferred_encryption_algos=ciphers)
             # Keep the TCP route private while authenticating the exact FQDN,
             # equivalent to smbclient's explicit -I route below.
             c.server_name = HOST
             return c
 
-        def connect(dialect=0x311, encrypted=False, protocol='kerberos', user='alice'):
-            c = connection(dialect)
+        def connect(dialect=0x311, encrypted=False, protocol='kerberos', user='alice', ciphers=None):
+            c = connection(dialect, ciphers)
             s = Session(c, username=user + '@' + REALM, require_encryption=encrypted, auth_protocol=protocol)
             s.connect()
             assert s.session_key and s.signing_key
@@ -108,6 +108,22 @@ def main():
                 assert not (f.root / 'smbdata' / (name + '-renamed')).exists()
                 c.disconnect()
         passed('real Kerberos and SPNEGO negotiate authenticate SMB2.1/3.0/3.0.2/3.1.1; independent client validates signing and AES encryption during write/read/flush/rename/truncate/delete')
+
+        for cipher in (3, 4):
+            for protocol in ('kerberos', 'negotiate'):
+                c, s, tree = connect(encrypted=True, protocol=protocol, ciphers=[cipher])
+                assert c.cipher_id == cipher and len(s.full_session_key) == 32
+                assert len(s.encryption_key) == len(s.decryption_key) == 32 and len(s.signing_key) == 16
+                h = create(tree, f'aes256-{cipher}-{protocol}')
+                payload = bytes(range(256)) * 256
+                h.write(payload); h.flush(); assert h.read(0, len(payload)) == payload
+                before = (s.encryption_key, s.decryption_key, s.signing_key)
+                tickets()
+                reauthenticate(s, 'alice@' + REALM, protocol=protocol)
+                assert before == (s.encryption_key, s.decryption_key, s.signing_key)
+                assert h.read(0, len(payload)) == payload
+                h.close(); c.disconnect()
+        passed('AES-256-CCM/GCM derive from the complete 32-byte Kerberos key with independent signed setup, encrypted I/O and renewal checks for Kerberos/SPNEGO')
 
         if args.smbclient:
             report['samba'] = []

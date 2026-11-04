@@ -51,13 +51,13 @@ def multiprotocol_packet(dialects=('NT LM 0.12','SMB 2.002','SMB 2.???')):
     return b'\xffSMB\x72'+bytes(27)+b'\0'+struct.pack('<H',len(body))+body
 
 
-def wire_auth(port,password,user,dialect=0x311,alter_transcript=False,bootstrap=False,previous_session=0):
+def wire_auth(port,password,user,dialect=0x311,alter_transcript=False,bootstrap=False,previous_session=0,cipher=2):
     sock=socket.create_connection(('127.0.0.1',port),timeout=10)
     try:
         if bootstrap:
             resp=exchange(sock,multiprotocol_packet());assert status(resp)==0
             assert struct.unpack_from('<H',resp,68)[0]==0x2ff
-        req=bytearray(negotiate_packet(dialect));struct.pack_into('<Q',req,24,int(bootstrap))
+        req=bytearray(negotiate_packet(dialect,cipher=cipher));struct.pack_into('<Q',req,24,int(bootstrap))
         # Later probes deliberately leave sequence holes: explicitly request
         # enough credits instead of relying on an unsolicited server grant.
         struct.pack_into('<H',req,14,32);req=bytes(req)
@@ -71,9 +71,9 @@ def wire_auth(port,password,user,dialect=0x311,alter_transcript=False,bootstrap=
         sid=struct.unpack_from('<Q',resp,40)[0];off,n=struct.unpack_from('<HH',resp,68)
         req=setup(ctx.step(resp[off:off+n]),2+int(bootstrap),sid);resp=exchange(sock,req);assert status(resp)==0
         transcript=hashlib.sha512(transcript+req).digest()
-        derive=lambda label,context:Session._smb3kdf(None,ctx.session_key,label+b'\0',context)
+        derive=lambda label,context,length=16:Session._smb3kdf(None,ctx.session_key,label+b'\0',context,length=length)
         if dialect==0x311:
-            signing=derive(b'SMBSigningKey',transcript);sending=derive(b'SMBC2SCipherKey',transcript);receiving=derive(b'SMBS2CCipherKey',transcript)
+            signing=derive(b'SMBSigningKey',transcript);sending=derive(b'SMBC2SCipherKey',transcript,32 if cipher>=3 else 16);receiving=derive(b'SMBS2CCipherKey',transcript,32 if cipher>=3 else 16)
         else:
             signing=derive(b'SMB2AESCMAC',b'SmbSign\0');sending=derive(b'SMB2AESCCM',b'ServerIn \0');receiving=derive(b'SMB2AESCCM',b'ServerOut\0')
         assert (sign(resp,signing)[48:64]==resp[48:64]) != alter_transcript
@@ -82,9 +82,9 @@ def wire_auth(port,password,user,dialect=0x311,alter_transcript=False,bootstrap=
 
 
 def encrypted(packet,key,sid,cipher=2,nonce=None):
-    nonce=nonce or os.urandom(12 if cipher==2 else 11)
+    nonce=nonce or os.urandom(12 if cipher in (2,4) else 11)
     aad=nonce+bytes(16-len(nonce))+struct.pack('<IHHQ',len(packet),0,1,sid)
-    data=(AESGCM if cipher==2 else AESCCM)(key).encrypt(nonce,packet,aad)
+    data=(AESGCM if cipher in (2,4) else AESCCM)(key).encrypt(nonce,packet,aad)
     return b'\xfdSMB'+data[-16:]+aad+data[:-16]
 
 
@@ -234,6 +234,19 @@ def run(args):
         c,s,t=connect(None,[1],True);assert c.dialect==0x311 and c.cipher_id==1
         h=create(t,'fallback-ccm');h.write(b'CCM');assert h.read(0,3)==b'CCM';h.close();c.disconnect(close=False)
         passed('default highest common dialect is 3.1.1; explicit CCM-only offer and encryption-required client work')
+        from smb_reauthentication import reauthenticate
+        for cipher in (3,4):
+            c,s,t=connect(0x311,[cipher],True)
+            assert c.cipher_id==cipher and len(s.encryption_key)==len(s.decryption_key)==32
+            assert len(s.signing_key)==16 and s.encryption_key!=s.decryption_key
+            h=create(t,'aes256-'+str(cipher));payload=bytes(range(256))*256
+            h.write(payload);h.flush();assert h.read(0,len(payload))==payload
+            before=(s.encryption_key,s.decryption_key,s.signing_key)
+            reauthenticate(s,'TAUCLOUD\\alice',f.password)
+            assert before==(s.encryption_key,s.decryption_key,s.signing_key)
+            assert h.read(0,len(payload))==payload
+            h.close();c.disconnect()
+        passed('AES-256-CCM/GCM-only offers use 32-byte directional keys, verified encrypted file I/O and same-handle NTLM renewal')
         modern,ms,mt=connect(None,encrypted_session=True);assert modern.dialect==0x311 and modern.cipher_id==2
         lease=SMB2CreateRequestLease();lease['lease_key']=os.urandom(16);lease['lease_state']=7
         durable=SMB2CreateDurableHandleRequestV2();durable['create_guid']=uuid.uuid4()
@@ -260,19 +273,25 @@ def run(args):
         legacy.disconnect(close=False);mixed.disconnect(close=False)
         passed('SMB2.1 signed and SMB3.1.1 encrypted sessions share immediate data visibility and byte-range locks')
         # Hostile negotiation contexts, before credential access.
-        for packet,expected in [(negotiate_packet(signing=2),0xc00000bb),(negotiate_packet(cipher=4),0xc00000bb),(negotiate_packet(hash_id=2),0xc05d0000)]:
+        for packet,expected in [(negotiate_packet(signing=2),0xc00000bb),(negotiate_packet(cipher=5),0xc00000bb),(negotiate_packet(hash_id=2),0xc05d0000)]:
             with socket.create_connection(('127.0.0.1',f.smbport),timeout=10) as sock:assert status(exchange(sock,packet))==expected
         for field,value in [(92,100),(96,17)]:
             bad=bytearray(negotiate_packet());struct.pack_into('<I' if field==92 else '<H',bad,field,value)
             with socket.create_connection(('127.0.0.1',f.smbport),timeout=10) as sock:assert status(exchange(sock,bad))==0xc000000d
         passed('unsupported signing/cipher/hash and malformed contexts fail without dialect fallback')
-        for dialect,cipher in [(0x300,1),(0x302,1),(0x311,2)]:
-            sock,sid,sk,ek,dk,_=wire_auth(f.smbport,f.password,user(),dialect)
+        for dialect,cipher in [(0x300,1),(0x302,1),(0x311,2),(0x311,3),(0x311,4)]:
+            sock,sid,sk,ek,dk,_=wire_auth(f.smbport,f.password,user(),dialect,cipher=cipher)
             echo=header(13,3,sid)+struct.pack('<HH',4,0);packet=encrypted(echo,ek,sid,cipher)
             response=exchange(sock,packet);assert response[:4]==b'\xfdSMB'
-            plain=(AESGCM if cipher==2 else AESCCM)(dk).decrypt(response[20:32 if cipher==2 else 31],response[52:]+response[4:20],response[20:52]);assert status(plain)==0
+            plain=(AESGCM if cipher in (2,4) else AESCCM)(dk).decrypt(response[20:32 if cipher in (2,4) else 31],response[52:]+response[4:20],response[20:52]);assert status(plain)==0
             rejected_connection(sock,packet)
-        passed('independent AES-CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect')
+        passed('independent AES-128/256 CCM/GCM transform decoding and replayed ciphertext rejected for each SMB3 dialect')
+        for cipher in (3,4):
+            for offset in (4,20,36,44,52):
+                sock,sid,sk,ek,dk,_=wire_auth(f.smbport,f.password,user(),cipher=cipher)
+                packet=bytearray(encrypted(header(13,3,sid)+struct.pack('<HH',4,0),ek,sid,cipher))
+                packet[offset]^=1;rejected_connection(sock,packet)
+        passed('AES-256-CCM/GCM reject modified tags, nonces, plaintext lengths, session IDs and ciphertext')
         for mode in ['tag','ciphertext','aad','sid','size','nonce','signature','unsigned','preauth','reused_nonce','validate','validate311']:
             dialect=0x300 if mode=='validate' else 0x311
             sock,sid,sk,ek,dk,_=wire_auth(f.smbport,f.password,user(),dialect,mode=='preauth')

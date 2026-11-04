@@ -11,3 +11,7 @@ Highest-common 3.1.1 is the modern default. Signed 2.1 compatibility remains ava
 Validate the whole transform and all compound headers/signatures before file operations. Use the credit MessageId window for replay rejection, a bounded nonce set for received nonce reuse, and random-prefix/counter outbound nonces. Close after 65,536 encrypted frames per direction to bound memory; automatic rekey is deferred. Connections cannot bind additional sessions/channels. Errors in authentication/secure negotiation close the connection and stop later compound commands.
 
 Caching, notification, durable/persistent handles and multichannel are independent features. Grant none; explicitly reject durable reconnect, notification and binding. This preserves immediate shared-authority consistency and honest restart semantics: authenticate again and reopen, with committed delete intents recovered by the file authority. The [M6 guide](../m6.md) and [evidence](../evidence/m6/README.md) define the selected profile; the broader native-client/Samba release gate remains open.
+
+### 2026-11-04
+
+The Full SMB/NFS expansion now implements AES-256-CCM/GCM for SMB 3.1.1, including full Kerberos authentication-key derivation; see [M6](../m6.md). The earlier AES-256 exclusion describes the original bounded profile, not the current implementation. GMAC and transport extensions remain open.

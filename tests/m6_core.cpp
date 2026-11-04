@@ -32,6 +32,17 @@ int main() {
     // Frozen vectors independently generated with cryptography KBKDFHMAC/AESCCM/AESGCM.
     ok(encode_bytes(kdf(key, "SMB2AESCMAC", bytes("SmbSign\0", 8))) ==
        "6234814cbb8ea9227440ebfeb5eacbe1");
+    bytes full_key, transcript;
+    for (unsigned i = 0; i < 64; ++i) {
+      transcript += char(i);
+      if (i < 32) full_key += char(i);
+    }
+    ok(encode_bytes(kdf(key, "SMBC2SCipherKey", transcript, 32)) ==
+       "d09c44a545f554240ddf8ac2777570de0f590e402196d1006261f7448076384d");
+    ok(encode_bytes(kdf(full_key, "SMBC2SCipherKey", transcript, 32)) ==
+       "e568de865ae188f20138931c5423898fc0d5e94fa094b72d474fc56cf5703db6");
+    rejected([&] { kdf("", "label", transcript, 32); });
+    rejected([&] { kdf(key, "label", transcript, 24); });
     ok(encode_bytes(preauth(bytes(64, '\0'), packet)) ==
        "a782a30a69d6928f8ec0121c1f89dbe485a48ad87ae96156551afd93c2182bb5066998d6a34a6788873b8a6cf64"
        "2033baa8838be40c9c7923eb1febbfce9e409");
@@ -41,19 +52,27 @@ int main() {
         "0dcfc45d2ddb66567ffa8dfe2112bae1c2723f4a50467cb692119567631b451e2b63a99be18c05138b85",
         "fd534d42ec61682d8a641b88f449a6c67702ffa0000102030405060708090a0b0000000050000000000001007b"
         "000000000000006d3fea8c621ef15343db6b813aae7e07a33708f547f8ebe1fe38eb360859bc73a585f9d4d0a5"
-        "91c468dd23cceca4f9bdfcae26c330b2004c167748e9967128dbda4fb70d1b098c596b793b1430774614"};
-    for (unsigned cipher : {1, 2}) {
-      auto encrypted = encrypt(key, cipher, 123, key.substr(0, cipher == 1 ? 11 : 12), packet);
+        "91c468dd23cceca4f9bdfcae26c330b2004c167748e9967128dbda4fb70d1b098c596b793b1430774614",
+        "fd534d42f472ca23951780579365be440c80fb9b000102030405060708090a000000000050000000000001007b"
+        "000000000000008d935c245e45b593b7fd1cbe14cad2d44cf59209b34ebc3232ef2369c9f9e27604466b5ca043"
+        "e6e6d8a5cd2b60c44758e4565b6bfe0aa17744ed163dcea8a6176c764814cd597ecf0527eb12f8546984",
+        "fd534d42c615f929f70a898f0fdfac77cc4c17aa000102030405060708090a0b0000000050000000000001007b"
+        "00000000000000b9519b59c1e0c41c85489d80bde4766293c79527e46e496b207eff9e01741ead21318cdf8be4"
+        "34bf5c8d55c6a4aa0617de6852be6ee395ed07ae102224decbd1b07d843997946026541de025a3c240a7"};
+    for (unsigned cipher : {1, 2, 3, 4}) {
+      const auto &cipher_key = cipher >= 3 ? full_key : key;
+      auto encrypted = encrypt(cipher_key, cipher, 123, key.substr(0, cipher % 2 ? 11 : 12), packet);
       ok(encrypted == decode_bytes(vectors[cipher - 1]));
-      ok(decrypt(key, cipher, 123, encrypted) == packet);
+      ok(decrypt(cipher_key, cipher, 123, encrypted) == packet);
       for (size_t i = 0; i < encrypted.size(); ++i) {
         auto bad = encrypted;
         bad[i] ^= 1;
-        rejected([&] { decrypt(key, cipher, 123, bad); });
+        rejected([&] { decrypt(cipher_key, cipher, 123, bad); });
       }
-      rejected([&] { decrypt(key, cipher, 124, encrypted); });
-      rejected([&] { decrypt(bytes(16, '\0'), cipher, 123, encrypted); });
-      rejected([&] { decrypt(key, 3, 123, encrypted); });
+      rejected([&] { decrypt(cipher_key, cipher, 124, encrypted); });
+      rejected([&] { decrypt(bytes(cipher_key.size(), '\0'), cipher, 123, encrypted); });
+      rejected([&] { decrypt(cipher >= 3 ? key : full_key, cipher, 123, encrypted); });
+      rejected([&] { decrypt(cipher_key, 5, 123, encrypted); });
     }
     auto negotiate = [](std::initializer_list<unsigned> dialects) {
       bytes p(100 + dialects.size() * 2, '\0');
@@ -102,6 +121,13 @@ int main() {
     add(8, decode_bytes("01000100"));
     auto response = n.accept(p, guid);
     ok(n.dialect == 0x311 && n.cipher == 2 && get(response, 6, 2) == 3);
+    for (unsigned cipher : {3, 4}) {
+      auto offer = p;
+      put(offer, 138, cipher, 2);
+      put(offer, 140, cipher, 2);
+      n.accept(offer, guid);
+      ok(n.dialect == 0x311 && n.cipher == cipher);
+    }
     rejected([&] { n.validate(n.client_info, guid); });
     for (size_t i = 0; i < p.size(); ++i)
       rejected([&] { n.accept(std::string_view(p).substr(0, i), guid); });

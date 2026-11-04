@@ -38,6 +38,7 @@ on:
       - 'tests/m6_integration.py'
       - 'tests/m2_core.cpp'
       - 'tests/m5_core.cpp'
+      - 'tests/m6_core.cpp'
       - 'tests/m7_core.cpp'
       - 'src/nfs_protocol.cpp'
       - 'src/nfs.cpp'
@@ -131,7 +132,9 @@ jobs:
           python scripts/prepare_pynfs.py
           python tests/nfs_gss_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} ${{ matrix.compiler == 'gcc' && '--native' || '' }} --pynfs build/pynfs/nfs4.1 --output build/acceptance/nfs-gss.json
       - name: SMB3 dialects and encrypted allocation
-        run: python tests/m6_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --large-mib 1 ${{ matrix.test_options }} --output build/acceptance/smb3.json
+        run: |
+          ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_m6_tests${{ matrix.suffix }}
+          python tests/m6_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --large-mib 1 ${{ matrix.test_options }} --output build/acceptance/smb3.json
       - name: SMB Kerberos, SPNEGO and native Linux CIFS
         if: runner.os == 'Linux'
         run: python tests/smb_gss_integration.py --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} ${{ matrix.test_options }} --smbclient smbclient ${{ matrix.compiler == 'gcc' && '--native' || '' }} --output build/acceptance/smb-gss.json

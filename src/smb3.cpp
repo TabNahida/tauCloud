@@ -39,27 +39,29 @@ bytes preauth(std::string_view previous, std::string_view packet) {
           "crypto_error");
   return result;
 }
-bytes kdf(std::string_view key, std::string_view label, std::string_view context) {
+bytes kdf(std::string_view key, std::string_view label, std::string_view context, size_t length) {
   // SP800-108 counter mode. SMB labels include their NUL, then the KDF separator.
-  require(key.size() == 16, "crypto_error");
+  require(!key.empty() && key.size() <= 64 && (length == 16 || length == 32), "crypto_error");
   bytes input("\0\0\0\1", 4);
   input += label;
   input.append(2, '\0');
   input += context;
-  input.append("\0\0\0\x80", 4);
-  return hmac(key, input, true).substr(0, 16);
+  input.append(length == 32 ? "\0\0\1\0" : "\0\0\0\x80", 4);
+  return hmac(key, input, true).substr(0, length);
 }
 namespace {
 bytes crypt(std::string_view key, unsigned cipher, std::string_view nonce, std::string_view aad,
             std::string_view data, bytes &tag, bool sealing) {
-  require(key.size() == 16 && (cipher == 1 || cipher == 2) &&
-              nonce.size() == (cipher == 1 ? 11u : 12u) && data.size() >= 64 &&
+  bool ccm = cipher == 1 || cipher == 3;
+  require(cipher >= 1 && cipher <= 4 && key.size() == (cipher >= 3 ? 32u : 16u) &&
+              nonce.size() == (ccm ? 11u : 12u) && data.size() >= 64 &&
               data.size() <= 1024 * 1024 && tag.size() == 16,
           "invalid_packet");
   std::unique_ptr<EVP_CIPHER_CTX, decltype(&EVP_CIPHER_CTX_free)> ctx(EVP_CIPHER_CTX_new(),
                                                                       EVP_CIPHER_CTX_free);
   auto *c = ctx.get();
-  auto *algo = cipher == 1 ? EVP_aes_128_ccm() : EVP_aes_128_gcm();
+  auto *algo = cipher == 1 ? EVP_aes_128_ccm() : cipher == 2 ? EVP_aes_128_gcm() :
+               cipher == 3 ? EVP_aes_256_ccm() : EVP_aes_256_gcm();
   auto ptr = [](std::string_view v) { return reinterpret_cast<const unsigned char *>(v.data()); };
   bytes out(data.size() + 16, '\0');
   auto *dst = reinterpret_cast<unsigned char *>(out.data());
@@ -68,19 +70,19 @@ bytes crypt(std::string_view key, unsigned cipher, std::string_view nonce, std::
               EVP_CIPHER_CTX_ctrl(c, EVP_CTRL_AEAD_SET_IVLEN, static_cast<int>(nonce.size()),
                                   nullptr) == 1,
           "crypto_error");
-  if (!sealing || cipher == 1)
+  if (!sealing || ccm)
     require(EVP_CIPHER_CTX_ctrl(c, EVP_CTRL_AEAD_SET_TAG, 16, sealing ? nullptr : tag.data()) == 1,
             "crypto_error");
   require(EVP_CipherInit_ex(c, nullptr, nullptr, ptr(key), ptr(nonce), sealing) == 1,
           "crypto_error");
-  if (cipher == 1)
+  if (ccm)
     require(EVP_CipherUpdate(c, nullptr, &n, nullptr, static_cast<int>(data.size())) == 1,
             "crypto_error");
   require(EVP_CipherUpdate(c, nullptr, &n, ptr(aad), static_cast<int>(aad.size())) == 1,
           "crypto_error");
   // CCM authenticates in Update; GCM authenticates in Final. Never release unauthenticated bytes.
   require(EVP_CipherUpdate(c, dst, &n, ptr(data), static_cast<int>(data.size())) == 1 &&
-              (cipher == 1 && !sealing ? true : EVP_CipherFinal_ex(c, dst + n, &end) == 1),
+              (ccm && !sealing ? true : EVP_CipherFinal_ex(c, dst + n, &end) == 1),
           "invalid_packet");
   require(static_cast<size_t>(n + end) == data.size(), "crypto_error");
   out.resize(data.size());
@@ -93,7 +95,7 @@ bytes encrypt(std::string_view key, unsigned cipher, uint64_t session, std::stri
               std::string_view plain) {
   bytes header(52, '\0'), tag(16, '\0');
   header.replace(0, 4, "\xfdSMB", 4);
-  require(nonce.size() == (cipher == 1 ? 11u : 12u), "invalid_packet");
+  require(nonce.size() == (cipher == 1 || cipher == 3 ? 11u : 12u), "invalid_packet");
   header.replace(20, nonce.size(), nonce);
   put(header, 36, plain.size(), 4);
   put(header, 42, 1, 2);
@@ -103,7 +105,7 @@ bytes encrypt(std::string_view key, unsigned cipher, uint64_t session, std::stri
   return header + data;
 }
 bytes decrypt(std::string_view key, unsigned cipher, uint64_t session, std::string_view packet) {
-  auto nonce_size = cipher == 1 ? 11u : 12u;
+  auto nonce_size = cipher == 1 || cipher == 3 ? 11u : 12u;
   require(packet.size() >= 116 && packet.substr(0, 4) == std::string_view("\xfdSMB", 4) &&
               get(packet, 36, 4) == packet.size() - 52 && get(packet, 40, 2) == 0 &&
               get(packet, 42, 2) == 1 && get(packet, 44, 8) == session &&
@@ -170,7 +172,11 @@ bytes negotiation::accept(std::string_view p, std::string_view guid, bool kerber
         match |= get(data, 2 + 2 * i, 2) == value;
       return match;
     };
-    cipher = supports(found.at(2), 2) ? 2 : (supports(found.at(2), 1) ? 1 : 0);
+    for (auto candidate : {2u, 1u, 4u, 3u})
+      if (supports(found.at(2), candidate)) {
+        cipher = candidate;
+        break;
+      }
     require(cipher != 0, "not_supported");
     if (found.contains(8))
       require(supports(found.at(8), 1), "not_supported");

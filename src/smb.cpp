@@ -629,13 +629,12 @@ struct client {
         } catch (...) { kerberos.reset(); throw; }
         if (accepted.major == 0) {
           kerberos.reset();
-          auto session_key = secret.substr(0, 16);
-          session_key.resize(16, '\0'); // MS-SMB2 SessionKey, for the negotiated AES-128 ciphers.
-          OPENSSL_cleanse(secret.data(), secret.size());
           json verified = {{"principal", accepted.principal}, {"lifetime", accepted.lifetime}};
           if (authenticated) verified["replace_token"] = token;
-          auto encoded_key = encode_bytes(session_key);
-          OPENSSL_cleanse(session_key.data(), session_key.size());
+          // AES-256 derives cipher keys from the full GSS key. The key stays
+          // in this worker; identity receives only the verified principal.
+          auto encoded_key = encode_bytes(secret);
+          OPENSSL_cleanse(secret.data(), secret.size());
           result = co_await smb_rpc(s, "identity", "smb_kerberos", verified);
           result["session_key"] = encoded_key;
           complete = true;
@@ -652,19 +651,24 @@ struct client {
             other->close();
         // MS-SMB2 3.3.5.5.2: renewal retains the original signing/cipher keys
         // and nonce history, while identity atomically replaces its grant token.
-        if (!authenticated) key = decode_bytes(result.at("session_key").get<std::string>());
-        if (!authenticated && selected.dialect >= 0x300) {
-          auto session_key = key;
+        if (!authenticated) {
+          auto full_key = decode_bytes(result.at("session_key").get<std::string>());
+          auto session_key = full_key.substr(0, 16);
+          session_key.resize(16, '\0');
+          key = session_key;
           if (selected.dialect == 0x311) {
             key = kdf(session_key, "SMBSigningKey", transcript);
-            decryption_key = kdf(session_key, "SMBC2SCipherKey", transcript);
-            encryption_key = kdf(session_key, "SMBS2CCipherKey", transcript);
-          } else {
+            bool aes256 = selected.cipher == 3 || selected.cipher == 4;
+            const auto &material = aes256 ? full_key : session_key;
+            decryption_key = kdf(material, "SMBC2SCipherKey", transcript, aes256 ? 32 : 16);
+            encryption_key = kdf(material, "SMBS2CCipherKey", transcript, aes256 ? 32 : 16);
+          } else if (selected.dialect >= 0x300) {
             key = kdf(session_key, "SMB2AESCMAC", bytes("SmbSign\0", 8));
             decryption_key = kdf(session_key, "SMB2AESCCM", bytes("ServerIn \0", 10));
             encryption_key = kdf(session_key, "SMB2AESCCM", bytes("ServerOut\0", 10));
           }
-          std::fill(session_key.begin(), session_key.end(), 0);
+          OPENSSL_cleanse(full_key.data(), full_key.size());
+          OPENSSL_cleanse(session_key.data(), session_key.size());
         }
         authenticated = true;
         reauthenticating = false;
