@@ -436,6 +436,8 @@ struct opened {
   std::string cache_cookie = "";
   int64_t cache_poll_at = 0, cache_fence_at = 0;
   bool cache_encrypted = false, cache_announced = false, cache_break_sent = false;
+  unsigned cache_level = 0, cache_break_level = 0;
+  bool cache_read_break_completed = false;
 };
 struct session_state {
   bool authenticated = false, raw_ntlm = false;
@@ -1019,6 +1021,8 @@ struct client : session_state, std::enable_shared_from_this<client> {
                       {"attributes", get(p, 92, 4)},
                       {"maximum", maximum},
                       {"explicit_access", explicit_access}};
+      if (requested_oplock == 1 || requested_oplock == 8)
+        request["oplock"] = requested_oplock;
       if (initial_security)
         request["security"] = *initial_security;
       if (initial_eas)
@@ -1098,17 +1102,22 @@ struct client : session_state, std::enable_shared_from_this<client> {
         put(b, 84, response_contexts.size(), 4);
         b += response_contexts;
       }
-      if (requested_oplock == 8 && !meta.at("directory").get<bool>() && (access & 3) == 3 &&
+      if ((requested_oplock == 1 || requested_oplock == 8) &&
+          !meta.at("directory").get<bool>() && (access & 1) &&
+          (requested_oplock == 1 || (access & 3) == 3) &&
           !(options & 0x1000)) {
         std::exception_ptr failure;
         try {
           auto &h = files.at(fid);
-          auto acquired = co_await operation(h, "cache_acquire", true);
+          json cache_request = {{"level", requested_oplock}};
+          auto acquired = co_await operation(h, "cache_acquire", requested_oplock == 8,
+                                             cache_request);
           if (acquired.at("granted").get<bool>()) {
             h.cache_cookie = acquired.at("cookie");
             h.cache_encrypted = encrypted;
+            h.cache_level = acquired.at("level");
             cache_deadline(h, acquired);
-            b[2] = 8;
+            b[2] = char(h.cache_level);
           }
         } catch (...) { failure = std::current_exception(); }
         if (failure) { co_await release(fid); std::rethrow_exception(failure); }
@@ -1118,14 +1127,25 @@ struct client : session_state, std::enable_shared_from_this<client> {
     if (cmd == 18) {
       check(structure == 24 && p.size() >= 88);
       auto &h = handle(p, 72, tid);
-      check(!h.cache_cookie.empty() && h.cache_break_sent, 0xc0000184);
+      // The object store already completed this II -> NONE transition. Its
+      // notification requires no ACK; a reply is an invalid oplock protocol,
+      // distinct from an unsolicited ACK before any break was issued.
+      check(!h.cache_read_break_completed, 0xc00000e3);
+      check(!h.cache_cookie.empty() && h.cache_break_sent && h.cache_level == 8, 0xc0000184);
       auto level = get(p, 66, 1);
-      json request = {{"cookie", h.cache_cookie}};
-      co_await operation(h, "cache_ack", true, request);
-      h.cache_cookie.clear(); h.cache_fence_at = h.cache_poll_at = 0;
+      bool valid = level == 0 || (level == 1 && h.cache_break_level == 1);
+      json request = {{"cookie", h.cache_cookie}, {"level", valid ? level : 0}};
+      auto state = co_await operation(h, "cache_ack", true, request);
       h.cache_break_sent = false;
-      check(level == 0, level == 255 ? 0xc000000d : 0xc00000e3);
+      h.cache_break_level = 0;
+      h.cache_level = state.at("level");
+      if (h.cache_level) {
+        cache_deadline(h, state);
+        if (state.at("breaking").get<bool>()) h.cache_poll_at = 0;
+      } else clear_cache(h);
+      check(valid, level == 255 ? 0xc000000d : 0xc00000e3);
       auto result = sized(24, 24);
+      result[2] = char(h.cache_level);
       result.replace(8, 16, fid_for(h));
       co_return result;
     }
@@ -1743,7 +1763,7 @@ struct client : session_state, std::enable_shared_from_this<client> {
             code = e.status;
             log("smb", "command_" + std::to_string(cmd), std::to_string(code));
           } catch (const error &e) {
-            if ((cmd == 5 || cmd == 14 || cmd == 17) && std::string_view(e.what()) == "cache_break_pending") {
+            if ((cmd == 5 || cmd == 9 || cmd == 10 || cmd == 14 || cmd == 17) && std::string_view(e.what()) == "cache_break_pending") {
               try { defer_command(p, tid, encrypted, 0, related_file); code = 0x103; }
               catch (const status_error &limit) { code = limit.status; }
             } else code = status(e.what());

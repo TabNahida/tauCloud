@@ -62,13 +62,14 @@ json security_new(space_state &s, const json &grant, const std::string &path, bo
 void security_add(space_state &s, const json &grant, const std::string &path, bool directory) {
   security_path(s, grant, security_parent(path), directory ? 4 : 2);
 }
-void security_sticky(space_state &s, const json &grant, const std::string &path) {
+void security_sticky(space_state &s, const json &grant, const std::string &path,
+                     const json *pinned = nullptr) {
   require(!path.empty(), "forbidden");
   auto parent = security_get(s, security_info(s, security_parent(path)));
   if (!(parent.value("mode_special", 0u) & 01000))
     return;
   auto actor = security::principal(grant.at("actor"));
-  auto child = security_get(s, security_info(s, path));
+  auto child = security_get(s, pinned ? *pinned : security_info(s, path));
   require(parent.at("owner") == actor || child.at("owner") == actor, "forbidden");
 }
 void security_delete(space_state &s, const json &grant, const std::string &path) {

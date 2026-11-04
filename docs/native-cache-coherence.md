@@ -1,7 +1,7 @@
 # Native cache exclusion
 
-Native exclusion now backs SMB EXCLUSIVE data-oplock grants and recall/ACK
-on eligible regular-file opens. Level II/BATCH oplocks, SMB leases, directory
+Native exclusion now backs SMB EXCLUSIVE and Level II data-oplock grants,
+downgrade and invalidation on eligible regular-file opens. BATCH oplocks, SMB leases, directory
 caching and NFS delegations remain unfinished. Full SMB/NFS compatibility
 remains open.
 
@@ -55,8 +55,8 @@ test before its protocol tests on GCC, Clang and MSVC.
 
 `file_cache.inc` now owns the cache grant beneath SMB. Only an authenticated
 SMB caller with the matching actor, space and path can acquire it. EXCLUSIVE
-requires a writable/readable open and current write authority. The internal
-Level II coordinator also admits read-only opens to an existing shared guard. Directory and delete-pending opens cannot acquire this authority.
+requires a writable/readable open and current write authority. Level II
+also admits read-only opens, including read-only shares, with no write-authority renewal. Directory and delete-pending opens cannot acquire this authority.
 Each acquisition gets a new random cookie; polling, acknowledgement and
 voluntary release must identify that exact acquisition. Repeating acquisition
 does not reset an outstanding break. An ACK without a pending break is rejected.
@@ -101,7 +101,7 @@ Notification order follows registration order, independently of those IDs.
 CANCEL by AsyncId or MessageId, predecessor failure, tree/session teardown and
 revocation complete or discard the dependent work without executing its writes.
 The transport bounds retained commands to 128 and request bytes to 1 MiB.
-Cache-blocked CREATE retries reauthorize and have a ten-second monotonic
+Cache-blocked CREATE, WRITE, LOCK and metadata retries reauthorize and have a ten-second monotonic
 retry deadline. Authentication continuations remain in their dedicated flow;
 a SESSION_SETUP dependent on a waiting operation is explicitly refused.
 
@@ -123,7 +123,8 @@ rules.
 An explicit EXCLUSIVE request on a writable regular-file open with both READ_DATA
 and WRITE_DATA may now receive an EXCLUSIVE grant if the file domain obtains
 native exclusion. Read-only opens, directories, delete-on-close and conflicting
-native access receive NONE. BATCH/Level II/lease requests are not granted yet.
+native access receive NONE for EXCLUSIVE requests. Explicit Level II requests
+can receive shared read caching as described below. BATCH/lease requests are not granted yet.
 An incompatible sharing request fails without recalling the existing cache.
 An attribute-only OPEN/OPEN_IF (READ_ATTRIBUTES, WRITE_ATTRIBUTES, SYNCHRONIZE)
 against a cached file retains its pinned native description and receives NONE
@@ -145,8 +146,9 @@ recommended by MS-SMB2 3.3.4.6; in particular the fixed MessageId is never reuse
 as an AES-GMAC signing nonce. Encrypted opens receive authenticated encrypted
 breaks with fresh transform nonces. Client ACKs still pass ordinary session,
 tree, FileId and signing/encryption validation. An unsolicited or duplicate ACK
-returns INVALID_DEVICE_STATE; a foreign handle returns FILE_CLOSED. The current
-recall target and successful ACK level are NONE. Invalid classic ACK levels
+returns INVALID_DEVICE_STATE; a foreign handle returns FILE_CLOSED. A reply to
+a completed Level II no-ACK break returns INVALID_OPLOCK_PROTOCOL. EXCLUSIVE
+can recall to NONE or downgrade to Level II. Invalid classic ACK levels
 release the native recall and return the appropriate protocol error.
 
 The holder can write/flush while a competing CREATE waits. ACK flushes native
@@ -170,7 +172,10 @@ jobs fail original exclusive3: a MAXIMUM_ALLOWED open recalled before failing
 sharing. [Remote evidence](evidence/pre-m8/smb-oplock-5a-remote.json) preserves
 that failure. The corrected ordering resolves effective rights and sharing
 from pinned security metadata before recall; original exclusive1/3/4 now pass
-locally. Remote reacceptance remains pending.
+locally and on GCC/Clang at `4420774`. The same targeted run fails on Windows
+when an initial NFS EXCHANGE_ID times out, before its wire-cache tests.
+[Fixed-source evidence](evidence/pre-m8/smb-shared-cache-442-remote.json) preserves
+that failure; it is not considered fixed.
 
 The attribute-open increment adds four independent dialect groups (28 total on
 Linux; 27 scheduled on Windows), including a second transport, share-none, query/close,
@@ -199,19 +204,53 @@ cache renewal still requires current write authority.
 [Local coordinator evidence](evidence/pre-m8/smb-shared-cache-local.json) covers downgrade,
 shared and read-only acquisition, denied writes, full-group invalidation,
 last-reader release, individual expiry, retained-descriptor reacquisition and
-actual conflicting native opens. This is file-domain support: the SMB wire layer
-still grants only EXCLUSIVE and recalls to NONE. Level II wire notification,
-no-ACK completion and downgrade/escalation races are the next integration step.
-The guard remains native RW exclusion; standalone read-only acquisition and
-complete native/shared-reader transitions still need platform-specific work.
+actual conflicting native opens. This coordinator now backs the Level II wire
+integration below.
+
+## Level II wire integration
+
+Explicit Level II CREATE requests can receive read caching. A compatible cached
+CREATE against EXCLUSIVE recalls it to Level II: the holder flushes and ACKs,
+then both opens share native exclusion. Ordinary readers can coexist without
+recall; a writer that needs a physically writable descriptor first invalidates
+a group backed by a read-only descriptor. Network rights are never expanded by
+retaining a native description. Windows RW kernel exclusion is requested even
+for a read-only handle; unsupported native grants still return NONE. Read-cache
+release/close never attempts a write-only native flush.
+
+WRITE and LOCK invalidate every affected Level II holder before acting. Each
+transport sends its authenticated notification, then releases its file-domain
+participation without waiting for a client ACK, as required by
+[MS-SMB2 client break processing](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/7bfe0275-5aff-4b63-b683-a0bae96bdb57).
+Native exclusion survives until the last notification/close/fence. Related
+WRITE/READ/CLOSE continuation preserves order and final responses grant no extra
+credits. CREATE responses precede their cache notifications.
+
+A native writer or cached byte-lock flush can tighten a pending EXCLUSIVE-to-II
+downgrade. The original ACK remains valid, but the same fixed recall deadline
+survives and a second II-to-NONE notification follows. Cached locks preclude a
+new shared read-cache grant. CANCEL drops the waiting operation without
+cancelling the holder's required downgrade. SET_INFO delete-pending and
+DELETE_ON_CLOSE preserve existing read caches until last close; sticky ownership
+checks use the pinned native identity without triggering an incidental open.
+
+[Local Level II evidence](evidence/pre-m8/smb-level2-local.json) includes four
+dialects, independent transports, actual native writers, read-only-share renewal,
+locks and downgrade races, cancellation, compound writes and both deletion modes.
+The full unmodified Samba oplock diagnostic is retained with every failure.
+The six selectors exclusive1/2/3/4 and levelii500/501 are included in remote
+acceptance alongside the independent wire tests. Remote Level II acceptance is
+pending; those cache steps continue after unrelated test failures when the build
+succeeded, while the job retains its original failure status.
 
 ## Remaining integration
 
-Level II/BATCH caching, SMB leases, namespace/handle caching, complete oplock transitions and the complete
+BATCH caching, SMB leases, namespace/handle caching, remaining Level II/exclusive
+transitions and the complete
 original Samba suite still need implementation and evidence. NFS still needs
 delegation state, recalls and revocation. Linux's finite kernel break deadline
 and namespace changes need explicit treatment for handle/delegation caching.
-The EXCLUSIVE data path does not close any of these broader compatibility gates.
+The implemented data-cache paths do not close any of these broader compatibility gates.
 
 References: [Linux file leases](https://www.man7.org/linux/man-pages/man2/F_SETLEASE.2const.html),
 [Windows oplock requests](https://learn.microsoft.com/en-us/windows/win32/api/winioctl/ni-winioctl-fsctl_request_oplock),

@@ -1,0 +1,594 @@
+smbtorture 4.19.5-Ubuntu
+Using seed 1793797799
+time: 2026-11-04 13:09:59.639921
+progress: 42
+test: exclusive1
+time: 2026-11-04 13:09:59.640060
+EXCLUSIVE1: open a file with an exclusive oplock (share mode: none)
+a 2nd open should not cause a break
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+unlink it - should also be no break
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+time: 2026-11-04 13:10:01.986961
+success: exclusive1
+test: exclusive2
+time: 2026-11-04 13:10:01.986975
+EXCLUSIVE2: open a file with an exclusive oplock (share mode: all)
+a 2nd open should cause a break to level 2
+Acking to level II [0x01] in oplock handler
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+try to unlink it - should cause a break
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+close both handles
+time: 2026-11-04 13:10:04.701189
+success: exclusive2
+test: exclusive3
+time: 2026-11-04 13:10:04.701208
+EXCLUSIVE3: open a file with an exclusive oplock (share mode: none)
+setpathinfo EOF should trigger a break to none
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+time: 2026-11-04 13:10:06.018261
+success: exclusive3
+test: exclusive4
+time: 2026-11-04 13:10:06.018274
+EXCLUSIVE4: open with exclusive oplock
+second open with attributes only shouldn't cause oplock break
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+time: 2026-11-04 13:10:07.355004
+success: exclusive4
+test: exclusive5
+time: 2026-11-04 13:10:07.355018
+EXCLUSIVE5: open with exclusive oplock
+second open with attributes only and NTCREATEX_DISP_OVERWRITE_IF dispostion causes oplock break
+Acking to none [0x00] in oplock handler
+time: 2026-11-04 13:10:07.766246
+failure: exclusive5 [
+source4/torture/smb2/oplock.c:657: status was NT_STATUS_ACCESS_DENIED, expected NT_STATUS_OK: Incorrect status
+]
+test: exclusive6
+time: 2026-11-04 13:10:07.766260
+EXCLUSIVE6: open a file with an exclusive oplock (share mode: none)
+rename with the parent directory handle open for DELETE should not generate a break but get a sharing violation
+Acking to none [0x00] in oplock handler
+trying rename while parent handle open for delete.
+time: 2026-11-04 13:10:08.207198
+failure: exclusive6 [
+source4/torture/smb2/oplock.c:732: status was NT_STATUS_OK, expected NT_STATUS_SHARING_VIOLATION: Incorrect status
+]
+test: exclusive9
+time: 2026-11-04 13:10:08.207204
+Acking to none [0x00] in oplock handler
+Acking to level II [0x01] in oplock handler
+Acking to none [0x00] in oplock handler
+WARNING!: (source4/torture/smb2/oplock.c:848): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x1
+
+Acking to level II [0x01] in oplock handler
+time: 2026-11-04 13:10:09.958916
+failure: exclusive9 [
+(source4/torture/smb2/oplock.c:848): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x1
+]
+test: batch1
+time: 2026-11-04 13:10:09.958932
+BATCH1: open with batch oplock
+unlink should generate a break
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+WARNING!: (source4/torture/smb2/oplock.c:907): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+
+WARNING!: (source4/torture/smb2/oplock.c:915): wrong value for break_info.count got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/oplock.c:916): wrong value for break_info.handle.data[0] got 0x0 - should be 0x10cdb2db
+
+2nd unlink should not generate a break
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+writing should generate a self break to none
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+WARNING!: (source4/torture/smb2/oplock.c:917): wrong value for break_info.level got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/oplock.c:936): wrong value for break_info.count got 0x0 - should be 0x1
+
+time: 2026-11-04 13:10:13.293140
+failure: batch1 [
+(source4/torture/smb2/oplock.c:937): wrong value for break_info.handle.data[0] got 0x0 - should be 0x10cdb2db
+]
+test: batch2
+time: 2026-11-04 13:10:13.293162
+BATCH2: open with batch oplock
+unlink should generate a break, which we ack as break to none
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+WARNING!: (source4/torture/smb2/oplock.c:990): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+
+WARNING!: (source4/torture/smb2/oplock.c:1002): wrong value for break_info.count got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/oplock.c:1003): wrong value for break_info.handle.data[0] got 0x0 - should be 0xede56f47
+
+2nd unlink should not generate a break
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+writing should not generate a break
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+time: 2026-11-04 13:10:16.632058
+failure: batch2 [
+(source4/torture/smb2/oplock.c:1004): wrong value for break_info.level got 0x0 - should be 0x1
+]
+test: batch3
+time: 2026-11-04 13:10:16.632072
+BATCH3: if we close on break then the unlink can succeed
+WARNING!: (source4/torture/smb2/oplock.c:1074): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+
+time: 2026-11-04 13:10:16.756808
+failure: batch3 [
+source4/torture/smb2/oplock.c:1078: status was NT_STATUS_SHARING_VIOLATION, expected NT_STATUS_OK: Incorrect status
+]
+test: batch4
+time: 2026-11-04 13:10:16.756814
+BATCH4: a self read should not cause a break
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+time: 2026-11-04 13:10:18.113256
+failure: batch4 [
+(source4/torture/smb2/oplock.c:1139): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+]
+test: batch5
+time: 2026-11-04 13:10:18.113272
+BATCH5: a 2nd open should give a break
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+WARNING!: (source4/torture/smb2/oplock.c:1200): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+
+WARNING!: (source4/torture/smb2/oplock.c:1210): wrong value for break_info.count got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/oplock.c:1211): wrong value for break_info.handle.data[0] got 0x0 - should be 0x6660720e
+
+time: 2026-11-04 13:10:19.438204
+failure: batch5 [
+(source4/torture/smb2/oplock.c:1212): wrong value for break_info.level got 0x0 - should be 0x1
+]
+test: batch6
+time: 2026-11-04 13:10:19.438216
+BATCH6: a 2nd open should give a break to level II if the first open allowed shared read
+WARNING!: (source4/torture/smb2/oplock.c:1272): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+WARNING!: (source4/torture/smb2/oplock.c:1279): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/oplock.c:1282): wrong value for break_info.count got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/oplock.c:1283): wrong value for break_info.handle.data[0] got 0x0 - should be 0x4dbc6189
+
+write should trigger a break to none on both
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+WARNING!: (source4/torture/smb2/oplock.c:1284): wrong value for break_info.level got 0x0 - should be 0x1
+
+time: 2026-11-04 13:10:22.806172
+failure: batch6 [
+(source4/torture/smb2/oplock.c:1299): wrong value for break_info.count got 0x0 - should be 0x2
+]
+test: batch7
+time: 2026-11-04 13:10:22.806185
+BATCH7: a 2nd open should get an oplock when we close instead of ack
+WARNING!: (source4/torture/smb2/oplock.c:1359): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+
+time: 2026-11-04 13:10:22.931736
+failure: batch7 [
+source4/torture/smb2/oplock.c:1366: status was NT_STATUS_SHARING_VIOLATION, expected NT_STATUS_OK: Incorrect status
+]
+test: batch8
+time: 2026-11-04 13:10:22.931742
+BATCH8: open with batch oplock
+second open with attributes only shouldn't cause oplock break
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+time: 2026-11-04 13:10:24.297162
+failure: batch8 [
+(source4/torture/smb2/oplock.c:1425): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+]
+test: batch9
+time: 2026-11-04 13:10:24.297183
+BATCH9: open with attributes only can create file
+Subsequent normal open should break oplock on attribute only open to level II
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+WARNING!: (source4/torture/smb2/oplock.c:1499): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+
+WARNING!: (source4/torture/smb2/oplock.c:1514): wrong value for break_info.count got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/oplock.c:1515): wrong value for break_info.handle.data[0] got 0x0 - should be 0x3d83faba
+
+WARNING!: (source4/torture/smb2/oplock.c:1517): wrong value for break_info.level got 0x0 - should be 0x1
+
+third oplocked open should grant level2 without break
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+WARNING!: (source4/torture/smb2/oplock.c:1518): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x1
+
+write should trigger a break to none on both
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+WARNING!: (source4/torture/smb2/oplock.c:1538): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x1
+
+time: 2026-11-04 13:10:28.683363
+failure: batch9 [
+(source4/torture/smb2/oplock.c:1553): wrong value for break_info.count got 0x0 - should be 0x2
+]
+test: batch9a
+time: 2026-11-04 13:10:28.683376
+BATCH9: open with attributes only can create file
+Subsequent attributes open should not break
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+Subsequent normal open should break oplock on attribute only open to level II
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+WARNING!: (source4/torture/smb2/oplock.c:1612): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+
+WARNING!: (source4/torture/smb2/oplock.c:1640): wrong value for break_info.count got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/oplock.c:1641): wrong value for break_info.handle.data[0] got 0x0 - should be 0x791d1784
+
+WARNING!: (source4/torture/smb2/oplock.c:1643): wrong value for break_info.level got 0x0 - should be 0x1
+
+third oplocked open should grant level2 without break
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+WARNING!: (source4/torture/smb2/oplock.c:1644): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x1
+
+write should trigger a break to none on both
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+WARNING!: (source4/torture/smb2/oplock.c:1664): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x1
+
+time: 2026-11-04 13:10:34.070378
+failure: batch9a [
+(source4/torture/smb2/oplock.c:1679): wrong value for break_info.count got 0x0 - should be 0x2
+]
+test: batch10
+time: 2026-11-04 13:10:34.070393
+BATCH10: Open with oplock after a non-oplock open should grant level2
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+write should trigger a break to none
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+WARNING!: (source4/torture/smb2/oplock.c:1759): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/oplock.c:1777): wrong value for break_info.count got 0x0 - should be 0x1
+
+time: 2026-11-04 13:10:37.430620
+failure: batch10 [
+(source4/torture/smb2/oplock.c:1778): wrong value for break_info.handle.data[0] got 0x0 - should be 0xeaddc83
+]
+test: batch11
+time: 2026-11-04 13:10:37.430638
+BATCH11: Test if setpathinfo set EOF breaks oplocks.
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+WARNING!: (source4/torture/smb2/oplock.c:1845): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+
+time: 2026-11-04 13:10:40.770516
+failure: batch11 [
+(source4/torture/smb2/oplock.c:1859): wrong value for break_info.count got 0x0 - should be 0x2
+]
+test: batch12
+time: 2026-11-04 13:10:40.770530
+BATCH12: Test if setpathinfo allocation size breaks oplocks.
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+WARNING!: (source4/torture/smb2/oplock.c:1926): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+
+time: 2026-11-04 13:10:44.088345
+failure: batch12 [
+(source4/torture/smb2/oplock.c:1940): wrong value for break_info.count got 0x0 - should be 0x2
+]
+test: batch13
+time: 2026-11-04 13:10:44.088360
+BATCH13: open with batch oplock
+second open with attributes only and NTCREATEX_DISP_OVERWRITE dispostion causes oplock break
+WARNING!: (source4/torture/smb2/oplock.c:1999): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+
+time: 2026-11-04 13:10:44.199729
+failure: batch13 [
+source4/torture/smb2/oplock.c:2017: status was NT_STATUS_ACCESS_DENIED, expected NT_STATUS_OK: Incorrect status
+]
+test: batch14
+time: 2026-11-04 13:10:44.199735
+BATCH14: open with batch oplock
+second open with attributes only and NTCREATEX_DISP_SUPERSEDE dispostion causes oplock break
+WARNING!: (source4/torture/smb2/oplock.c:2078): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+
+time: 2026-11-04 13:10:44.306106
+failure: batch14 [
+source4/torture/smb2/oplock.c:2096: status was NT_STATUS_ACCESS_DENIED, expected NT_STATUS_OK: Incorrect status
+]
+test: batch15
+time: 2026-11-04 13:10:44.306112
+BATCH15: Test if qpathinfo all info breaks a batch oplock (should not).
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+time: 2026-11-04 13:10:46.661482
+failure: batch15 [
+(source4/torture/smb2/oplock.c:2167): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+]
+test: batch16
+time: 2026-11-04 13:10:46.661496
+BATCH16: open with batch oplock
+second open with attributes only and NTCREATEX_DISP_OVERWRITE_IF dispostion causes oplock break
+WARNING!: (source4/torture/smb2/oplock.c:2232): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+
+time: 2026-11-04 13:10:46.784549
+failure: batch16 [
+source4/torture/smb2/oplock.c:2250: status was NT_STATUS_ACCESS_DENIED, expected NT_STATUS_OK: Incorrect status
+]
+test: batch19
+time: 2026-11-04 13:10:46.784555
+BATCH19: open a file with an batch oplock (share mode: none)
+setfileinfo rename info should not trigger a break but should cause a sharing violation
+WARNING!: (source4/torture/smb2/oplock.c:2337): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+
+time: 2026-11-04 13:10:46.889463
+failure: batch19 [
+source4/torture/smb2/oplock.c:2351: status was NT_STATUS_OK, expected NT_STATUS_SHARING_VIOLATION: Incorrect status
+]
+test: batch20
+time: 2026-11-04 13:10:46.889469
+BATCH20: open a file with an batch oplock (share mode: all)
+setfileinfo rename info should not trigger a break but should cause a sharing violation
+WARNING!: (source4/torture/smb2/oplock.c:2422): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+
+time: 2026-11-04 13:10:47.024335
+failure: batch20 [
+source4/torture/smb2/oplock.c:2433: status was NT_STATUS_OK, expected NT_STATUS_SHARING_VIOLATION: Incorrect status
+]
+test: batch21
+time: 2026-11-04 13:10:47.024341
+BATCH21: open with batch oplock
+writing should not generate a break
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+time: 2026-11-04 13:10:48.425522
+failure: batch21 [
+(source4/torture/smb2/oplock.c:2550): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+]
+test: batch22a
+time: 2026-11-04 13:10:48.425541
+BATCH22: open with batch oplock
+a 2nd open should succeed after the oplock break timeout
+WARNING!: (source4/torture/smb2/oplock.c:2614): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+WARNING!: (source4/torture/smb2/oplock.c:2624): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x1
+
+waited 1 seconds for oplock timeout
+WARNING!: (source4/torture/smb2/oplock.c:2628): wrong value for te got 1 - should be between 34 and 50
+
+WARNING!: (source4/torture/smb2/oplock.c:2631): wrong value for break_info.count got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/oplock.c:2632): wrong value for break_info.handle.data[0] got 0x0 - should be 0xaa1c864d
+
+time: 2026-11-04 13:10:49.689439
+failure: batch22a [
+(source4/torture/smb2/oplock.c:2633): wrong value for break_info.level got 0x0 - should be 0x1
+]
+test: batch22b
+time: 2026-11-04 13:10:49.689452
+BATCH22: open with batch oplock
+a 2nd open should succeed after the oplock break timeout
+transport[transport1] uses tcp port: 51350
+WARNING!: (source4/torture/smb2/oplock.c:2696): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+
+WARNING!: source4/torture/smb2/block.c:377: status was NT_STATUS_USER_SESSION_DELETED, expected NT_STATUS_OK: FSCTL_SMBTORTURE_FORCE_UNACKED_TIMEOUT failed
+
+On a Samba server 'smbd:FSCTL_SMBTORTURE = yes' is needed!
+
+Otherwise you may need to use iptables like this:
+--option='torture:use_iptables=yes'
+And maybe something like this in addition:
+--option='torture:iptables_command=sudo /sbin/iptables'
+
+
+time: 2026-11-04 13:10:49.799393
+failure: batch22b [
+source4/torture/smb2/oplock.c:2706: Expression `block_ok' failed: test_block_smb2_transport
+]
+test: batch23
+time: 2026-11-04 13:10:49.799398
+BATCH23: an open and ask for a batch oplock
+a 2nd open without level2 oplock support should generate a break to level2
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+WARNING!: (source4/torture/smb2/oplock.c:2795): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+
+WARNING!: (source4/torture/smb2/oplock.c:2806): wrong value for break_info.count got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/oplock.c:2807): wrong value for break_info.handle.data[0] got 0x0 - should be 0xc393c9ec
+
+a 3rd open with level2 oplock support should not generate a break
+WARNING!: (source4/torture/smb2/oplock.c:2808): wrong value for break_info.level got 0x0 - should be 0x1
+
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+time: 2026-11-04 13:10:52.174478
+failure: batch23 [
+(source4/torture/smb2/oplock.c:2818): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x1
+]
+test: batch24
+time: 2026-11-04 13:10:52.174497
+BATCH24: a open without level support and ask for a batch oplock
+a 2nd open with level2 oplock support should generate a break
+WARNING!: (source4/torture/smb2/oplock.c:2890): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+WARNING!: (source4/torture/smb2/oplock.c:2899): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/oplock.c:2902): wrong value for break_info.count got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/oplock.c:2903): wrong value for break_info.handle.data[0] got 0x0 - should be 0x1cf0fce5
+
+time: 2026-11-04 13:10:53.491694
+failure: batch24 [
+(source4/torture/smb2/oplock.c:2904): wrong value for break_info.level got 0x0 - should be 0x1
+]
+test: batch25
+time: 2026-11-04 13:10:53.491707
+BATCH25: open a file with an batch oplock (share mode: none)
+time: 2026-11-04 13:10:53.673497
+failure: batch25 [
+(source4/torture/smb2/oplock.c:2958): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+]
+test: batch26
+time: 2026-11-04 13:10:53.673510
+Open the base file with batch oplock
+Got batch oplock on base file
+Opening stream file with batch oplock..
+WARNING!: (source4/torture/smb2/oplock.c:3017): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+
+time: 2026-11-04 13:10:53.730634
+failure: batch26 [
+source4/torture/smb2/oplock.c:3026: status was NT_STATUS_OBJECT_NAME_INVALID, expected NT_STATUS_OK: Error opening stream file
+]
+test: stream1
+time: 2026-11-04 13:10:53.730639
+time: 2026-11-04 13:10:53.810184
+failure: stream1 [
+source4/torture/smb2/oplock.c:3126: status was NT_STATUS_OBJECT_NAME_INVALID, expected NT_STATUS_OK: Error creating file
+]
+test: doc
+time: 2026-11-04 13:10:53.810197
+open a file with a batch oplock
+Set delete on close
+2nd open should not break and get DELETE_PENDING
+time: 2026-11-04 13:10:54.116531
+failure: doc [
+(source4/torture/smb2/oplock.c:3269): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+]
+test: brl1
+time: 2026-11-04 13:10:54.116545
+open with batch oplock
+a 2nd open should give a break
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+WARNING!: (source4/torture/smb2/oplock.c:3352): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+
+WARNING!: (source4/torture/smb2/oplock.c:3374): wrong value for break_info.count got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/oplock.c:3375): wrong value for break_info.level got 0x0 - should be 0x1
+
+a self BRL acquisition should break to none
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+WARNING!: (source4/torture/smb2/oplock.c:3377): wrong value for break_info.handle.data[0] got 0x0 - should be 0xa0660208
+
+WARNING!: (source4/torture/smb2/oplock.c:3398): wrong value for break_info.count got 0x0 - should be 0x1
+
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+time: 2026-11-04 13:10:57.452532
+failure: brl1 [
+(source4/torture/smb2/oplock.c:3400): wrong value for break_info.handle.data[0] got 0x0 - should be 0xa0660208
+]
+test: brl2
+time: 2026-11-04 13:10:57.452546
+open with batch oplock
+a self BRL acquisition should not break to none
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+time: 2026-11-04 13:10:58.730497
+failure: brl2 [
+(source4/torture/smb2/oplock.c:3477): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+]
+test: brl3
+time: 2026-11-04 13:10:58.730511
+open with batch oplock
+a 2nd open should give a break
+WARNING!: (source4/torture/smb2/oplock.c:3579): wrong value for io.smb2.out.oplock_level got 0x0 - should be 0x9
+
+WARNING!: (source4/torture/smb2/oplock.c:3599): wrong value for break_info.count got 0x0 - should be 0x1
+
+WARNING!: (source4/torture/smb2/oplock.c:3600): wrong value for break_info.level got 0x0 - should be 0x1
+
+a self BRL acquisition should break to none
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+WARNING!: (source4/torture/smb2/oplock.c:3602): wrong value for break_info.handle.data[0] got 0x0 - should be 0x1a05ccc8
+
+WARNING!: (source4/torture/smb2/oplock.c:3623): wrong value for break_info.count got 0x0 - should be 0x1
+
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+time: 2026-11-04 13:11:01.029745
+failure: brl3 [
+(source4/torture/smb2/oplock.c:3625): wrong value for break_info.handle.data[0] got 0x0 - should be 0x1a05ccc8
+]
+test: levelii500
+time: 2026-11-04 13:11:01.029765
+LEVELII500: acknowledging a break from II to none should return an error
+write should trigger a break to none and when we reply, an oplock break failure
+Acking to none [0x00] in oplock handler
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+Waiting for a potential oplock break...
+... waiting for an oplock break timed out
+time: 2026-11-04 13:11:05.586567
+success: levelii500
+test: levelii501
+time: 2026-11-04 13:11:05.586581
+LEVELII501: Test double break sequence
+Got break to none [0x00] in oplock handler, postponing break response for 500msec
+break done: NT_STATUS_OK
+open2 done: NT_STATUS_OK
+open1 done: NT_STATUS_OK
+time: 2026-11-04 13:11:07.729757
+success: levelii501
+test: levelii502
+time: 2026-11-04 13:11:07.729769
+LEVELII502: Open a stale LEVEL2 oplock with OVERWRITEtime: 2026-11-04 13:11:08.853062
+failure: levelii502 [
+source4/torture/smb2/oplock.c:4048: Expression `io.smb2.out.oplock_level==0x09' failed: Did not get BATCH oplock
+]
+test: statopen1
+time: 2026-11-04 13:11:08.853076
+WARNING!: (source4/torture/smb2/oplock.c:4089): wrong value for cr.out.oplock_level got 0x0 - should be 0x9
+
+		Specific bits: 0x1
+WARNING!: (source4/torture/smb2/oplock.c:4114): wrong value for break_info.count got 0x0 - should be 0x1
+
+time: 2026-11-04 13:11:08.986617
+failure: statopen1 [
+test 0: access_mask: , expect_stat_open: no
+]

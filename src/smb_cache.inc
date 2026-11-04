@@ -1,5 +1,11 @@
 // File-domain cookies name native data-cache exclusion. They never appear on
 // the network; the SMB FileId and owning session identify the wire oplock.
+void clear_cache(opened &h, bool read_break_completed = false) {
+  h.cache_cookie.clear(); h.cache_fence_at = h.cache_poll_at = 0;
+  h.cache_level = h.cache_break_level = 0;
+  h.cache_break_sent = false;
+  h.cache_read_break_completed = read_break_completed;
+}
 void cache_deadline(opened &h, const json &snapshot) {
   auto remaining = h.grant.at("expires").get<int64_t>() - now();
   if (snapshot.at("breaking").get<bool>())
@@ -41,22 +47,32 @@ pace::task<void> poll_caches_locked() {
         auto it = files.find(fid);
         if (it == files.end() || it->second.cache_cookie.empty()) continue;
         json request = {{"cookie", it->second.cache_cookie}};
-        auto state = co_await operation(it->second, "cache_poll", true, request);
+        auto state = co_await operation(it->second, "cache_poll", it->second.cache_level == 8,
+                                        request);
         auto &h = files.at(fid);
         cache_deadline(h, state);
         if (!h.cache_announced || h.cache_break_sent || !state.at("breaking").get<bool>()) continue;
         h.cache_break_sent = true;
+        h.cache_break_level = state.at("break_level");
         auto response = sized(64, 64);
         response.replace(0, 4, "\xfeSMB", 4);
         put(response, 4, 64, 2); put(response, 12, 18, 2);
         put(response, 16, 1, 4); put(response, 24, UINT64_MAX, 8);
         put(response, 40, session, 8); // TreeId and credits stay zero.
-        auto body = sized(24, 24); // Always recall data caching to NONE.
+        auto body = sized(24, 24);
+        body[2] = char(h.cache_break_level);
         body.replace(8, 16, fid); response += body;
         // MS-SMB2 3.3.4.6 recommends unsigned notifications. In particular,
         // never reuse the all-ones MessageId as an AES-GMAC signing nonce.
         // Encrypted opens retain authenticated encryption with fresh nonces.
         co_await send_packet(std::move(response), h.cache_encrypted);
+        if (h.cache_level == 1) {
+          // Level II -> NONE requires no client ACK. Keep native exclusion
+          // until the notification has been sent, then release this reader's
+          // participation. Other transports keep their own guard references.
+          co_await operation(h, "cache_ack", false, request);
+          clear_cache(files.at(fid), true);
+        }
       } catch (...) {
         // Expiry, policy revocation or worker recovery has fenced this open.
         // A transport still advertising cached authority cannot survive it.

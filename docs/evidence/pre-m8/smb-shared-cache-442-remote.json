@@ -1,0 +1,196 @@
+{
+  "recorded_at": "2026-11-04T13:14:56.474918+00:00",
+  "source": "442077416128893496fe18cd3ed55c204800f8c3",
+  "run_id": 41831417876,
+  "url": "https://github.com/TabNahida/tauCloud/actions/runs/41831417876",
+  "conclusion": "failure",
+  "scope": "GCC and Clang targeted matrix passes including 28 EXCLUSIVE/attribute wire groups and original exclusive1/3/4; Windows core passes but initial NFS EXCHANGE_ID times out before the wire-cache steps. This predates Level II wire integration.",
+  "jobs": {
+    "gcc": {
+      "job_id": 126579266417,
+      "artifact_id": 13325650560,
+      "artifact_sha256": "f78e73efab7b656e5dc3bdadfc904120da5256713cb3b32c94208116edd70cec",
+      "conclusion": "success",
+      "wire": {
+        "sha256": "299fc3bdd94b6f0e8fc03abe25548bdf1703be305542113a8bb0994d839f569b",
+        "report": {
+          "status": "passed",
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+          "checks": [
+            "210: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+            "210: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+            "210: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+            "300: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+            "300: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+            "300: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+            "302: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+            "302: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+            "302: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+            "311: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+            "311: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+            "311: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+            "210: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+            "300: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+            "302: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+            "311: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+            "sharing violations do not recall dirty caches; readonly, directory, delete-on-close and conflicting native opens receive no unsupported cache grant",
+            "a lease-form ACK for a classic oplock is rejected and finishes the recall without leaving native exclusion stuck",
+            "two encrypted sessions on one transport renew independent cache authority and route breaks/ACKs with their own keys; a foreign-session ACK cannot release another open",
+            "native host reads/writes wait for SMB recall; dirty client data flushes before host access and the original handle observes subsequent native writes",
+            "SET_INFO recalls before mutation, permits cached flush while pending and applies EOF after ACK without replaying side effects",
+            "a new cached CREATE is announced before its own compound SET_INFO recall; asynchronous retries preserve the inherited FileId through the dependent READ",
+            "NFSv3 READ on an existing handle returns JUKEBOX during native recall; repeated retries leave SMB flush/ACK live and the next read returns current data",
+            "DAV GET returns a retryable response while a cache recall is pending and reads freshly flushed bytes after ACK",
+            "another transport cannot ACK the holder FileId; CLOSE flushes/releases authority and wakes the peer CREATE",
+            "unacknowledged recall fences the holder transport and open while the conflicting client completes after native exclusion releases",
+            "credential revocation closes the cache-bearing transport and releases native exclusion without requiring a client request",
+            "stalled identity RPC cannot hold the cache transport past its authority: independent watchdog closes it before IPC timeout and autonomous worker expiry releases native exclusion"
+          ],
+          "recorded_at": "2026-11-04T13:00:43.483927+00:00"
+        }
+      },
+      "samba": {
+        "report_sha256": "ee6dcb3fb51c10ba2ea3697e1a070fbba0f45e6b4ffa21b39ff91f1b5b8c000e",
+        "status": "passed",
+        "tests": [
+          {
+            "selector": "smb2.oplock.exclusive1",
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log_sha256": "2fe88bbf020fd5bd10f26f2ab59d130642d04064b61a6a74b2445a3de019e712",
+            "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793797298\ntime: 2026-11-04 13:01:38.824667\ntest: exclusive1\ntime: 2026-11-04 13:01:38.824987\nEXCLUSIVE1: open a file with an exclusive oplock (share mode: none)\na 2nd open should not cause a break\nWaiting for a potential oplock break...\n... waiting for an oplock break timed out\nunlink it - should also be no break\nWaiting for a potential oplock break...\n... waiting for an oplock break timed out\ntime: 2026-11-04 13:01:40.934401\nsuccess: exclusive1\n"
+          },
+          {
+            "selector": "smb2.oplock.exclusive3",
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log_sha256": "cecd70c6fb8a7b58937fc480456c2ebf0a71bf432a1d4fd54d7038364d469dde",
+            "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793797301\ntime: 2026-11-04 13:01:41.007880\ntest: exclusive3\ntime: 2026-11-04 13:01:41.008186\nEXCLUSIVE3: open a file with an exclusive oplock (share mode: none)\nsetpathinfo EOF should trigger a break to none\nWaiting for a potential oplock break...\n... waiting for an oplock break timed out\ntime: 2026-11-04 13:01:42.111411\nsuccess: exclusive3\n"
+          },
+          {
+            "selector": "smb2.oplock.exclusive4",
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log_sha256": "4fb0baac1e946f8282b8d84682b96a6f7a82c21577d8d50c9954b2d28194a7d1",
+            "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793797302\ntime: 2026-11-04 13:01:42.188564\ntest: exclusive4\ntime: 2026-11-04 13:01:42.188836\nEXCLUSIVE4: open with exclusive oplock\nsecond open with attributes only shouldn't cause oplock break\nWaiting for a potential oplock break...\n... waiting for an oplock break timed out\ntime: 2026-11-04 13:01:43.295379\nsuccess: exclusive4\n"
+          }
+        ]
+      }
+    },
+    "clang": {
+      "job_id": 126579266785,
+      "artifact_id": 13323698107,
+      "artifact_sha256": "4e2ed8e42622a34d35f1b7d11092ecaf9cc39467a32af82735699f32d2f963d6",
+      "conclusion": "success",
+      "wire": {
+        "sha256": "c323a614df4b0073d5c363d9f1f27f4ffe26129939ca2ffab4ff97569d3067c3",
+        "report": {
+          "status": "passed",
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+          "checks": [
+            "210: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+            "210: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+            "210: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+            "300: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+            "300: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+            "300: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+            "302: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+            "302: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+            "302: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+            "311: EXCLUSIVE grant survives idle renewal, same-transport CREATE waits, break is bound to session/FileId, holder flush precedes ACK and final read sees new bytes",
+            "311: cache-conflicting related CREATE/READ/CLOSE keeps all descendants pending and resolves the newly generated FileId after ACK",
+            "311: CANCEL abandons a conflicting CREATE without cancelling the holder recall or leaking an open",
+            "210: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+            "300: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+            "302: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+            "311: a separate attribute-only OPEN_IF/query/close preserves EXCLUSIVE despite share-none; data access is denied and an actual attribute mutation recalls before committing",
+            "sharing violations do not recall dirty caches; readonly, directory, delete-on-close and conflicting native opens receive no unsupported cache grant",
+            "a lease-form ACK for a classic oplock is rejected and finishes the recall without leaving native exclusion stuck",
+            "two encrypted sessions on one transport renew independent cache authority and route breaks/ACKs with their own keys; a foreign-session ACK cannot release another open",
+            "native host reads/writes wait for SMB recall; dirty client data flushes before host access and the original handle observes subsequent native writes",
+            "SET_INFO recalls before mutation, permits cached flush while pending and applies EOF after ACK without replaying side effects",
+            "a new cached CREATE is announced before its own compound SET_INFO recall; asynchronous retries preserve the inherited FileId through the dependent READ",
+            "NFSv3 READ on an existing handle returns JUKEBOX during native recall; repeated retries leave SMB flush/ACK live and the next read returns current data",
+            "DAV GET returns a retryable response while a cache recall is pending and reads freshly flushed bytes after ACK",
+            "another transport cannot ACK the holder FileId; CLOSE flushes/releases authority and wakes the peer CREATE",
+            "unacknowledged recall fences the holder transport and open while the conflicting client completes after native exclusion releases",
+            "credential revocation closes the cache-bearing transport and releases native exclusion without requiring a client request",
+            "stalled identity RPC cannot hold the cache transport past its authority: independent watchdog closes it before IPC timeout and autonomous worker expiry releases native exclusion"
+          ],
+          "recorded_at": "2026-11-04T12:57:20.493978+00:00"
+        }
+      },
+      "samba": {
+        "report_sha256": "931b455b4d7cebf09fa355cb01913b6c1eeb61db9c9a86eefdf346da443e6481",
+        "status": "passed",
+        "tests": [
+          {
+            "selector": "smb2.oplock.exclusive1",
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log_sha256": "8f7d6af5efd08bb1d09de7632c92c95709198cd33a1377fd31e2a6c2211b2d1c",
+            "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793797101\ntime: 2026-11-04 12:58:21.026917\ntest: exclusive1\ntime: 2026-11-04 12:58:21.027125\nEXCLUSIVE1: open a file with an exclusive oplock (share mode: none)\na 2nd open should not cause a break\nWaiting for a potential oplock break...\n... waiting for an oplock break timed out\nunlink it - should also be no break\nWaiting for a potential oplock break...\n... waiting for an oplock break timed out\ntime: 2026-11-04 12:58:23.330945\nsuccess: exclusive1\n"
+          },
+          {
+            "selector": "smb2.oplock.exclusive3",
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log_sha256": "c60f990f701fec5a84ca33f07575cd72f3af92a4c0cf0e6bd5754af601335b46",
+            "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793797103\ntime: 2026-11-04 12:58:23.477360\ntest: exclusive3\ntime: 2026-11-04 12:58:23.477571\nEXCLUSIVE3: open a file with an exclusive oplock (share mode: none)\nsetpathinfo EOF should trigger a break to none\nWaiting for a potential oplock break...\n... waiting for an oplock break timed out\ntime: 2026-11-04 12:58:24.748500\nsuccess: exclusive3\n"
+          },
+          {
+            "selector": "smb2.oplock.exclusive4",
+            "status": "passed",
+            "counts": {
+              "success": 1,
+              "failure": 0,
+              "error": 0,
+              "skip": 0
+            },
+            "log_sha256": "d08ee6583a1bcf1f66d59705478c25b0253866627a0511a5cc7562d780d7dab8",
+            "log": "smbtorture 4.19.5-Ubuntu\nUsing seed 1793797104\ntime: 2026-11-04 12:58:24.873712\ntest: exclusive4\ntime: 2026-11-04 12:58:24.873938\nEXCLUSIVE4: open with exclusive oplock\nsecond open with attributes only shouldn't cause oplock break\nWaiting for a potential oplock break...\n... waiting for an oplock break timed out\ntime: 2026-11-04 12:58:26.157248\nsuccess: exclusive4\n"
+          }
+        ]
+      }
+    },
+    "msvc": {
+      "job_id": 126579266786,
+      "artifact_id": 13322789693,
+      "artifact_sha256": "87b82eb2faae5ea905bcdf14767060d78d89a74cad5c42d1dcfa7157e173a6f7",
+      "conclusion": "failure",
+      "job_log_sha256": "05e7bb95d2bec2aa1f106e1a7c2fcd139b63788ec181cbbe2efceba21ee56985",
+      "passed_core_lines": [
+        "2026-11-04T12:48:47.9336128Z {\"checks\":68,\"disk_full\":\"native-adapter fault injection\",\"offset_bits\":64,\"status\":\"passed\"}",
+        "2026-11-04T12:49:00.4177126Z {\"checks\":12501,\"status\":\"passed\"}"
+      ],
+      "failure_trace": "Traceback (most recent call last):\r\n2026-11-04T12:51:13.3174048Z   File \"D:\\a\\tauCloud\\tauCloud\\tests\\nfs_notify_lock_integration.py\", line 220, in <module>\r\n2026-11-04T12:51:13.3175483Z     p.add_argument('--sanitizers', action='store_true'); run(p.parse_args())\r\n2026-11-04T12:51:13.3176533Z                                                          ^^^^^^^^^^^^^^^^^^^\r\n2026-11-04T12:51:13.3177805Z   File \"D:\\a\\tauCloud\\tauCloud\\tests\\nfs_notify_lock_integration.py\", line 97, in run\r\n2026-11-04T12:51:13.3178932Z     a, b, rival = client(), client(True), client()\r\n2026-11-04T12:51:13.3179739Z                   ^^^^^^^^\r\n2026-11-04T12:51:13.3181125Z   File \"D:\\a\\tauCloud\\tauCloud\\tests\\nfs_notify_lock_integration.py\", line 79, in client\r\n2026-11-04T12:51:13.3182391Z     else: c.session()\r\n2026-11-04T12:51:13.3182966Z           ^^^^^^^^^^^\r\n2026-11-04T12:51:13.3183959Z   File \"D:\\a\\tauCloud\\tauCloud\\tests\\m7_integration.py\", line 72, in session\r\n2026-11-04T12:51:13.3190944Z     r=self.compound([op.exchange_id(t4.client_owner4(b'12345678',self.owner),0,t4.state_protect4_a(0),[])],False)\r\n2026-11-04T12:51:13.3192187Z       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n2026-11-04T12:51:13.3193249Z   File \"D:\\a\\tauCloud\\tauCloud\\tests\\m7_integration.py\", line 67, in compound\r\n2026-11-04T12:51:13.3194469Z     return self.decode4(self.exchange(packet))\r\n2026-11-04T12:51:13.3195259Z                         ^^^^^^^^^^^^^^^^^^^^^\r\n2026-11-04T12:51:13.3196070Z   File \"D:\\a\\tauCloud\\tauCloud\\tests\\m7_integration.py\", line 41, in exchange\r\n2026-11-04T12:51:13.3197633Z     marker=struct.unpack('>I',read(4))[0];data+=read(marker&0x7fffffff)\r\n2026-11-04T12:51:13.3198481Z                               ^^^^^^^\r\n2026-11-04T12:51:13.3199658Z   File \"D:\\a\\tauCloud\\tauCloud\\tests\\m7_integration.py\", line 37, in read\r\n2026-11-04T12:51:13.3200909Z     v=self.sock.recv(n-len(b));assert v,'connection closed';b+=v\r\n2026-11-04T12:51:13.3202185Z       ^^^^^^^^^^^^^^^^^^^^^^^^\r\n2026-11-04T12:51:13.3203118Z TimeoutError: timed out\r\n2026-11-04T12:51:13.4907182Z ",
+      "status": "unresolved-initial-exchange-id-timeout",
+      "missing_failure_report": "The previous harness only wrote JSON on success. The follow-up always preserves traceback and server/worker logs; no timeout increase or retry was added."
+    }
+  }
+}

@@ -4,6 +4,7 @@ import argparse
 import json
 import struct
 import time
+import traceback
 from pathlib import Path
 import xdrlib3 as xdr
 from nfs_backchannel_integration import CallbackClient
@@ -68,6 +69,7 @@ class NotifyClient(CallbackClient):
 def run(args):
     f, port = fixture(args.bin, 512 if args.sanitizers else 256)
     clients, checks = [], []
+    report = dict(status='failed', checks=checks, sanitizers=args.sanitizers)
     def passed(message):
         checks.append(message); print('PASS ' + message, flush=True)
     def client(notify=False, uid=1000, back=None):
@@ -205,13 +207,25 @@ def run(args):
         assert not doomed.notifications
         assert doomed.compound([]).status == 10052
         passed('expired client and OPEN state remove the queued hint; releasing the competing lock never notifies or revives the expired session')
-        report = dict(status='passed', checks=checks, sanitizers=args.sanitizers)
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(json.dumps(report, indent=2)+'\n')
+        report['status'] = 'passed'
         print(json.dumps(report))
+    except Exception:
+        report['error'] = traceback.format_exc()
+        report['clients_created'] = len(clients)
+        f.log.flush()
+        for name, path in [('server', f.base/'supervisor.log'),
+                           ('nfs', f.state/'logs/nfs.jsonl'),
+                           ('identity', f.state/'logs/identity.jsonl'),
+                           ('file', f.state/'logs/file.jsonl')]:
+            if path.exists(): report[name+'_log'] = path.read_text(errors='replace')[-32000:]
+        raise
     finally:
-        for c in clients: c.close()
-        f.close()
+        try:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(json.dumps(report, indent=2)+'\n')
+        finally:
+            for c in clients: c.close()
+            f.close()
 
 
 if __name__ == '__main__':

@@ -40,7 +40,9 @@ std::unique_ptr<native_cache_guard> native_file::cache_guard(bool write_cache) c
 #ifdef _WIN32
   // Native R/RH breaks on writes are advisory: they do not wait for an ACK.
   // Only RW currently satisfies this primitive's data-exclusion guarantee.
-  if (!write_cache || !(impl_->file->access & GENERIC_WRITE)) return nullptr;
+  // RW describes the kernel exclusion, not the caller's data-access rights.
+  // A read-only protocol open still needs writes delayed until invalidation.
+  if (!write_cache) return nullptr;
 #else
   // SIGIO is reserved only when no application handler owns it. No signal
   // handler touches file state: F_GETLEASE reports the requested break target.

@@ -386,6 +386,53 @@ int main(int argc, char **argv) {
       call("disposition", path, {{"handle", second}, {"delete", true}});
       call("close", path, {{"handle", second}});
     }
+    {
+      auto h = open("cache-escalation");
+      auto cached = call("cache_acquire", "cache-escalation", {{"handle", h}});
+      auto control = json{{"handle", h}, {"cookie", cached.at("cookie")}};
+      rejected([&] { call("open", "cache-escalation", {{"access", 0x13019f},
+          {"sharing", 7}, {"disposition", 1}, {"options", 0x40}, {"oplock", 8}}); },
+          "cache_break_pending");
+      auto initial = call("cache_poll", "cache-escalation", control);
+      ok(initial.at("break_level") == 1);
+      auto native = native_file::root(base / "files");
+      rejected([&] { native.open("alice/cache-escalation"); }, "locked");
+      auto tightened = call("cache_poll", "cache-escalation", control);
+      ok(tightened.at("break_level") == 0 && tightened.at("remaining_ms") <= initial.at("remaining_ms"));
+      control["level"] = 1;
+      auto downgraded = call("cache_ack", "cache-escalation", control);
+      ok(downgraded.at("level") == 1 && downgraded.at("breaking") &&
+          downgraded.at("remaining_ms") <= tightened.at("remaining_ms"));
+      rejected([&] { native.open("alice/cache-escalation"); }, "locked");
+      control["level"] = 0;
+      ok(!call("cache_ack", "cache-escalation", control).at("granted"));
+      ok(native.open("alice/cache-escalation").info().at("size") == 0);
+      call("disposition", "cache-escalation", {{"handle", h}, {"delete", true}});
+      call("close", "cache-escalation", {{"handle", h}});
+    }
+    {
+      auto writer = open("readonly-cache");
+      call("write", "readonly-cache", {{"handle", writer}, {"offset", 0},
+          {"data", encode_bytes("read")}, {"request_id", random_hex(16)}});
+      call("close", "readonly-cache", {{"handle", writer}});
+      auto ro = [&](const std::string &op, json body) {
+        body["grant"] = grant("readonly-cache", false, false);
+        return store->dispatch("smb_" + op, body, ctx("smb"));
+      };
+      auto reader = ro("open", {{"access", 0x120089}, {"sharing", 7},
+          {"disposition", 1}, {"options", 0x40}}).at("handle");
+      auto cache = ro("cache_acquire", {{"handle", reader}, {"level", 1}});
+      ok(cache.at("granted") && cache.at("level") == 1);
+      auto native = native_file::root(base / "files");
+      rejected([&] { native.open("alice/readonly-cache", false, false, true); }, "locked");
+      ok(!ro("cache_ack", {{"handle", reader}, {"cookie", cache.at("cookie")}}).at("granted"));
+      ok(ro("cache_acquire", {{"handle", reader}, {"level", 1}}).at("granted"));
+      ro("close", {{"handle", reader}});
+      ok(native.open("alice/readonly-cache").read(0, 4) == "read");
+      writer = open("readonly-cache");
+      call("disposition", "readonly-cache", {{"handle", writer}, {"delete", true}});
+      call("close", "readonly-cache", {{"handle", writer}});
+    }
     auto h = open("data", 0x13019f, 1);
     rejected([&] { open("data"); }, "sharing_violation");
     call("close", "data", {{"handle", h}});

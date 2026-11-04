@@ -76,6 +76,7 @@ struct file_store::impl {
     std::string cache_cookie = "";
     int64_t cache_authority_until = 0, cache_break_until = 0;
     unsigned cache_level = 0, cache_break_level = 0;
+    bool cache_downgrade_pending = false;
   };
   struct byte_lock {
     std::string handle, object;

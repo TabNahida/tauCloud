@@ -216,6 +216,15 @@ native_file native_file::retain() const {
   result.impl_->allow_unlinked = true;
   return result;
 }
+bool native_file::writable() const {
+#ifdef _WIN32
+  return (impl_->file->access & GENERIC_WRITE) != 0;
+#else
+  auto flags = fcntl(impl_->file->handle, F_GETFL);
+  if (flags < 0) native_error();
+  return (flags & O_ACCMODE) != O_RDONLY;
+#endif
+}
 #include "native_notify.inc"
 #include "native_cache.inc"
 std::string native_file::stable_identity() const {

@@ -26,6 +26,7 @@ public:
   native_file &operator=(native_file &&) noexcept;
   // Share an already-confined descriptor, retaining access after unlink.
   native_file retain() const;
+  bool writable() const;
   std::unique_ptr<native_watch> watch(bool recursive, uint32_t filter) const;
   // Kernel-enforced data-cache exclusion. Returns null if the requested
   // guarantee cannot be established; callers must then decline caching.

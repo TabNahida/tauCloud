@@ -94,7 +94,7 @@ pace::task<void> pump_commands(uint64_t sid) {
     } catch (const status_error &e) { code = e.status; }
       catch (const error &e) {
         auto cmd = get(item.request, 12, 2);
-        if ((cmd == 5 || cmd == 14 || cmd == 17) && std::string_view(e.what()) == "cache_break_pending") {
+        if ((cmd == 5 || cmd == 9 || cmd == 10 || cmd == 14 || cmd == 17) && std::string_view(e.what()) == "cache_break_pending") {
           auto current = pending_commands.find(id);
           if (current != pending_commands.end() && !current->second.deadline)
             current->second.deadline = async_clock() + 10000;

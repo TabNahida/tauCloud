@@ -20,6 +20,7 @@ void cache_break(opened &h, unsigned level = 0) {
   if (!h.cache_break_until) {
     h.cache_break_until = cache_clock() + 5000;
     h.cache_break_level = level;
+    h.cache_downgrade_pending = level == 1;
   } else if (level == 0) {
     // A write/native conflict can tighten a pending downgrade, never extend it.
     h.cache_break_level = 0;
@@ -39,7 +40,13 @@ void cache_conflict(const std::string &space, const std::string &path,
   for (auto &[id, h] : handles) {
     if (h.cache && id != owner && h.space == space &&
         (beneath(h.path, path) || beneath(path, h.path))) {
-      cache_break(h, level);
+      auto target = level;
+      if (target == 1 && h.cache_level == 8 && !locks.empty()) {
+        auto native = h.file.info().at("object").get<std::string>();
+        if (std::any_of(locks.begin(), locks.end(),
+            [&](const auto &held) { return held.object == native; })) target = 0;
+      }
+      cache_break(h, target);
       pending |= h.cache_break_until != 0;
     }
   }
@@ -106,6 +113,11 @@ json cache_dispatch(const std::string &op, const json &body, const json &grant, 
         guard = held.cache;
         level = 1;
       }
+      if (level == 1 && !locks.empty()) {
+        auto native = h.file.info().at("object").get<std::string>();
+        if (std::any_of(locks.begin(), locks.end(),
+            [&](const auto &held) { return held.object == native; })) return cache_snapshot(h);
+      }
       if (!guard) guard = h.file.cache_guard(true);
       if (guard) {
         cache_renew(h, grant);
@@ -113,6 +125,7 @@ json cache_dispatch(const std::string &op, const json &body, const json &grant, 
         h.cache = std::move(guard);
         h.cache_level = level;
         h.cache_break_level = 0;
+        h.cache_downgrade_pending = false;
         h.cache_break_until = 0;
       }
     }
@@ -131,12 +144,22 @@ json cache_dispatch(const std::string &op, const json &body, const json &grant, 
   require(op == "smb_cache_ack" || op == "smb_cache_release", "not_supported");
   require(op != "smb_cache_ack" || h.cache_break_until, "invalid_device_state");
   auto level = op == "smb_cache_ack" ? body.value("level", 0u) : 0u;
-  require(level == 0 || (level == 1 && h.cache_break_level == 1), "invalid_request");
-  h.file.flush();
+  require(level == 0 || (level == 1 && h.cache_level == 8 && h.cache_downgrade_pending),
+          "invalid_request");
+  // Only EXCLUSIVE can hold dirty client writes. A Level II participant may
+  // have a physically read-only handle (FlushFileBuffers requires write access
+  // on Windows), and cannot write until all read caches have been invalidated.
+  if (h.cache_level == 8) h.file.flush();
   if (level == 1) {
     h.cache_level = 1;
-    h.cache_break_until = 0;
-    h.cache_break_level = 0;
+    h.cache_downgrade_pending = false;
+    // A native writer or mutation may have tightened the recall after an II
+    // notification was sent. Accept that valid ACK, but keep the NONE recall
+    // and its original deadline until the subsequent no-ACK break is sent.
+    if (h.cache_break_level == 1) {
+      h.cache_break_until = 0;
+      h.cache_break_level = 0;
+    }
     cache_renew(h, grant);
     return cache_snapshot(h);
   }
@@ -145,6 +168,7 @@ json cache_dispatch(const std::string &op, const json &body, const json &grant, 
   if (h.cache.use_count() == 1) h.cache->release();
   h.cache.reset(); h.cache_cookie.clear();
   h.cache_level = h.cache_break_level = 0;
+  h.cache_downgrade_pending = false;
   h.cache_authority_until = h.cache_break_until = 0;
   return cache_snapshot(h);
 }

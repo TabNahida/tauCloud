@@ -37,7 +37,7 @@ class Ack(Structure):
         super().__init__()
 
 
-def capture_breaks(c):
+def capture_breaks(c, include_level=False):
     """smbprotocol has no unsolicited handler: consume only verified break frames.
 
     Keep its transport, authentication, encryption and ordinary reply parser.
@@ -61,8 +61,11 @@ def capture_breaks(c):
                 assert h['flags'].get_value() == 1  # spec recommends unsigned break
                 assert plain[48:64] == bytes(16) and plain[36:40] == bytes(4)
                 assert h['credit_response'].get_value() == 0
-                assert struct.unpack_from('<H', plain, 64)[0] == 24 and plain[66] == 0
-                received.put((h['session_id'].get_value(), plain[72:88], encrypted))
+                assert struct.unpack_from('<H', plain, 64)[0] == 24 and plain[66] in (0, 1)
+                item = (h['session_id'].get_value(), plain[72:88], encrypted)
+                if include_level: item += (plain[66],)
+                else: assert plain[66] == 0
+                received.put(item)
                 continue
             return raw
     c.transport.recv = receive

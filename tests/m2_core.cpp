@@ -74,6 +74,15 @@ int main() {
       guard.reset(); retained = native_file(); file = native_file();
 
       auto reader = directory.open("cache-exclusion");
+      {
+        check(!reader.writable());
+        auto strong_read_guard = reader.cache_guard(true);
+        check(bool(strong_read_guard));
+        rejects([&] { directory.open("cache-exclusion", false, false, true); }, "locked");
+        check(strong_read_guard->breaking() && reader.read(0, 3) == "new");
+        strong_read_guard->release();
+        check(!reader.writable());
+      }
 #ifdef _WIN32
       // Native Windows R breaks do not block a writer, so they cannot promise
       // this primitive's delayed admission guarantee.
