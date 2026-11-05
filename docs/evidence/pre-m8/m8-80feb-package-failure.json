@@ -1,0 +1,30 @@
+{
+  "status": "failed",
+  "recorded_at": "2026-11-05T05:33:40.711267+00:00",
+  "source_commit": "80feb2f162ad2aa85a3707d20ec66e99444c846d",
+  "run_url": "https://github.com/TabNahida/tauCloud/actions/runs/41973255450",
+  "jobs": [
+    {
+      "name": "plugins (windows-2025, msvc)",
+      "conclusion": "success",
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41973255450/job/127066129017"
+    },
+    {
+      "name": "plugins (ubuntu-24.04, gcc)",
+      "conclusion": "success",
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41973255450/job/127066129236"
+    },
+    {
+      "name": "plugins (ubuntu-24.04, clang, --sanitizers)",
+      "conclusion": "failure",
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41973255450/job/127066129460"
+    }
+  ],
+  "failed_log_sha256": "7f98e1f92e88c4cb98c2c0dfa1767433d8618706bd9d41cc629c34b0cca81a2a",
+  "failure": [
+    "2026-11-05T05:24:42.9911047Z AssertionError: ('plugins/plan', 503, b'{\"error\":{\"code\":\"package_limit\"}}')"
+  ],
+  "limits": [
+    "Clang plugin package planning returns HTTP 503 package_limit; exact resource phase remains unproven. GCC and MSVC pass. This is not a successful M8 matrix."
+  ]
+}

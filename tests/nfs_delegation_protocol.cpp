@@ -188,6 +188,7 @@ int nfs_delegation_protocol_suite(bool require_native = false) {
     std::vector<std::string> closes;
     server *network = nullptr;
     unsigned adoption_fault = 0;
+    bool purge_fault = false;
     auto domain = [&](std::string target, std::string op, json body) -> json {
       if (target == "identity") {
         ++authorizations;
@@ -216,6 +217,9 @@ int nfs_delegation_protocol_suite(bool require_native = false) {
       }
       if (op == "nfs_delegation" && body.value("op", "") == "adopt" && adoption_fault == 1) {
         adoption_fault = 0; throw error("delegation_recovery_failed");
+      }
+      if (op == "nfs_delegation" && body.value("op", "") == "return" && purge_fault) {
+        purge_fault = false; throw error("io_error");
       }
       auto result = store->dispatch(op, body, ctx());
       if (op == "nfs_delegation" && body.value("op", "") == "channel" && adoption_fault == 3) {
@@ -967,6 +971,104 @@ int nfs_delegation_protocol_suite(bool require_native = false) {
         ok(native.open("space/recovery", false, false, true).info().at("size") == 9);
         std::cout << "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario " << fault << '\n';
       }
+      auto foreign_file = nfs("create", directory, {{"name", "purge-foreign"}}).at("handle").get<std::string>();
+      auto ordinary_file = nfs("create", directory, {{"name", "purge-open"}}).at("handle").get<std::string>();
+      for (unsigned fault : {0u, 1u, 2u}) {
+        server_cfg.state = base / ("purge-" + std::to_string(fault));
+        secure_directory(server_cfg.state); restart_protocol();
+        auto original = connect("purge-owner");
+        auto ordinary = open_result(send(original, {put(ordinary_file), opening(original, 1)}), 0).first;
+        auto locking = [&](peer &p, const std::string &open, bool reclaiming) {
+          return writer().u32(12).u32(1).boolean(reclaiming).u64(0).u64(1).boolean(true)
+              .u32(0).fixed(open).u32(0).u64(p.client).opaque("purge-lock");
+        };
+        send(original, {put(ordinary_file), locking(original, ordinary, false)});
+        establish_callback();
+        // Client cleanup covers user delegations, not just the creator's UID.
+        original.uid = 1001;
+        send(original, {put(recovered_file), writer().u32(56).u32(0x100).u32(4)});
+        original.uid = 1000;
+        auto other = connect("purge-other"); establish_callback();
+        send(other, {put(foreign_file), writer().u32(56).u32(0x100).u32(4)});
+        ok(records().size() == 2);
+        restart_protocol();
+        auto blocked = [&](const std::string &path) {
+          try { native.open(path, false, false, true); return false; }
+          catch (const error &e) { return std::string_view(e.what()) == "locked"; }
+        };
+        ok(blocked("space/recovery") && blocked("space/purge-foreign"));
+        // A forged owner name after server restart is not authority over the
+        // durable records, even when the caller was their original user.
+        auto impostor = connect("purge-owner", false, 1001);
+        send(impostor, {put(recovered_file), want_reclaim()}, 10034);
+        send(impostor, {writer().u32(7).u64(0)});
+        send(impostor, {writer().u32(58).boolean(false)});
+        ok(records().size() == 2 && blocked("space/recovery"));
+        send(impostor, {writer().u32(44).fixed(impostor.session)}, 0, false);
+        send(impostor, {writer().u32(57).u64(impostor.client)}, 0, false);
+        auto recovering = connect("purge-owner", false);
+        auto recovering_other = connect("purge-other", false);
+        recovering.uid = 1001;
+        send(recovering, {writer().u32(7).u64(recovering.client)}, 10082);
+        recovering.uid = 1000;
+        ok(records().size() == 2 && blocked("space/recovery"));
+        if (fault) {
+          if (fault == 1) purge_fault = true;
+          else {
+            database saved(server_cfg.state / "nfs.db");
+            sql(saved, "CREATE TRIGGER reject_purge BEFORE DELETE ON recovery "
+                "WHEN json_extract(OLD.body,'$.kind')='delegation' "
+                "BEGIN SELECT RAISE(FAIL,'test purge delete failure'); END;");
+          }
+          send(recovering, {writer().u32(7).u64(recovering_other.client)}, 10006);
+          ok(records().size() == 2 && blocked("space/purge-foreign"));
+          ok(blocked("space/recovery") == (fault == 1));
+          ok(protocol->dispatch(last_request, recovering.connection) == last_response);
+          if (fault == 2) {
+            database saved(server_cfg.state / "nfs.db"); sql(saved, "DROP TRIGGER reject_purge");
+          }
+          // Retry must also work after losing the protocol's in-memory map.
+          restart_protocol();
+          recovering = connect("purge-owner", false);
+          recovering_other = connect("purge-other", false);
+        }
+        // The argument deliberately names the other client; SEQUENCE wins.
+        send(recovering, {writer().u32(7).u64(recovering_other.client)});
+        ok(protocol->dispatch(last_request, recovering.connection) == last_response);
+        ok(records().size() == 1 && records()[0].at("client") == encode_bytes("purge-other"));
+        ok(!blocked("space/recovery") && blocked("space/purge-foreign"));
+        send(recovering, {writer().u32(7).u64(UINT64_MAX)});
+        // OPEN and lock recovery remain available; purge is not RECLAIM_COMPLETE.
+        auto claim = writer().u32(18).u32(0).u32(1).u32(0).u64(recovering.client)
+            .opaque("owner").u32(0).u32(1).u32(0);
+        auto recovered_open = open_result(send(recovering, {put(ordinary_file), claim}), 0).first;
+        auto recovered_lock = send(recovering, {put(ordinary_file), locking(recovering, recovered_open, true)});
+        send(recovering, {put(ordinary_file), writer().u32(14).u32(1).u32(0).fixed(recovered_lock).u64(0).u64(1)});
+        send(recovering, {put(ordinary_file), writer().u32(4).u32(0).fixed(recovered_open)});
+        auto reclaimed = read_delegation(send(recovering_other, {put(foreign_file), want_reclaim()}));
+        send(recovering_other, {writer().u32(7).u64(0)});
+        ok(records().size() == 1 && blocked("space/purge-foreign"));
+        send(recovering_other, {put(foreign_file), writer().u32(25).fixed(reclaimed).u64(0).u32(1)});
+        send(recovering_other, {put(foreign_file), writer().u32(8).fixed(reclaimed)});
+        ok(records().empty() && !blocked("space/purge-foreign"));
+        std::cout << "PASS DELEGPURGE owner/principal isolation, native release, OPEN/lock reclaim, active delegation preservation and fault " << fault << '\n';
+      }
+      server_cfg.state = base / "purge-legacy";
+      secure_directory(server_cfg.state); restart_protocol();
+      auto legacy = connect("legacy-owner"); establish_callback();
+      send(legacy, {put(recovered_file), writer().u32(56).u32(0x100).u32(4)});
+      {
+        database saved(server_cfg.state / "nfs.db");
+        sql(saved, "UPDATE recovery SET body=json_remove(body,'$.owner_principal') "
+            "WHERE json_extract(body,'$.kind')='delegation'");
+      }
+      restart_protocol(); legacy = connect("legacy-owner", false);
+      send(legacy, {writer().u32(7).u64(0)}, 10006);
+      send(legacy, {put(recovered_file), want_reclaim()}, 10034);
+      ok(records().size() == 1);
+      send(legacy, {writer().u32(58).boolean(false)});
+      ok(records().empty() && native.open("space/recovery", false, false, true).info().at("size") == 9);
+      std::cout << "PASS legacy delegation records cannot authorize purge or reclaim without a creator binding; normal completion still releases protection\n";
       // The original owner's destructor has a child-reaper thread after file
       // worker replacement. The later SIGKILL test needs its own fresh child.
       protocol.reset(); network = nullptr; store.reset();

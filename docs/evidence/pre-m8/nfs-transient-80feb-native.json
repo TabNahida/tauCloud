@@ -1,0 +1,141 @@
+{
+  "status": "passed",
+  "recorded_at": "2026-11-05T05:35:24.266862+00:00",
+  "source_commit": "80feb2f162ad2aa85a3707d20ec66e99444c846d",
+  "run_url": "https://github.com/TabNahida/tauCloud/actions/runs/41973255587",
+  "jobs": [
+    {
+      "name": "kernel (gcc, release, n)",
+      "conclusion": "success",
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41973255587/job/127066129442"
+    },
+    {
+      "name": "kernel (clang, debug, y)",
+      "conclusion": "success",
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41973255587/job/127066129709"
+    }
+  ],
+  "artifacts": {
+    "gcc": {
+      "sha256": "c619efc893b81f797b052a692c8b96128d92e0fd1b5043bb4c0d326448dda223",
+      "mandatory_marker": true,
+      "groups": [
+        "PASS CHANNEL/nonblocking-handshake-ACK-errors-fixed-timeout 570 checks",
+        "PASS NFSv3 domain deadline returns JUKEBOX and a fresh RPC transaction can recover",
+        "PASS pre-operation authorization refresh retries once with stable mutation identity, fresh authority, revocation and ordinary expiry boundaries",
+        "PASS distinct delegation state, CLAIM_DELEG_CUR_FH, CLOSE/disconnect independence and client/principal/file/access checks",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 0",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 1",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 2",
+        "PASS per-filesystem RECLAIM_COMPLETE releases unreclaimed native guards before acknowledging completion",
+        "PASS grace expiry retires unreclaimed native guards and does not revive expired protection",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 5",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 6",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 7",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 8",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 9",
+        "PASS 2759 delegation protocol/native component checks; production handout remains gated",
+        "PASS native delegation 2091 checks"
+      ]
+    },
+    "clang": {
+      "sha256": "dab75df6be43081e65adce390ed0b75478bcfcdc09f70dc1e5a0efe97c569e3d",
+      "mandatory_marker": true,
+      "groups": [
+        "PASS CHANNEL/nonblocking-handshake-ACK-errors-fixed-timeout 570 checks",
+        "PASS NFSv3 domain deadline returns JUKEBOX and a fresh RPC transaction can recover",
+        "PASS pre-operation authorization refresh retries once with stable mutation identity, fresh authority, revocation and ordinary expiry boundaries",
+        "PASS distinct delegation state, CLAIM_DELEG_CUR_FH, CLOSE/disconnect independence and client/principal/file/access checks",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 0",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 1",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 2",
+        "PASS per-filesystem RECLAIM_COMPLETE releases unreclaimed native guards before acknowledging completion",
+        "PASS grace expiry retires unreclaimed native guards and does not revive expired protection",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 5",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 6",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 7",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 8",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 9",
+        "PASS 2747 delegation protocol/native component checks; production handout remains gated",
+        "PASS native delegation 2158 checks"
+      ]
+    }
+  },
+  "limits": [
+    "Native primitive and injected-provider component acceptance. Production handout and Full SMB/NFS remain incomplete.",
+    "This commit predates DELEGPURGE; these results do not validate the newer purge implementation.",
+    "Metadata snapshot contains selected completed steps; the full metadata matrix was still running and is not counted as passed."
+  ],
+  "metadata_snapshot": {
+    "run_url": "https://github.com/TabNahida/tauCloud/actions/runs/41973255605",
+    "status": "in_progress",
+    "jobs": [
+      {
+        "name": "gcc metadata",
+        "status": "in_progress",
+        "url": "https://github.com/TabNahida/tauCloud/actions/runs/41973255605/job/127066129712",
+        "selected_steps": [
+          {
+            "name": "NFS delegation protocol components (injected native provider, not production handout)",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "NFS advertised lease, session expiry and recovery after configuration changes",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "SMB shared lease native exclusion and file-domain authority",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ]
+      },
+      {
+        "name": "clang metadata",
+        "status": "in_progress",
+        "url": "https://github.com/TabNahida/tauCloud/actions/runs/41973255605/job/127066129982",
+        "selected_steps": [
+          {
+            "name": "NFS delegation protocol components (injected native provider, not production handout)",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "NFS advertised lease, session expiry and recovery after configuration changes",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "SMB shared lease native exclusion and file-domain authority",
+            "status": "pending",
+            "conclusion": ""
+          }
+        ]
+      },
+      {
+        "name": "msvc metadata",
+        "status": "in_progress",
+        "url": "https://github.com/TabNahida/tauCloud/actions/runs/41973255605/job/127066130056",
+        "selected_steps": [
+          {
+            "name": "NFS delegation protocol components (injected native provider, not production handout)",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "NFS advertised lease, session expiry and recovery after configuration changes",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "SMB shared lease native exclusion and file-domain authority",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ]
+  }
+}

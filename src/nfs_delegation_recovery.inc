@@ -103,6 +103,7 @@ void reclaim_delegation4(writer &body, const identity &who, const std::string &s
   auto found = reclaim.find(rid);
   check(found != reclaim.end(), 10034);
   auto &record = found->second;
+  check(record.value("owner_principal", "") == owner.principal, 10034);
   check(!record.value("recovery_denied", false) && record.contains("binding"), 10033);
   check(record.at("verifier") == owner.verifier, 10034);
   check(delegations.size() < 32, 10018);

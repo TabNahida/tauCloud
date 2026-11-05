@@ -1,0 +1,142 @@
+{
+  "status": "passed",
+  "recorded_at": "2026-11-05T05:37:43.783452+00:00",
+  "source_base": "80feb2f162ad2aa85a3707d20ec66e99444c846d",
+  "compiler": "Clang debug ASan/UBSan",
+  "source_sha256": {
+    "src/nfs_v4.inc": "d6fabc114071ef5349adee17d441776e3814d174f389b4b1543b9dde7e5cbc83",
+    "src/nfs_delegations.inc": "45080d1a25bd3d32cffa9f7f30c0247771b701d85145cad3ac4cdb2bd6eb1b0c",
+    "src/nfs_delegation_recovery.inc": "4923ec4b20d56c2f2ef2e74ec2cb3674451925af40745497556d4c8b3c3b115d",
+    "tests/nfs_delegation_protocol.cpp": "d4d2bc248e55370c8b77ef0e85b9078be30eeb7240858cadd682b8fabb791147",
+    "tests/nfs_discovery_integration.py": "5c07e929a0832173d2b95829ea82af90520e9d741b25dbf552b6b2d4fa167c57",
+    "tests/nfs_machine_credentials.py": "6ce89af16231c53623219523f7c842d85919ea7d003495ffb73092bd1eb8e7bd",
+    "tests/nfs_ssv_integration.py": "127ccce829f37d73af13720e23803103418709dd2d121766db5b301d0d58bed2"
+  },
+  "scope": "DELEGPURGE server-reclaim cleanup, durable client creator isolation, failure/restart retry, legacy rejection, OPEN/lock and active delegation preservation. Full SMB/NFS remains unfinished.",
+  "binary_sha256": {
+    "taucloud_nfs": "4b881aa26783e514bb91cfc01e822252e6387bfb12725c17f3203737e2416c58",
+    "taucloud_native_delegation_kernel_tests": "6012385aafb23ab23a91f91c4c25c5876a4ccb9bffc51728577d583be5283df5",
+    "taucloud_nfs_delegation_protocol_tests": "b9d117c3d05b2c8fbc53226bbdbe6374a557a47a046efea4c1b42469264625fb",
+    "taucloud_m7_tests": "da366924ee8e9eaa31869c0ab776dc33d8aaa2874de1dec40ee321a836744fba"
+  },
+  "native_vm": {
+    "kernel": "Linux 6.19",
+    "filesystems": [
+      "tmpfs",
+      "ext4"
+    ],
+    "log_sha256": "effa08ad0a604373945ae3e8fd833446ebab20e1e086dc455694365077ac1d12",
+    "mandatory_marker": true,
+    "groups": [
+      "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 0",
+      "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 1",
+      "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 2",
+      "PASS per-filesystem RECLAIM_COMPLETE releases unreclaimed native guards before acknowledging completion",
+      "PASS grace expiry retires unreclaimed native guards and does not revive expired protection",
+      "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 5",
+      "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 6",
+      "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 7",
+      "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 8",
+      "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 9",
+      "PASS DELEGPURGE owner/principal isolation, native release, OPEN/lock reclaim, active delegation preservation and fault 0",
+      "PASS DELEGPURGE owner/principal isolation, native release, OPEN/lock reclaim, active delegation preservation and fault 1",
+      "PASS DELEGPURGE owner/principal isolation, native release, OPEN/lock reclaim, active delegation preservation and fault 2",
+      "PASS legacy delegation records cannot authorize purge or reclaim without a creator binding; normal completion still releases protection",
+      "PASS 3648 delegation protocol/native component checks; production handout remains gated",
+      "PASS native delegation 2111 checks"
+    ]
+  },
+  "wire": {
+    "discovery": {
+      "status": "passed",
+      "checks": [
+        "EXPORT and DUMP filter root-squashed/unmapped principals; duplicate MNT is idempotent",
+        "mount records survive reconnect; UMNT/UMNTALL affect only caller and preserve NFS filehandles",
+        "rpcbind DUMP/GETVERSADDR advertise implemented TCP services plus UDP NSM; older NLM versions remain absent",
+        "recognized unsupported file types return per-operation errors after successful SEQUENCE/PUTFH",
+        "BACKCHANNEL_CTL updates bounded callback configuration; unknown GSS, SP4_NONE SET_SSV and obsolete v4.0 operations return defined per-operation errors",
+        "DELEGPURGE uses SEQUENCE, ignores its clientid, needs no filehandle, preserves current FH and replays exactly; foreign principal is denied",
+        "optional pNFS/attribute operations are decoded and return NOTSUPP with their own operation number, not OP_ILLEGAL",
+        "WANT_DELEGATION with no explicit delegation preference returns INVAL and stops the compound",
+        "AUTH_NONE negotiates through a separately scoped anonymous identity; no file access or AUTH_SYS reply reuse; anonymous policy revocation invalidates security replies",
+        "export revocation immediately hides discovery and denies subsequent MNT"
+      ],
+      "report_sha256": "987e5c7ac3a1882196684ffc5a2dbe6e1abc43369a764ece35ef0078b5c5d1b6"
+    },
+    "machine": {
+      "status": "passed",
+      "checks": [
+        "krb5 service 2: negotiates exact enforced operations and cleanup-only allow set; confirmation and CREATE_SESSION replay require the machine",
+        "krb5 service 2: confirmed EXCHANGE_ID retains its policy and rejects credential or protection downgrade",
+        "krb5 service 2: unbound SEQUENCE cannot attach a connection; authenticated bind works; user session maintenance is denied without damaging the live session",
+        "krb5 service 2: an unmapped machine releases user locks/open state after mapping revocation, but cannot read user data",
+        "krb5 service 2: cleanup cannot cross client IDs, confirmed protection lists are immutable, and write locks remain releasable after OPEN_DOWNGRADE",
+        "krb5 service 2: negotiated SEQUENCE protection rejects a user before slot consumption",
+        "krb5 service 2: cached success cannot be downgraded to authentication-only; integrity/privacy replay and authorized destruction succeed",
+        "krb5 service 3: negotiates exact enforced operations and cleanup-only allow set; confirmation and CREATE_SESSION replay require the machine",
+        "krb5 service 3: confirmed EXCHANGE_ID retains its policy and rejects credential or protection downgrade",
+        "krb5 service 3: unbound SEQUENCE cannot attach a connection; authenticated bind works; user session maintenance is denied without damaging the live session",
+        "krb5 service 3: an unmapped machine releases user locks/open state after mapping revocation, but cannot read user data",
+        "krb5 service 3: cleanup cannot cross client IDs, confirmed protection lists are immutable, and write locks remain releasable after OPEN_DOWNGRADE",
+        "krb5 service 3: negotiated SEQUENCE protection rejects a user before slot consumption",
+        "krb5 service 3: cached success cannot be downgraded to authentication-only; integrity/privacy replay and authorized destruction succeed",
+        "machine state cleanup requires an agreed allow bit; ordinary owner cleanup remains usable",
+        "AUTH_SYS and authentication-only GSS cannot negotiate machine protection; SP4_NONE implicit binding remains available"
+      ],
+      "report_sha256": "01129207e2a35ae811e1317c61d4a81760d833255d354203fd5a9cc3a98ae653"
+    },
+    "ssv": {
+      "status": "passed",
+      "checks": [
+        "AUTH_SYS and authentication-only Kerberos cannot establish SP4_SSV",
+        "empty algorithms, zero window, unsupported OIDs and forbidden hash/cipher combinations return protocol errors",
+        "SHA-1/AES-128: indexes, confirmation identity, zero-key rejection, SET_SSV digest/length and all three RPC protection services",
+        "SHA-1: reflected signatures and corrupted privacy payloads do not authenticate",
+        "SHA-1: handles have independent RPC counters, share key rotations, accept the negotiated old-key window and reject expired versions",
+        "SHA-1: self-protected SET_SSV and exact replay, immutable policy, additive handles, protected session maintenance and client destruction",
+        "SHA-224/AES-192: indexes, confirmation identity, zero-key rejection, SET_SSV digest/length and all three RPC protection services",
+        "SHA-224: reflected signatures and corrupted privacy payloads do not authenticate",
+        "SHA-224: handles have independent RPC counters, share key rotations, accept the negotiated old-key window and reject expired versions",
+        "SHA-224: self-protected SET_SSV and exact replay, immutable policy, additive handles, protected session maintenance and client destruction",
+        "SHA-256/AES-256: indexes, confirmation identity, zero-key rejection, SET_SSV digest/length and all three RPC protection services",
+        "SHA-256: reflected signatures and corrupted privacy payloads do not authenticate",
+        "SHA-256: handles have independent RPC counters, share key rotations, accept the negotiated old-key window and reject expired versions",
+        "SSV CB_NULL and CB_SEQUENCE authenticate all three services across distinct handles with one non-repeating reverse counter for the shared context",
+        "SSV state-only credentials cannot read user data but can close negotiated state after user mapping revocation",
+        "zero initial handles can be added after confirmation; foreign SSV credentials cannot bind or destroy another client; algorithms/window cannot silently change",
+        "SHA-256: self-protected SET_SSV and exact replay, immutable policy, additive handles, protected session maintenance and client destruction",
+        "SHA-384/AES-256: indexes, confirmation identity, zero-key rejection, SET_SSV digest/length and all three RPC protection services",
+        "SHA-384: reflected signatures and corrupted privacy payloads do not authenticate",
+        "SHA-384: handles have independent RPC counters, share key rotations, accept the negotiated old-key window and reject expired versions",
+        "SHA-384: self-protected SET_SSV and exact replay, immutable policy, additive handles, protected session maintenance and client destruction",
+        "SHA-512/AES-256: indexes, confirmation identity, zero-key rejection, SET_SSV digest/length and all three RPC protection services",
+        "SHA-512: reflected signatures and corrupted privacy payloads do not authenticate",
+        "SHA-512: handles have independent RPC counters, share key rotations, accept the negotiated old-key window and reject expired versions",
+        "SHA-512: self-protected SET_SSV and exact replay, immutable policy, additive handles, protected session maintenance and client destruction"
+      ],
+      "report_sha256": "fe5a74d6ccc5f4ad4a8a7baba488194ac84b33a9e5c45e4213f25d3214cc2348"
+    }
+  },
+  "protocol": {
+    "log_sha256": "c92508bd7d72b37ba95f97bb7773dde101d20851a3cead284a21eb966b79fc64",
+    "result": "PASS 1431 delegation protocol/native component checks; production handout remains gated"
+  },
+  "m7": {
+    "log_sha256": "fa970ad3208d993729ea8db4c4cafe139d0dad6aaee02953d2685991d9685e40",
+    "result": "{\"checks\":1554,\"status\":\"passed\"}"
+  },
+  "corrected_fixture_failure": {
+    "log_sha256": "9f86eb8efba0ca0c6b35edb97a0ec02c420df6c01b9dbabdccf32ebca111e0e7",
+    "result": [
+      "failed_line=362",
+      "delegation_protocol_test_failed checks=2740 fixture=\"/tmp/tc-nfs-delegation-protocol-c247df780735\""
+    ],
+    "cause": "The new fixture expected plain NONE for an explicit NO_DELEG request (which returns NONE_EXT), and placed a lock on the intended delegation target. OPEN/lock state now uses a separate file before callback establishment, and SQL/native guard assertions require real delegation grants."
+  },
+  "limits": [
+    "Native positive results use the injected private provider; production wire handout remains gated.",
+    "Previous-client claims and retention across client replacement, WRITE delegations, full host-loss recovery, Windows native delegation ownership and Full SMB/NFS remain incomplete.",
+    "Remote acceptance for these changes is pending.",
+    "After final compilation only a stale comment about previous-client claims was corrected; executable source statements are unchanged."
+  ]
+}

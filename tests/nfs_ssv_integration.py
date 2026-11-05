@@ -24,7 +24,7 @@ HASHES = {1: bytes.fromhex('06052b0e03021a'), **{
     for bits, suffix in ((224,'04'), (256,'01'), (384,'02'), (512,'03'))}}
 CIPHERS = {bits: bytes.fromhex('06096086480165030401'+suffix)
            for bits, suffix in ((128,'02'), (192,'16'), (256,'2a'))}
-ENFORCE = bitmap(40, 41, 42, 43, 44, 57)
+ENFORCE = bitmap(7, 40, 41, 42, 43, 44, 57)
 ALLOW = bitmap(4, 14, 21, 42, 45)
 
 
@@ -217,6 +217,7 @@ def main():
                 export['principals'] = {'bob@'+REALM:dict(uid=1000,gid=1000)}
                 f.api('nfs-exports',f.admin,export)
                 s.seq = c.seq
+                expect(s,[op.delegpurge(0)])
                 expect(s,[op.putfh(handle),op.read(state,0,16)],13)
                 expect(s,[op.putfh(handle),op.close(0,state)])
                 c.seq = s.seq

@@ -146,6 +146,9 @@ negotiation fixture and native NFS fixture. Repeated
 initialization phase is not established. Clang M8 still fails Docker package
 planning with `package_limit`; its GCC and Windows jobs pass. These remain open
 ([failure evidence](docs/evidence/pre-m8/remote-02d2-failures.json)).
+At `80feb2f`, Clang M8 again fails with `package_limit`, this time at
+`plugins/plan`; GCC and Windows pass
+([fixed-source failure evidence](docs/evidence/pre-m8/m8-80feb-package-failure.json)).
 The same commit's Clang metadata job also fails both callback-output tests while
 establishing TCP backpressure: the connection is already in FIN_WAIT1 before
 callback assertions. Its GCC/MSVC metadata jobs pass; the closure cause remains
@@ -162,8 +165,20 @@ misreported as INVAL. Internal deadline/transport/unavailable/generation errors
 now map to DELAY/JUKEBOX; real TCP stalls and watchdog replacement preserve the
 NFS session through bounded client retries. The native SMB fixture now performs
 the protocol's single fresh-authority preparation retry, verified with a 2.1-second
-cold-root delay and unchanged grants. Windows reacceptance remains pending
+cold-root delay and unchanged grants. At `80feb2f`, the Windows NFS lease and
+native SMB lease steps pass; the full metadata matrix is still running. Both
+Linux 6.19 GCC/Clang jobs also pass
+([source-bound evidence](docs/evidence/pre-m8/nfs-transient-80feb-native.json))
 ([local evidence](docs/evidence/pre-m8/nfs-transient-errors-local.json)).
+
+DELEGPURGE now clears unreclaimed native delegations using the SEQUENCE client
+and durable creator identity, with replay, cleanup failure and OPEN/lock
+preservation coverage. Previous-client claims and retention across replacement
+remain open ([implementation](docs/nfs-delegations.md#purging-delegations-awaiting-recovery)).
+Local Linux 6.19 acceptance passes 2,111 native and 3,648 protocol component
+checks, with TCP/Kerberos/SSV regressions also passing
+([source-bound evidence](docs/evidence/pre-m8/nfs-delegpurge-local.json)); remote
+acceptance of this increment is pending.
 
 Private native delegation adoption now transfers a durable client binding while
 fencing old reservation channels, conservatively completing uncertain replies,

@@ -699,7 +699,7 @@ json parse4(reader &r) {
     a["ssv"] = encode_bytes(r.opaque(1024));
     a["digest"] = encode_bytes(r.opaque(1024));
     break;
-  case 7: // Optional delegation purge, no delegations are issued.
+  case 7: // DELEGPURGE derives its client from SEQUENCE, not this obsolete ID.
   case 30: // NFSv4.0 RENEW is obsolete in v4.1.
     r.u64();
     break;
@@ -1505,7 +1505,7 @@ std::string v4(const identity &who, reader &r) {
           delegation_want(want, true);
           auto m = meta4(who, current);
           auto claim = a.at("claim").get<uint32_t>();
-          check(claim != 6, 10004); // Previous-client recovery needs DELEGPURGE.
+          check(claim != 6, 10004); // Client-replacement retention is not yet implemented.
           if (claim == 1) {
             check(grace_end && !client.reclaim_complete, 10033);
             reclaim_delegation4(body, who, sid, current, m, a.at("delegation"));
@@ -1825,6 +1825,28 @@ std::string v4(const identity &who, reader &r) {
               body.u32(0);
             } catch (const failure &e) { body.u32(e.status); }
           }
+        } else if (op == 7) {
+          check(client.principal == who.key || state_credential(client, who), 10082);
+          // A name alone is not authority over a previous client's durable
+          // state. Legacy component records lack this binding; leave them for
+          // completion/grace cleanup rather than guess their owner.
+          for (const auto &[id, record] : reclaim)
+            if (record.value("kind", "") == "delegation" && record.at("client") == client.owner)
+              check(record.contains("owner_principal"), 10006);
+          for (auto it = reclaim.begin(); it != reclaim.end();)
+            if (it->second.value("kind", "") == "delegation" && it->second.at("client") == client.owner &&
+                it->second.at("owner_principal") == client.principal) {
+              try {
+                release_recovering_delegation(it->second);
+                remove_recovery(it->first);
+              } catch (const error &e) {
+                log("nfs", "delegpurge_cleanup_error", e.what());
+                // RFC 8881's DELEGPURGE error set excludes IO/NO_GRACE.
+                check(false, status(e.what()) == 10008 ? 10008 : 10006);
+              }
+              it = reclaim.erase(it);
+            } else
+              ++it;
         } else if (op == 58) {
           std::string filesystem;
           if (a.at("one_fs").get<bool>()) {
@@ -1836,6 +1858,7 @@ std::string v4(const identity &who, reader &r) {
           }
           for (auto it = reclaim.begin(); it != reclaim.end();)
             if (it->second.at("client") == client.owner && it->second.at("principal") == who.key &&
+                (!it->second.contains("owner_principal") || it->second.at("owner_principal") == client.principal) &&
                 (filesystem.empty() || it->second.at("handle").get<std::string>().substr(4, 16) == filesystem)) {
               release_recovering_delegation(it->second);
               remove_recovery(it->first);

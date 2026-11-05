@@ -93,9 +93,12 @@ def main():
             switch(other, machine); bind(other, c); switch(other, bob)
             other.seq = c.seq
             expect(other, [op.backchannel_ctl(0, [])], 10082); c.seq = other.seq
+            expect(other, [op.delegpurge(cid)], 10082); c.seq = other.seq
+            expect(c, [op.delegpurge(0)])
             expect(other, [op.destroy_session(c.sid)], 10082, False)
             expect(other, [op.destroy_clientid(cid)], 10082, False)
             c.service = 1; expect(c, [op.backchannel_ctl(0, [])], 10082)
+            expect(c, [op.delegpurge(cid)], 10082)
             c.service = service
             expect(c, [])
             passed(f'krb5 service {service}: unbound SEQUENCE cannot attach a connection; authenticated bind works; user session maintenance is denied without damaging the live session')

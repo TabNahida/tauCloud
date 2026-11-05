@@ -154,7 +154,21 @@ def main():
         zero = t4.stateid4(0, bytes(12))
         returned = alice.compound([op.putfh(root_handle), op.delegreturn(zero)])
         assert returned.status == 10025 and returned.resarray[-1].resop == 8, returned
-        optional = [op.delegpurge(alice.cid), op.openattr(False),
+        result = alice.compound([op.delegpurge(0)], session=False)
+        assert result.status == 10071, result
+        for ignored in (0, alice.cid, 2**64-1):
+            packet = alice.compound([op.delegpurge(ignored)], packet_only=True)
+            first = alice.exchange(packet)
+            assert alice.decode4(first).status == 0
+            assert alice.exchange(packet) == first
+        result = alice.compound([op.putfh(root_handle), op.delegpurge(0), op.getfh()])
+        assert result.status == 0 and result.resarray[-1].opgetfh.resok4.object == root_handle, result
+        alice.uid = 1001
+        result = alice.compound([op.delegpurge(alice.cid)])
+        assert result.status == 10082, result
+        alice.uid = 1000
+        checks.append('DELEGPURGE uses SEQUENCE, ignores its clientid, needs no filehandle, preserves current FH and replays exactly; foreign principal is denied')
+        optional = [op.openattr(False),
             op.getdeviceinfo(bytes(16), 1, 1024, []),
             op.getdevicelist(1, 1, 0, bytes(8)),
             op.layoutcommit(0, 1, False, zero, t4.newoffset4(False),
@@ -165,7 +179,7 @@ def main():
             result = alice.compound([op.putfh(root_handle), operation, op.getfh()])
             assert result.status == 10004 and len(result.resarray) == 3, result
             assert result.resarray[-1].resop == operation.argop, result
-        checks.append('optional pNFS/delegation/attribute operations are decoded and return NOTSUPP with their own operation number, not OP_ILLEGAL')
+        checks.append('optional pNFS/attribute operations are decoded and return NOTSUPP with their own operation number, not OP_ILLEGAL')
         result = alice.compound([op.putfh(root_handle), op.want_delegation(0, t4.deleg_claim4(4)), op.getfh()])
         assert result.status == 22 and len(result.resarray) == 3 and result.resarray[-1].resop == 56, result
         checks.append('WANT_DELEGATION with no explicit delegation preference returns INVAL and stops the compound')

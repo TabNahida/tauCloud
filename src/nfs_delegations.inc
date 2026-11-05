@@ -185,6 +185,7 @@ bool delegation4(writer &body, const identity &who, const std::string &sid,
       {"principal", who.key}, {"handle", fh}, {"type", 1}};
   auto rid = digest(recovery.dump());
   recovery["verifier"] = client_ids.at(client).verifier;
+  recovery["owner_principal"] = client_ids.at(client).principal;
   recovery["binding"] = {{"client", std::to_string(client)}, {"generation", acquired.value("binding_generation", uint64_t(0))},
       {"cookie", acquired.at("cookie")}, {"worker", worker}, {"object", object}, {"grant", grant},
       {"provider", acquired.value("provider", "")}, {"period_ms", acquired.at("lease_period_ms")}};

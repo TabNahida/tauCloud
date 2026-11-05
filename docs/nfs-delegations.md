@@ -32,7 +32,8 @@ WANT_DELEGATION accepts the ordinary CLAIM_FH path without creating OPEN state.
 It ignores data-access bits, rejects absent/NO_DELEG-only preferences, preserves
 the current filehandle, reports IS_DIR for directory requests, and supports
 idempotent cancellation. Previous-client recovery still returns NOTSUPP because
-it requires DELEGPURGE and retained delegation state. Server-reclaim requests
+retention across client replacement is incomplete. DELEGPURGE is implemented for
+persisted delegations awaiting server-restart recovery. Server-reclaim requests
 return NO_GRACE outside recovery and RECLAIM_BAD when no matching delegation
 was persisted. File-sensitive replies require current export authority,
 including on slot replay. Unknown principals and revoked exports cannot obtain
@@ -1270,6 +1271,43 @@ The earlier `2fad84c` remote matrix passed GCC and failed Clang's pre-existing
 300-millisecond inventory-order assumption. The fixture now pins both records
 for the ordering assertion, cancels one without renewal, then observes expiry
 against its acknowledged deadline ([remote evidence](evidence/pre-m8/nfs-adoption-2fad-remote.json)).
-Full client-restart recovery (including previous-client claims/DELEGPURGE), WRITE
+Full client-restart recovery (including previous-client claims and retention), WRITE
 delegations, complete owner/host-loss coordination, authenticated native-client
 reclaim and Windows native ownership remain open. Production handout stays closed.
+
+## Purging delegations awaiting recovery
+
+DELEGPURGE takes its client from SEQUENCE, ignores the argument's clientid,
+requires no current filehandle and preserves an existing one, as specified by
+[RFC 8881 section 18.5](https://www.rfc-editor.org/rfc/rfc8881.html#section-18.5).
+The client creator or its negotiated state-protection credential can purge all
+of that client's unreclaimed delegations, including those granted to other users.
+Foreign credentials receive WRONG_CRED. The durable record now binds the client
+owner name to its creator principal; another principal cannot reuse that name
+after server restart to purge or reclaim the original client's delegations, or
+discard them through RECLAIM_COMPLETE.
+
+Cleanup releases the original native guard before deleting its durable row.
+Native or database failure leaves pending records retryable; transient worker
+failure returns DELAY, other cleanup failures return SERVERFAULT. Exact session
+replay preserves the original result. Older private component records without
+the creator binding return SERVERFAULT; delegation reclaim returns RECLAIM_BAD.
+Completion or grace cleanup can still release them. OPEN and lock records,
+other clients' delegations, and already reclaimed or active delegations remain
+intact. Purging does not mark RECLAIM_COMPLETE.
+
+The component fixture tests owner-name spoofing, a different user on the same
+session, clientid confusion, preservation and successful recovery of OPEN/lock
+state, native exclusion before/after purge, and active delegation use after
+purge. Fault injection covers native release failure and an actual SQLite DELETE
+rejection after native release. TCP discovery tests exercise the no-state wire
+path; Kerberos machine and SSV tests exercise protected cleanup. This increment
+does not enable previous-client claims or production delegation grants.
+
+Local Clang ASan/UBSan acceptance passes 1,554 M7 checks, 1,431 host protocol
+checks, 10 TCP discovery groups, 16 Kerberos machine groups and 25 SSV groups.
+Linux 6.19 passes 2,111 native checks on tmpfs/ext4 and 3,648 protocol component
+checks, including all three purge/failure scenarios and legacy record handling.
+[Evidence](evidence/pre-m8/nfs-delegpurge-local.json) preserves the corrected
+fixture failure, final results and source/binary hashes. Remote acceptance of
+this increment remains pending.
