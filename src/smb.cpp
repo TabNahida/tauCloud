@@ -665,10 +665,27 @@ struct client : session_state, std::enable_shared_from_this<client> {
   }
   pace::task<json> operation(opened &h, std::string op, bool writing, json body = json::object()) {
     check(!h.pipe, 0xc00000bb);
+    bool refresh = !h.cache_cookie.empty() && (op == "read" || op == "write" || op == "flush");
+    if (refresh) {
+      // A successful data operation can acknowledge cache maintenance in the
+      // same file-domain round trip. Dirty caches still require write authority,
+      // even when this individual request only reads or flushes the open.
+      writing |= h.lease ? bool(h.access & 6) :
+          h.cache_level == 8 || (h.cache_level == 9 && (h.access & 6));
+      body["cache_cookie"] = h.cache_cookie;
+    }
     h.grant = co_await authorize(h.tree_id, h.path, writing);
     body["grant"] = h.grant;
     body["handle"] = h.handle;
-    co_return co_await smb_rpc(s, h.grant.at("root").at("worker"), "smb_" + op, body);
+    auto result = co_await smb_rpc(s, h.grant.at("root").at("worker"), "smb_" + op, body);
+    if (refresh) {
+      const auto &state = result.at("cache");
+      cache_deadline(h, state);
+      if (h.lease) h.lease_state = state.at("state");
+      // A piggybacked renewal must not defer delivery of a pending recall.
+      if (state.value("breaking", false) || state.contains("notification")) h.cache_poll_at = 0;
+    }
+    co_return result;
   }
   pace::task<void> release(bytes fid) {
     auto it = files.find(fid);

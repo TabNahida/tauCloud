@@ -624,8 +624,19 @@ struct file_store::impl {
     if (op == "nfs_file") return nfs_dispatch(body, ctx);
     if (op == "nfs_delegation") return nfs_delegation_dispatch(body, ctx);
     if (op == "nfs_reap") return nfs_reap(body, ctx);
-    if (op.starts_with("smb_"))
-      return smb_dispatch(op, body, ctx);
+    if (op.starts_with("smb_")) {
+      bool refresh = body.contains("cache_cookie") &&
+          (op == "smb_read" || op == "smb_write" || op == "smb_flush");
+      if (refresh) {
+        // Renew under the same signed authority before IO, with the ordinary
+        // cookie/open/write checks. Never let data IO resurrect a fenced open.
+        auto request = body; request["cookie"] = body.at("cache_cookie");
+        smb_dispatch("smb_cache_poll", request, ctx);
+      }
+      auto result = smb_dispatch(op, body, ctx);
+      if (refresh) result["cache"] = cache_snapshot(handles.at(body.at("handle").get<std::string>()));
+      return result;
+    }
     if (op == "inspect") {
       require(ctx.caller == "identity", "forbidden");
       return inspect_root(body.at("path").get<std::string>());

@@ -4,22 +4,25 @@
 #include <taucloud/security.hpp>
 #include <iostream>
 #include <thread>
+#include <source_location>
 using namespace tc;
 using namespace tc::smb_detail;
 int main(int argc, char **argv) {
   int checks = 0;
-  auto ok = [&](bool v) {
+  auto ok = [&](bool v, std::source_location loc = std::source_location::current()) {
+    if (!v) std::cerr << "failed_line=" << loc.line() << '\n';
     require(v, "test_failed");
     ++checks;
   };
-  auto rejected = [&](auto fn, std::string code) {
+  auto rejected = [&](auto fn, std::string code,
+                      std::source_location loc = std::source_location::current()) {
     try {
       fn();
       throw error("expected_rejection");
     } catch (const error &e) {
       if (code != e.what())
         std::cerr << code << " != " << e.what() << '\n';
-      ok(code == e.what());
+      ok(code == e.what(), loc);
     }
   };
   auto base = fs::temp_directory_path() / ("tc5-unit-" + random_hex(6));
@@ -143,9 +146,17 @@ int main(int argc, char **argv) {
       g["signature"] = mac(grantkey, g.dump());
       return g;
     };
-    auto call = [&](std::string op, std::string path, json body = json::object()) {
+    auto call = [&](std::string op, std::string path, json body = json::object(),
+                    std::source_location loc = std::source_location::current()) {
       body["grant"] = grant(path);
-      return store->dispatch("smb_" + op, body, ctx("smb"));
+      auto started = now();
+      try { return store->dispatch("smb_" + op, body, ctx("smb")); }
+      catch (const error &e) {
+        if (std::string_view(e.what()) == "lease_expired")
+          std::cerr << "lease_expired operation=" << op << " elapsed_ms=" << now() - started
+                    << " after_checks=" << checks << " call_line=" << loc.line() << '\n';
+        throw;
+      }
     };
     auto open = [&](std::string path, uint32_t access = 0x13019f, unsigned share = 7,
                     unsigned disposition = 3, unsigned options = 0x40) {
@@ -158,6 +169,40 @@ int main(int argc, char **argv) {
           .at("handle")
           .get<std::string>();
     };
+    {
+      auto h = open("cache-io", 0x1f01ff);
+      call("write", "cache-io", {{"handle", h}, {"offset", 0}, {"data", encode_bytes("old")},
+          {"request_id", random_hex(16)}});
+      auto cached = call("cache_acquire", "cache-io", {{"handle", h}});
+      ok(cached.at("granted"));
+      auto cookie = cached.at("cookie");
+      auto shorten = [&] {
+        auto g = grant("cache-io"); g.erase("signature"); g["expires"] = now() + 400;
+        g["signature"] = mac(grantkey, g.dump());
+        store->dispatch("smb_cache_poll", {{"handle", h}, {"cookie", cookie}, {"grant", g}}, ctx("smb"));
+      };
+      auto request = json{{"handle", h}, {"cache_cookie", "wrong"}, {"offset", 0}, {"data", encode_bytes("bad")}};
+      rejected([&] { call("write", "cache-io", request); }, "invalid_request");
+      ok(call("read", "cache-io", {{"handle", h}, {"offset", 0}, {"count", 3}}).at("data") == encode_bytes("old"));
+      request["cache_cookie"] = cookie; request["grant"] = grant("cache-io", false, false); request["count"] = 3;
+      rejected([&] { store->dispatch("smb_read", request, ctx("smb")); }, "forbidden");
+      for (auto op : {"write", "read", "flush"}) {
+        shorten();
+        auto renewed = call(op, "cache-io", {{"handle", h}, {"cache_cookie", cookie},
+            {"offset", 0}, {"count", 3}, {"data", encode_bytes("new")}, {"request_id", random_hex(16)}});
+        ok(renewed.at("cache").at("cookie") == cookie && renewed.at("cache").at("granted"));
+        std::this_thread::sleep_for(std::chrono::milliseconds(600));
+        // Cross the old authority boundary without a separate cache poll.
+        ok(call("read", "cache-io", {{"handle", h}, {"offset", 0}, {"count", 3}}).at("data") == encode_bytes("new"));
+      }
+      shorten(); std::this_thread::sleep_for(std::chrono::milliseconds(600));
+      rejected([&] { call("write", "cache-io", request); }, "stale_handle");
+      h = open("cache-io", 0x1f01ff);
+      ok(call("read", "cache-io", {{"handle", h}, {"offset", 0}, {"count", 3}}).at("data") == encode_bytes("new"));
+      call("disposition", "cache-io", {{"handle", h}, {"delete", true}});
+      call("close", "cache-io", {{"handle", h}});
+      std::cout << "PASS SMB data IO acknowledges cache renewal; invalid authority/cookie and fenced opens cannot mutate or revive\n";
+    }
     {
       auto h = open("cache-domain", 0x1f01ff);
       auto cache_acl = security::defaults(security::principal("alice"), "");
@@ -814,7 +859,7 @@ int main(int argc, char **argv) {
     std::cout << json{{"status", "passed"}, {"checks", checks}}.dump() << '\n';
     return 0;
   } catch (const std::exception &e) {
-    std::cerr << e.what() << '\n';
+    std::cerr << e.what() << " after_checks=" << checks << '\n';
     if (!worker_identity.is_null()) {
       try { terminate_verified(worker_identity); reap_children(); } catch (...) {}
     }

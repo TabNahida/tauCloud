@@ -7,6 +7,25 @@ ACK routing. Negotiation advertises file leasing on SMB 2.1/3.0/3.0.2/3.1.1;
 directory leasing and multichannel remain unadvertised. This is file-lease
 implementation and targeted acceptance, not complete SMB compatibility.
 
+READ, WRITE and FLUSH on cache-bearing opens now include their private cache
+cookie in the file-domain request. The file service verifies and renews that
+cache under the same signed grant before IO, then returns its cache snapshot
+with the result. The transport uses the acknowledged snapshot to update its
+fence and immediately schedules any pending recall. This removes a separate
+maintenance round trip from active data IO; it does not lengthen signed grant
+validity, delay fixed recall deadlines or bypass the independent watchdog.
+Writable caches still obtain write authority for maintenance. Read-only BATCH
+and Level II holders continue to renew with read authority. Wrong cookies and
+expired/fenced opens fail before mutation.
+
+[Local data-IO maintenance evidence](evidence/pre-m8/smb-cache-io-local.json)
+records 12,595 core checks and passing independent oplock (40), lease (42),
+Level II (40) and BATCH (37) groups. The first oplock run lost its transport
+to an authority timeout during directory recall; the same binary passed all
+40 groups on the second run. That failure is retained as an unresolved stability
+issue, and this change is not a claim that the native macOS reconnect failure
+is fixed. Cross-platform and native-client reacceptance remain necessary.
+
 `lease_registry` indexes entries by ClientGuid and LeaseKey. The caller supplies
 a canonical, namespace-qualified filename and a unique open identifier before
 the asynchronous open. Failed CREATE releases its reservation; successful opens

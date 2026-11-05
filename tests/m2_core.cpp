@@ -4,6 +4,7 @@
 #include <iostream>
 #include <future>
 #include <thread>
+#include <source_location>
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -11,18 +12,20 @@
 #endif
 using namespace tc;
 static int checks = 0;
-void check(bool value) {
+void check(bool value, std::source_location loc = std::source_location::current()) {
+  if (!value) std::cerr << "failed_line=" << loc.line() << '\n';
   require(value, "test_failed");
   ++checks;
 }
-template <class F> void rejects(F call, const std::string &code) {
+template <class F> void rejects(F call, const std::string &code,
+                               std::source_location loc = std::source_location::current()) {
   try {
     call();
     throw error("rejection_expected");
   } catch (const error &e) {
     if (code != e.what())
       std::cerr << "expected " << code << ", got " << e.what() << '\n';
-    check(code == e.what());
+    check(code == e.what(), loc);
   }
 }
 int main() {

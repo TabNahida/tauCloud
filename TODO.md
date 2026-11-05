@@ -147,11 +147,22 @@ replayed writes carry the old one and receive FILE_CLOSED. This recurrence is
 preserved alongside the earlier passing run and requires correction
 ([trace evidence](docs/evidence/pre-m8/macos-native-c243-failure.json)).
 
+SMB READ/WRITE/FLUSH now piggyback acknowledged cache maintenance on their data
+RPC while preserving cookie binding, signed grant expiry and recall/watchdog
+fences. Core checks and 159 independent wire groups pass locally; a first-run
+directory-recall authority timeout remains recorded as unresolved stability
+([evidence](docs/evidence/pre-m8/smb-cache-io-local.json)). Cross-platform and
+native macOS reacceptance of this follow-up remain pending. Earlier `5d76595`
+Windows jobs also report an M2 assertion after 74 checks and an M5 lease expiry;
+test diagnostics now include source lines and grant-processing duration.
+
 A private, delegation-bound native reservation channel now bypasses the file
 worker's primary queue. It enforces operation/record/token ownership and retains
 protection through channel EOF and file-worker death. Linux 6.19 tests prove
 ACKs still arrive while the file worker is SIGSTOPed; 927 ASan/UBSan guest checks
 pass. The capability handshake now verifies separate client/server HMAC proofs.
+The complete GCC release and Clang ASan/UBSan Linux 6.19 Actions workflow passes
+at `5d76595` ([remote evidence](docs/evidence/pre-m8/nfs-reservation-channel-5d-remote.json)).
 The file service now publishes bound capabilities and mirrors owner-confirmed
 reservation counts, deadlines and terminal states without inferring expiry from
 stale local snapshots. Original recall cutoffs survive IPC delay. This integration

@@ -564,6 +564,12 @@ SIGSTOP of the file worker while another process obtains native ACKs, and bounde
 retention after SIGKILL. Network receipt/reply routing and recovery/reclaim still
 require integration; production handout remains disabled.
 
+[Remote acceptance at `5d76595`](evidence/pre-m8/nfs-reservation-channel-5d-remote.json)
+passes the complete GCC release and Clang ASan/UBSan Linux 6.19 workflow. Their
+guest suites report 911 and 968 checks respectively, including both filesystems
+and the mandatory VM pass marker. This source precedes the file-domain integration
+described below.
+
 The file service now publishes the capability through its private `channel`
 operation after verifying the signed original grant, cookie, client, actor,
 root, export, filehandle and path scope. Ordinary snapshots do not contain it.
