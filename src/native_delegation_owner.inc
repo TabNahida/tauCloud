@@ -13,7 +13,7 @@ struct native_delegation_owner::impl {
   };
   static_assert(sizeof(packet) == 80);
   enum { acquire_read = 1, acquire_write, query, renew, recall, release, reserve, complete, cancel,
-         export_capability, bind_channel, export_owner, bind_owner };
+         export_capability, bind_channel, export_owner, bind_owner, next_record, restore_file };
   static std::array<char, 32> proof(std::string_view secret, std::string_view endpoint, uint64_t id,
                                      std::string_view nonce, bool server, bool recovery = false) {
     require(secret.size() == 16 && endpoint.size() == 16 && nonce.size() == 16, "invalid_request");
@@ -114,20 +114,23 @@ struct native_delegation_owner::impl {
   void disconnect() {
     if (control.handle >= 0) { ::close(control.handle); control.handle = -1; }
   }
-  packet exchange(const packet &request, int fd = -1) {
+  packet exchange(const packet &request, int fd = -1, resource *returned = nullptr, int64_t deadline = 0) {
     require(control.handle >= 0, "delegation_owner_lost");
-    auto deadline = clock() + 1500;
-    bool ok = send(control.handle, request, fd);
+    if (!deadline) deadline = clock() + 1500;
+    bool ok = clock() < deadline && send(control.handle, request, fd);
     packet response;
-    resource unexpected;
+    resource received;
     while (ok) {
       pollfd p{control.handle, POLLIN, 0};
       auto remaining = deadline - clock();
       if (remaining <= 0) { ok = false; break; }
       int rc = poll(&p, 1, static_cast<int>(remaining));
       if (rc < 0 && errno == EINTR) continue;
-      ok = rc > 0 && receive(control.handle, response, unexpected) && unexpected.handle < 0 &&
-          (response.op & 255) == request.op && (request.id == 0 || response.id == request.id) &&
+      ok = rc > 0 && receive(control.handle, response, received) &&
+          ((received.handle >= 0) == (returned && !(response.op >> 16))) &&
+          (response.op & 255) == request.op &&
+          (request.op == next_record ? (!response.id || response.id > request.id) :
+              (request.id == 0 || response.id == request.id)) &&
           (!request.reservation || response.reservation == request.reservation);
       break;
     }
@@ -140,6 +143,7 @@ struct native_delegation_owner::impl {
       if (error_code == 6) throw error("forbidden");
       throw error("delegation_owner_io");
     }
+    if (returned) { returned->handle = received.handle; received.handle = -1; }
     return response;
   }
   ~impl() {
@@ -284,11 +288,12 @@ struct native_delegation_owner::impl {
         response.capability.fill(0);
         unsigned failure = 0;
         bool adopting = false;
+        int returned = -1;
         try {
           auto op = request.op;
-          require(op >= acquire_read && op <= bind_owner, "invalid_request");
+          require(op >= acquire_read && op <= restore_file, "invalid_request");
           if (primary) require(op != bind_channel && op != bind_owner &&
-              request.capability == std::array<char, 32>{}, "invalid_request");
+              (op == restore_file || request.capability == std::array<char, 32>{}), "invalid_request");
           else {
             auto &c = channels.at(current);
             if (!c.id) {
@@ -334,6 +339,22 @@ struct native_delegation_owner::impl {
                   std::string_view(request.capability.data(), 16), true, true);
               adopting = true;
             }
+          } else if (op == next_record) {
+            require(primary && !request.period && !request.remaining, "invalid_request");
+            response.id = 0;
+            for (auto it = records.upper_bound(request.id); it != records.end(); ++it) {
+              auto &r = it->second;
+              r.lifetime.expire(clock());
+              if (!r.lifetime.held()) { r.guard.reset(); r.file = native_file(); continue; }
+              auto identity = decode_bytes(digest(r.file.stable_identity()));
+              std::copy(identity.begin(), identity.end(), response.capability.begin());
+              response.id = it->first;
+              response.op |= static_cast<unsigned>(r.lifetime.status()) << 8;
+              response.period = r.lifetime.expires();
+              response.remaining = r.lifetime.recall_until();
+              response.reserved = static_cast<uint32_t>(r.reservations.size());
+              break;
+            }
           } else if (acquiring) {
             require(!request.id && request.period >= 5000 && request.period <= 3600000 &&
                 request.remaining > clock() && request.remaining <= clock() + request.period, "invalid_request");
@@ -359,7 +380,15 @@ struct native_delegation_owner::impl {
             auto &r = found->second;
             r.lifetime.expire(clock());
             if (!r.lifetime.held()) { r.guard.reset(); r.file = native_file(); }
-            if (op == export_capability) {
+            if (op == restore_file) {
+              require(primary && r.lifetime.held(), "stale_handle");
+              auto identity = decode_bytes(digest(r.file.stable_identity()));
+              require(equal(identity, std::string_view(request.capability.data(), request.capability.size())), "stale_handle");
+              response.native_flags = (r.file.impl_->private_pin ? 1 : 0) | (r.file.impl_->allow_unlinked ? 2 : 0);
+              std::copy(identity.begin(), identity.end(), response.capability.begin());
+              returned = r.file.impl_->file->handle;
+            }
+            else if (op == export_capability) {
               require(primary && r.lifetime.held(), "stale_handle");
               listen_for_channels();
               if (r.capability.empty()) r.capability = decode_bytes(random_hex(16));
@@ -416,7 +445,7 @@ struct native_delegation_owner::impl {
               code == "forbidden" ? 6 : 4;
         } catch (...) { failure = 4; }
         response.op |= failure << 16;
-        bool delivered = send(current, response);
+        bool delivered = send(current, response, failure ? -1 : returned);
         if (adopting && !failure && delivered) {
           socket = current; connected = true;
           channels.at(current).socket->handle = -1;
@@ -679,6 +708,62 @@ json native_delegation_owner::recovery_capability() {
 #endif
 }
 native_delegation_owner::~native_delegation_owner() = default;
+json native_delegation_owner::inventory() {
+#ifdef __linux__
+  std::lock_guard lock(impl_->mutex);
+  auto deadline = impl::clock() + 1500;
+  json records = json::array();
+  impl::packet request; request.op = impl::next_record;
+  try {
+    for (;;) {
+      auto response = impl_->exchange(request, -1, nullptr, deadline);
+      require(!response.native_flags && !response.reservation, "delegation_owner_io");
+      if (!response.id) {
+        require(response.op == impl::next_record && !response.period && !response.remaining && !response.reserved &&
+            response.capability == std::array<char, 32>{}, "delegation_owner_io");
+        return records;
+      }
+      require(records.size() < 256, "delegation_owner_io");
+      auto record = impl::snapshot(response);
+      require(record.at("held").get<bool>(), "delegation_owner_io");
+      record["id"] = response.id;
+      record["identity_sha256"] = encode_bytes(std::string_view(response.capability.data(), response.capability.size()));
+      records.push_back(std::move(record));
+      request.id = response.id;
+    }
+  } catch (...) { impl_->disconnect(); throw; }
+#else
+  throw error("not_supported");
+#endif
+}
+native_file native_delegation_owner::restore(uint64_t id, const std::string &expected_identity) {
+#ifdef __linux__
+  require(id && !expected_identity.empty(), "invalid_request");
+  std::lock_guard lock(impl_->mutex);
+  impl::packet request; request.op = impl::restore_file; request.id = id;
+  auto identity = decode_bytes(digest(expected_identity));
+  std::copy(identity.begin(), identity.end(), request.capability.begin());
+  native_file file;
+  auto response = impl_->exchange(request, -1, file.impl_->file.get());
+  // The transferred description shares the owner's guard. Fence it before
+  // exposing it, including on validation failure; never acquire a second guard.
+  file.impl_->file->cache_owned = true;
+  try {
+    require(!(response.native_flags & ~3u) && !response.reservation &&
+        response.capability == request.capability && impl::snapshot(response).at("held").get<bool>(), "delegation_owner_io");
+    file.impl_->private_pin = response.native_flags & 1;
+    file.impl_->allow_unlinked = response.native_flags & 2;
+    require(file.stable_identity() == expected_identity, "delegation_owner_io");
+    auto [found, inserted] = impl_->owned.emplace(id, file.impl_->file);
+    // Repeated restores must share the local fence so release/terminal
+    // observation clears all returned handles together.
+    if (!inserted) file.impl_->file = found->second;
+    return file;
+  } catch (...) { impl_->disconnect(); throw; }
+#else
+  (void)id; (void)expected_identity; throw error("not_supported");
+#endif
+}
 int64_t native_delegation_owner::process_id() const {
 #ifdef __linux__
   return impl_->child > 0 ? impl_->child : impl_->recovered_peer;
@@ -784,7 +869,7 @@ void native_delegation_owner::release(uint64_t id) {
     // a newly acquired guard on this same description. Keep the local fence
     // until the unreaped child is known dead; do not infer death from EOF.
     struct stat info{}; siginfo_t exited{};
-    if (std::string_view(e.what()) != "delegation_owner_lost" || found == impl_->owned.end() ||
+    if (std::string_view(e.what()) != "delegation_owner_lost" || found == impl_->owned.end() || impl_->child <= 0 ||
         waitid(P_PID, impl_->child, &exited, WEXITED | WNOHANG | WNOWAIT) || exited.si_pid != impl_->child ||
         fstat(found->second->handle, &info) || !S_ISREG(info.st_mode)) throw;
     if (delegation_level(found->second->handle, F_UNLCK) < 0 &&

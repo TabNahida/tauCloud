@@ -19,6 +19,14 @@ public:
   // private; reattachment neither renews leases nor reconstructs protocol state.
   explicit native_delegation_owner(const json &recovery_capability);
   json recovery_capability();
+  // Primary-only recovery inventory: live records in ascending ID order, with
+  // SHA-256 of stable_identity(). Bounded to 256 records and one 1.5s budget.
+  // Observation does not renew protection; records can expire during the scan.
+  json inventory();
+  // Return the retained open description, never reopen a pathname. The caller
+  // must supply the original stable identity from its durable intent. This
+  // neither renews protection nor authorizes protocol reclaim or file IO.
+  native_file restore(uint64_t id, const std::string &expected_identity);
   ~native_delegation_owner();
   native_delegation_owner(const native_delegation_owner &) = delete;
   uint64_t acquire(const native_file &, int64_t period_ms, int64_t remaining_ms,

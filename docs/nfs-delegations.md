@@ -1031,8 +1031,52 @@ checks; Linux 6.19 passes 1,627 native and 1,464 protocol component checks.
 
 This is the control recovery primitive, not completed file-domain or NFS reclaim.
 Production does not yet persist or consume recovery capabilities. Durable
-acquisition-intent/record reconciliation, native descriptor restoration, fresh
+acquisition-intent/record reconciliation in the file domain, fresh
 authority checks, file-domain restart fencing and protocol-state reclaim remain
 required before wire handout. A capability cannot resurrect a dead owner or
-survive a host reboot. Windows equivalents remain open. Remote acceptance is
-pending.
+survive a host reboot. Windows equivalents remain open. The control reconnection
+implementation at `05eca58` passes GCC and Clang Linux 6.19
+[remote native/component acceptance](evidence/pre-m8/nfs-owner-recovery-05-native.json);
+those results precede the descriptor-restoration changes below.
+
+
+## Recovery inventory and retained descriptions
+
+An authenticated primary can enumerate live native records in ascending ID
+order. Each item includes its original lease/recall deadlines, reservation count
+and SHA-256 of the native stable identity. The whole scan has one 1.5-second
+budget and a 256-record limit, rather than a new timeout for every item. It skips
+expired records and does not renew them. It is an observation, not an atomic
+snapshot: a listed record may expire before restoration. The identity digest
+helps reconcile an acquisition whose result ID was not durably recorded; it is
+not authorization, and multiple guards for one incarnation must not be treated
+as an unambiguous protocol-state match.
+
+`restore(id, expected_identity)` requires the original stable identity. The owner
+checks its digest before returning the retained open description via SCM_RIGHTS;
+the recipient then verifies the full native identity on the actual descriptor.
+No pathname is reopened and no guard is reacquired. Original read/write access,
+private-pin and unlinked-incarnation flags are preserved. Directory guards keep
+their existing parent protection in the owner. Repeated restores share one local
+ownership fence; explicit release or terminal inspection clears it. A recovered
+controller cannot treat its diagnostic peer PID as verified child-death evidence
+for forced local cleanup.
+
+Reservation-only channels cannot enumerate or restore descriptions. Responses
+with absent, surplus or unexpected descriptors, wrong identity, unsupported
+flags or malformed enumeration are rejected; received descriptors are closed
+and the failed transport is detached without unlocking retained guards.
+Observation and restoration preserve fixed recall and lease deadlines.
+
+Tests cover real controller SIGKILL both after committing its record and after
+persisting only pre-acquire intent, then inventory matching and retained IO.
+They also cover readonly/write access, directory-parent exclusion, private pins,
+unlinked files, repeated restore, expiry and release. An independent wire peer
+checks descriptor cleanup, the 256/257 boundary, nonadvancing cursors and the
+single total timeout. Local Clang ASan/UBSan acceptance passes 570 independent
+channel checks and, on Linux 6.19, 1,805 native plus 1,464 protocol component
+checks. See [acceptance evidence](evidence/pre-m8/nfs-owner-restore-local.json).
+Remote acceptance of this change is pending.
+Production file-domain journal integration, fresh authorization, restart fencing
+and NFS protocol reclaim remain required; this primitive does not enable wire
+handout or establish complete delegation recovery.

@@ -1,0 +1,57 @@
+{
+  "status": "passed",
+  "source_commit": "05eca58bd0e22d45476b316d4e46f317f73f0f3a",
+  "run_url": "https://github.com/TabNahida/tauCloud/actions/runs/41959252710",
+  "jobs": [
+    {
+      "name": "kernel (clang, debug, y)",
+      "conclusion": "success",
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41959252710/job/127021420292"
+    },
+    {
+      "name": "kernel (gcc, release, n)",
+      "conclusion": "success",
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41959252710/job/127021420602"
+    }
+  ],
+  "artifacts": {
+    "gcc": {
+      "sha256": "03798ca02cbd8947105df99fbfc5b3ed97e7294c51aa7323847d8859cba1d520",
+      "mandatory_marker": true,
+      "selected_groups": [
+        "PASS CHANNEL/recovery-mutual-proof-domain-separation-and-fixed-timeout",
+        "PASS CHANNEL/nonblocking-handshake-ACK-errors-fixed-timeout 507 checks",
+        "PASS \"/tmp/delegation\" OWNER/recovery-auth-single-controller-fixed-deadlines-channel-rotation",
+        "PASS \"/tmp/delegation\" OWNER/persisted-capability-SIGKILL-controller-reattach-renew-release",
+        "PASS \"/tmp/delegation\" OWNER/recovery-cannot-revive-expired-guards",
+        "PASS \"/disk/delegation\" OWNER/recovery-auth-single-controller-fixed-deadlines-channel-rotation",
+        "PASS \"/disk/delegation\" OWNER/persisted-capability-SIGKILL-controller-reattach-renew-release",
+        "PASS \"/disk/delegation\" OWNER/recovery-cannot-revive-expired-guards",
+        "PASS distinct delegation state, CLAIM_DELEG_CUR_FH, CLOSE/disconnect independence and client/principal/file/access checks",
+        "PASS 1470 delegation protocol/native component checks; production handout remains gated",
+        "PASS native delegation 1613 checks"
+      ]
+    },
+    "clang": {
+      "sha256": "0f98f996a73f52930ef934445c50de7ab5af03493c67a1391f4292c73f98acef",
+      "mandatory_marker": true,
+      "selected_groups": [
+        "PASS CHANNEL/recovery-mutual-proof-domain-separation-and-fixed-timeout",
+        "PASS CHANNEL/nonblocking-handshake-ACK-errors-fixed-timeout 507 checks",
+        "PASS \"/tmp/delegation\" OWNER/recovery-auth-single-controller-fixed-deadlines-channel-rotation",
+        "PASS \"/tmp/delegation\" OWNER/persisted-capability-SIGKILL-controller-reattach-renew-release",
+        "PASS \"/tmp/delegation\" OWNER/recovery-cannot-revive-expired-guards",
+        "PASS \"/disk/delegation\" OWNER/recovery-auth-single-controller-fixed-deadlines-channel-rotation",
+        "PASS \"/disk/delegation\" OWNER/persisted-capability-SIGKILL-controller-reattach-renew-release",
+        "PASS \"/disk/delegation\" OWNER/recovery-cannot-revive-expired-guards",
+        "PASS distinct delegation state, CLAIM_DELEG_CUR_FH, CLOSE/disconnect independence and client/principal/file/access checks",
+        "PASS 1452 delegation protocol/native component checks; production handout remains gated",
+        "PASS native delegation 1673 checks"
+      ]
+    }
+  },
+  "limits": [
+    "Fixed-source native/component regression for owner control reconnection only; inventory and descriptor restoration were added afterward.",
+    "Production delegation handout and full SMB/NFS conformance remain incomplete."
+  ]
+}

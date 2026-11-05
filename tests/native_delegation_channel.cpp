@@ -30,7 +30,9 @@ struct packet {
 };
 static_assert(sizeof(packet) == 80);
 enum class fault { none, reflected, wrong_id, wrong_op, zero_token, bad_magic,
-                   short_record, descriptor, state, count, eof, timeout, capacity, wrong_token };
+                   short_record, descriptor, state, count, eof, timeout, capacity, wrong_token,
+                   restore_missing, restore_multiple, restore_error_fd, restore_identity, restore_flags,
+                   inventory_full, inventory_overflow, inventory_loop, inventory_slow };
 struct peer {
   int gate = -1;
   pid_t child = -1;
@@ -56,7 +58,7 @@ struct peer {
       auto receive = [&](unsigned op) {
         packet p; pollfd readable{connection, POLLIN, 0};
         if (::poll(&readable, 1, 4000) <= 0 || recv(connection, &p, sizeof(p), 0) != sizeof(p) ||
-            p.magic != 0x54434434 || p.op != op || p.id != (op == 13 ? 0 : 1)) _exit(4);
+            p.magic != 0x54434434 || p.op != op || (op != 14 && p.id != (op == 13 ? 0 : 1))) _exit(4);
         return p;
       };
       auto release = [&] {
@@ -79,6 +81,46 @@ struct peer {
       release();
       if (recovery && scenario == fault::timeout) { release(); _exit(0); }
       send(response);
+      if (recovery && scenario >= fault::restore_missing && scenario <= fault::restore_flags) {
+        response = receive(15); response.period = clock_ms() + 5000;
+        if (scenario == fault::restore_missing) { send(response); _exit(0); }
+        if (scenario == fault::restore_error_fd) response.op |= 3 << 16;
+        if (scenario == fault::restore_identity) response.capability[0] ^= 1;
+        if (scenario == fault::restore_flags) response.native_flags = 4;
+        int extra = open("/dev/null", O_RDONLY | O_CLOEXEC);
+        int descriptors[2] = {extra, extra};
+        auto size = scenario == fault::restore_multiple ? sizeof(descriptors) : sizeof(int);
+        iovec data{&response, sizeof(response)};
+        alignas(cmsghdr) char ancillary[CMSG_SPACE(sizeof(descriptors))]{};
+        msghdr message{}; message.msg_iov = &data; message.msg_iovlen = 1;
+        message.msg_control = ancillary; message.msg_controllen = CMSG_SPACE(size);
+        auto c = CMSG_FIRSTHDR(&message); c->cmsg_level = SOL_SOCKET; c->cmsg_type = SCM_RIGHTS;
+        c->cmsg_len = CMSG_LEN(size); std::memcpy(CMSG_DATA(c), descriptors, size);
+        if (extra < 0 || sendmsg(connection, &message, MSG_NOSIGNAL) != sizeof(response)) _exit(9);
+        _exit(0);
+      }
+      if (recovery && scenario >= fault::inventory_full) {
+        for (unsigned i = 0; i < 257; ++i) {
+          response = receive(14);
+          if (response.id != i) _exit(11);
+          response.id = i + 1; response.period = clock_ms() + 5000;
+          if (scenario == fault::inventory_loop && i == 1) response.id = i;
+          if (scenario == fault::inventory_full && i == 256) { response.id = 0; response.period = 0; }
+          if (scenario == fault::inventory_slow) {
+            std::this_thread::sleep_for(400ms);
+            if (i == 3) {
+              // The caller's one total budget must close this connection before
+              // a peer can turn 256 individually timely replies into minutes.
+              pollfd lost{connection, POLLIN, 0}; char byte;
+              if (poll(&lost, 1, 500) <= 0 || recv(connection, &byte, 1, 0) != 0) _exit(12);
+              _exit(0);
+            }
+          }
+          send(response);
+          if (scenario == fault::inventory_loop && i == 1) _exit(0);
+        }
+        _exit(0);
+      }
       if (recovery) _exit(0);
       if (scenario == fault::reflected) _exit(0);
       response = receive(7); release();
@@ -164,6 +206,36 @@ int native_delegation_channel_suite() {
     server.finish();
   }
   std::cout << "PASS CHANNEL/recovery-mutual-proof-domain-separation-and-fixed-timeout\n";
+  for (auto scenario : {fault::restore_missing, fault::restore_multiple, fault::restore_error_fd,
+       fault::restore_identity, fault::restore_flags, fault::inventory_full, fault::inventory_overflow,
+       fault::inventory_loop, fault::inventory_slow}) {
+    auto descriptor_count = [] {
+      return std::distance(fs::directory_iterator("/proc/self/fd"), fs::directory_iterator());
+    };
+    auto before = descriptor_count();
+    {
+      peer server(scenario, true); server.release();
+      native_delegation_owner owner(server.capability);
+      auto start = clock_ms();
+      if (scenario == fault::inventory_full) {
+        auto records = owner.inventory();
+        check(records.size() == 256 && records[0].at("id") == 1 && records[255].at("id") == 256,
+            "inventory_full_boundary_failed");
+      } else {
+        auto expected = scenario == fault::restore_identity || scenario == fault::restore_flags ||
+            scenario == fault::inventory_overflow ? "delegation_owner_io" : "delegation_owner_lost";
+        rejected([&] {
+          if (scenario >= fault::inventory_full) owner.inventory(); else owner.restore(1, "expected-incarnation");
+        }, expected);
+        rejected([&] { owner.inspect(1); }, "delegation_owner_lost");
+        if (scenario == fault::inventory_slow)
+          check(clock_ms() - start >= 1400 && clock_ms() - start < 2300, "inventory_total_deadline_slid");
+      }
+      server.finish();
+    }
+    check(descriptor_count() == before, "recovery_descriptor_leaked");
+  }
+  std::cout << "PASS CHANNEL/recovery-descriptor-validation-cleanup-and-bounded-inventory\n";
   for (auto scenario : {fault::none, fault::reflected, fault::wrong_id, fault::wrong_op, fault::zero_token,
        fault::bad_magic, fault::short_record, fault::descriptor, fault::state, fault::count, fault::eof,
        fault::timeout, fault::capacity, fault::wrong_token}) {

@@ -140,6 +140,17 @@ Selected-profile acceptance: [M7 guide](docs/m7.md), [中文](docs/m7.zh-CN.md),
 
 ## Full SMB/NFS compatibility prerequisite (user decision, 2026-10-31)
 
+Native owner recovery now includes live-record inventory and original-description
+restoration using the expected native incarnation. Enumeration has one total
+1.5-second budget and a 256-record bound; neither operation renews protection.
+SIGKILL recovery tests cover pre-acquire intent without a committed result ID,
+and retained readonly/write, private-pin, unlinked and directory descriptions.
+Independent wire faults cover descriptor cleanup and enumeration limits.
+Production file-domain journal/adoption and NFS reclaim remain open
+([details](docs/nfs-delegations.md#recovery-inventory-and-retained-descriptions),
+[local evidence](docs/evidence/pre-m8/nfs-owner-restore-local.json)).
+
+
 Cold file-domain preparation now has a distinct pre-operation expiry result.
 SMB/NFS/API obtain fresh authority and retry it at most once, preserving mutation
 identity; ordinary expiry and revocation remain failures. Deterministic cold
