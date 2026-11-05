@@ -7,6 +7,7 @@ on:
       - 'scripts/build_delegation_kernel.py'
       - 'scripts/run_native_delegation_vm.py'
       - 'tests/native_delegation_kernel.cpp'
+      - 'tests/native_delegation_channel.cpp'
       - 'tests/nfs_delegation_protocol.cpp'
       - 'src/nfs_protocol.cpp'
       - 'src/nfs_reply_lifetime.inc'

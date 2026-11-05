@@ -1,0 +1,633 @@
+{
+  "source_commit": "2ea53058b15f01a0c0280f5c42edf6051e24e5c3",
+  "recorded_at": "2026-11-05T00:36:16.527036+00:00",
+  "status": "partial_matrix",
+  "results": {
+    "windows-backend": {
+      "job": "https://github.com/TabNahida/tauCloud/actions/runs/41938278559/job/126952202109",
+      "conclusion": "success",
+      "artifacts": {
+        "acceptance/filezilla-windows.json": {
+          "sha256": "21a47842eb00e3d2b8b53788dac50d7da3f197e6c4dcc81d587d6381f3e341bc",
+          "status": "passed",
+          "checks": 3
+        },
+        "acceptance/nfs-attributes.json": {
+          "sha256": "b397bb3f8d3b8d3b4b82366013fc1ac064c1b699fe6cf97ec51edf0f7ce2129e",
+          "status": "passed",
+          "checks": 7
+        },
+        "acceptance/nfs-create.json": {
+          "sha256": "079776398677bc6695efd94deb3f648e85468db6c73d0f2ba4a72773547038ea",
+          "status": "passed",
+          "checks": 5
+        },
+        "acceptance/windows-native-nfs.json": {
+          "sha256": "54e2e9dd0d506410f7126bd10786764a9e17766a9574fb41617255df1b280673",
+          "status": "passed",
+          "checks": 3
+        },
+        "acceptance/windows-native-smb.json": {
+          "sha256": "698c863c04d1dcdc498f619051c528de6f5cdc6f035e7bf2fb08cbdaf6fd6685",
+          "status": "passed",
+          "checks": 0
+        },
+        "acceptance/nfs-state.json": {
+          "sha256": "5e878c04ca64028995e628cdcea82023b9a909ae9bb7585fc28ad5da5b1d2dd0",
+          "status": "passed",
+          "checks": 5
+        },
+        "m7/windows-msvc.smb-notify.json": {
+          "sha256": "86981bf78366dc512256e899164d03fc01d2f95b83c277524c6d5703e43fae25",
+          "status": "passed",
+          "checks": 16
+        },
+        "m7/windows-msvc.nfs-notify-lock.json": {
+          "sha256": "9ccbf21ed7bc20a2c1461dd606fa2da483f9ca89c6bea233cc33830a2912e35f",
+          "status": "passed",
+          "checks": 9
+        },
+        "m7/windows-msvc.nfs-mode.json": {
+          "sha256": "192ccfb16acd7a21a65b2777aa2b96fcd091f5ce9cd6ca11310e6485a6b79f86",
+          "status": "passed",
+          "checks": 7
+        },
+        "m7/windows-msvc.smb.json": {
+          "sha256": "a102cdbcd1dc92b9ac605b6a434bbf1374e5aa11211b3026e387633a07b79d14",
+          "status": "passed",
+          "checks": 12
+        },
+        "m7/windows-msvc.security.json": {
+          "sha256": "b71a4b19b72ebe4b6884966ff79b2409a3a02b0bfe7fa7ad279ca6fbffa0acfd",
+          "status": "passed",
+          "checks": 13
+        },
+        "m7/windows-msvc.smb-blocking-locks.json": {
+          "sha256": "86d1570ca40bee195dc25775f2dd8a2fbbb6a5ea694c4c249c88d8f17abe365e",
+          "status": "passed",
+          "checks": 25
+        },
+        "m7/windows-msvc.discovery.json": {
+          "sha256": "dbe4723a8e089b0a2b58065cc8da90c11680e2f48f075670f4f7d9fd9ff5ba58",
+          "status": "passed",
+          "checks": 9
+        },
+        "m7/windows-msvc.smb-multisession.json": {
+          "sha256": "fc41a4c543f2e7a3e132411c10ace965967bc2d4eb6b65f1ec2f4341656db8ac",
+          "status": "passed",
+          "checks": 9
+        },
+        "m7/windows-msvc.integration.json": {
+          "sha256": "1080e1555c48eb910af5d82059035d701742e0aecf8f6180dd6abae00985b275",
+          "status": "passed",
+          "checks": 15
+        },
+        "m7/windows-msvc.ftp.json": {
+          "sha256": "9cd0c8f9400b97f522dff08571bb66d2d07b045708346082693c7d46c02de3ad",
+          "status": "passed",
+          "checks": 11
+        },
+        "m7/windows-msvc.smb3.json": {
+          "sha256": "df5f25ba7bd6fa337566d7a75303fcca422a24ec38c68b7c9a34ecb36c94fba1",
+          "status": "passed",
+          "checks": 23
+        },
+        "m7/windows-msvc.unlink.json": {
+          "sha256": "d780411a6b9a5bb1022587ebed89522329baa059fb421ffb309111cec96b4470",
+          "status": "passed",
+          "checks": 4
+        },
+        "m7/windows-msvc.smb-rename.json": {
+          "sha256": "9e6cbdb51e86874c237d1034d0f9cb6c07e460318b03e73816c50b76543c93b7",
+          "status": "passed",
+          "checks": 2
+        },
+        "m7/windows-msvc.nfs.json": {
+          "sha256": "c455bee6957d56138e6fe7b5c35b8419c756e5628b729183d34438a92522dc02",
+          "status": "passed",
+          "checks": 15
+        },
+        "m7/windows-msvc.json": {
+          "sha256": "a40b3270c9fdf0d6850ae0fec31224acf20f4cd9f6f5735bd586768c0332ef03",
+          "status": "passed",
+          "checks": 0,
+          "steps": 44,
+          "failed_steps": [],
+          "unit_results": [
+            {
+              "command": "D:\\a\\tauCloud\\tauCloud\\build\\windows\\x64\\release\\taucloud_m2_tests.exe",
+              "returncode": 0,
+              "stdout": "{\"checks\":77,\"disk_full\":\"native-adapter fault injection\",\"offset_bits\":64,\"status\":\"passed\"}"
+            },
+            {
+              "command": "D:\\a\\tauCloud\\tauCloud\\build\\windows\\x64\\release\\taucloud_m5_tests.exe",
+              "returncode": 0,
+              "stdout": "PASS SMB data IO acknowledges cache renewal; invalid authority/cookie and fenced opens cannot mutate or revive\n{\"checks\":12595,\"status\":\"passed\"}"
+            }
+          ]
+        },
+        "m7/windows-msvc.smb-paths.json": {
+          "sha256": "d87d434a6feafc5f152172f61a8a0feee846c0d36cbeb009d97d4731da7c94e4",
+          "status": "passed",
+          "checks": 3
+        },
+        "m7/windows-msvc.nfs-session-negotiation.json": {
+          "sha256": "41a52528bc34ddf9b1187750a22a00e71686f58d3e8327409d05f362c8c6d691",
+          "status": "passed",
+          "checks": 3
+        },
+        "m7/windows-msvc.smb-reauth.json": {
+          "sha256": "adafa4be62ff4f6934c5f1badd9fb34c901b668b85e52a868992c5a101eaf4ee",
+          "status": "passed",
+          "checks": 6
+        },
+        "m7/windows-msvc.pin-recovery.json": {
+          "sha256": "325ecff4d2db6c4520e09346f0c6c40f37c94d495582a11cc5462b0196b5498f",
+          "status": "passed",
+          "checks": 3
+        },
+        "m7/windows-msvc.smb-allocation.json": {
+          "sha256": "21aff4cdf17283c9b78c9c3b349528a6769444446909fdad7b342ff347499b4d",
+          "status": "passed",
+          "checks": 4
+        },
+        "m7/windows-msvc.nfs-acl.json": {
+          "sha256": "26aba51056739c73be4ab500764fbda2b26392ff8c0648f1778e37ae6546a2f9",
+          "status": "passed",
+          "checks": 8
+        },
+        "m7/windows-msvc.dav.json": {
+          "sha256": "80ec7765a123b728fda41addf31726529cc2e56d81d81964fdde34c7edd24e23",
+          "status": "passed",
+          "checks": 10
+        },
+        "m7/windows-msvc.nlm.json": {
+          "sha256": "7783946985debcf6b4b954f600eea0689154109a43e0d2b429ecc157b9ad3517",
+          "status": "passed",
+          "checks": 7
+        },
+        "m7/windows-msvc.smb-owner.json": {
+          "sha256": "3b81cdfe411224a0ebd4d237a645ffde9883684aa2eeb5903cf59254c1205b24",
+          "status": "passed",
+          "checks": 4
+        },
+        "m7/windows-msvc.files.json": {
+          "sha256": "b838eef4b71f476d8c063a4371303c7a0a7aa3c79eb070e87f5c1d0a12e927ab",
+          "status": "passed",
+          "checks": 10
+        },
+        "m7/windows-msvc.smb-rename-metadata.json": {
+          "sha256": "cd0f60d0c89159e87784b444b13a1610eb152877e71a9ff1c30b169f3e3018b6",
+          "status": "passed",
+          "checks": 7
+        },
+        "m7/windows-msvc.nfs-backchannel.json": {
+          "sha256": "6be66af6aa225b61c9fac0d8e8dfa6a4e2a648894c950fcc021bc3270a1c9e3f",
+          "status": "passed",
+          "checks": 19
+        },
+        "m7/windows-msvc.smb-delete-close.json": {
+          "sha256": "9ce4a28447e5471a1f774f1a30d15f5ae2e74bfc1d95e5a421a8d22c65a3b083",
+          "status": "passed",
+          "checks": 4
+        },
+        "m7/windows-msvc.smb-notify-peers.json": {
+          "sha256": "d99b68071bf2a570e169496c52c82687a69c5bfb0ba767159fc05d4c09584f7d",
+          "status": "passed",
+          "checks": 3
+        },
+        "m7/windows-msvc.smb-signing.json": {
+          "sha256": "8d5929592861e53e5c80d90890de8f14cb1e3bb915e6f0293e0b60693f7cd920",
+          "status": "passed",
+          "checks": 4
+        },
+        "m7/windows-msvc.smb-attributes.json": {
+          "sha256": "74c5ae47060f0a2d5835475a9949f919d978ab88b4337b8c02e37975a53d3cee",
+          "status": "passed",
+          "checks": 9
+        },
+        "m7/windows-msvc.smb-notify-reuse.json": {
+          "sha256": "828cf9693e7b23a559a75a1a878744a3169821f41df7cb56bfd1fec502e93036",
+          "status": "passed",
+          "checks": 1
+        },
+        "m7/windows-msvc.namespace.json": {
+          "sha256": "b3aac84c4ea2ae547040c477f4d643d6ac1e68d53dcef315b7d719faf5d68724",
+          "status": "passed",
+          "checks": 7
+        }
+      }
+    },
+    "clang-backend": {
+      "job": "https://github.com/TabNahida/tauCloud/actions/runs/41938278559/job/126952202413",
+      "conclusion": "success",
+      "artifacts": {
+        "m7/linux-clang.smb-paths.json": {
+          "sha256": "2282b88a71afa6e1a3109cd4943c17d1dbcc4d30389f03898935638d9300637c",
+          "status": "passed",
+          "checks": 3
+        },
+        "m7/linux-clang.nfs-notify-lock.json": {
+          "sha256": "027c953efcf1d6f60c5ceaa6ae1e82180cc9cac1632831ab3945c6f15a13bb29",
+          "status": "passed",
+          "checks": 9
+        },
+        "m7/linux-clang.discovery.json": {
+          "sha256": "51ca32e5793710197ee4edccd328bffae5537efa8f8f0815f5d13d4363efe09b",
+          "status": "passed",
+          "checks": 9
+        },
+        "m7/linux-clang.ftp.json": {
+          "sha256": "185348e4315e27a975d52508bde1730daff1b11f6bdcfa58697278f76f78ed2f",
+          "status": "passed",
+          "checks": 11
+        },
+        "m7/linux-clang.smb-notify-reuse.json": {
+          "sha256": "21501cf260a139cd8e87561813bcf62047b5700a5f894a9d097f5928db71bc74",
+          "status": "passed",
+          "checks": 1
+        },
+        "m7/linux-clang.smb-multisession.json": {
+          "sha256": "bb47908539ebe4cc6ab65f394a7c942df569ec1db50c318b6020f4417ba3cc4d",
+          "status": "passed",
+          "checks": 9
+        },
+        "m7/linux-clang.namespace.json": {
+          "sha256": "6ff5dc4847f58de91c65cc86ac217f8cadd7fcf5c4706248dd7e240241f2f355",
+          "status": "passed",
+          "checks": 7
+        },
+        "m7/linux-clang.nlm.json": {
+          "sha256": "3d6eabda891dd03e19171a802773e05477f42455124b08f45c6333f4e526da58",
+          "status": "passed",
+          "checks": 7
+        },
+        "m7/linux-clang.nfs.json": {
+          "sha256": "2db9e95beb724f463a66e1e5006f19c5900604b3582826dd9dd28f72aeb15610",
+          "status": "passed",
+          "checks": 15
+        },
+        "m7/linux-clang.nfs-backchannel.json": {
+          "sha256": "51edb28636374d7de2b1160cfabcd1ff1064c48d818a6da7b9c2eafa389d8171",
+          "status": "passed",
+          "checks": 19
+        },
+        "m7/linux-clang.smb-allocation.json": {
+          "sha256": "285527f362a3a8b1b45ffbc5d92063866ab797a902aa74ec21b1f4db70d1094e",
+          "status": "passed",
+          "checks": 4
+        },
+        "m7/linux-clang.files.json": {
+          "sha256": "bf035b36bf1f7e79652ed937da24a8e8ffc5c35f68ccb66d0304c4c7a8d126b2",
+          "status": "passed",
+          "checks": 10
+        },
+        "m7/linux-clang.smb-rename-metadata.json": {
+          "sha256": "528d01d10582ceccc57fc9dc73e5c89412546332fe46deb5a2c3f9b1427ea33f",
+          "status": "passed",
+          "checks": 7
+        },
+        "m7/linux-clang.smb-rename.json": {
+          "sha256": "ac766d7c13d1d213ae82eb5e95b37288b03ea84ca7b7befe3fc24e11c57dbc8d",
+          "status": "passed",
+          "checks": 2
+        },
+        "m7/linux-clang.smb-notify.json": {
+          "sha256": "bf5f2c50edc37468b77b5c220c2d5988eb07dadfbc1dc9b2fd189f5535d0b6af",
+          "status": "passed",
+          "checks": 19
+        },
+        "m7/linux-clang.smb.json": {
+          "sha256": "02f5bb770a227402678898623cd0b9ddbe0cb95da13a0ab72e6f65c70ea12c6b",
+          "status": "passed",
+          "checks": 12
+        },
+        "m7/linux-clang.smb-notify-peers.json": {
+          "sha256": "daba8066c3ed428ec3ad0033dbf6286968a2cdcbda3a018dd20bcadd9a866f82",
+          "status": "passed",
+          "checks": 3
+        },
+        "m7/linux-clang.smb-blocking-locks.json": {
+          "sha256": "9875665b01b0079048bc189d1a0b04ba6ffeb77abd3548bf218eb217f64435c6",
+          "status": "passed",
+          "checks": 25
+        },
+        "m7/linux-clang.nfs-session-negotiation.json": {
+          "sha256": "f15977f397d5752100b71403b242d858c1a9f45032be2a789c00e3551856e458",
+          "status": "passed",
+          "checks": 3
+        },
+        "m7/linux-clang.smb-signing.json": {
+          "sha256": "d7a52c57031f44080baf222bdc3c4bc8c77bfbc71279b86fc3762c50fbcb63f7",
+          "status": "passed",
+          "checks": 4
+        },
+        "m7/linux-clang.nfs-gss.krb5.json": {
+          "sha256": "29ba9c26e99d4e56c334ae52fbb290243944d2fd9ae34bfac8d3959515f79500",
+          "status": null,
+          "checks": 0
+        },
+        "m7/linux-clang.json": {
+          "sha256": "1a55473281f8d44e8003e148a7a7e994bdc68249eff15d8e286e93a0c0636c57",
+          "status": "passed",
+          "checks": 0,
+          "steps": 48,
+          "failed_steps": [],
+          "unit_results": [
+            {
+              "command": "/home/runner/work/tauCloud/tauCloud/build/linux/x86_64/debug/taucloud_m2_tests",
+              "returncode": 0,
+              "stdout": "{\"checks\":83,\"disk_full\":\"native-adapter fault injection\",\"offset_bits\":64,\"status\":\"passed\"}"
+            },
+            {
+              "command": "/home/runner/work/tauCloud/tauCloud/build/linux/x86_64/debug/taucloud_m5_tests",
+              "returncode": 0,
+              "stdout": "PASS SMB data IO acknowledges cache renewal; invalid authority/cookie and fenced opens cannot mutate or revive\n{\"checks\":12595,\"status\":\"passed\"}"
+            }
+          ]
+        },
+        "m7/linux-clang.pin-recovery.json": {
+          "sha256": "264d65cd41d08b42a60d9740b2badc9ff70185622ab127c11da3b05c7724891a",
+          "status": "passed",
+          "checks": 3
+        },
+        "m7/linux-clang.smb-attributes.json": {
+          "sha256": "86962dee9b9fce3e3d247cacf16c3f2f881e7b3e8f9850e64b88163fc2db70a8",
+          "status": "passed",
+          "checks": 9
+        },
+        "m7/linux-clang.dav.json": {
+          "sha256": "4d1e48b79170a2a0b8bafeed84edc7caecb0189f26b7fe93c3723839aadf2451",
+          "status": "passed",
+          "checks": 11
+        },
+        "m7/linux-clang.nfs-acl.json": {
+          "sha256": "f2ff14446675f0a470a09759cc8d41dd4916e5a0fae4b8abd5a04b7c3fb2dcdb",
+          "status": "passed",
+          "checks": 8
+        },
+        "m7/linux-clang.nfs-gss.krb5i.json": {
+          "sha256": "36ab42663026ec72951c0a84815333a4af9a2d2ce73bd827d467def50abfd9b2",
+          "status": null,
+          "checks": 0
+        },
+        "m7/linux-clang.smb-owner.json": {
+          "sha256": "f93206f6ca8f8cb8e24e30ffa21feaf028af94d99ac1a49105363c45216e4552",
+          "status": "passed",
+          "checks": 4
+        },
+        "m7/linux-clang.smb-gss.json": {
+          "sha256": "3a4c45d8fb680bb03576302e3cf59ba395e6926119423760869463bf20035d01",
+          "status": "passed",
+          "checks": 11
+        },
+        "m7/linux-clang.nfs-gss.krb5p.json": {
+          "sha256": "d975dd20f72b0340805b7fbd479b67696b86cf999c0c823bf565469bc9ed4944",
+          "status": null,
+          "checks": 0
+        },
+        "m7/linux-clang.nfs-mode.json": {
+          "sha256": "c7c393e259ba9e347c28a59e9a8952084f3a4b5733e3c1041571c20a8c803acd",
+          "status": "passed",
+          "checks": 7
+        },
+        "m7/linux-clang.unlink.json": {
+          "sha256": "c9c52c535d79d0bb169f128d24ad4ed22ea6f965e7167a740fdb8f3a2c1e502c",
+          "status": "passed",
+          "checks": 4
+        },
+        "m7/linux-clang.integration.json": {
+          "sha256": "62ac8a383f7cf0a4661e3013970d3d89ac34dd447b80895c191bd36ed6669a04",
+          "status": "passed",
+          "checks": 15
+        },
+        "m7/linux-clang.nfs-gss-backchannel.json": {
+          "sha256": "3fc9f9c401405e3c9d83c81ee56b7d688f30a75334fc8db9e062139eab98032f",
+          "status": "passed",
+          "checks": 9
+        },
+        "m7/linux-clang.smb3.json": {
+          "sha256": "5be876ea15b395667dfa58b34d78f9f4e47d2d6088d5e66a036fe2d36006f27d",
+          "status": "passed",
+          "checks": 23
+        },
+        "m7/linux-clang.smb-reauth.json": {
+          "sha256": "389cb23cbbaa06a5196ec84af10a5108ba732ce8af8cfcfb545c838f7e9ca07f",
+          "status": "passed",
+          "checks": 6
+        },
+        "m7/linux-clang.nfs-gss.json": {
+          "sha256": "fcb43651e92d9175938791b57bfafa97137fa888a8971b6341a04bfb044ba927",
+          "status": "passed",
+          "checks": 9
+        },
+        "m7/linux-clang.security.json": {
+          "sha256": "67a379cc4b82505f33241d48b35ef18941b673dbfaa565e65345639bd9703b5f",
+          "status": "passed",
+          "checks": 13
+        },
+        "m7/linux-clang.smb-delete-close.json": {
+          "sha256": "fce4fded4382b973256396618069c9001db000ad030782406fde5994dd730ea2",
+          "status": "passed",
+          "checks": 4
+        }
+      }
+    },
+    "windows-metadata": {
+      "job": "https://github.com/TabNahida/tauCloud/actions/runs/41938278481/job/126952202396",
+      "conclusion": "success",
+      "artifacts": {
+        "nfs-mode.json": {
+          "sha256": "192ccfb16acd7a21a65b2777aa2b96fcd091f5ce9cd6ca11310e6485a6b79f86",
+          "status": "passed",
+          "checks": 7
+        },
+        "nfs-acl.json": {
+          "sha256": "26aba51056739c73be4ab500764fbda2b26392ff8c0648f1778e37ae6546a2f9",
+          "status": "passed",
+          "checks": 8
+        },
+        "security-oplocks.json": {
+          "sha256": "2b5c26b1200a631dc29a85841791cf73acef6a67afbd0c857e88b6e66029d62c",
+          "status": "passed",
+          "checks": 12
+        },
+        "leases.json": {
+          "sha256": "17d9f0fd3316a45f18d3138528127704baa496e2fddcd208bc82401bcdacfbf3",
+          "status": "passed",
+          "checks": 42
+        },
+        "compound-async.json": {
+          "sha256": "23c5a8ba28d0ee4f844ae07d529319384d3a2ffdc59b6428d3d58dc5985c97d3",
+          "status": "passed",
+          "checks": 24
+        },
+        "metadata.json": {
+          "sha256": "74c5ae47060f0a2d5835475a9949f919d978ab88b4337b8c02e37975a53d3cee",
+          "status": "passed",
+          "checks": 9
+        },
+        "smb-rename-metadata.json": {
+          "sha256": "cd0f60d0c89159e87784b444b13a1610eb152877e71a9ff1c30b169f3e3018b6",
+          "status": "passed",
+          "checks": 7
+        },
+        "windows-native-security.json": {
+          "sha256": "de5ff630398a7d48a83f23d54f48915a6d09a593cd688da51ff46578e267afa9",
+          "status": "passed",
+          "checks": 0
+        },
+        "nfs-attributes.json": {
+          "sha256": "b397bb3f8d3b8d3b4b82366013fc1ac064c1b699fe6cf97ec51edf0f7ce2129e",
+          "status": "passed",
+          "checks": 7
+        },
+        "smb-notify.json": {
+          "sha256": "86981bf78366dc512256e899164d03fc01d2f95b83c277524c6d5703e43fae25",
+          "status": "passed",
+          "checks": 16
+        },
+        "smb-notify-reuse.json": {
+          "sha256": "828cf9693e7b23a559a75a1a878744a3169821f41df7cb56bfd1fec502e93036",
+          "status": "passed",
+          "checks": 1
+        },
+        "smb-delete-close.json": {
+          "sha256": "9ce4a28447e5471a1f774f1a30d15f5ae2e74bfc1d95e5a421a8d22c65a3b083",
+          "status": "passed",
+          "checks": 4
+        },
+        "security.json": {
+          "sha256": "b71a4b19b72ebe4b6884966ff79b2409a3a02b0bfe7fa7ad279ca6fbffa0acfd",
+          "status": "passed",
+          "checks": 13
+        },
+        "smb-owner.json": {
+          "sha256": "3b81cdfe411224a0ebd4d237a645ffde9883684aa2eeb5903cf59254c1205b24",
+          "status": "passed",
+          "checks": 4
+        },
+        "object-id.json": {
+          "sha256": "36dd59829ffa01fc441ac19c3ea1642a5f639ebc9bd13cfc8b2cc8888722de75",
+          "status": "passed",
+          "checks": 12
+        },
+        "smb-paths.json": {
+          "sha256": "d87d434a6feafc5f152172f61a8a0feee846c0d36cbeb009d97d4731da7c94e4",
+          "status": "passed",
+          "checks": 3
+        },
+        "smb-anonymous.json": {
+          "sha256": "1801f65c42a385c50e60d9d8757ad00327fb8f56ed7328a4d758d1d477c716bd",
+          "status": "passed",
+          "checks": 11
+        },
+        "nfs-notify-lock.json": {
+          "sha256": "9ccbf21ed7bc20a2c1461dd606fa2da483f9ca89c6bea233cc33830a2912e35f",
+          "status": "passed",
+          "checks": 9
+        },
+        "smb-rename.json": {
+          "sha256": "9e6cbdb51e86874c237d1034d0f9cb6c07e460318b03e73816c50b76543c93b7",
+          "status": "passed",
+          "checks": 2
+        },
+        "allocation.json": {
+          "sha256": "21aff4cdf17283c9b78c9c3b349528a6769444446909fdad7b342ff347499b4d",
+          "status": "passed",
+          "checks": 4
+        },
+        "nfs-callback-recovery.json": {
+          "sha256": "c28338f2911583c664c48d624896973c1d2792663280ce520752e4cc99790c58",
+          "status": "passed",
+          "checks": 6
+        },
+        "nfs-backchannel.json": {
+          "sha256": "6be66af6aa225b61c9fac0d8e8dfa6a4e2a648894c950fcc021bc3270a1c9e3f",
+          "status": "passed",
+          "checks": 19
+        },
+        "smb3.json": {
+          "sha256": "3a7887a304351dc3e95fada2371979b8b6f00224ee5e8bdf28b4cedb4f0a3298",
+          "status": "passed",
+          "checks": 23
+        },
+        "nfs-session-negotiation.json": {
+          "sha256": "41a52528bc34ddf9b1187750a22a00e71686f58d3e8327409d05f362c8c6d691",
+          "status": "passed",
+          "checks": 3
+        },
+        "smb-multisession.json": {
+          "sha256": "fc41a4c543f2e7a3e132411c10ace965967bc2d4eb6b65f1ec2f4341656db8ac",
+          "status": "passed",
+          "checks": 9
+        },
+        "security-query.json": {
+          "sha256": "18f0a743c595a5ba7a681c01b1d9e52e0ec8f8f83c4d51fd811165d42340e727",
+          "status": "passed",
+          "checks": 20
+        },
+        "oplocks.json": {
+          "sha256": "380532062f4622808b8bb6992db8f85a1472e3b7512f2bc904038a6f788418ef",
+          "status": "passed",
+          "checks": 39
+        },
+        "nfs-delegation-negotiation.json": {
+          "sha256": "e15183f47d169f60c0c6abdbc985a95892e68e6c9263a5dc4696754180f197ec",
+          "status": "passed",
+          "checks": 7
+        },
+        "nfs-discovery.json": {
+          "sha256": "dbe4723a8e089b0a2b58065cc8da90c11680e2f48f075670f4f7d9fd9ff5ba58",
+          "status": "passed",
+          "checks": 9
+        },
+        "smb-signing.json": {
+          "sha256": "8d5929592861e53e5c80d90890de8f14cb1e3bb915e6f0293e0b60693f7cd920",
+          "status": "passed",
+          "checks": 4
+        },
+        "nfs-lease-lifetime.json": {
+          "sha256": "b0a2a6b5d3880aa5085bc8f41a098c044ad6fc89c261556ce01a2ebf7c1431a9",
+          "status": "passed",
+          "checks": 4
+        },
+        "oplock-batch.json": {
+          "sha256": "7d52beac6817f3636c4a4ed099765ede5966003ed95b8ccd85aaf61e55687d93",
+          "status": "passed",
+          "checks": 37
+        },
+        "smb-notify-peers.json": {
+          "sha256": "d99b68071bf2a570e169496c52c82687a69c5bfb0ba767159fc05d4c09584f7d",
+          "status": "passed",
+          "checks": 3
+        },
+        "smb-reauth.json": {
+          "sha256": "adafa4be62ff4f6934c5f1badd9fb34c901b668b85e52a868992c5a101eaf4ee",
+          "status": "passed",
+          "checks": 6
+        },
+        "security-metadata.json": {
+          "sha256": "05863db130cf890a971c08f3078c1848a5455c9fbd2eb10358be49e0bedbae5f",
+          "status": "passed",
+          "checks": 20
+        },
+        "oplock-level2.json": {
+          "sha256": "afc605ea0867ded498f689432831856211986e9eb30ba4f4f90db959cd1eddb7",
+          "status": "passed",
+          "checks": 40
+        },
+        "blocking-locks.json": {
+          "sha256": "9f35a2220426b0e9ec53eb99b937e5c086dd780f20f60834063ddce165df3116",
+          "status": "passed",
+          "checks": 25
+        }
+      }
+    }
+  },
+  "limitations": [
+    "The listed completed jobs succeeded. GCC backend and GCC/Clang metadata jobs were still running; no whole-matrix claim.",
+    "Windows M2 and M5 failures on 5d76595 did not recur here; this does not establish the cause of the earlier timing failures.",
+    "No new macOS result; earlier instability remains open."
+  ]
+}

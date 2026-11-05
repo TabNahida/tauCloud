@@ -124,7 +124,7 @@ if has_config("m1") then
     if is_plat("linux") then
         target("taucloud_native_delegation_kernel_tests")
             set_kind("binary")
-            add_files("tests/native_delegation_kernel.cpp", "tests/nfs_delegation_protocol.cpp")
+            add_files("tests/native_delegation_kernel.cpp", "tests/native_delegation_channel.cpp", "tests/nfs_delegation_protocol.cpp")
             add_defines("TAUCLOUD_NATIVE_PROTOCOL_VM")
             add_deps("taucloud_core")
             add_tests("default", {run_timeout = 90})

@@ -157,6 +157,10 @@ native encrypted SMB/ACL and Linux CIFS Kerberos (2.1, 3.0, 3.0.2, 3.1.1) pass
 at `2ea5305` ([evidence](docs/evidence/pre-m8/smb-cache-io-2ea-native.json)). Earlier `5d76595`
 Windows jobs also report an M2 assertion after 74 checks and an M5 lease expiry;
 test diagnostics now include source lines and grant-processing duration.
+At `2ea5305`, the Windows backend and metadata jobs and the Clang backend job
+pass; Windows M2 has 77 checks, Clang M2 has 83, and both M5 runs pass 12,595.
+These failures did not recur in these runs; their historical cause and macOS
+stability are not closed ([job evidence](docs/evidence/pre-m8/smb-cache-io-2ea-platforms.json)).
 
 A private, delegation-bound native reservation channel now bypasses the file
 worker's primary queue. It enforces operation/record/token ownership and retains
@@ -178,8 +182,13 @@ ACK precedes network lease/slot advancement; failed replay authorization cannot
 renew. Autonomous native revocation is imported without rejecting ordinary
 session traffic. The Linux 6.19 VM now requires the actual-owner protocol suite
 ([details](docs/nfs-delegations.md#native-reservations-on-received-rpcs)).
-Asynchronous native exchange, owner-loss monitoring, callback priority and
-recovery remain unfinished; production handout is still disabled
+The native channel now supports nonblocking mutual authentication and
+reservation/completion ACKs with a fixed deadline and single outstanding request.
+447 independent channel checks pass; Linux 6.19 tmpfs/ext4 SIGSTOP/timeout tests
+preserve native protection, with 1,512 native and 1,105 protocol checks passing
+([evidence](docs/evidence/pre-m8/nfs-channel-nonblocking-local.json)). Integrating
+this primitive into reactor scheduling, owner-loss monitoring, callback priority
+and recovery remain unfinished; production handout is still disabled
 ([details](docs/nfs-delegations.md#independent-reservation-capability-channel)).
 
 The independent NFS native owner now acknowledges bounded request reservations:

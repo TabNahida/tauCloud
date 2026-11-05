@@ -656,3 +656,37 @@ production handout, alongside worker replacement, restart fences and reclaim.
 Local Clang ASan/UBSan acceptance passes 1,087 host protocol checks and, with
 mandatory native protection in Linux 6.19, 1,105 protocol checks plus 997 native
 checks. See [local routing evidence](evidence/pre-m8/nfs-request-routing-local.json).
+
+## Nonblocking native channel exchanges
+
+The independent reservation channel now also supports a nonblocking mode. Its
+constructor sends the mutual-authentication handshake and returns without
+waiting for the owner. The caller polls that ACK before beginning inspection,
+reservation or completion. Each channel permits one outstanding exchange;
+overlapping submissions are rejected without consuming or replacing that request.
+The ordinary synchronous methods are refused in nonblocking mode, preventing an
+accidental wait through that API.
+
+Polling uses a zero-timeout readiness check and a nonblocking packet receive.
+Every exchange has one absolute 1.5-second monotonic deadline. Polling does not
+move it, and timeout, EOF, malformed state, mismatched operation/record/token or
+unexpected descriptors close the channel. Uncertain reservations are retained by
+the independent owner through its existing EOF/full-lease behavior. Valid negative
+ACKs such as capacity exhaustion or an already-consumed token allow a subsequent
+operation; authentication failure closes the channel.
+
+An independent wire peer controls when it acknowledges each request, testing
+pending handshake/operation behavior, mutual proof, duplicate polling, capacity
+recovery, invalid responses and timeout. Real Linux 6.19 tests additionally stop
+the owner with SIGSTOP: polling returns while it cannot respond, resumed
+completion confirms the full lease, and timeout followed by EOF preserves the
+native guard and the uncertain token's full lease.
+Clang ASan/UBSan acceptance passes 447 independent channel checks (467 total on
+the capability-refusing host), then 1,512 native checks plus 1,105 protocol checks
+in the mandatory Linux 6.19 guest
+([evidence](evidence/pre-m8/nfs-channel-nonblocking-local.json)).
+
+This adds the transport primitive. The receipt/reply registry still uses its
+synchronous adapter; scheduling nonblocking exchanges from the reactor, monitoring
+owner loss between exchanges, callback/cleanup priority and recovery fences remain
+required before production delegation handout.

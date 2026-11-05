@@ -680,6 +680,64 @@ static void reservation_channel_suite(const fs::path &base, bool required) {
   }
   std::cout << "PASS " << base << " CHANNEL/SIGSTOP-file-worker-independent-ACK-and-SIGKILL-retention\n";
 }
+static void nonblocking_owner_suite(const fs::path &base, bool required) {
+  auto root = native_file::root(base);
+  auto file = root.open("owned");
+  native_delegation_owner owner;
+  auto id = owner.acquire(file, 5000, 5000);
+  if (!id) { check(!required, "required_async_owner_unavailable"); return; }
+  using reservation_channel = native_delegation_reservation_channel;
+  auto capability = owner.reservation_capability(id);
+  reservation_channel channel(capability, reservation_channel::mode::nonblocking);
+  auto result = [&] {
+    for (;;) {
+      if (auto ack = channel.poll()) return *ack;
+      std::this_thread::sleep_for(1ms);
+    }
+  };
+  check(result().at("held"), "async_owner_handshake");
+  channel.begin_reserve(); auto token = result().at("reservation").get<uint64_t>();
+  auto pid = static_cast<pid_t>(owner.process_id()); bool stopped = false;
+  auto stop = [&] {
+    check(kill(pid, SIGSTOP) == 0, "async_owner_stop"); stopped = true;
+    int status = 0;
+    check(waitpid(pid, &status, WUNTRACED) == pid && WIFSTOPPED(status), "async_owner_not_stopped");
+  };
+  auto resume = [&] { check(kill(pid, SIGCONT) == 0, "async_owner_resume"); stopped = false; };
+  try {
+    stop();
+    auto started = monotonic_ms();
+    channel.begin_complete(token, true);
+    for (int i = 0; i < 20; ++i) check(!channel.poll(), "async_stopped_owner_blocked");
+    check(monotonic_ms() - started < 500, "async_stopped_owner_delayed_caller");
+    resume();
+    auto completed = result();
+    check(completed.at("reservations") == 0 && completed.at("lease_expires_ms").get<int64_t>() >= started + 5000,
+        "async_owner_completion_lost_full_lease");
+
+    channel.begin_reserve(); check(result().at("reservation").get<uint64_t>() != token, "async_owner_reused_token");
+    stop(); channel.begin_inspect();
+    bool timed_out = false;
+    try { result(); } catch (const error &e) { timed_out = std::string_view(e.what()) == "delegation_owner_lost"; }
+    check(timed_out, "async_stopped_owner_not_timed_out");
+    auto resumed = monotonic_ms(); resume();
+    json retained;
+    do {
+      retained = owner.inspect(id);
+      if (retained.at("reservations") == 0) break;
+      std::this_thread::sleep_for(5ms);
+    } while (monotonic_ms() < resumed + 1000);
+    check(retained.at("held") && retained.at("reservations") == 0 &&
+        retained.at("lease_expires_ms").get<int64_t>() >= resumed + 5000,
+        "async_timeout_released_uncertain_token");
+    int writer = open((base / "owned").c_str(), O_WRONLY | O_NONBLOCK);
+    check(writer < 0 && errno == EWOULDBLOCK, "async_timeout_lost_native_guard");
+    owner.release(id);
+    writer = open((base / "owned").c_str(), O_WRONLY | O_NONBLOCK);
+    check(writer >= 0, "async_release_still_blocks_writer"); close(writer);
+  } catch (...) { if (stopped) kill(pid, SIGCONT); throw; }
+  std::cout << "PASS " << base << " CHANNEL/nonblocking-SIGSTOP-timeout-uncertain-token-native-retention\n";
+}
 static void file_domain_suite(const fs::path &base) {
   initialize(base / "state", 38443);
   auto cfg = config::load(base / "state"); cfg.nfs_lease_seconds = 5;
@@ -971,6 +1029,7 @@ static void file_domain_suite(const fs::path &base) {
   std::cout << "PASS " << base << " FILE-DOMAIN/owner-renew-recall-return-replacement-SIGKILL\n";
 }
 int nfs_delegation_protocol_suite(bool require_native);
+int native_delegation_channel_suite();
 int main(int argc, char **argv) {
   if (auto result = native_delegation_owner::entry(argc, argv); result >= 0) return result;
   bool guest = getpid() == 1;
@@ -986,21 +1045,27 @@ int main(int argc, char **argv) {
       check(mount("tmpfs", "/tmp", "tmpfs", 0, nullptr) == 0, "mount_tmpfs");
       check(mount("/dev/vda", "/disk", "ext4", 0, nullptr) == 0, "mount_ext4");
       reservation_channel_authentication_suite();
+      checks += native_delegation_channel_suite();
       suite("/tmp/delegation", true);
       owner_suite("/tmp/delegation", true);
       reservation_channel_suite("/tmp/delegation", true);
+      nonblocking_owner_suite("/tmp/delegation", true);
       file_domain_suite("/tmp/domain");
       suite("/disk/delegation", true);
       owner_suite("/disk/delegation", true);
       reservation_channel_suite("/disk/delegation", true);
+      nonblocking_owner_suite("/disk/delegation", true);
       file_domain_suite("/disk/domain");
       check(nfs_delegation_protocol_suite(true) == 0, "native_protocol_routing");
     } else {
       reservation_channel_authentication_suite();
+      checks += native_delegation_channel_suite();
+      if (argc > 1 && std::string_view(argv[1]) == "--channel-only") return 0;
       base = fs::temp_directory_path() / ("tc-native-delegation-" + random_hex(6));
       suite(base, argc > 1 && std::string_view(argv[1]) == "--require");
       owner_suite(base, argc > 1 && std::string_view(argv[1]) == "--require");
       reservation_channel_suite(base, argc > 1 && std::string_view(argv[1]) == "--require");
+      nonblocking_owner_suite(base, argc > 1 && std::string_view(argv[1]) == "--require");
     }
     std::cout << "PASS native delegation " << checks << " checks\n";
     if (guest) std::cout << "TAUCLOUD_DELEGATION_VM_PASS\n";

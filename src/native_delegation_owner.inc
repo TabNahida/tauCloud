@@ -377,17 +377,92 @@ struct native_delegation_owner::impl {
 };
 struct native_delegation_reservation_channel::impl {
 #ifdef __linux__
-  native_delegation_owner::impl transport;
+  using owner = native_delegation_owner::impl;
+  owner transport;
   uint64_t id = 0;
+  bool nonblocking = false;
+  bool authenticated = false;
+  struct exchange_state {
+    owner::packet request;
+    int64_t deadline;
+    std::optional<std::array<char, 32>> proof;
+  };
+  std::optional<exchange_state> pending;
+  void begin(const owner::packet &request, std::optional<std::array<char, 32>> proof = {}) {
+    require(!pending, "operation_pending");
+    require(transport.control.handle >= 0, "delegation_owner_lost");
+    auto deadline = owner::clock() + 1500;
+    if (!owner::send(transport.control.handle, request)) {
+      transport.disconnect(); throw error("delegation_owner_lost");
+    }
+    pending = exchange_state{request, deadline, proof};
+  }
+  void begin(unsigned op, uint64_t token = 0) {
+    require(!pending, "operation_pending");
+    require(transport.control.handle >= 0, "delegation_owner_lost");
+    require(authenticated, "forbidden");
+    owner::packet request; request.op = op; request.id = id; request.reservation = token;
+    begin(request);
+  }
+  [[noreturn]] void lost() {
+    pending.reset(); transport.disconnect(); throw error("delegation_owner_lost");
+  }
+  std::optional<json> poll() {
+    require(transport.control.handle >= 0, "delegation_owner_lost");
+    require(pending.has_value(), "invalid_request");
+    if (owner::clock() >= pending->deadline) lost();
+    pollfd readable{transport.control.handle, POLLIN, 0};
+    auto ready = ::poll(&readable, 1, 0);
+    if (!ready || (ready < 0 && errno == EINTR)) return {};
+    owner::packet response; resource unexpected;
+    const auto &request = pending->request;
+    if (ready < 0 || !owner::receive(transport.control.handle, response, unexpected) || unexpected.handle >= 0 ||
+        (response.op & 255) != request.op || response.id != request.id ||
+        (request.reservation && response.reservation != request.reservation)) lost();
+    auto expected = pending->proof;
+    pending.reset();
+    if (expected && (response.op >> 16)) transport.disconnect();
+    switch (response.op >> 16) {
+      case 0: break;
+      case 2: throw error("invalid_request");
+      case 3: throw error("stale_handle");
+      case 5: throw error("operation_limit");
+      case 6: throw error("forbidden");
+      default: lost();
+    }
+    if (expected && !equal(std::string_view(response.capability.data(), response.capability.size()),
+                          std::string_view(expected->data(), expected->size()))) {
+      transport.disconnect(); throw error("forbidden");
+    }
+    // A successful reserve must identify its owned token. Malformed state is
+    // uncertain, so abandon the channel and let the owner retain its tokens.
+    if ((response.op & 255) == owner::reserve && !response.reservation) lost();
+    try {
+      auto value = owner::snapshot(response);
+      if (expected) authenticated = true;
+      return value;
+    }
+    catch (...) { transport.disconnect(); throw; }
+  }
+  json wait() {
+    for (;;) {
+      if (auto response = poll()) return *response;
+      pollfd readable{transport.control.handle, POLLIN, 0};
+      auto remaining = pending->deadline - owner::clock();
+      if (remaining <= 0) lost();
+      auto ready = ::poll(&readable, 1, static_cast<int>(remaining));
+      if (ready < 0 && errno != EINTR) lost();
+    }
+  }
   json exchange(unsigned op, uint64_t token = 0) {
     std::lock_guard lock(transport.mutex);
-    native_delegation_owner::impl::packet request;
-    request.op = op; request.id = id; request.reservation = token;
-    return native_delegation_owner::impl::snapshot(transport.exchange(request));
+    require(!nonblocking, "invalid_request");
+    begin(op, token);
+    return wait();
   }
 #endif
 };
-native_delegation_reservation_channel::native_delegation_reservation_channel(const json &capability)
+native_delegation_reservation_channel::native_delegation_reservation_channel(const json &capability, mode selected)
     : impl_(std::make_unique<impl>()) {
 #ifdef __linux__
   using owner = native_delegation_owner::impl;
@@ -411,13 +486,11 @@ native_delegation_reservation_channel::native_delegation_reservation_channel(con
   auto endpoint = std::string_view(value).substr(0, 16), secret = std::string_view(value).substr(16);
   auto nonce = decode_bytes(random_hex(16));
   request.capability = owner::proof(secret, endpoint, impl_->id, nonce, false);
-  auto response = impl_->transport.exchange(request);
-  auto expected = owner::proof(secret, endpoint, impl_->id, nonce, true);
-  require(equal(std::string_view(response.capability.data(), response.capability.size()),
-                std::string_view(expected.data(), expected.size())), "forbidden");
-  owner::snapshot(response);
+  impl_->nonblocking = selected == mode::nonblocking;
+  impl_->begin(request, owner::proof(secret, endpoint, impl_->id, nonce, true));
+  if (!impl_->nonblocking) impl_->wait();
 #else
-  (void)capability; throw error("not_supported");
+  (void)capability; (void)selected; throw error("not_supported");
 #endif
 }
 native_delegation_reservation_channel::~native_delegation_reservation_channel() = default;
@@ -441,6 +514,39 @@ json native_delegation_reservation_channel::complete(uint64_t reservation, bool 
   return impl_->exchange(renew_lease ? native_delegation_owner::impl::complete : native_delegation_owner::impl::cancel, reservation);
 #else
   (void)reservation; (void)renew_lease; throw error("not_supported");
+#endif
+}
+void native_delegation_reservation_channel::begin_inspect() {
+#ifdef __linux__
+  std::lock_guard lock(impl_->transport.mutex);
+  impl_->begin(native_delegation_owner::impl::query);
+#else
+  throw error("not_supported");
+#endif
+}
+void native_delegation_reservation_channel::begin_reserve() {
+#ifdef __linux__
+  std::lock_guard lock(impl_->transport.mutex);
+  impl_->begin(native_delegation_owner::impl::reserve);
+#else
+  throw error("not_supported");
+#endif
+}
+void native_delegation_reservation_channel::begin_complete(uint64_t reservation, bool renew_lease) {
+#ifdef __linux__
+  require(reservation, "invalid_request");
+  std::lock_guard lock(impl_->transport.mutex);
+  impl_->begin(renew_lease ? native_delegation_owner::impl::complete : native_delegation_owner::impl::cancel, reservation);
+#else
+  (void)reservation; (void)renew_lease; throw error("not_supported");
+#endif
+}
+std::optional<json> native_delegation_reservation_channel::poll() {
+#ifdef __linux__
+  std::lock_guard lock(impl_->transport.mutex);
+  return impl_->poll();
+#else
+  throw error("not_supported");
 #endif
 }
 json native_delegation_owner::reservation_capability(uint64_t id) {

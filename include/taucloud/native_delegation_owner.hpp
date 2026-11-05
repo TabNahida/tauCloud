@@ -45,11 +45,23 @@ class native_delegation_reservation_channel {
   struct impl;
   std::unique_ptr<impl> impl_;
 public:
-  explicit native_delegation_reservation_channel(const json &capability);
+  enum class mode { synchronous, nonblocking };
+  // Nonblocking construction sends the handshake; poll must acknowledge it
+  // before starting an operation. It never waits for an owner response.
+  explicit native_delegation_reservation_channel(const json &capability, mode = mode::synchronous);
   ~native_delegation_reservation_channel();
   native_delegation_reservation_channel(const native_delegation_reservation_channel &) = delete;
   json inspect();
   json reserve();
   json complete(uint64_t reservation, bool renew_lease);
+  // At most one outstanding exchange. A second begin is refused without
+  // disturbing the first. poll returns nullopt while pending, then consumes
+  // exactly one result. Poll at least once at the fixed 1.5 second deadline;
+  // timeout, EOF or malformed ACK closes the channel without releasing guards.
+  // Synchronous methods are rejected on a nonblocking channel.
+  void begin_inspect();
+  void begin_reserve();
+  void begin_complete(uint64_t reservation, bool renew_lease);
+  std::optional<json> poll();
 };
 } // namespace tc
