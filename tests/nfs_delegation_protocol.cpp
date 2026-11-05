@@ -1,11 +1,13 @@
 #include <taucloud/files.hpp>
 #include <taucloud/native_delegation_owner.hpp>
 #include <taucloud/nfs.hpp>
+#include <taucloud/nfs_output_queue.hpp>
 #include <taucloud/runtime/priority_mutex.hpp>
 #include <deque>
 #include <atomic>
 #include <iostream>
 #include <source_location>
+#include <set>
 #include <thread>
 #include <future>
 #ifdef __linux__
@@ -26,6 +28,52 @@ int nfs_delegation_protocol_suite(bool require_native = false) {
     require(value, "delegation_protocol_test_failed"); ++checks;
   };
   try {
+    {
+      output_queue queue;
+      std::set<uint64_t> completed;
+      auto complete = [&](uint64_t id) { ok(completed.insert(id).second); };
+      ok(queue.push({"partial-frame", 1}));
+      const auto &active = queue.start();
+      for (uint64_t i = 2; i <= 16; ++i) ok(queue.push({"ordinary", i}));
+      ok(!queue.push({"over-normal-limit", 99}));
+      for (uint64_t i = 100; i < 104; ++i) ok(queue.push({"callback", i, true}));
+      ok(!queue.push({"over-callback-limit", 199, true}));
+      ok(active.packet == "partial-frame" && active.completion == 1);
+      // Priority may not replace an in-progress frame. Its budget and token
+      // remain owned until write completion or cancellation.
+      bool interleaved = false;
+      try { queue.start(); } catch (const error &) { interleaved = true; }
+      ok(interleaved); complete(queue.finish());
+      for (uint64_t i = 100; i < 104; ++i) {
+        ok(queue.start().completion == i); complete(queue.finish());
+        ok(queue.push({"continuing-callback-traffic", i + 4, true}));
+      }
+      ok(queue.start().completion == 2); // Four callbacks cannot starve data.
+      queue.drain(complete); // Includes active frame and both waiting classes.
+      ok(queue.empty() && completed.size() == 24);
+      for (uint64_t i = 1; i <= 16; ++i) ok(completed.contains(i));
+      for (uint64_t i = 100; i < 108; ++i) ok(completed.contains(i));
+      queue.drain(complete); ok(completed.size() == 24);
+      ok(queue.push({"after-disconnect-cleanup", 200, true}));
+      queue.drain(complete); ok(completed.contains(200));
+    }
+    {
+      output_queue queue;
+      for (uint64_t i = 1; i <= 4; ++i) ok(queue.push({std::string(max_record, 'd'), i}));
+      queue.start(); // Moving to the writer must not free its byte budget.
+      ok(!queue.push({"one-byte-too-many", 9}));
+      ok(queue.push({std::string(max_record, 'c'), 5, true}));
+      ok(!queue.push({"x", 10, true}));
+      ok(!queue.push({std::string(max_record + 1, 'x'), 11, true}));
+      ok(!queue.push({"", 12}));
+      ok(queue.finish() == 1);
+      ok(queue.push({std::string(max_record, 'r'), 6}));
+      std::set<uint64_t> completed;
+      queue.drain([&](uint64_t id) { ok(completed.insert(id).second); });
+      ok((completed == std::set<uint64_t>{2, 3, 4, 5, 6}));
+      ok(queue.empty());
+    }
+    std::cout << "PASS outbound callback reservation, frame integrity, bounded priority, in-flight byte accounting and exact completion cleanup\n";
     for (const auto &[priority, normal] : {std::pair{3u, 2u}, {8u, 2u}, {0u, 4u}, {8u, 0u}}) {
       taucloud::priority_mutex gate;
       std::vector<bool> order; order.reserve(priority + normal);

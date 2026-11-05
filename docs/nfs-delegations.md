@@ -905,3 +905,37 @@ counts vary with scheduling. Remote acceptance is pending. See
 [baseline and acceptance](evidence/pre-m8/nfs-shared-admission-local.json).
 Outgoing callback scheduling, durable recovery and production delegation handout
 remain open; this change does not establish fairness between individual clients.
+
+## Bounded callback output scheduling
+
+The TCP writer now reserves a separate queue for server-generated reverse RPCs.
+Ordinary responses retain sixteen records and 1 MiB; callbacks have four records
+and 256 KiB. Both budgets include the frame currently being written. Selection
+happens only between complete RPC frames, prefers callbacks, and admits an
+ordinary response after at most four consecutive callbacks when both classes
+are waiting. This does not preempt a partial frame or reorder bytes already
+accepted by the kernel. Only the trusted reverse-RPC send path chooses the
+callback class; incoming request headers cannot mark ordinary replies as callbacks.
+
+The queue owns reply-completion tokens from successful admission through actual
+write completion or cancellation. Socket failure drains the active frame and
+both waiting classes exactly once. Rejected enqueue and writer-start failure
+also release tokens. Queue ownership cannot be copied. The existing per-frame
+five-second write timeout remains in effect.
+
+Component checks cover reserved record/byte budgets, non-interleaving active
+frames, sustained callback traffic with ordinary progress, overflow and exact
+cleanup. A Linux TCP test stops reading, observes the kernel send queue reach a
+plateau, requests another callback, then verifies that it arrives ahead of
+queued READ replies while every data payload remains intact. This is transport
+backpressure evidence, distinct from the component tests. The same test against
+an isolated `dd65a14` FIFO service fails because its callback arrives only after
+all READ responses. Local ASan/UBSan passes 1,290 protocol checks, seven callback
+receipt groups, 19 backchannel groups and nine real-KDC groups. Linux 6.19 passes
+1,391 protocol and 1,553 native checks. See
+[local acceptance](evidence/pre-m8/nfs-output-local.json).
+
+The callback response deadline still starts at probe creation; priority does not
+account for time spent behind the currently blocked frame. Explicit transport
+send/deadline coordination, durable owner recovery and production delegation
+handout remain open. Remote acceptance is pending.

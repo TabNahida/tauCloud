@@ -1,10 +1,10 @@
 #include <taucloud/nfs.hpp>
+#include <taucloud/nfs_output_queue.hpp>
 #include <taucloud/files.hpp>
 #include <taucloud/runtime/bounded_executor.hpp>
 #include <pace/tcp.hpp>
 #include <pace/udp.hpp>
 #include <map>
-#include <deque>
 namespace tc {
 namespace {
 bool is_rpc_reply(std::string_view packet) {
@@ -12,14 +12,10 @@ bool is_rpc_reply(std::string_view packet) {
   nfs_detail::reader header(packet); header.u32();
   return header.u32() == 1;
 }
-struct outgoing_reply {
-  std::string packet;
-  uint64_t completion = 0;
-};
+using outgoing_reply = nfs_detail::outgoing_record;
 struct nfs_connection {
   pace::tcp::stream socket;
-  std::deque<outgoing_reply> output;
-  size_t queued_bytes = 0;
+  nfs_detail::output_queue output;
   unsigned processing = 0;
   unsigned callback_records = 0;
   bool writing = false;
@@ -62,46 +58,44 @@ struct nfs_runtime {
 // One writer owns each stream. Reverse RPCs and ordinary replies cannot
 // interleave record headers or payloads, even while a client pipelines requests.
 pace::task<void> write_frames(nfs_runtime &s, std::shared_ptr<nfs_connection> c) {
-  uint64_t current = 0;
   try {
     while (c->socket.is_open() && s.healthy() && !c->output.empty()) {
-      auto packet = std::move(c->output.front());
-      c->output.pop_front();
-      current = packet.completion;
+      const auto &packet = c->output.start();
       nfs_detail::writer header;
       header.u32(0x80000000u | uint32_t(packet.packet.size()));
       auto timer = s.io->call_after(5s, [c] { c->socket.close(); });
       co_await c->socket.write_all(header.data + packet.packet);
-      s.protocol.enqueue_reply_completion(current); current = 0;
-      c->queued_bytes -= packet.packet.size();
+      s.protocol.enqueue_reply_completion(c->output.finish());
     }
   } catch (...) { c->socket.close(); }
-  s.protocol.enqueue_reply_completion(current);
   c->writing = false;
   if (!c->socket.is_open()) {
-    for (const auto &packet : c->output) s.protocol.enqueue_reply_completion(packet.completion);
-    c->output.clear(); c->queued_bytes = 0;
+    c->output.drain([&](uint64_t id) { s.protocol.enqueue_reply_completion(id); });
   }
 }
 void enqueue(nfs_runtime &s, const std::shared_ptr<nfs_connection> &c, outgoing_reply packet) {
   s.healthy();
   if (!c->socket.is_open() || packet.packet.empty()) { s.protocol.enqueue_reply_completion(packet.completion); return; }
-  if (packet.packet.size() > nfs_detail::max_record || c->output.size() >= 16 ||
-      c->queued_bytes + packet.packet.size() > 4 * nfs_detail::max_record) {
-    s.protocol.enqueue_reply_completion(packet.completion);
-    c->socket.close(); return;
-  }
-  c->queued_bytes += packet.packet.size();
-  c->output.push_back(std::move(packet));
-  if (!c->writing) {
-    c->writing = true;
-    s.io->spawn(write_frames(s, c));
+  auto completion = packet.completion;
+  try {
+    require(c->output.push(std::move(packet)), "overloaded");
+    completion = 0; // The queue now owns delivery/cancellation accounting.
+    if (!c->writing) {
+      c->writing = true;
+      try { s.io->spawn(write_frames(s, c)); }
+      catch (...) { c->writing = false; throw; }
+    }
+  } catch (...) {
+    s.protocol.enqueue_reply_completion(completion);
+    c->socket.close();
+    if (!c->writing)
+      c->output.drain([&](uint64_t id) { s.protocol.enqueue_reply_completion(id); });
   }
 }
 void nfs_runtime::send(std::string connection, std::string packet) {
   io->post([this, connection = std::move(connection), packet = std::move(packet)]() mutable {
     auto found = sockets.find(connection);
-    if (found != sockets.end()) enqueue(*this, found->second, outgoing_reply{std::move(packet)});
+    if (found != sockets.end()) enqueue(*this, found->second, outgoing_reply{std::move(packet), 0, true});
   });
 }
 pace::task<outgoing_reply> process(nfs_runtime &s, std::string packet, std::string connection,

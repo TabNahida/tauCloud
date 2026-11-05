@@ -189,6 +189,15 @@ Authentication and lease advancement remain independent of header classification
 ([details](docs/nfs-delegations.md#reserved-callback-receipt-capacity),
 [baseline and acceptance](docs/evidence/pre-m8/nfs-shared-admission-local.json)).
 
+Callback output now has a separate four-record/256-KiB reservation beside the
+sixteen-record/1-MiB ordinary queue. Complete-frame priority allows ordinary
+progress after four callbacks and retains in-flight byte/completion accounting.
+Real Linux TCP backpressure validates callbacks preceding queued intact READ
+replies. Probe deadlines still need explicit transport-send coordination;
+durable recovery and production delegation handout remain open
+([details](docs/nfs-delegations.md#bounded-callback-output-scheduling),
+[local evidence](docs/evidence/pre-m8/nfs-output-local.json)).
+
 macOS native SMB remains unstable: the `c243218` backend run passes Linux GCC,
 Clang and Windows jobs plus macOS NFSv3, but macOS SMB fails after an authority
 watchdog disconnect. The replacement transport returns a new FileId while
