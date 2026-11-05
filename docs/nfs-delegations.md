@@ -790,3 +790,30 @@ protocol and 1,541 native checks; Clang reports 1,176 and 1,603 respectively.
 Scheduling affects polling counts. See the
 [fixed-source remote evidence](evidence/pre-m8/nfs-native-health-21-remote.json).
 The production handout and durable recovery gates above remain open.
+
+## Bounded concurrent TCP record receipt
+
+The connection reader now registers a complete record immediately and continues
+reading while its dispatch awaits native ACKs, executor capacity or file IPC.
+This matters for pipelined calls and shared fore/backchannel connections; their
+association is described in [RFC 8881 §2.10.3.1](https://www.rfc-editor.org/rfc/rfc8881.html#section-2.10.3.1).
+Previously, the reader waited for a reply before receiving the next record.
+A real TCP reproduction sent an invalid SEQUENCE followed by a valid READ before
+the five-second lease expired. Delaying the first dispatch until after expiry
+made the subsequent READ fail with BADSESSION, even though both records had
+already been sent. The invalid request does not renew the lease.
+
+The corrected runtime captures at most 16 processing records per connection and
+32 globally, in addition to the existing bounded executor and output queues.
+Overflow closes the affected transport and abandons undispatched admissions.
+Replies still use one writer per stream, and native completion tracking remains
+attached to delivery. Shutdown drains processing coroutines before stopping the
+reactor. UDP discovery keeps its existing sequential path.
+
+Four queue/pipeline/overflow checks, 19 backchannel groups, six callback-recovery
+groups and four lease-lifetime groups pass locally under Clang ASan/UBSan;
+[evidence](evidence/pre-m8/nfs-pipeline-local.json) retains the failing baseline.
+This change does not remove the protocol mutex or provide callback dispatch
+priority. Callback deadlines under executor delay, durable fencing and reclaim
+still require work before production delegation handout. Remote acceptance is
+pending.

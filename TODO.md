@@ -150,6 +150,15 @@ is pending, and the historical Windows delay phase is still unproven
 ([behavior](docs/file-authorization.md),
 [local evidence](docs/evidence/pre-m8/grant-preparation-local.json)).
 
+NFS TCP receipt now continues while previous dispatches wait, with 16 processing
+records per connection and 32 globally. A same-connection pre-expiry READ that
+formerly failed with BADSESSION now passes; overflow releases queued admissions
+and permits a fresh OPEN/READ. Four receipt/overflow checks, 19 backchannel, six
+callback-recovery and four lease-lifetime groups pass locally. Callback dispatch
+priority/deadlines and durable recovery remain open; remote acceptance is pending
+([details](docs/nfs-delegations.md#bounded-concurrent-tcp-record-receipt),
+[baseline and acceptance](docs/evidence/pre-m8/nfs-pipeline-local.json)).
+
 macOS native SMB remains unstable: the `c243218` backend run passes Linux GCC,
 Clang and Windows jobs plus macOS NFSv3, but macOS SMB fails after an authority
 watchdog disconnect. The replacement transport returns a new FileId while

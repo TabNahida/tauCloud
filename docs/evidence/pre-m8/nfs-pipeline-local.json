@@ -1,0 +1,90 @@
+{
+  "status": "passed",
+  "source_base": "52b8914dab1509f731c54ea31670302f88038ecb",
+  "recorded_at": "2026-11-05T01:32:58.164505+00:00",
+  "compiler": "Clang debug ASan/UBSan",
+  "source_sha256": {
+    "src/nfs.cpp": "63145947097d34eb57f40344ff721f141390e6e5ba3983f8872824d6047a719c",
+    "tests/nfs_admission_queue.py": "dc866dbbef2e123cb5b398b2b82707c4d526ecf7e4f658abfb29f36474843641"
+  },
+  "baseline": {
+    "source_commit": "52b8914dab1509f731c54ea31670302f88038ecb",
+    "sha256": "c8119c146efd6b46ab9b430daaf07d7cc326a3c618eda97047b39645c72d35a2",
+    "status": "failed",
+    "checks": [
+      "complete TCP request reaches the bounded executor before lease expiry and retains OPEN beyond expiry while both workers are occupied",
+      "successful SEQUENCE renews after the delay; queued READ returns original data; suspended file worker was not replaced"
+    ],
+    "error": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/tests/nfs_admission_queue.py\", line 157, in main\n    assert good.status == 0, good\n           ^^^^^^^^^^^^^^^^\nAssertionError: COMPOUND4res(status=NFS4ERR_BADSESSION, tag=b'tc7', resarray=[nfs_resop4(resop=OP_SEQUENCE, opsequence=SEQUENCE4res(sr_status=NFS4ERR_BADSESSION))])\n",
+    "note": "The original queue checks pass, then the new same-connection reproduction fails before the later overflow scenario."
+  },
+  "results": {
+    "final": {
+      "sha256": "1489d2b6c4a3bda65fbd9c67b4a2e6c4878df901b2b5ee09dbdcba806830429b",
+      "checks": [
+        "complete TCP request reaches the bounded executor before lease expiry and retains OPEN beyond expiry while both workers are occupied",
+        "successful SEQUENCE renews after the delay; queued READ returns original data; suspended file worker was not replaced",
+        "two records on one TCP connection are admitted before expiry while the first waits; failed SEQUENCE cannot renew the following READ",
+        "blocked pipeline overflow closes only its transport, abandons queued admissions and recovers capacity for a fresh authenticated OPEN/READ"
+      ],
+      "timing_seconds": {
+        "queued_send_after_renewal": 4.001507714041509,
+        "completion_after_renewal": 5.5342398910433985
+      },
+      "pipeline_timing_seconds": {
+        "sent_after_renewal": 3.8005108989891596,
+        "completion_after_renewal": 5.567666362971067
+      }
+    },
+    "callback": {
+      "sha256": "acdb1f56e3898d67867a463844d1ffa96631362a0e6125799dc06272fbe7e731",
+      "checks": [
+        "initial CB_SEQUENCE BADSESSION retries exact slot after session-installation race, without requiring forechannel SEQUENCE on a callback-only session",
+        "initial-callback classification is captured when sent, so a forechannel SEQUENCE overtaking its BADSESSION reply cannot create a false permanent fault",
+        "CB_SEQUENCE DELAY retains exact request/slot, retries after backoff on the live connection and leaves ordinary file operations usable",
+        "BADSESSION, BADSLOT, SEQ_MISORDERED and SEQ_FALSE_RETRY report BACKCHANNEL_FAULT without tearing down the shared TCP stream; a new session recovers",
+        "CONN_NOT_BOUND_TO_SESSION withdraws callback readiness; explicit rebind retries the same sequence without marking a permanent session fault",
+        "an error reply with trailing XDR remains invalid and must disconnect before an exact retry"
+      ]
+    },
+    "backchannel": {
+      "sha256": "51edb28636374d7de2b1160cfabcd1ff1064c48d818a6da7b9c2eafa389d8171",
+      "checks": [
+        "CREATE_SESSION binds a bidirectional transport; CB_NULL uses the requested program/version and AUTH_NONE while forechannel RPC stays usable",
+        "probe replies are bound to their exact TCP connection and XID; cross-connection, duplicate and unknown replies cannot change path state",
+        "BACKCHANNEL_CTL changes program and invalidates old probes; malformed matched replies keep path down and idempotent rebinding reprobes it",
+        "cleared callback credentials and destroyed/recreated sessions cannot be validated by a stale probe response",
+        "BIND_CONN_TO_SESSION supports BACK and BACK_OR_BOTH on new transports, rejects invalid directions and changes to existing channel roles",
+        "AUTH_SYS CB_NULL carries the offered timestamp, machine name, UID/GID and supplementary groups exactly",
+        "five-second probe timeout ignores late success; rebind recovers the path without recreating the session",
+        "losing the only callback transport sets CB_PATH_DOWN on a surviving forechannel connection",
+        "CB_NULL success alone does not validate the sequenced backchannel; CB_SEQUENCE success on the wrong transport is ignored",
+        "truncated/trailing XDR and mismatched status/tag/count/op/session/sequence/slot close the transport before exact retry; only a valid success advances the slot",
+        "successful CB_SEQUENCE advances exactly once; BACKCHANNEL_CTL retains the session sequence and ignores old duplicate replies",
+        "BIND and callback program replacement never retry an outstanding CB_COMPOUND on a live transport; its original reply releases the slot without validating the new program",
+        "completion of a callback issued before credential removal advances its slot but cannot resurrect the disabled backchannel",
+        "CB_COMPOUND timeout closes the original transport before retry; stale RPC replies on the replacement cannot complete the unresolved slot",
+        "one callback slot serializes multiple bound paths; transport loss retries the unresolved request on another bound connection",
+        "loss of the only backchannel with an unanswered CB_COMPOUND reports CB_PATH_DOWN_SESSION; binding a replacement clears that flag and preserves the pending sequence",
+        "client-advertised slot growth beyond CREATE_SESSION and shrink back to zero are accepted without allocation or increasing callback concurrency",
+        "destroying and recreating a session starts a distinct callback slot at sequence one; old CB_COMPOUND success cannot validate it",
+        "UINT32_MAX offered callback slots require only slot zero; AUTH_SYS credentials must fit the negotiated complete CB_COMPOUND request size"
+      ]
+    },
+    "lifetime": {
+      "sha256": "b2dd80ec8fcdf17da2c6aee114e46e72bbdae04b45ca36bee30b3e2420a65ff9",
+      "checks": [
+        "default lease is 60 seconds; configured five-second lease is advertised and SEQUENCE renews OPEN beyond its initial expiry",
+        "SEQUENCE and exact replay on either session renew the shared client lease and keep an idle sibling session and its OPEN usable",
+        "idle session and OPEN expire at the advertised lease; another client opens the file while the expired stateid remains invalid",
+        "reducing the lease preserves the old reclaim window across repeated restarts, then converges to the configured duration after grace"
+      ]
+    }
+  },
+  "limits": [
+    "Receive/dispatch overlap is bounded to 16 records per connection and 32 globally; executor and writer bounds remain separate.",
+    "This does not provide callback dispatch priority or remove the protocol-state mutex. Timely callback replies delayed beyond their probe deadline still need separate acceptance.",
+    "The native delegation production handout and durable restart/reclaim gates remain open.",
+    "Remote acceptance of this change is pending."
+  ]
+}

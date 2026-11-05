@@ -15,6 +15,7 @@ struct nfs_connection {
   pace::tcp::stream socket;
   std::deque<outgoing_reply> output;
   size_t queued_bytes = 0;
+  unsigned processing = 0;
   bool writing = false;
   explicit nfs_connection(pace::tcp::stream stream) : socket(std::move(stream)) {}
 };
@@ -24,6 +25,7 @@ struct nfs_runtime {
   taucloud::bounded_executor pool{2, 16, 16 * nfs_detail::max_record};
   nfs_detail::server protocol;
   std::atomic<int> connections = 0;
+  std::atomic<unsigned> processing = 0;
   std::atomic_bool native_fenced = false;
   std::map<std::string, std::shared_ptr<nfs_connection>> sockets;
   void send(std::string connection, std::string packet);
@@ -94,7 +96,8 @@ void nfs_runtime::send(std::string connection, std::string packet) {
     if (found != sockets.end()) enqueue(*this, found->second, outgoing_reply{std::move(packet)});
   });
 }
-pace::task<outgoing_reply> process(nfs_runtime &s, std::string packet, std::string connection) {
+pace::task<outgoing_reply> process(nfs_runtime &s, std::string packet, std::string connection,
+                                 uint64_t admission = 0) {
   struct pending {
     outgoing_reply reply;
     std::exception_ptr failure;
@@ -104,7 +107,7 @@ pace::task<outgoing_reply> process(nfs_runtime &s, std::string packet, std::stri
   auto p = std::make_shared<pending>();
   // This runs on the transport reactor after record assembly, before either
   // the bounded executor or the protocol mutex can delay authentication.
-  auto admission = s.protocol.begin_request(connection);
+  if (!admission) admission = s.protocol.begin_request(connection);
   struct admission_cleanup {
     nfs_detail::server &protocol;
     uint64_t id;
@@ -142,6 +145,19 @@ pace::task<outgoing_reply> process(nfs_runtime &s, std::string packet, std::stri
   }
   co_return std::move(p->reply);
 }
+pace::task<void> process_record(nfs_runtime &s, std::shared_ptr<nfs_connection> c,
+                               std::string packet, std::string connection, uint64_t admission) {
+  outgoing_reply response;
+  try {
+    response = co_await process(s, std::move(packet), std::move(connection), admission);
+    enqueue(s, c, std::move(response));
+    response.completion = 0;
+  } catch (...) { c->socket.close(); }
+  // Also covers allocation failure while constructing the process coroutine.
+  s.protocol.abandon_request(admission);
+  s.protocol.enqueue_reply_completion(response.completion);
+  --c->processing; --s.processing;
+}
 pace::task<void> serve(nfs_runtime &s, pace::tcp::stream stream) {
   auto c = std::make_shared<nfs_connection>(std::move(stream));
   auto &socket = c->socket;
@@ -168,10 +184,21 @@ pace::task<void> serve(nfs_runtime &s, pace::tcp::stream stream) {
             break;
         }
       }
-      auto response = co_await process(s, std::move(record.data), connection);
+      // Reading the next record must not wait for file IPC, executor capacity,
+      // or a fore-channel reply: callbacks and other slots share this stream.
+      // Bound captured packets before scheduling any coroutine. Admission is
+      // recorded here, not when the scheduled coroutine eventually runs.
+      require(c->processing < 16 && s.processing < 32, "overloaded");
+      auto admission = s.protocol.begin_request(connection);
+      ++c->processing; ++s.processing;
+      try {
+        s.io->spawn(process_record(s, c, std::move(record.data), connection, admission));
+      } catch (...) {
+        s.protocol.abandon_request(admission);
+        --c->processing; --s.processing;
+        throw;
+      }
       active = true;
-      if (response.packet.empty()) { s.protocol.enqueue_reply_completion(response.completion); continue; }
-      enqueue(s, c, std::move(response));
     }
   } catch (...) {
   }
@@ -286,6 +313,8 @@ int nfs(const config &c, const std::string &generation, std::atomic_bool &stoppi
     std::this_thread::sleep_for(20ms);
   s.pool.shutdown();
   while (s.pool.outstanding() > 0)
+    std::this_thread::sleep_for(10ms);
+  while (s.processing > 0)
     std::this_thread::sleep_for(10ms);
   s.io->stop();
   loop.join();
