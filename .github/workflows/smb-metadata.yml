@@ -85,6 +85,7 @@ on:
       - 'src/nfs.cpp'
       - 'src/nfs_backchannel.inc'
       - 'include/taucloud/nfs.hpp'
+      - 'include/taucloud/runtime/priority_mutex.hpp'
       - 'tests/nfs_backchannel_integration.py'
       - 'tests/nfs_callback_recovery.py'
       - 'tests/nfs_notify_lock_integration.py'

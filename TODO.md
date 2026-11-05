@@ -156,8 +156,9 @@ NFS TCP receipt now continues while previous dispatches wait, with 16 processing
 records per connection and 32 globally. A same-connection pre-expiry READ that
 formerly failed with BADSESSION now passes; overflow releases queued admissions
 and permits a fresh OPEN/READ. Four receipt/overflow checks, 19 backchannel, six
-callback-recovery and four lease-lifetime groups pass locally. Callback dispatch
-priority and durable recovery remain open; remote acceptance is pending
+callback-recovery and four lease-lifetime groups pass locally. Bounded incoming
+callback priority is described below; outgoing scheduling and durable recovery
+remain open. Remote acceptance is pending
 ([details](docs/nfs-delegations.md#bounded-concurrent-tcp-record-receipt),
 [baseline and acceptance](docs/evidence/pre-m8/nfs-pipeline-local.json)).
 
@@ -165,8 +166,20 @@ Timely callback replies now retain their original receipt time across delayed
 dispatch. Only a matching, post-probe, pre-deadline RPC hint defers timeout; all
 authentication/sequence checks still precede renewal. Five positive/negative TCP
 fault scenarios, 19 backchannel, six recovery, nine real-KDC groups and 1,146
-protocol checks pass locally. Remote acceptance is pending
+protocol checks pass locally. Native/component regression passes the GCC/Clang
+Linux 6.19 jobs at `0135dd0`; the TCP fault matrix is pending
 ([baseline and acceptance](docs/evidence/pre-m8/nfs-callback-queue-local.json)).
+
+Incoming callback replies now have a separate one-worker/eight-record executor
+and priority over waiting ordinary protocol dispatches, with a four-holder burst
+limit to preserve ordinary progress. A real-TCP saturated ordinary queue still
+accepts valid callbacks; six queue cases, 19 backchannel groups, nine real-KDC
+groups, four ordinary admission groups and 1,185 protocol checks pass locally.
+Linux 6.19 also passes 1,286 protocol component and 1,555 native checks. Remote
+acceptance is pending. Shared admission fairness, outgoing scheduling and durable
+delegation recovery remain open
+([details](docs/nfs-delegations.md#bounded-priority-for-callback-responses),
+[local evidence](docs/evidence/pre-m8/nfs-priority-local.json)).
 
 macOS native SMB remains unstable: the `c243218` backend run passes Linux GCC,
 Clang and Windows jobs plus macOS NFSv3, but macOS SMB fails after an authority

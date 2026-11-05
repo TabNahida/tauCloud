@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import signal
 import socket
+import struct
 import time
 import traceback
 
@@ -37,7 +38,7 @@ def main():
         (f.state / 'config.json').write_text(json.dumps(config))
         f.start()
         report['timing_seconds'] = {}
-        for case in ('valid', 'malformed', 'wrong-xid', 'wrong-transport', 'late'):
+        for case in ('valid', 'saturated', 'malformed', 'wrong-xid', 'wrong-transport', 'late'):
             first_client = len(clients)
             blocker = Client(port); clients.append(blocker); blocker.session()
             state, handle = blocker.open(blocker.root(), ('callback-queue-' + case).encode(), create=True)
@@ -54,6 +55,17 @@ def main():
             pending = pool.submit(blocker.compound, [op.putfh(handle), op.read(state, 0, 1)])
             assert blocker.sock.sent.wait(1)
             time.sleep(.2)
+            if case == 'saturated':
+                flood = Client(port); clients.append(flood)
+                packets = [flood.packet(100003, 4, 0, b'') for _ in range(16)]
+                flood.sock.sendall(b''.join(struct.pack('>I', 0x80000000 | len(p)) + p for p in packets))
+                # One blocked call plus sixteen ordinary RPCs overflows the
+                # sixteen-job pool, but not the per-connection record limit.
+                # No job can finish while the protocol mutex is held. Closure
+                # therefore proves ordinary capacity was exhausted first.
+                flood.sock.settimeout(1)
+                try: assert flood.sock.recv(1) == b'', 'ordinary queue was not held'
+                except ConnectionResetError: pass
             if case == 'late':
                 time.sleep(max(0, started + 5.2 - time.monotonic()))
             if case == 'malformed': callback.acknowledge_sequence(body=b'invalid')
@@ -71,7 +83,7 @@ def main():
             assert not pending.done(), 'file worker fault did not hold dispatch'
             os.kill(file_pid, signal.SIGCONT); stopped = None
             pending.result(timeout=12)
-            if case == 'valid':
+            if case in ('valid', 'saturated'):
                 flags = callback.flags()
                 assert not flags & (1 | 512 | 1024), flags
                 assert len(callback.sequences) == 1, 'timely successful callback was retried'
@@ -90,7 +102,9 @@ def main():
                 assert result.status == 10052, ('invalid callback renewed expired session', case, result)
             assert f.ctl('status')['file']['identity'] == identity
             report['timing_seconds'][case] = dict(sent_after_probe=sent, processed_after_probe=time.monotonic() - started)
-            report['checks'].append('timely CB_SEQUENCE reply survives delayed dispatch without retry or disconnect' if case == 'valid' else case + ' callback reply cannot validate the path or renew an expired session')
+            report['checks'].append('timely CB_SEQUENCE reply survives delayed dispatch without retry or disconnect' if case == 'valid' else
+                'reserved callback capacity accepts a timely CB_SEQUENCE reply while the ordinary executor is demonstrably full' if case == 'saturated' else
+                case + ' callback reply cannot validate the path or renew an expired session')
             print('PASS callback queue ' + case, flush=True)
             for c in clients[first_client:]: c.close()
         report['status'] = 'passed'

@@ -1,6 +1,7 @@
 #include <taucloud/files.hpp>
 #include <taucloud/native_delegation_owner.hpp>
 #include <taucloud/nfs.hpp>
+#include <taucloud/runtime/priority_mutex.hpp>
 #include <deque>
 #include <atomic>
 #include <iostream>
@@ -25,6 +26,42 @@ int nfs_delegation_protocol_suite(bool require_native = false) {
     require(value, "delegation_protocol_test_failed"); ++checks;
   };
   try {
+    for (const auto &[priority, normal] : {std::pair{3u, 2u}, {8u, 2u}, {0u, 4u}, {8u, 0u}}) {
+      taucloud::priority_mutex gate;
+      std::vector<bool> order; order.reserve(priority + normal);
+      std::vector<std::jthread> workers;
+      std::unique_lock held(gate);
+      auto enqueue = [&](bool control) {
+        workers.emplace_back([&, control] {
+          auto lock = gate.enter(control);
+          order.push_back(control);
+        });
+      };
+      // Queue normal work first, then callbacks, while neither can run.
+      for (unsigned i = 0; i < normal; ++i) enqueue(false);
+      for (unsigned i = 0; i < priority; ++i) enqueue(true);
+      auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
+      while (gate.pending() != std::pair{normal, priority} && std::chrono::steady_clock::now() < deadline)
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      bool ready = gate.pending() == std::pair{normal, priority};
+      held.unlock(); workers.clear();
+      ok(ready && order.size() == priority + normal);
+      unsigned controls = 0, ordinary = 0, burst = 0;
+      for (bool control : order) {
+        if (control) {
+          ok(ordinary == normal || burst < 4);
+          ++controls; ++burst;
+        } else {
+          ok(controls == priority || burst == 4);
+          ++ordinary; burst = 0;
+        }
+      }
+      ok(controls == priority && ordinary == normal && gate.pending() == std::pair{0u, 0u});
+      try { auto lock = gate.enter(true); throw error("gate-release"); }
+      catch (const error &e) { ok(std::string_view(e.what()) == "gate-release"); }
+      std::lock_guard acquired_after_exception(gate);
+    }
+    std::cout << "PASS callback dispatch priority precedes queued ordinary work, bounds bursts and releases on exceptions\n";
     initialize(base / "state", 38443);
     auto cfg = config::load(base / "state"); cfg.nfs_lease_seconds = 5;
     fs::create_directories(base / "root");

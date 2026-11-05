@@ -841,6 +841,41 @@ session cannot be revived. Regression passes 19 backchannel groups, six callback
 recovery groups, nine real-MIT-KDC groups and 1,146 protocol component checks under
 Clang ASan/UBSan. [Evidence](evidence/pre-m8/nfs-callback-queue-local.json) retains
 the failing baseline and test-fixture corrections. The new TCP fault scenarios
-are included in the Linux GCC/Clang Actions matrix. Remote results are pending;
-callback dispatch priority, durable native recovery and production delegation
-handout remain open.
+are included in the Linux GCC/Clang Actions matrix. Remote results are pending.
+Bounded incoming callback priority is described below; durable native recovery
+and production delegation handout remain open.
+
+The native/component regression at `0135dd0` passes both GCC and Clang Linux
+6.19 jobs ([evidence](evidence/pre-m8/nfs-callback-queue-0135-native.json)). This
+workflow does not run the delayed TCP callback scenarios; their separate
+cross-platform matrix remains pending.
+
+## Bounded priority for callback responses
+
+Incoming RPC replies now use a separate executor with one worker and eight
+outstanding records. Ordinary RPC calls retain two workers and sixteen records;
+the existing per-connection and global receipt bounds still apply. The RPC
+direction header selects scheduling capacity only. Unknown XIDs, wrong
+transports, invalid GSS and malformed responses still undergo the same checks.
+Overflow closes the affected transport, and shutdown drains both executors.
+
+The protocol state gate prefers already-waiting callback dispatches. When
+ordinary work is also waiting, at most four consecutive priority holders can
+run before ordinary work gets a turn. The currently executing operation is not
+preempted; state remains serialized. Maintenance and disconnect processing use
+the ordinary path. This bounds the scheduling advantage available to forged
+reply headers without making authentication depend on queue selection.
+
+An independent TCP fault test fills the ordinary executor while its first file
+RPC is blocked, confirms rejection of the overflowing ordinary transport, then
+successfully submits a valid callback through reserved capacity. Concurrent gate
+tests verify priority over earlier ordinary waiters, the four-holder burst limit,
+ordinary-only/priority-only progress and exception-safe release. Six callback
+queue cases, 19 backchannel groups, nine real-KDC groups, four ordinary admission
+groups and 1,185 protocol checks pass locally. Linux 6.19 additionally passes
+1,286 protocol component and 1,555 native checks, including real-owner loss during
+blocked renewal ([evidence](evidence/pre-m8/nfs-priority-local.json)). Remote
+acceptance is pending. Reservation covers executor capacity; shared receipt and
+connection caps can still reject records before scheduling. Admission fairness,
+outgoing callback scheduling, durable recovery and production delegation handout
+remain separate open gates.

@@ -23,6 +23,7 @@ struct nfs_runtime {
   config cfg;
   std::shared_ptr<pace::io_context> io = std::make_shared<pace::io_context>();
   taucloud::bounded_executor pool{2, 16, 16 * nfs_detail::max_record};
+  taucloud::bounded_executor callbacks{1, 8, 8 * nfs_detail::max_record};
   nfs_detail::server protocol;
   std::atomic<int> connections = 0;
   std::atomic<unsigned> processing = 0;
@@ -114,8 +115,15 @@ pace::task<outgoing_reply> process(nfs_runtime &s, std::string packet, std::stri
     ~admission_cleanup() { protocol.abandon_request(id); }
   } admitted{s.protocol, admission};
   while (!s.protocol.request_ready(admission)) co_await s.io->sleep_for(1ms);
+  // This header selects bounded scheduling capacity, never authentication.
+  // The protocol dispatcher still validates the exact callback and transport.
+  bool callback = false;
+  if (packet.size() >= 8) {
+    nfs_detail::reader header(packet); header.u32(); callback = header.u32() == 1;
+  }
+  auto &executor = callback ? s.callbacks : s.pool;
   taucloud::bounded_executor::ticket ticket;
-  require(s.pool.submit(
+  require(executor.submit(
               s.io, nfs_detail::max_record, std::chrono::steady_clock::now() + 5s,
               [&s, p, packet = std::move(packet), connection, admission](std::stop_token stop) {
                 require(!stop.stop_requested(), "cancelled");
@@ -312,7 +320,8 @@ int nfs(const config &c, const std::string &generation, std::atomic_bool &stoppi
   while (s.connections > 0 && now() < deadline)
     std::this_thread::sleep_for(20ms);
   s.pool.shutdown();
-  while (s.pool.outstanding() > 0)
+  s.callbacks.shutdown();
+  while (s.pool.outstanding() > 0 || s.callbacks.outstanding() > 0)
     std::this_thread::sleep_for(10ms);
   while (s.processing > 0)
     std::this_thread::sleep_for(10ms);

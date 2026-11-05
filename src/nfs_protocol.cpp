@@ -4,6 +4,7 @@
 #include <taucloud/gss.hpp>
 #include <taucloud/nfs_ssv.hpp>
 #include <taucloud/native_delegation_owner.hpp>
+#include <taucloud/runtime/priority_mutex.hpp>
 #include <algorithm>
 #include <map>
 #include <deque>
@@ -139,7 +140,7 @@ struct server::impl {
   backchannel_send send_backchannel;
   backchannel_close close_backchannel;
   database db;
-  std::mutex mutex;
+  taucloud::priority_mutex mutex;
   std::string connection;
   std::string verifier = decode_bytes(random_hex(8));
   struct identity {

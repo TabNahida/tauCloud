@@ -17,7 +17,11 @@ std::string dispatch(std::string_view packet, std::string connection_id, uint64_
     uint64_t id;
     ~finish_admission() { self.cancel_request(id); self.drain_native(); }
   } admitted{*this, admission};
-  std::lock_guard guard(mutex);
+  bool response = false;
+  if (packet.size() >= 8) {
+    reader header(packet); header.u32(); response = header.u32() == 1;
+  }
+  auto guard = mutex.enter(response);
   await_request(admission);
   claim_request(admission, connection_id);
   connection = std::move(connection_id);

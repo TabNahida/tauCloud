@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "source_commit": "0135dd089061d3774894ce5387d4a38e6beea032",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41950728181",
+  "results": {
+    "gcc": {
+      "sha256": "9f60f1be041eddfe6642def51027ec8c43eb469f31da1d25695f706732a536e9",
+      "mandatory_marker": true,
+      "groups": [
+        "PASS CHANNEL/nonblocking-handshake-ACK-errors-fixed-timeout 491 checks",
+        "PASS distinct delegation state, CLAIM_DELEG_CUR_FH, CLOSE/disconnect independence and client/principal/file/access checks",
+        "PASS native owner SIGKILL fences new/queued requests and an in-flight file result without waiting for the protocol mutex",
+        "PASS 1253 delegation protocol/native component checks; production handout remains gated",
+        "PASS native delegation 1542 checks"
+      ]
+    },
+    "clang": {
+      "sha256": "3b280f4f1323f016fff8f7adf373c9c278bbb78139ebff481d8fcce4acfff605",
+      "mandatory_marker": true,
+      "groups": [
+        "PASS CHANNEL/nonblocking-handshake-ACK-errors-fixed-timeout 491 checks",
+        "PASS distinct delegation state, CLAIM_DELEG_CUR_FH, CLOSE/disconnect independence and client/principal/file/access checks",
+        "PASS native owner SIGKILL fences new/queued requests and an in-flight file result without waiting for the protocol mutex",
+        "PASS 1241 delegation protocol/native component checks; production handout remains gated",
+        "PASS native delegation 1584 checks"
+      ]
+    }
+  },
+  "limits": [
+    "This confirms native/component regression, not the delayed TCP callback scenarios; those run in the separate metadata matrix.",
+    "Production delegation handout remains disabled; durable recovery remains open."
+  ]
+}
