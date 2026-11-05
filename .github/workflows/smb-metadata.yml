@@ -87,6 +87,7 @@ on:
       - 'src/nfs_backchannel.inc'
       - 'include/taucloud/nfs.hpp'
       - 'include/taucloud/nfs_output_queue.hpp'
+      - 'include/taucloud/nfs_callback_delivery.hpp'
       - 'include/taucloud/runtime/priority_mutex.hpp'
       - 'tests/nfs_backchannel_integration.py'
       - 'tests/nfs_callback_recovery.py'
@@ -182,6 +183,9 @@ jobs:
       - name: NFS callback output priority under TCP backpressure
         if: ${{ !cancelled() && steps.compile.outcome == 'success' && runner.os == 'Linux' }}
         run: python tests/nfs_output_queue.py ${{ matrix.test_options }} --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/nfs-output-queue.json
+      - name: NFS callback response deadline after delayed transmission
+        if: ${{ !cancelled() && steps.compile.outcome == 'success' && runner.os == 'Linux' }}
+        run: python tests/nfs_output_queue.py ${{ matrix.test_options }} --delay-reply --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/nfs-output-deadline.json
       - name: SMB shared lease state, wire vectors and break transitions
         if: ${{ !cancelled() && steps.compile.outcome == 'success' }}
         run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_smb_lease_tests${{ matrix.suffix }}

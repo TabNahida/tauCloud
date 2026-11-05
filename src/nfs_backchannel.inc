@@ -1,7 +1,7 @@
 // Backchannel requests use only bound TCP transports, never client addresses.
 struct callback_probe {
   std::string session, connection;
-  int64_t deadline;
+  std::shared_ptr<callback_delivery> delivery;
   bool compound = false;
   uint32_t sequence = 0;
   uint64_t generation = 0;
@@ -104,7 +104,7 @@ void send_callback_probe(const std::string &id, const std::string &bound, bool c
     else body.fixed(s.callback_references);
     body.fixed(s.callback_extra);
   }
-  callback_probe probe{id, bound, now() + 5000, compound, s.callback_sequence, s.callback_generation};
+  callback_probe probe{id, bound, {}, compound, s.callback_sequence, s.callback_generation};
   probe.initializing = !s.callback_session_seen && s.callback_sequence == 1;
   writer call;
   call.u32(callback_xid).u32(0).u32(2).u32(s.callback_program).u32(1).u32(compound ? 1 : 0);
@@ -141,9 +141,11 @@ void send_callback_probe(const std::string &id, const std::string &bound, bool c
   }
   if (call.data.size() > s.callback_request_limit) return;
   probe.first_arrival = request_boundary();
+  probe.delivery = std::make_shared<callback_delivery>();
   if (compound) s.callback_unresolved = true;
+  auto delivery = probe.delivery;
   callback_probes.emplace(callback_xid, std::move(probe));
-  send_backchannel(bound, std::move(call.data));
+  send_backchannel(bound, std::move(call.data), std::move(delivery));
 }
 void sequence_callback(const std::string &id) {
   auto &s = sessions.at(id);
@@ -182,8 +184,12 @@ void expire_callback_probes() {
     if (client == client_ids.end() || !client_live(found->second.client)) return true;
     // Receipt only defers timeout until bounded dispatch validates this reply.
     // It cannot advance a callback slot or renew the client by itself.
-    if (probe.deadline > now() || timely_callback_receipt(item.first, probe.connection,
-        probe.first_arrival, probe.deadline)) return false;
+    auto time = now();
+    bool send_failed = probe.delivery->expire_send(time);
+    auto deadline = probe.delivery->deadline();
+    if (!send_failed && (deadline > time || timely_callback_receipt(item.first, probe.connection,
+        probe.first_arrival, deadline))) return false;
+    if (send_failed) disconnect_callback(probe.connection);
     if (probe.compound) {
       // RFC 8881 2.10.6.2 prohibits retry on a live original transport.
       // Keep the slot occupied until disconnect() confirms that it is gone.
@@ -235,7 +241,8 @@ void callback_reply(uint32_t xid, reader &r) {
   uint32_t operation_status = 0;
   std::string clear;
   try {
-    if (timely_callback_receipt(xid, connection, probe.first_arrival, probe.deadline, true) &&
+    if (!probe.delivery->expire_send() &&
+        timely_callback_receipt(xid, connection, probe.first_arrival, probe.delivery->deadline(), true) &&
         r.data.size() <= s.callback_response_limit && r.u32() == 0) {
       auto flavor = r.u32();
       auto verifier = r.opaque(400);

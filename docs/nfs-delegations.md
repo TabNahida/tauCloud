@@ -935,7 +935,49 @@ receipt groups, 19 backchannel groups and nine real-KDC groups. Linux 6.19 passe
 1,391 protocol and 1,553 native checks. See
 [local acceptance](evidence/pre-m8/nfs-output-local.json).
 
-The callback response deadline still starts at probe creation; priority does not
-account for time spent behind the currently blocked frame. Explicit transport
-send/deadline coordination, durable owner recovery and production delegation
-handout remain open. Remote acceptance is pending.
+This first output-priority change still started the response deadline at probe
+creation. The transport timing correction below removes that coupling. Durable
+owner recovery and production delegation handout remain open. Remote acceptance
+is pending.
+
+The output scheduling components at `c7444a4` pass both GCC and Clang Linux 6.19
+jobs with real native guards ([fixed-source evidence](evidence/pre-m8/nfs-output-c744-native.json)).
+These jobs do not run TCP backpressure; its separate metadata matrix remains
+pending. They also predate the delivery-deadline change below.
+
+## Callback transmission and response deadlines
+
+Each probe now owns a shared delivery ticket. A queued transport holds only a
+weak reference; retiring or replacing the probe cancels its unsent frame. The
+single writer pins the ticket while writing an active frame, then atomically
+records completion after the whole RPC frame is accepted by the local transport.
+This is local send completion, not an acknowledgment by the remote application.
+
+There are two bounded waits: at most five seconds from enqueue through complete
+frame transmission, followed by five seconds for the response. A send that has
+already expired cannot later open a response window. Duplicate completion cannot
+reset the deadline. A pending, untrusted reply hint cannot prolong a failed send.
+Existing receipt timestamps still protect timely replies delayed in dispatch,
+and full transport, GSS, sequence, slot and XDR checks still precede renewal.
+Client leases and GSS contexts retain their independent expiry boundaries.
+
+Delivery notification uses an atomic ticket without taking the protocol mutex.
+The write timeout uses the remaining enqueue budget, so it cannot create another
+five-second send allowance when a queued frame starts late. Uncertain compound
+results retain their slots until confirmed transport disconnection before retry,
+as required by [RFC 8881 §2.10.6.2](https://www.rfc-editor.org/rfc/rfc8881.html#section-2.10.6.2).
+
+A real Linux TCP baseline at `c7444a4` fills the kernel send buffer, queues a
+CB_NULL probe, resumes reading three seconds later, then replies 5.3 seconds
+after enqueue. The baseline reports CB_PATH_DOWN; the corrected runtime accepts
+the response within five seconds of actual frame transmission and subsequently
+validates CB_SEQUENCE. Component checks cover boundary expiry, duplicate
+completion, failed-send non-revival and cancellation of retired queued frames.
+Concurrent completion/expiry tests require exactly one outcome; maintenance
+uses one time snapshot when deciding expiry. The final local ASan/UBSan run
+passes 1,554 M7 checks, 1,361 protocol checks, seven callback queue groups, 19
+backchannel groups and nine real-KDC groups. Linux 6.19 passes 1,464 protocol
+and 1,553 native checks (native scheduling can affect component check counts).
+See [baseline and acceptance](evidence/pre-m8/nfs-delivery-local.json). Durable
+recovery and production delegation handout remain open; this is not full NFS
+conformance. Remote acceptance is pending.

@@ -10,6 +10,7 @@
 #include <set>
 #include <thread>
 #include <future>
+#include <latch>
 #ifdef __linux__
 #include <csignal>
 #include <cstring>
@@ -28,6 +29,37 @@ int nfs_delegation_protocol_suite(bool require_native = false) {
     require(value, "delegation_protocol_test_failed"); ++checks;
   };
   try {
+    {
+      callback_delivery sent(1000);
+      ok(sent.deadline() == 6000 && !sent.expire_send(5999));
+      ok(sent.finish(4000) && sent.deadline() == 9000);
+      ok(!sent.expire_send(6000));
+      ok(!sent.finish(7000) && sent.deadline() == 9000);
+      callback_delivery stalled(1000);
+      ok(stalled.expire_send(6000) && stalled.deadline() == 0);
+      ok(!stalled.finish(5999) && !stalled.finish(7000) && stalled.deadline() == 0);
+      callback_delivery late(1000);
+      ok(!late.finish(6000) && late.deadline() == 0);
+      callback_delivery boundary(1000);
+      ok(boundary.finish(5999) && boundary.deadline() == 10999);
+      for (unsigned i = 0; i < 16; ++i) {
+        callback_delivery racing(1000);
+        std::latch start(3);
+        bool sent = false;
+        std::jthread writer([&] { start.count_down(); start.wait(); sent = racing.finish(5999); });
+        std::jthread timeout([&] { start.count_down(); start.wait(); racing.expire_send(6000); });
+        start.count_down(); writer.join(); timeout.join();
+        ok(racing.deadline() == (sent ? 10999 : 0));
+        ok(!racing.finish(7000) && racing.deadline() == (sent ? 10999 : 0));
+      }
+      auto owner = std::make_shared<callback_delivery>(1000);
+      output_queue queue;
+      ok(queue.push({"retired-probe", 0, true, owner}));
+      owner.reset();
+      ok(queue.start().delivery.expired());
+      ok(queue.finish() == 0 && queue.empty());
+    }
+    std::cout << "PASS callback delivery starts one response window, bounds unsent lifetime and cancels retired queued frames\n";
     {
       output_queue queue;
       std::set<uint64_t> completed;
@@ -196,7 +228,9 @@ int nfs_delegation_protocol_suite(bool require_native = false) {
         std::this_thread::sleep_for(std::chrono::milliseconds(3500));
       }
       return result;
-    }, callback_call{}, [&](auto connection, auto packet) { callbacks.emplace_back(connection, packet); },
+    }, callback_call{}, [&](auto connection, auto packet, auto delivery) {
+      callbacks.emplace_back(connection, packet); ok(delivery->finish());
+    },
        [&](auto connection) { closes.push_back(connection); });
     network = protocol.get();
     struct peer { std::string connection, session; uint64_t client = 0; uint32_t sequence = 0, uid = 1000; };

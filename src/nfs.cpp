@@ -32,7 +32,7 @@ struct nfs_runtime {
   unsigned callback_records = 0; // Only the transport reactor updates counts.
   std::atomic_bool native_fenced = false;
   std::map<std::string, std::shared_ptr<nfs_connection>> sockets;
-  void send(std::string connection, std::string packet);
+  void send(std::string connection, std::string packet, std::shared_ptr<nfs_detail::callback_delivery>);
   bool healthy() {
     if (protocol.poll_native()) return !native_fenced;
     if (!native_fenced.exchange(true)) {
@@ -46,8 +46,8 @@ struct nfs_runtime {
           return rpc(c, "nfs", target, op, body);
         }, [c](uint32_t program, uint32_t version, uint32_t procedure, std::string body) {
           return nfs_detail::loopback_callback(c, program, version, procedure, body);
-        }, [this](std::string connection, std::string packet) {
-          send(std::move(connection), std::move(packet));
+        }, [this](std::string connection, std::string packet, auto delivery) {
+          send(std::move(connection), std::move(packet), std::move(delivery));
         }, [this](std::string connection) {
           io->post([this, connection = std::move(connection)] {
             auto found = sockets.find(connection);
@@ -61,10 +61,18 @@ pace::task<void> write_frames(nfs_runtime &s, std::shared_ptr<nfs_connection> c)
   try {
     while (c->socket.is_open() && s.healthy() && !c->output.empty()) {
       const auto &packet = c->output.start();
+      auto delivery = packet.delivery.lock();
+      if (packet.callback && !delivery) {
+        s.protocol.enqueue_reply_completion(c->output.finish());
+        continue; // Probe retired before its queued frame could start.
+      }
+      if (delivery) require(!delivery->expire_send(), "callback_send_timeout");
       nfs_detail::writer header;
       header.u32(0x80000000u | uint32_t(packet.packet.size()));
-      auto timer = s.io->call_after(5s, [c] { c->socket.close(); });
+      auto timeout = delivery ? std::chrono::milliseconds(std::max<int64_t>(0, delivery->queued_until() - now())) : 5s;
+      auto timer = s.io->call_after(timeout, [c] { c->socket.close(); });
       co_await c->socket.write_all(header.data + packet.packet);
+      if (delivery) require(delivery->finish(), "callback_send_timeout");
       s.protocol.enqueue_reply_completion(c->output.finish());
     }
   } catch (...) { c->socket.close(); }
@@ -92,10 +100,13 @@ void enqueue(nfs_runtime &s, const std::shared_ptr<nfs_connection> &c, outgoing_
       c->output.drain([&](uint64_t id) { s.protocol.enqueue_reply_completion(id); });
   }
 }
-void nfs_runtime::send(std::string connection, std::string packet) {
-  io->post([this, connection = std::move(connection), packet = std::move(packet)]() mutable {
+void nfs_runtime::send(std::string connection, std::string packet,
+                       std::shared_ptr<nfs_detail::callback_delivery> delivery) {
+  io->post([this, connection = std::move(connection), packet = std::move(packet),
+            delivery = std::weak_ptr(delivery)]() mutable {
     auto found = sockets.find(connection);
-    if (found != sockets.end()) enqueue(*this, found->second, outgoing_reply{std::move(packet), 0, true});
+    if (found != sockets.end() && !delivery.expired())
+      enqueue(*this, found->second, outgoing_reply{std::move(packet), 0, true, delivery});
   });
 }
 pace::task<outgoing_reply> process(nfs_runtime &s, std::string packet, std::string connection,

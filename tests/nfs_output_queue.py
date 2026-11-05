@@ -28,6 +28,7 @@ def main():
     p.add_argument('--bin', required=True, type=Path)
     p.add_argument('--output', required=True, type=Path)
     p.add_argument('--sanitizers', action='store_true')
+    p.add_argument('--delay-reply', action='store_true')
     args = p.parse_args()
     report = dict(status='failed', checks=[], recorded_at=datetime.datetime.now(datetime.timezone.utc).isoformat())
     f = c = None
@@ -58,11 +59,13 @@ def main():
         time.sleep(.15)
         packet = c.compound([op.backchannel_ctl(c.program, [t4.callback_sec_parms4(0)])], packet_only=True)
         control = struct.unpack_from('>I', packet)[0]
-        c.frame(packet); time.sleep(.1)
+        c.frame(packet); queued_at = time.monotonic()
+        time.sleep(3 if args.delay_reply else .1)
         c.sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1048576)
         report['kernel_send_queue_samples'] = samples
         report['read_count'] = len(reads)
         callbacks = []
+        held_probe = None
         deadline = time.monotonic() + 15
         def read(count):
             data = b''
@@ -87,7 +90,11 @@ def main():
                 assert r.unpack_uint() == 0 and r.unpack_bytes() == b''
                 callbacks.append(len(reads))
                 if procedure == 0:
-                    r.done(); c.probes.append(xid); c.acknowledge(xid)
+                    r.done(); c.probes.append(xid)
+                    if args.delay_reply:
+                        assert held_probe is None
+                        held_probe = xid
+                    else: c.acknowledge(xid)
                 else:
                     assert procedure == 1
                     c.receive_sequence(xid, r)
@@ -102,9 +109,17 @@ def main():
                 result = c.decode3('READ', body)
                 assert result.status == 0 and result.resok.data == payload, result
         assert callbacks and callbacks[0] > 0, ('callback did not overtake queued data', callbacks)
+        if args.delay_reply:
+            assert held_probe is not None
+            time.sleep(max(0, queued_at + 5.3 - time.monotonic()))
+            report['reply_after_enqueue_seconds'] = time.monotonic() - queued_at
+            assert report['reply_after_enqueue_seconds'] < 7, 'test failed to release its response promptly'
+            c.acknowledge(held_probe)
         c.path(True)
         report['reads_remaining_at_callbacks'] = callbacks
         report['checks'].append('real TCP backpressure permits a callback before queued data replies, with intact payloads and a healthy path')
+        if args.delay_reply:
+            report['checks'].append('response after the original enqueue deadline succeeds within five seconds of actual frame transmission')
         report['status'] = 'passed'
         print('PASS real TCP output callback priority', flush=True)
     except Exception:

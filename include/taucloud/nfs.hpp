@@ -1,5 +1,6 @@
 #pragma once
 #include <taucloud/core.hpp>
+#include <taucloud/nfs_callback_delivery.hpp>
 #include <string_view>
 namespace tc::nfs_detail {
 constexpr size_t max_record = 256 * 1024;
@@ -36,7 +37,9 @@ using domain_call = std::function<json(std::string, std::string, json)>;
 // Only typed NLM/NSM messages to the single trusted loopback peer are permitted.
 using callback_call = std::function<std::string(uint32_t, uint32_t, uint32_t, std::string)>;
 // Reverse RPCs use only an already-bound transport, never a client-supplied address.
-using backchannel_send = std::function<void(std::string, std::string)>;
+// Queue only a weak delivery reference; pin it while writing the active frame,
+// then call finish() after the entire frame is accepted by the transport.
+using backchannel_send = std::function<void(std::string, std::string, std::shared_ptr<callback_delivery>)>;
 // Closing is asynchronous; protocol.disconnect confirms transport loss before
 // an outstanding CB_COMPOUND may be retried on another bound connection.
 using backchannel_close = std::function<void(std::string)>;

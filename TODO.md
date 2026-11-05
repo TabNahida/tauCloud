@@ -193,10 +193,19 @@ Callback output now has a separate four-record/256-KiB reservation beside the
 sixteen-record/1-MiB ordinary queue. Complete-frame priority allows ordinary
 progress after four callbacks and retains in-flight byte/completion accounting.
 Real Linux TCP backpressure validates callbacks preceding queued intact READ
-replies. Probe deadlines still need explicit transport-send coordination;
+replies. Transport-send/deadline coordination is described below;
 durable recovery and production delegation handout remain open
 ([details](docs/nfs-delegations.md#bounded-callback-output-scheduling),
 [local evidence](docs/evidence/pre-m8/nfs-output-local.json)).
+
+Callback response time now starts after complete local frame transmission,
+with an independent fixed five-second enqueue/send budget. Atomic delivery
+tickets cannot reopen failed sends or extend deadlines through duplicate
+completion; retired probes cancel unsent frames. A real delayed-send baseline
+reports CB_PATH_DOWN at `c7444a4`, while the corrected runtime validates the
+response and subsequent CB_SEQUENCE
+([details](docs/nfs-delegations.md#callback-transmission-and-response-deadlines),
+[local evidence](docs/evidence/pre-m8/nfs-delivery-local.json)).
 
 macOS native SMB remains unstable: the `c243218` backend run passes Linux GCC,
 Clang and Windows jobs plus macOS NFSv3, but macOS SMB fails after an authority

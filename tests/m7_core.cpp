@@ -172,7 +172,9 @@ int main() {
       std::vector<std::pair<std::string, std::string>> callbacks;
       std::vector<std::string> closes;
       server protocol(cfg, [](auto, auto, auto) { return json::object(); }, {},
-                      [&](auto connection, auto packet) { callbacks.emplace_back(connection, packet); },
+                      [&](auto connection, auto packet, auto delivery) {
+                        callbacks.emplace_back(connection, packet); ok(delivery->finish());
+                      },
                       [&](auto connection) { closes.push_back(connection); });
       uint32_t xid = 100;
       auto compound = [&](writer operation, const std::string &connection) {

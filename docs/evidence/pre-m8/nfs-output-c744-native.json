@@ -1,0 +1,45 @@
+{
+  "status": "passed",
+  "source_commit": "c7444a4a9d4c4783a926ec9bdce0b6719949fb9e",
+  "run_url": "https://github.com/TabNahida/tauCloud/actions/runs/41955667940",
+  "jobs": [
+    {
+      "name": "kernel (clang, debug, y)",
+      "conclusion": "success",
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41955667940/job/127009846819"
+    },
+    {
+      "name": "kernel (gcc, release, n)",
+      "conclusion": "success",
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41955667940/job/127009846867"
+    }
+  ],
+  "artifacts": {
+    "gcc": {
+      "sha256": "96193d0eaeda98a301b4957cdf10ae70d05fb2a8f981bbe83e3e95f6f4908f10",
+      "mandatory_marker": true,
+      "selected_groups": [
+        "PASS outbound callback reservation, frame integrity, bounded priority, in-flight byte accounting and exact completion cleanup",
+        "PASS native owner SIGKILL fences new/queued requests and an in-flight file result without waiting for the protocol mutex",
+        "PASS 1397 delegation protocol/native component checks; production handout remains gated",
+        "PASS native delegation 1534 checks"
+      ]
+    },
+    "clang": {
+      "sha256": "87202e8c88aa647bb3ff0f1f69043a311785dc80eefbc3001d22fdff176966f4",
+      "mandatory_marker": true,
+      "selected_groups": [
+        "PASS outbound callback reservation, frame integrity, bounded priority, in-flight byte accounting and exact completion cleanup",
+        "PASS native owner SIGKILL fences new/queued requests and an in-flight file result without waiting for the protocol mutex",
+        "PASS 1379 delegation protocol/native component checks; production handout remains gated",
+        "PASS native delegation 1569 checks"
+      ]
+    }
+  },
+  "limits": [
+    "These jobs test queue/protocol components with actual Linux 6.19 native guards. They do not run the TCP backpressure test.",
+    "TCP and GCC/Clang/MSVC metadata acceptance remain separate.",
+    "This is c7444a4 output scheduling evidence, not acceptance of the subsequent delivery-deadline change.",
+    "Production delegation handout and full SMB/NFS compatibility remain incomplete."
+  ]
+}

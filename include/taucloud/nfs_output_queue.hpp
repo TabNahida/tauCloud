@@ -10,6 +10,7 @@ struct outgoing_record {
   std::string packet;
   uint64_t completion = 0;
   bool callback = false;
+  std::weak_ptr<callback_delivery> delivery{};
 };
 
 // Reactor-owned. The active frame stays charged until its write completes;
