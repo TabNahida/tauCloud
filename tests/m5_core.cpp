@@ -170,6 +170,19 @@ int main(int argc, char **argv) {
           .get<std::string>();
     };
     {
+      auto expired = grant("cold-prepare");
+      json request = {{"grant", expired}, {"write", true}, {"access", 0x13019f},
+                      {"sharing", 7}, {"disposition", 2}, {"options", 0x40}};
+      test_root_delay(2100);
+      rejected([&] { store->dispatch("smb_open", request, ctx("smb")); }, "grant_refresh_required");
+      ok(!fs::exists(base / "files/alice/cold-prepare"));
+      auto h = open("cold-prepare", 0x13019f, 7, 2);
+      ok(fs::is_regular_file(base / "files/alice/cold-prepare"));
+      call("close", "cold-prepare", {{"handle", h}});
+      rejected([&] { store->dispatch("smb_open", request, ctx("smb")); }, "lease_expired");
+      std::cout << "PASS cold SMB CREATE rejects expired preparation before create and accepts fresh authorization\n";
+    }
+    {
       auto h = open("cache-io", 0x1f01ff);
       call("write", "cache-io", {{"handle", h}, {"offset", 0}, {"data", encode_bytes("old")},
           {"request_id", random_hex(16)}});

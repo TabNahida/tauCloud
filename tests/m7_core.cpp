@@ -271,7 +271,10 @@ int main() {
       b["request_id"] = id.empty() ? random_hex(16) : id;
       return store->dispatch("nfs_file", b, ctx("nfs"));
     };
+    test_root_delay(2100);
+    rejected([&] { call("root", ""); }, "grant_refresh_required");
     auto dir = call("root", "").at("handle").get<std::string>();
+    std::cout << "PASS cold NFS root preparation requires fresh authorization before returning a handle\n";
     auto file = call("create", dir, {{"name", "data"}}).at("handle").get<std::string>();
     auto discovery = call("security_stat", file, json::object(), "", true);
     ok(discovery == json{{"handle", file}, {"directory", false}});

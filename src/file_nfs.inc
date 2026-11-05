@@ -517,6 +517,7 @@ json nfs_dispatch(const json &body, const call_context &ctx) {
   require(g.at("protocol") == "nfs" && g.contains("export"), "forbidden");
   auto &s = attach(g, ctx);
   nfs_init();
+  prepared_lease(g, ctx);
   auto space = g.at("space").at("id").get<std::string>(), actor = g.at("actor").get<std::string>();
   auto metadata = [&](json m) {
     if (!discovery) return m;

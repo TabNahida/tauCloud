@@ -34,7 +34,9 @@
 namespace tc {
 #ifdef TAUCLOUD_TEST_IO
 static std::atomic<int64_t> write_budget = -1;
+static std::atomic<int64_t> root_delay = 0;
 void test_write_budget(int64_t bytes) { write_budget = bytes; }
+void test_root_delay(int64_t milliseconds) { root_delay = milliseconds; }
 #endif
 std::string encode_bytes(std::string_view input) {
   std::string out;
@@ -436,6 +438,10 @@ json native_file::info(bool change_stamp) const {
 #endif
 }
 native_file native_file::root(const fs::path &path) {
+#ifdef TAUCLOUD_TEST_IO
+  if (auto delay = root_delay.exchange(0); delay > 0)
+    std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+#endif
   require(path.is_absolute(), "invalid_path");
   native_file result;
 #ifdef _WIN32

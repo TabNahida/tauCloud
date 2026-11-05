@@ -212,17 +212,25 @@ static pace::task<pace::http::server_response> handle(api_state &s, pace::http::
                       {"share", body.value("share", "")},
                       {"path", body.value("path", "")},
                       {"write", file_write}};
-      auto grant = co_await dispatch(s, "identity", "authorize", request);
-      body["grant"] = grant;
-      if (file_op == "rename") {
-        auto target = body.at("destination");
-        target["auth"] = auth;
-        target["write"] = true;
-        body["target_grant"] = co_await dispatch(s, "identity", "authorize", target);
-      }
       if (!r.header("Idempotency-Key").empty())
         body["request_id"] = r.header("Idempotency-Key");
-      auto value = co_await dispatch(s, grant.at("root").at("worker"), file_op, body);
+      json value;
+      for (unsigned attempt = 0;; ++attempt) {
+        auto grant = co_await dispatch(s, "identity", "authorize", request);
+        body["grant"] = grant;
+        if (file_op == "rename") {
+          auto target = body.at("destination");
+          target["auth"] = auth;
+          target["write"] = true;
+          body["target_grant"] = co_await dispatch(s, "identity", "authorize", target);
+        }
+        try {
+          value = co_await dispatch(s, grant.at("root").at("worker"), file_op, body);
+          break;
+        } catch (const error &e) {
+          if (attempt || std::string_view(e.what()) != "grant_refresh_required") throw;
+        }
+      }
       if (value.is_object()) {
         value.erase("native");
         value.erase("stage");

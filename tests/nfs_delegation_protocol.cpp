@@ -55,6 +55,12 @@ int nfs_delegation_protocol_suite(bool require_native = false) {
     nfs("write", handle, {{"offset", 0}, {"data", encode_bytes("original")}});
     auto native = native_file::root(base / "root");
     bool component_provider = false, authorized = true, slow_read = false;
+    unsigned authorizations = 0, prepare_failures = 0, prepared_mutations = 0;
+    bool revoke_on_prepare = false;
+    std::string prepare_error = "grant_refresh_required";
+    std::string prepare_operation = "mkdir";
+    std::vector<json> prepare_requests;
+    std::vector<unsigned> prepare_authorizations;
     std::atomic_bool slow_read_entered = false;
     std::atomic_bool blocked_renewal = false, renewal_entered = false;
     json private_delegation;
@@ -65,10 +71,22 @@ int nfs_delegation_protocol_suite(bool require_native = false) {
     server *network = nullptr;
     auto protocol = std::make_unique<server>(cfg, [&](std::string target, std::string op, json body) -> json {
       if (target == "identity") {
+        ++authorizations;
         require(authorized, "forbidden");
         return grant(body.at("credential").value("uid", 1000u), body.value("security_discovery", false));
       }
       if (target != "file") return json::object();
+      if (op == "nfs_file" && body.value("op", "") == prepare_operation) {
+        auto recorded = body; recorded.erase("grant");
+        prepare_requests.push_back(std::move(recorded));
+        prepare_authorizations.push_back(authorizations);
+        if (prepare_failures) {
+          --prepare_failures;
+          if (revoke_on_prepare) authorized = false;
+          throw error(prepare_error);
+        }
+        ++prepared_mutations;
+      }
       // Test-only provider injection. The production file domain's wire gate
       // is first tested below, then this component fixture supplies its native
       // primitive. This does NOT prove host metadata or crash-safe handout.
@@ -214,6 +232,39 @@ int nfs_delegation_protocol_suite(bool require_native = false) {
       ok(locked);
     };
     auto a = connect("one"); establish_callback();
+    auto mkdir = [&](std::string name, unsigned expected = 0) {
+      prepare_requests.clear(); prepare_authorizations.clear(); prepared_mutations = 0;
+      return send(a, {put(directory), writer().u32(6).u32(2).opaque(name).u32(0).opaque("")}, expected);
+    };
+    prepare_failures = 1;
+    mkdir("fresh-prepare");
+    ok(prepare_requests.size() == 2 && prepared_mutations == 1);
+    ok(prepare_requests[0] == prepare_requests[1] && prepare_requests[0].contains("request_id"));
+    ok(prepare_authorizations[1] == prepare_authorizations[0] + 1);
+    ok(fs::is_directory(base / "root/space/fresh-prepare"));
+    prepare_failures = 2;
+    mkdir("bounded-prepare", 10008);
+    ok(prepare_requests.size() == 2 && !prepared_mutations && !prepare_failures);
+    ok(!fs::exists(base / "root/space/bounded-prepare"));
+    prepare_failures = 1; revoke_on_prepare = true;
+    mkdir("revoked-prepare", 13);
+    ok(prepare_requests.size() == 1 && !prepared_mutations && !authorized);
+    ok(authorizations == prepare_authorizations[0] + 1);
+    ok(!fs::exists(base / "root/space/revoked-prepare"));
+    authorized = true; revoke_on_prepare = false;
+    prepare_failures = 1; prepare_error = "lease_expired";
+    mkdir("expired-prepare", 13);
+    ok(prepare_requests.size() == 1 && !prepared_mutations);
+    ok(authorizations == prepare_authorizations[0]);
+    ok(!fs::exists(base / "root/space/expired-prepare"));
+    prepare_error = "grant_refresh_required";
+    prepare_operation = "lookup"; prepare_failures = 2;
+    prepare_requests.clear(); prepare_authorizations.clear(); prepared_mutations = 0;
+    send(a, {put(directory), writer().u32(28).opaque("fresh-prepare")}, 10008);
+    ok(prepare_requests.size() == 2 && !prepared_mutations && !prepare_failures);
+    ok(fs::is_directory(base / "root/space/fresh-prepare"));
+    prepare_operation = "mkdir";
+    std::cout << "PASS pre-operation authorization refresh retries once with stable mutation identity, fresh authority, revocation and ordinary expiry boundaries\n";
     auto refused = open_result(send(a, {put(), opening(a, 0x101)}), 3);
     slow_read = true;
     send(a, {put(), writer().u32(25).fixed(refused.first).u64(0).u32(8)});

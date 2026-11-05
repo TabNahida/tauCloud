@@ -143,7 +143,8 @@ uint32_t status(std::string_view code) {
   if (code == "forbidden" || code == "permission_denied" || code == "policy_revoked" ||
       code == "lease_expired" || code == "mixed_writers_disabled")
     return 0xc0000022;
-  if (code == "overloaded" || code == "handle_limit" || code == "lock_limit")
+  if (code == "overloaded" || code == "handle_limit" || code == "lock_limit" ||
+      code == "grant_refresh_required")
     return 0xc000009a;
   if (code == "io_error" || code == "internal_error" || code == "uncertain_write" ||
       code == "database_error")
@@ -663,6 +664,17 @@ struct client : session_state, std::enable_shared_from_this<client> {
     for (const auto &[id, pending] : pending_commands) waiting.push_back(id);
     for (auto id : waiting) co_await finish_command(id, 0xc000006d);
   }
+  pace::task<json> prepared_file(uint32_t tid, std::string path, bool writing,
+                                 std::string op, json body, json &grant) {
+    for (unsigned attempt = 0;; ++attempt) {
+      if (attempt) grant = co_await authorize(tid, path, writing);
+      body["grant"] = grant;
+      try { co_return co_await smb_rpc(s, grant.at("root").at("worker"), op, body); }
+      catch (const error &e) {
+        if (attempt || std::string_view(e.what()) != "grant_refresh_required") throw;
+      }
+    }
+  }
   pace::task<json> operation(opened &h, std::string op, bool writing, json body = json::object()) {
     check(!h.pipe, 0xc00000bb);
     bool refresh = !h.cache_cookie.empty() && (op == "read" || op == "write" || op == "flush");
@@ -677,7 +689,7 @@ struct client : session_state, std::enable_shared_from_this<client> {
     h.grant = co_await authorize(h.tree_id, h.path, writing);
     body["grant"] = h.grant;
     body["handle"] = h.handle;
-    auto result = co_await smb_rpc(s, h.grant.at("root").at("worker"), "smb_" + op, body);
+    auto result = co_await prepared_file(h.tree_id, h.path, writing, "smb_" + op, body, h.grant);
     if (refresh) {
       const auto &state = result.at("cache");
       cache_deadline(h, state);
@@ -1113,7 +1125,7 @@ struct client : session_state, std::enable_shared_from_this<client> {
         request["allocation"] = *initial_allocation;
       if (binding)
         request["lease"] = {{"client", encode_bytes(binding->client)}, {"context", encode_bytes(lease_context)}};
-      auto meta = co_await smb_rpc(s, grant.at("root").at("worker"), "smb_open", request);
+      auto meta = co_await prepared_file(tid, name, writing, "smb_open", request, grant);
       access = meta.at("access");
       auto fid = decode_bytes(random_hex(16));
       files.emplace(
@@ -1486,8 +1498,7 @@ struct client : session_state, std::enable_shared_from_this<client> {
                                              ? 0 : h.path.rfind('/'));
         auto parent_grant = co_await authorize(tid, parent_path, false);
         json parent_request = {{"grant", parent_grant}};
-        auto parent = co_await smb_rpc(s, parent_grant.at("root").at("worker"),
-                                      "smb_path_stat", parent_request);
+        auto parent = co_await prepared_file(tid, parent_path, false, "smb_path_stat", parent_request, parent_grant);
         self["name"] = ".";
         parent["name"] = "..";
         entries.insert(entries.begin(), parent);
@@ -1648,7 +1659,7 @@ struct client : session_state, std::enable_shared_from_this<client> {
         } else if (klass == 3 || klass == 7) {
           auto grant = co_await authorize(tid, "", false);
           json request = {{"grant", grant}};
-          auto q = co_await smb_rpc(s, grant.at("root").at("worker"), "smb_quota", request);
+          auto q = co_await prepared_file(tid, "", false, "smb_quota", request, grant);
           auto total = q.at("limit").get<uint64_t>(),
                used = q.at("used").get<uint64_t>() + q.at("reserved").get<uint64_t>();
           auto free = total > used ? total - used : 0;

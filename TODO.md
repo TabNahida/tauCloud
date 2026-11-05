@@ -140,6 +140,16 @@ Selected-profile acceptance: [M7 guide](docs/m7.md), [中文](docs/m7.zh-CN.md),
 
 ## Full SMB/NFS compatibility prerequisite (user decision, 2026-10-31)
 
+Cold file-domain preparation now has a distinct pre-operation expiry result.
+SMB/NFS/API obtain fresh authority and retry it at most once, preserving mutation
+identity; ordinary expiry and revocation remain failures. Deterministic cold
+attachment and NFS retry/revocation tests pass, alongside 87 M2, 12,599 M5,
+1,550 M7 and 1,146 protocol checks. Real TCP/HTTPS regression passes 42 SMB lease,
+15 NFS, ten API and two admission-queue groups. Remote acceptance of this change
+is pending, and the historical Windows delay phase is still unproven
+([behavior](docs/file-authorization.md),
+[local evidence](docs/evidence/pre-m8/grant-preparation-local.json)).
+
 macOS native SMB remains unstable: the `c243218` backend run passes Linux GCC,
 Clang and Windows jobs plus macOS NFSv3, but macOS SMB fails after an authority
 watchdog disconnect. The replacement transport returns a new FileId while
@@ -206,6 +216,9 @@ distinguished from unexpected loss. Durable restart/file-domain fencing, callbac
 dispatch priority and recovery remain unfinished; production handout is disabled
 ([instance-fence evidence](docs/evidence/pre-m8/nfs-native-health-local.json))
 ([details](docs/nfs-delegations.md#independent-reservation-capability-channel)).
+The instance fence passes both GCC and Clang/ASan Linux 6.19 remote jobs at
+`21cf7d9`, including actual-owner SIGKILL during a blocked file-domain renewal
+([fixed-source evidence](docs/evidence/pre-m8/nfs-native-health-21-remote.json)).
 
 The independent NFS native owner now acknowledges bounded request reservations:
 completion preserves a full lease, cancellation does not renew, duplicates

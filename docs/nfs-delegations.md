@@ -783,3 +783,10 @@ continues to decline delegations. See
 channel checks, 1,087 host protocol checks and, in Linux 6.19, 1,188 actual-owner
 protocol checks plus 1,554 native checks pass under Clang ASan/UBSan. Two real-TCP
 queue checks and all six callback-recovery groups also pass.
+
+Remote Linux 6.19 acceptance at `21cf7d9` passes with GCC and Clang/ASan. Both
+jobs include actual-owner SIGKILL while renewal is blocked: GCC reports 1,194
+protocol and 1,541 native checks; Clang reports 1,176 and 1,603 respectively.
+Scheduling affects polling counts. See the
+[fixed-source remote evidence](evidence/pre-m8/nfs-native-health-21-remote.json).
+The production handout and durable recovery gates above remain open.

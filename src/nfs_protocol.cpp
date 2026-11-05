@@ -49,7 +49,7 @@ uint32_t status(std::string_view code) {
     return 10004;
   if (code == "overloaded" || code == "directory_limit" || code == "operation_limit" ||
       code == "uncertain_write" || code == "locked" || code == "sharing_violation" ||
-      code == "cache_break_pending")
+      code == "cache_break_pending" || code == "grant_refresh_required")
     return 10008;
   if (code == "io_error" || code == "internal_error" || code == "database_error")
     return 5;
@@ -227,6 +227,18 @@ struct server::impl {
   json file(const identity &who, const std::string &handle, std::string op,
             json args = json::object(), std::string request = "", std::string export_name = "",
             bool discovery = false) {
+    for (unsigned attempt = 0;; ++attempt) {
+      try { return file_once(who, handle, op, args, request, export_name, discovery); }
+      catch (const error &e) {
+        if (std::string_view(e.what()) != "grant_refresh_required") throw;
+        // A nested namespace lookup has its own budget. Do not let its
+        // exhausted retry cause an enclosing rename/remove to repeat it.
+        if (attempt) throw error("overloaded");
+      }
+    }
+  }
+  json file_once(const identity &who, const std::string &handle, std::string op,
+                 json args, std::string request, std::string export_name, bool discovery) {
     json b = {{"peer", "127.0.0.1"},
               {"credential", who.credential},
               {"write", op == "write" || op == "resize" || op == "create" || op == "mkdir" ||

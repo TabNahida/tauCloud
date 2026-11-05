@@ -256,6 +256,13 @@ struct file_store::impl {
                 grant.at("epoch").get<int64_t>() >= minimum_epoch,
             "lease_expired");
   }
+  void prepared_lease(const json &grant, const call_context &ctx) {
+    // Only immediately after attachment, before this request's operation.
+    // Recovery/index maintenance may have run, but no requested mutation has.
+    ctx.check();
+    require(grant.at("epoch").get<int64_t>() >= minimum_epoch, "policy_revoked");
+    require(grant.at("expires").get<int64_t>() > now(), "grant_refresh_required");
+  }
   json object(const std::string &space, const std::string &path) {
     statement q(db,
                 "SELECT native,object,size,directory,path FROM objects WHERE space=? AND path=?");
@@ -745,7 +752,8 @@ struct file_store::impl {
     auto &s = attach(grant, ctx);
     auto space = grant.at("space").at("id").get<std::string>(),
          path = grant.at("path").get<std::string>(), actor = grant.at("actor").get<std::string>();
-    lease(grant, ctx);
+    if (grant.at("protocol") == "core") prepared_lease(grant, ctx);
+    else lease(grant, ctx);
     cache_conflict(space, path);
     for (auto j : jobs(space))
       if ((j.value("protocol", "") == "webdav" || j.value("protocol", "") == "ftp") &&

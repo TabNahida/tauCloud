@@ -100,6 +100,7 @@ public:
 json inspect_root(const fs::path &path);
 #ifdef TAUCLOUD_TEST_IO
 void test_write_budget(int64_t bytes);
+void test_root_delay(int64_t milliseconds);
 #endif
 json system_inventory(const call_context &ctx);
 class file_store {

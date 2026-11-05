@@ -182,14 +182,17 @@ int main() {
       return g;
     };
     auto call = [&](std::string op, std::string path, json body = json::object()) {
-      body["grant"] = grant(path);
       auto started = now();
-      try { return files->dispatch(op, body, context()); }
-      catch (const error &e) {
-        if (std::string_view(e.what()) == "lease_expired")
-          std::cerr << "lease_expired operation=" << op << " path=" << path
-                    << " elapsed_ms=" << now() - started << " after_checks=" << checks << '\n';
-        throw;
+      for (unsigned attempt = 0;; ++attempt) {
+        body["grant"] = grant(path);
+        try { return files->dispatch(op, body, context()); }
+        catch (const error &e) {
+          if (!attempt && std::string_view(e.what()) == "grant_refresh_required") continue;
+          if (std::string_view(e.what()) == "lease_expired" || std::string_view(e.what()) == "grant_refresh_required")
+            std::cerr << e.what() << " operation=" << op << " path=" << path
+                      << " elapsed_ms=" << now() - started << " after_checks=" << checks << '\n';
+          throw;
+        }
       }
     };
     auto denied = grant("", true, now() - 1);
@@ -206,6 +209,16 @@ int main() {
         check(std::string_view(e.what()) != "unsafe_path_accepted");
       }
     }
+    // Delay the first root access after signature/expiry verification. Cold
+    // attachment may outlast authorization, but cannot execute the mkdir.
+    auto cold = grant("cold-prepare");
+    test_root_delay(2100);
+    rejects([&] { files->dispatch("mkdir", {{"grant", cold}}, context()); }, "grant_refresh_required");
+    check(!fs::exists(root_path / "space/cold-prepare"));
+    call("mkdir", "cold-prepare");
+    check(fs::is_directory(root_path / "space/cold-prepare"));
+    rejects([&] { files->dispatch("mkdir", {{"grant", cold}}, context()); }, "lease_expired");
+    std::cout << "PASS cold attachment expiry refuses mutation, fresh authorization succeeds and an already-expired grant remains invalid\n";
     call("mkdir", "nested");
     auto j = call("begin", "nested/data", {{"size", 8}, {"request_id", random_hex(16)}});
     test_write_budget(3);

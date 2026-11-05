@@ -1,0 +1,165 @@
+{
+  "status": "passed",
+  "source_base": "21cf7d99c6b533d3072227743041c81619ae0b0c",
+  "recorded_at": "2026-11-05T01:23:16.984965+00:00",
+  "compiler": "Clang debug ASan/UBSan",
+  "source_sha256": {
+    "include/taucloud/files.hpp": "83e8fd661f71a60f1c3cdbaaff6b4deb67f5f2e8c6897ebba3357c5221361ec1",
+    "src/api.cpp": "ccee5f4c189921f7f63a79d9a2f606e5cc63ecb30ec5ffebd5d734de164c754f",
+    "src/file_nfs.inc": "0179d21a6f4ed2a2cca940109f5261cbe916f9f61b91175cb5062b528e3cacb9",
+    "src/file_smb.inc": "27f97f35454598af170680d2510b95ec40b81a33c834dac16071b4faf5dc03ad",
+    "src/files.cpp": "cba7cf054e0742cd1cd5c7c1577ad19df085c353b0d6d7b0f4bbe6888b00c429",
+    "src/native_files.cpp": "2489ab6b1f0281aaee6a84f9fd88e57d411eb807427ee4f85cedd3cbe9f9b023",
+    "src/nfs_protocol.cpp": "d29bd534f8bce801864b924c1fef68a4f0bb32fdd83d9469b67a1bab1616a803",
+    "src/smb.cpp": "96c3aae2aba3be2a24b3998ca94ba426e4bc0e65d9016d502cc3fe7c52255626",
+    "tests/m2_core.cpp": "da027c81bb4a5be2e1ca24bcdd12c63086c374250eb170a57dac2b8990055d38",
+    "tests/m5_core.cpp": "df88a4b40548f6df6a5bee8360ce500d8354f2317d8721510189cbf8671c66c9",
+    "tests/m7_core.cpp": "5487448bfb027e0f9b80eecdc62637607802888c510f0f1944b7ba1aa20f14e1",
+    "tests/nfs_delegation_protocol.cpp": "c8b1f9a4db05fbd89073da3d535250bc0b0369a79773d78d41a2840565027571"
+  },
+  "core": {
+    "m2": {
+      "sha256": "5e013dad38f549db36b132083b41090b4dc0fc42bbb41105b81e7609b7b4f98b",
+      "checks": 87,
+      "groups": [
+        "PASS cold attachment expiry refuses mutation, fresh authorization succeeds and an already-expired grant remains invalid"
+      ]
+    },
+    "m5": {
+      "sha256": "4f989d1585bb6f711e6daa610114a4079b4aeaa047eb56e21e836ba18fad9612",
+      "checks": 12599,
+      "groups": [
+        "PASS cold SMB CREATE rejects expired preparation before create and accepts fresh authorization",
+        "PASS SMB data IO acknowledges cache renewal; invalid authority/cookie and fenced opens cannot mutate or revive"
+      ]
+    },
+    "m7": {
+      "sha256": "fee5d8b017ed773d917adbc68e5e5dd30e0c2cbd51c1e1d6760c52b5731f3853",
+      "checks": 1550,
+      "groups": [
+        "PASS cold NFS root preparation requires fresh authorization before returning a handle"
+      ]
+    }
+  },
+  "integration": {
+    "api": {
+      "sha256": "55e2c90ec71f3c667250be1c4bd290f9c124c82b050c1b10ebea87e32077ff1b",
+      "checks": [
+        "users/groups/membership; separate management roles; root, space and writer overlap rejected",
+        "two-user isolation and administrator has no implicit file grant; aliases charge quota once",
+        "portable names, traversal, case aliases, hard links and symlink rejection",
+        "random writes, explicit flush, range locks, stable open identity across rename",
+        "quota pre-reservation, staged visibility and cancellation releases capacity",
+        "acknowledged grant and group revocation; open handles cannot bypass policy",
+        "domain crash fencing, sibling continuity and durable staged upload recovery",
+        "bounded CPU/memory/network/capacity inventory, honest disk-health states and audit",
+        "bounded HTTPS CLI upload/download with SHA-256 match: 1048576 bytes; worker budget 512 MiB",
+        "clean stop, all owner databases consistent and logs exclude credentials"
+      ]
+    },
+    "smb-lease": {
+      "sha256": "2b4b5f71f0956464021e6e0eb9018596f1a9ca6ba28410e630e20af241ff026a",
+      "checks": [
+        "210: v1 shared lease survives renewal, joins during recall, validates client/key/ACK state and coherently breaks RWH to RH to NONE",
+        "300: v2 shared lease survives renewal, joins during recall, validates client/key/ACK state and coherently breaks RWH to RH to NONE",
+        "302: v2 shared lease survives renewal, joins during recall, validates client/key/ACK state and coherently breaks RWH to RH to NONE",
+        "311: v2 shared lease survives renewal, joins during recall, validates client/key/ACK state and coherently breaks RWH to RH to NONE",
+        "210: rename preserves own lease/epoch, waits for foreign HANDLE ACK before publishing path, and disposition/DELETE_ON_CLOSE recall HANDLE while preserving READ until last close",
+        "300: rename preserves own lease/epoch, waits for foreign HANDLE ACK before publishing path, and disposition/DELETE_ON_CLOSE recall HANDLE while preserving READ until last close",
+        "302: rename preserves own lease/epoch, waits for foreign HANDLE ACK before publishing path, and disposition/DELETE_ON_CLOSE recall HANDLE while preserving READ until last close",
+        "311: rename preserves own lease/epoch, waits for foreign HANDLE ACK before publishing path, and disposition/DELETE_ON_CLOSE recall HANDLE while preserving READ until last close",
+        "210: lease notification selects the first available authenticated ClientGuid transport without a member open, excludes unauthenticated/foreign peers and falls back after disconnect",
+        "300: lease notification selects the first available authenticated ClientGuid transport without a member open, excludes unauthenticated/foreign peers and falls back after disconnect",
+        "302: lease notification selects the first available authenticated ClientGuid transport without a member open, excludes unauthenticated/foreign peers and falls back after disconnect",
+        "311: lease notification selects the first available authenticated ClientGuid transport without a member open, excludes unauthenticated/foreign peers and falls back after disconnect",
+        "same-client authenticated transport without an open routes the native recall ACK to the owning connection",
+        "R-only native invalidation delivers a sessionless no-ACK break before releasing exclusion",
+        "global key/name reservation covers NONE leases, rejects another path and is released after final close or failed CREATE",
+        "all eight v1/v2 requested state combinations return legal grants; H/W without READ succeeds with NONE",
+        "an original NONE member renews promoted shared authority after the promoting member closes",
+        "a conflicting lease prevents partial promotion of an existing R lease to RH when RWH was requested",
+        "malformed sizes, unknown state bits and duplicate lease contexts fail; reserved flags are ignored and v2 is ignored on SMB 2.1",
+        "the same LeaseKey under different client GUIDs identifies independent leases",
+        "native recall waits 35 seconds for ACK expiry, revokes caching before admitting the writer, rejects late ACK and preserves ordinary IO on the original open",
+        "metadata-only and write-only opens hold renewable RWH without gaining READ/WRITE rights; foreign leases recall to shared RH",
+        "a pre-existing metadata-only handle shares native identity with a later write-only leased handle without adding data access",
+        "READ_CONTROL, attribute and synchronize-only opens retain native exclusion without a data-cache recall",
+        "read-only-share metadata lease renews and ACKs without obtaining write authority or data access",
+        "210: incompatible sharing recalls only HANDLE (RWH to RW), preserves dirty writes on denial, then a compatible open recalls WRITE (RW to R)",
+        "300: incompatible sharing recalls only HANDLE (RWH to RW), preserves dirty writes on denial, then a compatible open recalls WRITE (RW to R)",
+        "302: incompatible sharing recalls only HANDLE (RWH to RW), preserves dirty writes on denial, then a compatible open recalls WRITE (RW to R)",
+        "311: incompatible sharing recalls only HANDLE (RWH to RW), preserves dirty writes on denial, then a compatible open recalls WRITE (RW to R)",
+        "210: queued overwrite chains RWH to RH to R to NONE, preserves same-key opens and dirty flush, and waits through both ACKs before truncating",
+        "300: queued overwrite chains RWH to RH to R to NONE, preserves same-key opens and dirty flush, and waits through both ACKs before truncating",
+        "302: queued overwrite chains RWH to RH to R to NONE, preserves same-key opens and dirty flush, and waits through both ACKs before truncating",
+        "311: queued overwrite chains RWH to RH to R to NONE, preserves same-key opens and dirty flush, and waits through both ACKs before truncating",
+        "210: delivered RH invalidation allows overwrite/write/EOF/allocation/lock before HANDLE ACK, preserves breaking CREATE state and still waits for incompatible sharing",
+        "300: delivered RH invalidation allows overwrite/write/EOF/allocation/lock before HANDLE ACK, preserves breaking CREATE state and still waits for incompatible sharing",
+        "302: delivered RH invalidation allows overwrite/write/EOF/allocation/lock before HANDLE ACK, preserves breaking CREATE state and still waits for incompatible sharing",
+        "311: delivered RH invalidation allows overwrite/write/EOF/allocation/lock before HANDLE ACK, preserves breaking CREATE state and still waits for incompatible sharing",
+        "unacknowledged delivered RH invalidation completes to NONE after 35 seconds, lets a pending CREATE recheck sharing, rejects late ACK and preserves authenticated transport and usable opens",
+        "210: RWH ACK expiry unblocks same-transport CREATE after 35 seconds, rejects late ACK, preserves original IO and permits later RWH reacquisition",
+        "300: RWH ACK expiry unblocks same-transport CREATE after 35 seconds, rejects late ACK, preserves original IO and permits later RWH reacquisition",
+        "302: RWH ACK expiry unblocks same-transport CREATE after 35 seconds, rejects late ACK, preserves original IO and permits later RWH reacquisition",
+        "311: RWH ACK expiry unblocks same-transport CREATE after 35 seconds, rejects late ACK, preserves original IO and permits later RWH reacquisition"
+      ]
+    },
+    "nfs": {
+      "sha256": "2db9e95beb724f463a66e1e5006f19c5900604b3582826dd9dd28f72aeb15610",
+      "checks": [
+        "TCP record fragmentation and MOUNT v3 with independent XDR codecs",
+        "unknown UID/GID/groups rejected; root squashed to explicitly unprivileged subject",
+        "root squash uses anonymous read rights, strips privileged groups and rejects writes/revoked rights",
+        "read-only TCP portmapper advertises NFS and does not advertise unsupported NLM version 3",
+        "trailing XDR rejected before WRITE; previously persisted bytes remain intact",
+        "v3 guarded CREATE, 64 KiB UNSTABLE upgraded to FILE_SYNC, READ, COMMIT, exact duplicate WRITE",
+        "MAC tamper rejected; file handle survives external rename and all-service restart; durable v3 replay and new write verifier",
+        "deleted/recreated path cannot revive an old file handle",
+        "v3 MKDIR, cross-directory RENAME, READDIRPLUS, REMOVE/RMDIR type separation",
+        "pynfs v4.1 EXCHANGE_ID/CREATE_SESSION/SEQUENCE, guarded OPEN, WRITE/READ, exact slot replay",
+        "false slot replay and foreign stateid rejected; GETATTR subset independently decoded",
+        "old sessions/stateids invalidated on reboot; persisted owner can reclaim OPEN during grace; CLOSE releases recovery record",
+        "unrelated client cannot reclaim another owner after restart",
+        "export disable revokes existing handles through fresh identity grants",
+        "offline metadata backup strips NFS enrollment and excludes persistent capability/recovery databases"
+      ]
+    },
+    "nfs-queue": {
+      "sha256": "c392b98ff3b5863babd2638ec8d58d9903c053a52ba1699a54d0815e2499790c",
+      "checks": [
+        "complete TCP request reaches the bounded executor before lease expiry and retains OPEN beyond expiry while both workers are occupied",
+        "successful SEQUENCE renews after the delay; queued READ returns original data; suspended file worker was not replaced"
+      ]
+    }
+  },
+  "protocol": {
+    "sha256": "fd4278826bde5a07ca9c680007ad7be7db0eba1531777b0396f838e8c5834c73",
+    "groups": [
+      "PASS pre-operation authorization refresh retries once with stable mutation identity, fresh authority, revocation and ordinary expiry boundaries",
+      "PASS production file authority declines wire handout without creating a hidden native guard",
+      "PASS slow COMPOUND completion preserves a full client lease after execution",
+      "PASS denied cached SEQUENCE replay has no lease-renewing reply completion token",
+      "PASS named CLAIM_DELEGATE_CUR materializes and replays without self-recall; foreign states, clients, principals and write access are rejected",
+      "PASS distinct delegation state, CLAIM_DELEG_CUR_FH, CLOSE/disconnect independence and client/principal/file/access checks",
+      "PASS WANT replay, typed CB_RECALL, definitive DELAY retry and acknowledgment without premature release",
+      "PASS wrong callback operation preserves the exact slot until confirmed disconnect and replays on a replacement backchannel",
+      "PASS recall deadline survives continued renewals; TEST_STATEID/FREE_STATEID acknowledge revocation while OPEN remains valid",
+      "PASS authority loss renews coherence past the old lease under fixed recall and still permits authenticated return",
+      "PASS validated CB_SEQUENCE renewal keeps an idle sibling session alive beyond its original lease",
+      "PASS session destruction retains client-owned delegation; foreign owner replacement and premature client destruction are refused",
+      "PASS independent reply/replay pins retain OPEN through delayed delivery; duplicate completion cannot extend expiry",
+      "PASS disconnect conservatively ends pending transmission with a full lease and leaves no immortal client pin",
+      "PASS a request received before expiry retains its OPEN across executor delay and maintenance until validated SEQUENCE",
+      "PASS rejected SEQUENCE, cancellation, duplicate cleanup and late arrivals cannot renew expired clients; old arrivals cannot pin future clients",
+      "PASS request admission is bounded, cancellation restores capacity and disconnect invalidates undispatched tokens",
+      "PASS 1146 delegation protocol/native component checks; production handout remains gated"
+    ]
+  },
+  "limits": [
+    "Only grant_refresh_required before the requested file operation can trigger one new authorization and retry.",
+    "Two-second grants, ordinary lease-expiry refusal and policy revocation remain enforced.",
+    "The exact delay phase of the historical Windows M2 timeout is unproven; remote acceptance of this change is pending.",
+    "SMB and API transport regression passes; deterministic protocol retry/revocation injection is in the NFS component fixture.",
+    "Full SMB/NFS, durable delegation restart fencing and production delegation handout remain incomplete."
+  ]
+}

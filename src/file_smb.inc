@@ -372,7 +372,7 @@ json smb_dispatch(const std::string &op, const json &body, const call_context &c
        path = grant.at("path").get<std::string>(), actor = grant.at("actor").get<std::string>();
   auto &s = attach(grant, ctx);
   if (!cleanup)
-    lease(grant, ctx);
+    prepared_lease(grant, ctx);
   if (op == "smb_path_stat") {
     auto f = path.empty() ? native_file() : s.directory.open(path, true);
     auto info = path.empty() ? s.directory.info() : f.info();
