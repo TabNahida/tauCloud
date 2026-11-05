@@ -1,0 +1,311 @@
+{
+  "status": "passed",
+  "recorded_at": "2026-11-05T05:18:09.647440+00:00",
+  "source_base": "8bac4bc98e4d833a6eb95f455708406e4f180678",
+  "compiler": "Clang debug ASan/UBSan",
+  "source_sha256": {
+    "src/nfs_protocol.cpp": "59640cfebd4c1ed9f7037e30830a3fd348f88881164c5f046612e32b02ae4743",
+    "tests/nfs_delegation_protocol.cpp": "1b9c8760686e95f61f0091b72bd0d81636a22e4cdd5ae45ebf5a927f2a2d0f27",
+    "tests/nfs_deadline_integration.py": "83c38fed3933ac5795760efaca58acc801e69b8e0a6ba39ef3eccec10b4ff226",
+    "tests/nfs_lease_lifetime.py": "6272f692a2f6f848cb33d1487a4f2977d6f26497fd9877d13c3f099ed4cf90c9",
+    "tests/smb_lease_native.cpp": "ad1a256dce40851f8ca848b112fe57dc35d14d3088e16b779f39f24a3f989f91",
+    "xmake.lua": "c52c667224e82979982dccd585e7e7ae8ccbcac5ad493ada41dff93cbaf55204",
+    ".github/workflows/smb-metadata.yml": "355467cdfd8ac2af694c53fdd7fa80c4f12d766cb58a9d703ed7625ff66ef9de"
+  },
+  "nfs_binary_sha256": "adc99b08c33ae6a028428e81fe8e3bb351d7865d7d020b2b9d302eb98e08a264",
+  "before_mapping": {
+    "log_sha256": "cec9a4a3f1484b7c583dc6be03d978228d40c45a777f2c8ccb3b17373776de39",
+    "source_hashes": [
+      "f7c61749576811cd7463cc528630d726cf061d9cad3165ac7a45b9d41fa6fdc5  src/nfs_protocol.cpp",
+      "c28f485c68f2f31362ae892238cb5ac8b6acbdee4e2cd8044c7bd47cb9d6460b  tests/nfs_delegation_protocol.cpp"
+    ],
+    "failure": [
+      "expected_status=10008 actual=22",
+      "delegation_protocol_test_failed checks=266"
+    ]
+  },
+  "intermediate_transport_failure": {
+    "status": "failed",
+    "checks": [],
+    "recorded_at": "2026-11-05T05:13:10.596640+00:00",
+    "open_attempts": [
+      {
+        "sequence": 3,
+        "status": 10008,
+        "operations": [
+          53,
+          22
+        ]
+      },
+      {
+        "sequence": 4,
+        "status": 22,
+        "operations": [
+          53,
+          22
+        ]
+      }
+    ],
+    "error": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/tests/nfs_deadline_integration.py\", line 43, in main\n    state, handle = recovery_open(c, root, b'deadline-recovery', attempts)\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/tests/nfs_lease_lifetime.py\", line 30, in recovery_open\n    assert result.status == 10008 and len(result.resarray) in (2, 3), result\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: COMPOUND4res(status=NFS4ERR_INVAL, tag=b'tc7', resarray=[nfs_resop4(resop=OP_SEQUENCE, opsequence=SEQUENCE4res(sr_status=NFS4_OK, sr_resok4=SEQUENCE4resok(sr_sessionid=b'P\\x9c\\x95\\x8d~\\xa6K\\x15\\xcf\\xb8\\x9e\\xd8\\x14\\x9c!\\xb1', sr_sequenceid=4, sr_slotid=0, sr_highest_slotid=3, sr_target_highest_slotid=3, sr_status_flags=1))), nfs_resop4(resop=OP_PUTFH, opputfh=PUTFH4res(status=NFS4ERR_INVAL))])\n",
+    "deadline_events": [
+      {
+        "code": "deadline_exceeded",
+        "event": "operation_22_domain_error",
+        "role": "nfs",
+        "time": 1793855601743
+      }
+    ],
+    "nfs_events": [
+      {
+        "code": "ok",
+        "event": "started",
+        "role": "nfs",
+        "time": 1793855592245
+      },
+      {
+        "code": "ok",
+        "event": "stopped",
+        "role": "nfs",
+        "time": 1793855594370
+      },
+      {
+        "code": "ok",
+        "event": "started",
+        "role": "nfs",
+        "time": 1793855596674
+      },
+      {
+        "code": "deadline_exceeded",
+        "event": "operation_22_domain_error",
+        "role": "nfs",
+        "time": 1793855601743
+      },
+      {
+        "code": "10008",
+        "event": "operation_22",
+        "role": "nfs",
+        "time": 1793855601743
+      },
+      {
+        "code": "transport_closed",
+        "event": "operation_22_domain_error",
+        "role": "nfs",
+        "time": 1793855601894
+      },
+      {
+        "code": "22",
+        "event": "operation_22",
+        "role": "nfs",
+        "time": 1793855601894
+      }
+    ],
+    "sha256": "850435c0d744331cd9d7892897e30aae8cc5201de600d0f4ead4237ad2c94bab"
+  },
+  "tcp": {
+    "status": "passed",
+    "checks": [
+      "real file-worker stall returns DELAY; bounded client retries with fresh SEQUENCE values create and close the file",
+      "real file-worker stall returns NFSv3 JUKEBOX; a bounded new-transaction retry succeeds after recovery",
+      "the same NFS worker and session remain usable across file-worker stalls or watchdog replacement"
+    ],
+    "recorded_at": "2026-11-05T05:16:00.716342+00:00",
+    "pause_outcomes": [
+      "worker terminated by watchdog",
+      "worker terminated by watchdog"
+    ],
+    "open_attempts": [
+      {
+        "sequence": 3,
+        "status": 10008,
+        "operations": [
+          53,
+          22
+        ]
+      },
+      {
+        "sequence": 4,
+        "status": 10008,
+        "operations": [
+          53,
+          22
+        ]
+      },
+      {
+        "sequence": 5,
+        "status": 0,
+        "operations": [
+          53,
+          22,
+          18,
+          10
+        ]
+      }
+    ],
+    "open_elapsed_seconds": 5.64406175800832,
+    "v3_retries": [
+      10008,
+      0
+    ],
+    "file_worker_replaced": true,
+    "deadline_events": [
+      {
+        "code": "deadline_exceeded",
+        "event": "operation_22_domain_error",
+        "role": "nfs",
+        "time": 1793855781841
+      },
+      {
+        "code": "deadline_exceeded",
+        "event": "v3_1",
+        "role": "nfs",
+        "time": 1793855787527
+      }
+    ],
+    "nfs_events": [
+      {
+        "code": "ok",
+        "event": "started",
+        "role": "nfs",
+        "time": 1793855767706
+      },
+      {
+        "code": "ok",
+        "event": "stopped",
+        "role": "nfs",
+        "time": 1793855772992
+      },
+      {
+        "code": "ok",
+        "event": "started",
+        "role": "nfs",
+        "time": 1793855776481
+      },
+      {
+        "code": "deadline_exceeded",
+        "event": "operation_22_domain_error",
+        "role": "nfs",
+        "time": 1793855781841
+      },
+      {
+        "code": "10008",
+        "event": "operation_22",
+        "role": "nfs",
+        "time": 1793855781841
+      },
+      {
+        "code": "service_unavailable",
+        "event": "operation_22_domain_error",
+        "role": "nfs",
+        "time": 1793855782346
+      },
+      {
+        "code": "10008",
+        "event": "operation_22",
+        "role": "nfs",
+        "time": 1793855782346
+      },
+      {
+        "code": "deadline_exceeded",
+        "event": "v3_1",
+        "role": "nfs",
+        "time": 1793855787527
+      },
+      {
+        "code": "service_unavailable",
+        "event": "v3_1",
+        "role": "nfs",
+        "time": 1793855787813
+      }
+    ],
+    "sha256": "e8ffe00ff3e1880f3b43bd8a2eae9e0a96b7ac16cfa436aece86974ddb8c822d"
+  },
+  "lease": {
+    "status": "passed",
+    "checks": [
+      "default lease is 60 seconds; configured five-second lease is advertised and SEQUENCE renews OPEN beyond its initial expiry",
+      "SEQUENCE and exact replay on either session renew the shared client lease and keep an idle sibling session and its OPEN usable",
+      "idle session and OPEN expire at the advertised lease; another client opens the file while the expired stateid remains invalid",
+      "reducing the lease preserves the old reclaim window across repeated restarts, then converges to the configured duration after grace"
+    ],
+    "recorded_at": "2026-11-05T05:16:17.385575+00:00",
+    "recovery_open_attempts": [
+      {
+        "sequence": 3,
+        "status": 0,
+        "operations": [
+          53,
+          22,
+          18,
+          10
+        ]
+      }
+    ],
+    "sha256": "51034bcb8e9761a3d02bdf261a8c736c6025e6cc0f90acc3627ff2e5e4d3efb0"
+  },
+  "protocol": {
+    "sha256": "e2881848ac22100c746d4d73f608064a6129ea6809380d623929342f3b6e42cd",
+    "groups": [
+      "PASS callback delivery starts one response window, bounds unsent lifetime and cancels retired queued frames",
+      "PASS outbound callback reservation, frame integrity, bounded priority, in-flight byte accounting and exact completion cleanup",
+      "PASS callback dispatch priority precedes queued ordinary work, bounds bursts and releases on exceptions",
+      "PASS domain deadline returns DELAY without automatic mutation retry; cached replay is exact and a new SEQUENCE can recover",
+      "PASS NFSv3 domain deadline returns JUKEBOX and a fresh RPC transaction can recover",
+      "PASS pre-operation authorization refresh retries once with stable mutation identity, fresh authority, revocation and ordinary expiry boundaries",
+      "PASS production file authority declines wire handout without creating a hidden native guard",
+      "PASS slow COMPOUND completion preserves a full client lease after execution",
+      "PASS denied cached SEQUENCE replay has no lease-renewing reply completion token",
+      "PASS named CLAIM_DELEGATE_CUR materializes and replays without self-recall; foreign states, clients, principals and write access are rejected",
+      "PASS distinct delegation state, CLAIM_DELEG_CUR_FH, CLOSE/disconnect independence and client/principal/file/access checks",
+      "PASS WANT replay, typed CB_RECALL, definitive DELAY retry and acknowledgment without premature release",
+      "PASS wrong callback operation preserves the exact slot until confirmed disconnect and replays on a replacement backchannel",
+      "PASS recall deadline survives continued renewals; TEST_STATEID/FREE_STATEID acknowledge revocation while OPEN remains valid",
+      "PASS authority loss renews coherence past the old lease under fixed recall and still permits authenticated return",
+      "PASS validated CB_SEQUENCE renewal keeps an idle sibling session alive beyond its original lease",
+      "PASS session destruction retains client-owned delegation; foreign owner replacement and premature client destruction are refused",
+      "PASS independent reply/replay pins retain OPEN through delayed delivery; duplicate completion cannot extend expiry",
+      "PASS disconnect conservatively ends pending transmission with a full lease and leaves no immortal client pin",
+      "PASS a request received before expiry retains its OPEN across executor delay and maintenance until validated SEQUENCE",
+      "PASS rejected SEQUENCE, cancellation, duplicate cleanup and late arrivals cannot renew expired clients; old arrivals cannot pin future clients",
+      "PASS request admission is bounded, cancellation restores capacity and disconnect invalidates undispatched tokens",
+      "PASS 1431 delegation protocol/native component checks; production handout remains gated"
+    ]
+  },
+  "m7": {
+    "sha256": "fa970ad3208d993729ea8db4c4cafe139d0dad6aaee02953d2685991d9685e40",
+    "groups": [
+      "PASS cold NFS root preparation requires fresh authorization before returning a handle",
+      "{\"checks\":1554,\"status\":\"passed\"}"
+    ]
+  },
+  "native_smb": {
+    "sha256": "7eb01a69d1cef9fc1a1b305bd388a48cdf55c0d021d11ac76661b6555f6cd3f0",
+    "groups": [
+      "PASS cold native lease fixture refreshes expired preparation once without extending grant lifetime",
+      "PASS shared native exclusion, own IO, compatible foreign opens, same-key CREATE during break and final-close lifetime",
+      "PASS chained recalls retain native exclusion through both ACKs and exact final notification delivery",
+      "PASS HANDLE recall permits cached close, while same-key sharing conflicts do not bypass access rules",
+      "PASS classic Level II and lease grants retain independent authority over one native guard",
+      "PASS delivered RH invalidation permits SMB/native data operations before ACK while sharing waits and expired authority still fences its open",
+      "PASS rename preserves originating native exclusion and waits for foreign HANDLE ACK; disposition preserves READ until last close",
+      "PASS expiry fences only that open; a fresh sibling keeps exclusion until acknowledgment",
+      "PASS missing delivery fences the open after five seconds despite continuous authority renewal",
+      "PASS NFS reads and writes recall SMB lease authority before accessing shared file data",
+      "PASS R-only invalidation releases native exclusion only after the matching notification is sent",
+      "PASS same-key membership grants no extra file rights, caller authority or revocation exemption",
+      "{\"checks\":127,\"status\":\"passed\"}"
+    ]
+  },
+  "analysis": [
+    "The Windows 2fad84c lease artifact records deadline_exceeded at OPEN and NFS status 22; the status mapping was wrong. The exact preparation or transport phase that consumed its deadline remains unknown.",
+    "Fault-injected domain errors verify DELAY, no automatic operation retry and exact cached replay. NFSv3 verifies JUKEBOX and successful fresh-transaction recovery.",
+    "The first real TCP run exposed transport_closed being mapped to INVAL during supervisor replacement of the stalled file worker. The final run maps timeout/disconnection/unavailable/stale-generation to transient status and retains the NFS session through real file-worker replacement.",
+    "The cold SMB fixture now follows the same single fresh-authority preparation retry as the protocol. A test-only 2100 ms root delay proves that behavior while grants remain 2000 ms; arbitrary lease_expired and post-operation errors are not retried.",
+    "The lease-change fixture retries only DELAY before OPEN succeeds, uses unchecked CREATE with no attributes for its private file, advances SEQUENCE, caps attempts at five and never retries an OPEN success followed by GETFH failure."
+  ],
+  "limits": [
+    "Remote validation of this source is pending; Windows failures are not closed by Linux results.",
+    "The real TCP fixture exercises a private new-file OPEN and metadata reads; it does not prove recovery of every ambiguous non-idempotent mutation.",
+    "The local native SMB run preceded only the final NFS error-mapping expansion; SMB/native implementation and test source were unchanged.",
+    "Full SMB/NFS and production delegation readiness remain incomplete."
+  ]
+}

@@ -32,17 +32,27 @@ int main() {
           {"write", write}, {"share", "smb"}, {"epoch", 2}, {"expires", now() + lifetime}, {"protocol", "smb"}};
       g["signature"] = mac(signing, g.dump()); return g;
     };
+    unsigned preparation_refreshes = 0;
     auto call = [&](std::string op, std::string path, json body = json::object()) {
-      body["grant"] = grant(path);
       auto started = std::chrono::steady_clock::now();
-      try { return store->dispatch("smb_" + op, body, ctx()); }
-      catch (const error &e) {
-        if (std::string_view(e.what()) == "lease_expired")
-          std::cerr << "expired_operation=" << op << " path=" << path
+      auto context = ctx();
+      for (unsigned attempt = 0;; ++attempt) {
+        body["grant"] = grant(path);
+        try { return store->dispatch("smb_" + op, body, context); }
+        catch (const error &e) {
+          if (!attempt && std::string_view(e.what()) == "grant_refresh_required") {
+            ++preparation_refreshes;
+            continue; // Match the protocol's one fresh-authority preparation retry.
+          }
+          if (std::string_view(e.what()) == "lease_expired" ||
+              std::string_view(e.what()) == "grant_refresh_required" ||
+              std::string_view(e.what()) == "deadline_exceeded")
+            std::cerr << "failed_operation=" << op << " code=" << e.what() << " attempt=" << attempt
                     << " elapsed_ms=" << std::chrono::duration_cast<std::chrono::milliseconds>(
                         std::chrono::steady_clock::now() - started).count()
                     << " grant_remaining_ms=" << body.at("grant").at("expires").get<int64_t>() - now() << '\n';
-        throw;
+          throw;
+        }
       }
     };
     auto client = random_hex(16), peer = random_hex(16), key = decode_bytes(random_hex(16));
@@ -71,7 +81,11 @@ int main() {
     {
       auto native = native_file::root(base / "root");
       const std::string path = "shared";
+      test_root_delay(2100);
       auto a = open(path, client);
+      check(preparation_refreshes == 1);
+      check(fs::is_regular_file(base / "root/space/shared"));
+      std::cout << "PASS cold native lease fixture refreshes expired preparation once without extending grant lifetime\n";
       write(path, a, "old");
       auto state = acquire(path, a); auto cookie = state.at("cookie");
       check(state.at("state") == 7 && state.at("epoch") == 11 && !state.at("breaking"));

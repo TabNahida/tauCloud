@@ -14,6 +14,31 @@ from m7_integration import Client, op, t4
 from pynfs_acceptance import fixture
 
 
+def recovery_open(client, root, name, attempts):
+    # This fixture creates a private file with unchecked CREATE and no initial
+    # attributes. Retry only DELAY before OPEN succeeds, never after a successful
+    # OPEN followed by a failing GETFH, or for arbitrary status codes.
+    for attempt in range(5):
+        result = client.compound([op.putfh(root),
+            op.open(0, 3, 0, t4.open_owner4(client.cid, b'lease-owner'),
+                    t4.openflag4(1, t4.createhow4(0, t4.fattr4([], b''))),
+                    t4.open_claim4(0, file=name)), op.getfh()])
+        attempts.append(dict(sequence=client.seq, status=result.status,
+                             operations=[part.resop for part in result.resarray]))
+        if result.status == 0:
+            return result.resarray[2].opopen.resok4.stateid, result.resarray[3].opgetfh.resok4.object
+        assert result.status == 10008 and len(result.resarray) in (2, 3), result
+        assert result.resarray[0].resop == 53 and result.resarray[0].opsequence.sr_status == 0, result
+        assert result.resarray[1].resop == 22, result
+        if len(result.resarray) == 2:
+            assert result.resarray[1].opputfh.status == 10008, result
+        else:
+            assert result.resarray[1].opputfh.status == 0, result
+            assert result.resarray[2].resop == 18 and result.resarray[2].opopen.status == 10008, result
+        assert attempt < 4, ('bounded recovery OPEN retry exhausted', attempts)
+        time.sleep(min(2, .5 * 2**attempt))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--bin', type=Path, required=True)
@@ -98,7 +123,8 @@ def main():
 
         restart(9)
         owner = client(); root = owner.root()
-        _, retained = owner.open(root, b'old-lease-recovery', create=True)
+        report['recovery_open_attempts'] = []
+        _, retained = recovery_open(owner, root, b'old-lease-recovery', report['recovery_open_attempts'])
         restart(5)
         # Read persisted state without changing it. A second restart must not
         # lose the old advertised lease while its reclaim records remain.

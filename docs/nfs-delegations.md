@@ -1260,7 +1260,11 @@ corrected fixture failures are retained in
 Final local Clang ASan/UBSan validation passes 1,554 M7 checks and 1,361 host
 protocol checks. The Linux 6.19 VM passes 2,110 native checks on tmpfs/ext4 and
 2,683 protocol component checks, including all ten recovery scenarios. Remote
-validation of this source remains pending.
+validation at `eeb79ee` also passes both Linux 6.19 jobs: GCC reports 2,093 native
+and 2,689 protocol checks, Clang reports 2,156 native and 2,677 protocol checks.
+Both include all ten recovery scenarios and the mandatory guest PASS marker
+([fixed-source evidence](evidence/pre-m8/nfs-reclaim-eeb-native.json)). Other
+platform and production-handout gates remain open.
 
 The earlier `2fad84c` remote matrix passed GCC and failed Clang's pre-existing
 300-millisecond inventory-order assumption. The fixture now pins both records

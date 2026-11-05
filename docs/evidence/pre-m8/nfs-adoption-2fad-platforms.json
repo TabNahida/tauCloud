@@ -68,11 +68,27 @@
     "Backend GCC, Clang, Windows and macOS-client jobs pass.",
     "Metadata GCC and Clang pass, including the original fixed-rate callback-output tests. This does not explain their failure at 02d2f2e.",
     "Windows metadata lease lifetime test passes its first three groups, then OPEN old-lease-recovery returns NFS4ERR_INVAL after restart(9), before testing lease reduction.",
-    "Windows native SMB lease test exits with grant_refresh_required after_checks=0; the failing operation is not identified by this log."
+    "Windows native SMB lease test exits with grant_refresh_required after_checks=0; the failing operation is not identified by this log.",
+    "The retained lease-lifetime artifact establishes deadline_exceeded at operation_18, mapped to NFS status 22. It does not identify which file preparation or IPC phase consumed the deadline."
   ],
   "limits": [
     "The Windows metadata failures remain unresolved. Passing backend jobs do not establish their resolution.",
     "READ delegation protocol reclaim was added after this commit.",
     "Full SMB/NFS and production delegation handout remain incomplete."
+  ],
+  "windows_lease_artifact_sha256": "ba3c9cc6436bf354eb0182c1104773aa297d46c590c395feebacb0b1acac70f0",
+  "windows_lease_domain_error": [
+    {
+      "code": "deadline_exceeded",
+      "event": "operation_18_domain_error",
+      "role": "nfs",
+      "time": 1793852770211
+    },
+    {
+      "code": "22",
+      "event": "operation_18",
+      "role": "nfs",
+      "time": 1793852770212
+    }
   ]
 }

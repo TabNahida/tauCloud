@@ -157,6 +157,13 @@ limits; a no-priority mutation still fails the callback-order assertion
 all Backend jobs and both Linux metadata jobs pass, but Windows metadata fails
 an OPEN after restart and the native lease test with `grant_refresh_required`;
 these remain open ([platform evidence](docs/evidence/pre-m8/nfs-adoption-2fad-platforms.json)).
+The retained Windows lease artifact identifies `deadline_exceeded` at OPEN being
+misreported as INVAL. Internal deadline/transport/unavailable/generation errors
+now map to DELAY/JUKEBOX; real TCP stalls and watchdog replacement preserve the
+NFS session through bounded client retries. The native SMB fixture now performs
+the protocol's single fresh-authority preparation retry, verified with a 2.1-second
+cold-root delay and unchanged grants. Windows reacceptance remains pending
+([local evidence](docs/evidence/pre-m8/nfs-transient-errors-local.json)).
 
 Private native delegation adoption now transfers a durable client binding while
 fencing old reservation channels, conservatively completing uncertain replies,
@@ -170,6 +177,10 @@ OPEN and delegated OPENs during grace
 failure recovery and native-client compatibility remain open; production
 handout remains gated ([implementation](docs/nfs-delegations.md#client-binding-adoption-across-protocol-restart),
 [acceptance](docs/evidence/pre-m8/nfs-adoption-local.json)).
+At `eeb79ee`, the complete Linux 6.19 native matrix passes both GCC and Clang,
+including all ten server-restart READ reclaim scenarios
+([fixed-source evidence](docs/evidence/pre-m8/nfs-reclaim-eeb-native.json)). This
+does not close the production-handout or complete instance-fencing gates.
 
 The Windows backend job at `4542cec` fails the first M2 `files/begin` upload
 with HTTP 503 `deadline_exceeded`. Its operation phase is not established; this

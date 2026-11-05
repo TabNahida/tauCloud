@@ -395,6 +395,43 @@ int nfs_delegation_protocol_suite(bool require_native = false) {
     ok(prepare_requests.size() == 1 && !prepared_mutations);
     ok(authorizations == prepare_authorizations[0]);
     ok(!fs::exists(base / "root/space/expired-prepare"));
+    prepare_failures = 1; prepare_error = "deadline_exceeded";
+    mkdir("delayed-domain", 10008);
+    ok(prepare_requests.size() == 1 && !prepared_mutations && !prepare_failures);
+    ok(!fs::exists(base / "root/space/delayed-domain"));
+    ok(protocol->dispatch(last_request, a.connection) == last_response);
+    ok(prepare_requests.size() == 1 && !prepared_mutations);
+    mkdir("delayed-domain"); // A new SEQUENCE can retry after the transient delay.
+    ok(prepare_requests.size() == 1 && prepared_mutations == 1);
+    ok(fs::is_directory(base / "root/space/delayed-domain"));
+    std::cout << "PASS domain deadline returns DELAY without automatic mutation retry; cached replay is exact and a new SEQUENCE can recover\n";
+    for (const auto *transient : {"transport_closed", "service_unavailable", "stale_generation"}) {
+      prepare_error = transient; prepare_failures = 1;
+      mkdir(transient, 10008);
+      ok(prepare_requests.size() == 1 && !prepared_mutations && !prepare_failures);
+      ok(!fs::exists(base / "root/space" / transient));
+      ok(protocol->dispatch(last_request, a.connection) == last_response);
+      ok(prepare_requests.size() == 1 && !prepared_mutations);
+    }
+    prepare_error = "deadline_exceeded";
+    prepare_operation = "stat"; prepare_failures = 1;
+    prepare_requests.clear(); prepared_mutations = 0;
+    auto getattr3 = [&](uint32_t expected) {
+      writer auth, request;
+      auth.u32(1).opaque("component").u32(1000).u32(1000).u32(0);
+      request.u32(++xid).u32(0).u32(2).u32(100003).u32(3).u32(1).u32(1).opaque(auth.data)
+          .u32(0).opaque("").opaque(decode_bytes(handle));
+      auto response = protocol->dispatch(request.data, "deadline-v3");
+      reader r(response);
+      ok(r.u32() == xid && r.u32() == 1 && r.u32() == 0 && r.u32() == 0 && r.opaque().empty() && r.u32() == 0);
+      ok(r.u32() == expected);
+      if (expected) r.end(); else ok(response.size() - r.pos == 84);
+    };
+    getattr3(10008);
+    ok(prepare_requests.size() == 1 && !prepared_mutations && !prepare_failures);
+    getattr3(0);
+    ok(prepare_requests.size() == 2 && prepared_mutations == 1);
+    std::cout << "PASS NFSv3 domain deadline returns JUKEBOX and a fresh RPC transaction can recover\n";
     prepare_error = "grant_refresh_required";
     prepare_operation = "lookup"; prepare_failures = 2;
     prepare_requests.clear(); prepare_authorizations.clear(); prepared_mutations = 0;

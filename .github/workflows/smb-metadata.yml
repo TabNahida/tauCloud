@@ -16,6 +16,7 @@ on:
       - 'src/nfs_delegations.inc'
       - 'src/nfs_delegation_recovery.inc'
       - 'tests/nfs_lease_lifetime.py'
+      - 'tests/nfs_deadline_integration.py'
       - 'tests/nfs_admission_queue.py'
       - 'tests/nfs_callback_queue.py'
       - 'tests/nfs_output_queue.py'
@@ -191,6 +192,9 @@ jobs:
       - name: NFS callback output with delayed file execution
         if: ${{ !cancelled() && steps.compile.outcome == 'success' && runner.os == 'Linux' }}
         run: python tests/nfs_output_queue.py ${{ matrix.test_options }} --pause-file-ms 1200 --delay-reply --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/nfs-output-paused.json
+      - name: NFS transient IPC deadlines and client retry
+        if: ${{ !cancelled() && steps.compile.outcome == 'success' && runner.os == 'Linux' }}
+        run: python tests/nfs_deadline_integration.py ${{ matrix.test_options }} --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/nfs-deadline.json
       - name: SMB shared lease state, wire vectors and break transitions
         if: ${{ !cancelled() && steps.compile.outcome == 'success' }}
         run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_smb_lease_tests${{ matrix.suffix }}

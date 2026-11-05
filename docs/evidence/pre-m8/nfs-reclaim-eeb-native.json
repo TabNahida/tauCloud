@@ -1,0 +1,61 @@
+{
+  "status": "passed",
+  "recorded_at": "2026-11-05T05:17:04.122778+00:00",
+  "source_commit": "eeb79ee04e45520acebee672f1ed13106b1019f0",
+  "run_url": "https://github.com/TabNahida/tauCloud/actions/runs/41970843360",
+  "jobs": [
+    {
+      "name": "kernel (gcc, release, n)",
+      "conclusion": "success",
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41970843360/job/127058467594"
+    },
+    {
+      "name": "kernel (clang, debug, y)",
+      "conclusion": "success",
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41970843360/job/127058467826"
+    }
+  ],
+  "artifacts": {
+    "gcc": {
+      "sha256": "81b4c55b600c5e64bf07ab02a8b8044536005b47f45909c26ea07ed72c4c8a0d",
+      "mandatory_marker": true,
+      "groups": [
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 0",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 1",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 2",
+        "PASS per-filesystem RECLAIM_COMPLETE releases unreclaimed native guards before acknowledging completion",
+        "PASS grace expiry retires unreclaimed native guards and does not revive expired protection",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 5",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 6",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 7",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 8",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 9",
+        "PASS 2689 delegation protocol/native component checks; production handout remains gated",
+        "PASS native delegation 2093 checks"
+      ]
+    },
+    "clang": {
+      "sha256": "57132d36b07ccf980151d03480b94f2122989e7628273f05aa4cdfc709dd11ff",
+      "mandatory_marker": true,
+      "groups": [
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 0",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 1",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 2",
+        "PASS per-filesystem RECLAIM_COMPLETE releases unreclaimed native guards before acknowledging completion",
+        "PASS grace expiry retires unreclaimed native guards and does not revive expired protection",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 5",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 6",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 7",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 8",
+        "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario 9",
+        "PASS 2677 delegation protocol/native component checks; production handout remains gated",
+        "PASS native delegation 2156 checks"
+      ]
+    }
+  },
+  "limits": [
+    "Real Linux 6.19 tmpfs/ext4 native protection with an injected private protocol provider; production wire handout remains gated.",
+    "Backend and metadata matrices for this commit were still running when recorded.",
+    "Client-restart recovery, WRITE delegations, owner/host-loss coordination, authenticated native-client reclaim and Windows native ownership remain open."
+  ]
+}

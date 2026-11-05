@@ -50,7 +50,8 @@ uint32_t status(std::string_view code) {
     return 10004;
   if (code == "overloaded" || code == "directory_limit" || code == "operation_limit" ||
       code == "uncertain_write" || code == "locked" || code == "sharing_violation" ||
-      code == "cache_break_pending" || code == "grant_refresh_required")
+      code == "cache_break_pending" || code == "grant_refresh_required" || code == "deadline_exceeded" ||
+      code == "transport_closed" || code == "service_unavailable" || code == "stale_generation")
     return 10008;
   if (code == "io_error" || code == "internal_error" || code == "database_error" ||
       code == "delegation_recovery_failed" || code == "delegation_owner_lost")
