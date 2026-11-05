@@ -58,7 +58,9 @@ public:
   uint64_t begin_request(std::string connection);
   bool request_ready(uint64_t admission);
   void abandon_request(uint64_t admission);
-  void poll_native();
+  // False latches native protection loss for this server instance. The reactor
+  // must close transports and refuse new connections; it cannot reset the latch.
+  bool poll_native();
   void enqueue_reply_completion(uint64_t completion);
   void transport_disconnected(const std::string &connection);
   // A transport may request a private completion token. A nonzero token pins

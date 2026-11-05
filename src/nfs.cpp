@@ -24,8 +24,17 @@ struct nfs_runtime {
   taucloud::bounded_executor pool{2, 16, 16 * nfs_detail::max_record};
   nfs_detail::server protocol;
   std::atomic<int> connections = 0;
+  std::atomic_bool native_fenced = false;
   std::map<std::string, std::shared_ptr<nfs_connection>> sockets;
   void send(std::string connection, std::string packet);
+  bool healthy() {
+    if (protocol.poll_native()) return !native_fenced;
+    if (!native_fenced.exchange(true)) {
+      for (const auto &[id, c] : sockets) c->socket.close();
+      log("nfs", "native_protection_lost", "delegation_owner_lost");
+    }
+    return false;
+  }
   explicit nfs_runtime(const config &c)
       : cfg(c), protocol(c, [c](std::string target, std::string op, json body) {
           return rpc(c, "nfs", target, op, body);
@@ -45,7 +54,7 @@ struct nfs_runtime {
 pace::task<void> write_frames(nfs_runtime &s, std::shared_ptr<nfs_connection> c) {
   uint64_t current = 0;
   try {
-    while (c->socket.is_open() && !c->output.empty()) {
+    while (c->socket.is_open() && s.healthy() && !c->output.empty()) {
       auto packet = std::move(c->output.front());
       c->output.pop_front();
       current = packet.completion;
@@ -65,6 +74,7 @@ pace::task<void> write_frames(nfs_runtime &s, std::shared_ptr<nfs_connection> c)
   }
 }
 void enqueue(nfs_runtime &s, const std::shared_ptr<nfs_connection> &c, outgoing_reply packet) {
+  s.healthy();
   if (!c->socket.is_open() || packet.packet.empty()) { s.protocol.enqueue_reply_completion(packet.completion); return; }
   if (packet.packet.size() > nfs_detail::max_record || c->output.size() >= 16 ||
       c->queued_bytes + packet.packet.size() > 4 * nfs_detail::max_record) {
@@ -172,7 +182,7 @@ pace::task<void> serve(nfs_runtime &s, pace::tcp::stream stream) {
 }
 pace::task<void> native_reservations(nfs_runtime &s, std::atomic_bool &stopping) {
   while (!stopping) {
-    s.protocol.poll_native();
+    s.healthy();
     co_await s.io->sleep_for(1ms);
   }
 }
@@ -180,7 +190,7 @@ pace::task<void> accept(nfs_runtime &s, pace::tcp::listener &listener, std::atom
   try {
     while (!stopping) {
       auto socket = co_await listener.accept();
-      if (s.connections >= std::min(s.cfg.connections, 16)) {
+      if (!s.healthy() || s.connections >= std::min(s.cfg.connections, 16)) {
         socket.close();
         continue;
       }
@@ -227,7 +237,8 @@ int nfs(const config &c, const std::string &generation, std::atomic_bool &stoppi
     auto p = process_info(own_pid());
     p["role"] = "nfs";
     p["generation"] = generation;
-    p["business_ready"] = true;
+    p["business_ready"] = !s.native_fenced;
+    p["native_delegation_fenced"] = s.native_fenced.load();
     p["connections"] = s.connections.load();
     p["compatibility"] = "experimental";
     return p;

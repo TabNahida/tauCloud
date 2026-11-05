@@ -63,5 +63,8 @@ public:
   void begin_reserve();
   void begin_complete(uint64_t reservation, bool renew_lease);
   std::optional<json> poll();
+  // Nonblocking mode only. Detects EOF/error, unsolicited idle packets and
+  // expired exchanges without consuming a valid pending ACK or renewing state.
+  bool alive();
 };
 } // namespace tc

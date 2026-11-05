@@ -161,10 +161,10 @@ At `2ea5305`, the Windows backend and metadata jobs and the Clang backend job
 pass; Windows M2 has 77 checks, Clang M2 has 83, and both M5 runs pass 12,595.
 These failures did not recur in these runs; their historical cause and macOS
 stability are not closed ([job evidence](docs/evidence/pre-m8/smb-cache-io-2ea-platforms.json)).
-The `4a9fb7a` Windows metadata job subsequently reports a failure in
-"Native cache exclusion, cancellation and allocation safety"; its job is still
-running and the detailed failure log remains to be collected
-([job](https://github.com/TabNahida/tauCloud/actions/runs/41942739962/job/126967341743)).
+The `4a9fb7a` Windows metadata failure is now localized to M2 first `mkdir nested`:
+4,575 ms elapsed with a two-second signed grant, after 52 checks. The job later
+passes native NFS and protocol checks. The delay phase remains unproven; grant
+validity has not been relaxed ([failure evidence](docs/evidence/pre-m8/windows-m2-4a-failure.json)).
 
 A private, delegation-bound native reservation channel now bypasses the file
 worker's primary queue. It enforces operation/record/token ownership and retains
@@ -196,8 +196,15 @@ reactor polling, with ordered holds and cleanup priority. Worker waits occur
 outside the registry lock; asynchronous disconnect defers session teardown. A
 real-owner SIGSTOP plus paused-file-renewal test verifies reactor calls remain
 responsive ([details](docs/nfs-delegations.md#reactor-reservation-scheduling)).
-Owner-loss monitoring, callback dispatch priority and recovery remain unfinished;
-production handout is still disabled
+The nonblocking primitive and subsequent scheduler both pass their GCC/Clang
+Linux 6.19 matrices ([primitive](docs/evidence/pre-m8/nfs-nonblocking-4a-remote.json),
+[scheduler](docs/evidence/pre-m8/nfs-scheduler-b445-remote.json)).
+Idle socket checks and nonrenewing owner probes now detect protection loss and
+latch an NFS instance fence: new/queued requests and in-flight results are refused,
+transports close and business readiness becomes false. Normal DELEGRETURN is
+distinguished from unexpected loss. Durable restart/file-domain fencing, callback
+dispatch priority and recovery remain unfinished; production handout is disabled
+([instance-fence evidence](docs/evidence/pre-m8/nfs-native-health-local.json))
 ([details](docs/nfs-delegations.md#independent-reservation-capability-channel)).
 
 The independent NFS native owner now acknowledges bounded request reservations:

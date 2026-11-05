@@ -62,6 +62,7 @@ int nfs_delegation_protocol_suite(bool require_native = false) {
     bool independent_owner = false;
     std::deque<std::pair<std::string, std::string>> callbacks;
     std::vector<std::string> closes;
+    server *network = nullptr;
     auto protocol = std::make_unique<server>(cfg, [&](std::string target, std::string op, json body) -> json {
       if (target == "identity") {
         require(authorized, "forbidden");
@@ -77,6 +78,8 @@ int nfs_delegation_protocol_suite(bool require_native = false) {
         while (blocked_renewal) std::this_thread::sleep_for(std::chrono::milliseconds(1));
       }
       auto result = store->dispatch(op, body, ctx());
+      if (op == "nfs_delegation" && body.value("op", "") == "return" && independent_owner)
+        ok(network->poll_native()); // Deliberate return closes its owner channel before the file RPC ACK.
       if (op == "nfs_delegation" && body.value("op", "") == "channel")
         reservation_capability = result.at("reservation_capability");
       if (op == "nfs_delegation" && body.value("op", "") == "acquire" && result.at("granted")) {
@@ -92,6 +95,7 @@ int nfs_delegation_protocol_suite(bool require_native = false) {
       return result;
     }, callback_call{}, [&](auto connection, auto packet) { callbacks.emplace_back(connection, packet); },
        [&](auto connection) { closes.push_back(connection); });
+    network = protocol.get();
     struct peer { std::string connection, session; uint64_t client = 0; uint32_t sequence = 0, uid = 1000; };
     uint32_t xid = 0, last_flags = 0;
     bool track_reply = false;
@@ -588,8 +592,57 @@ int nfs_delegation_protocol_suite(bool require_native = false) {
     catch (const error &e) { abandoned = std::string_view(e.what()) == "cancelled"; }
     ok(abandoned);
     std::cout << "PASS request admission is bounded, cancellation restores capacity and disconnect invalidates undispatched tokens\n";
+#ifdef __linux__
+    if (require_native) {
+      component_provider = true;
+      callbacks.clear(); closes.clear();
+      auto dying = connect("native-owner-loss"); establish_callback();
+      auto fresh_file = nfs("create", directory, {{"name", "owner-loss"}}).at("handle").get<std::string>();
+      auto protected_open = open_result(send(dying, {put(fresh_file), opening(dying, 0x101)}), 1);
+      ok(independent_owner && !protected_open.second.empty());
+      auto held_receipt = protocol->admit_request("held-before-native-loss");
+      auto value = decode_bytes(reservation_capability.at("capability").get<std::string>());
+      int peer_fd = socket(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC, 0); ok(peer_fd >= 0);
+      sockaddr_un address{}; address.sun_family = AF_UNIX;
+      auto name = "taucloud-nfs-" + encode_bytes(std::string_view(value).substr(0, 16));
+      std::memcpy(address.sun_path + 1, name.data(), name.size());
+      auto connected = ::connect(peer_fd, reinterpret_cast<sockaddr *>(&address),
+          offsetof(sockaddr_un, sun_path) + 1 + name.size());
+      ucred peer{}; socklen_t peer_size = sizeof(peer);
+      auto identified = getsockopt(peer_fd, SOL_SOCKET, SO_PEERCRED, &peer, &peer_size);
+      close(peer_fd); ok(connected == 0 && identified == 0 && peer.uid == geteuid() && peer.pid > 1);
+      int owner_status = 0; ok(waitpid(peer.pid, &owner_status, WNOHANG) == 0);
+      blocked_renewal = true; renewal_entered = false;
+      auto replay_packet = last_request;
+      auto executing = std::async(std::launch::async, [&] { return protocol->dispatch(replay_packet, dying.connection); });
+      struct unblock_loss { std::atomic_bool &flag; ~unblock_loss() { flag = false; } } release{blocked_renewal};
+      auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(3);
+      while (!renewal_entered && std::chrono::steady_clock::now() < deadline)
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      ok(renewal_entered);
+      // Detect owner death while the protocol mutex remains held by the
+      // file callback; independent channel tests also prove idle EOF detection.
+      ok(kill(peer.pid, SIGKILL) == 0 && waitpid(peer.pid, &owner_status, 0) == peer.pid && WIFSIGNALED(owner_status));
+      auto started = std::chrono::steady_clock::now();
+      ok(!protocol->poll_native());
+      ok(std::chrono::steady_clock::now() - started < std::chrono::milliseconds(500));
+      bool new_refused = false, queued_refused = false, result_refused = false;
+      try { protocol->begin_request("after-native-loss"); }
+      catch (const error &e) { new_refused = std::string_view(e.what()) == "delegation_owner_lost"; }
+      try { protocol->request_ready(held_receipt); }
+      catch (const error &e) { queued_refused = std::string_view(e.what()) == "delegation_owner_lost"; }
+      blocked_renewal = false;
+      try { executing.get(); }
+      catch (const error &e) { result_refused = std::string_view(e.what()) == "delegation_owner_lost"; }
+      ok(new_refused && queued_refused && result_refused);
+      protocol->abandon_request(held_receipt);
+      protocol->transport_disconnected(dying.connection);
+      ok(!protocol->poll_native() && !protocol->poll_native());
+      std::cout << "PASS native owner SIGKILL fences new/queued requests and an in-flight file result without waiting for the protocol mutex" << std::endl;
+    }
+#endif
     std::cout << "PASS " << checks << " delegation protocol/native component checks; production handout remains gated\n";
-    // Keep destruction order explicit: protocol has no live delegations here.
+    // Destroy protocol state before its file provider, including fenced state.
     native = native_file(); protocol.reset(); store.reset();
     fs::remove_all(base);
     return 0;

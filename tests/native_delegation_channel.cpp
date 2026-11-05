@@ -151,6 +151,7 @@ int native_delegation_channel_suite() {
        fault::timeout, fault::capacity, fault::wrong_token}) {
     peer server(scenario);
     reservation_channel c(server.capability, reservation_channel::mode::nonblocking);
+    check(c.alive(), "async_live_pending_handshake");
     // The peer cannot answer until explicitly released. A blocking constructor
     // or poll therefore fails, instead of passing by scheduling coincidence.
     for (int i = 0; i < 10; ++i) check(!c.poll(), "async_handshake_waited");
@@ -163,8 +164,10 @@ int native_delegation_channel_suite() {
       server.finish(); continue;
     }
     check(result(c).at("held"), "async_handshake_result");
+    check(c.alive(), "async_live_idle_channel");
     rejected([&] { c.poll(); }, "invalid_request");
     c.begin_reserve();
+    check(c.alive(), "async_live_pending_reserve");
     for (int i = 0; i < 10; ++i) check(!c.poll(), "async_reserve_waited");
     rejected([&] { c.begin_complete(1, false); }, "operation_pending");
     server.release();
@@ -197,6 +200,8 @@ int native_delegation_channel_suite() {
     rejected([&] { result(c); }, "stale_handle");
     c.begin_inspect(); check(result(c).at("held"), "async_valid_after_negative_ack");
     server.finish();
+    check(!c.alive() && !c.alive(), "async_idle_eof_not_detected");
+    rejected([&] { c.begin_inspect(); }, "delegation_owner_lost");
   }
   std::cout << "PASS CHANNEL/nonblocking-handshake-ACK-errors-fixed-timeout " << checks << " checks\n";
   return checks;

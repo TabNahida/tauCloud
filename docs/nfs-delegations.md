@@ -523,8 +523,9 @@ also confirms the earlier owner primitive on Linux 6.19 and native Windows NFSv3
 roundtrips; it does not include the subsequent file-domain integration.
 
 The received-RPC route below now covers admission and transport completion with
-independent owner ACKs and asynchronous exchange. Failure monitoring, production
-handout, replacement recovery and reclaim remain incomplete.
+independent owner ACKs and asynchronous exchange. Monitoring and instance fencing
+are described below; production handout, replacement recovery and reclaim remain
+incomplete.
 
 ## Independent reservation capability channel
 
@@ -651,9 +652,9 @@ tests do not demonstrate production delegation handout.
 
 Owner exchanges now run through the bounded nonblocking scheduler described
 below. Network admission and completion do not wait for the file worker, the
-protocol mutex or native ACKs. Callback dispatch priority and prompt owner-loss
-fencing still remain required before production handout, alongside worker
-replacement, restart fences and reclaim.
+protocol mutex or native ACKs. An instance-level protection-loss fence is described below. Callback dispatch
+priority, worker replacement, durable restart fences and reclaim still remain
+required before production handout.
 Local Clang ASan/UBSan acceptance passes 1,087 host protocol checks and, with
 mandatory native protection in Linux 6.19, 1,105 protocol checks plus 997 native
 checks. See [local routing evidence](evidence/pre-m8/nfs-request-routing-local.json).
@@ -688,8 +689,11 @@ in the mandatory Linux 6.19 guest
 ([evidence](evidence/pre-m8/nfs-channel-nonblocking-local.json)).
 
 The receipt/reply registry now uses this primitive through a bounded scheduler.
-Monitoring owner loss between exchanges, callback dispatch priority and recovery
-fences remain required before production delegation handout.
+The original nonblocking primitive passes the GCC release and Clang ASan/UBSan
+Linux 6.19 Actions matrix at `4a9fb7a`
+([remote evidence](evidence/pre-m8/nfs-nonblocking-4a-remote.json)).
+Owner monitoring and instance fencing are described below; callback dispatch
+priority and durable recovery fences remain required before production handout.
 
 
 ## Reactor reservation scheduling
@@ -733,3 +737,49 @@ Local Clang ASan/UBSan acceptance passes 1,087 host protocol checks, 1,132
 actual-owner protocol checks plus 1,512 native checks in Linux 6.19, two real-TCP
 queue checks, four lease/restart groups and six callback-recovery groups.
 See [scheduler acceptance](evidence/pre-m8/nfs-native-scheduler-local.json).
+The actual-owner scheduler and simultaneous SIGSTOP/paused-file callback checks
+also pass both compiler jobs at `b445fca`
+([remote evidence](evidence/pre-m8/nfs-scheduler-b445-remote.json)).
+
+
+## Native protection monitoring and instance fencing
+
+Nonblocking channels now expose an idle health check. It consumes no ACK and does
+not renew a lease: EOF, socket errors, unsolicited idle packets and an expired
+outstanding exchange permanently close that channel. The scheduler also issues
+an inspection after 250 ms without an acknowledged exchange. Inspection does not
+renew state, and a stopped/unresponsive owner must answer within the existing
+fixed 1.5-second exchange deadline. Polling these probes never waits for the file
+worker or the protocol mutex.
+
+Losing a published, still-required native route latches a fault for the current
+NFS server instance. New and already-queued requests are refused. Domain calls
+check the latch before invocation and after return, and dispatch cannot return a
+successful result once fenced. The reactor closes its existing transports,
+refuses new connections and reports `business_ready=false` with
+`native_delegation_fenced=true`. Removing a route or completing a stale request
+does not reset the latch.
+
+Failed publication does not fence a server that never handed out the delegation.
+An acknowledged terminal cutoff is distinguished from losing protection while it
+is owed. Explicit DELEGRETURN marks the route as retiring before its file RPC, so
+the expected native channel close cannot race the RPC ACK and be mistaken for an
+owner crash. On a failed return the suppression ends; unexpected loss is still
+fatal. The protocol fixture deliberately polls in the return/ACK interval.
+
+The actual-owner Linux 6.19 test kills its verified child owner while the protocol
+thread is blocked in a file-domain renewal callback. Reactor polling detects the
+loss, rejects both new and previously queued requests, refuses the in-flight
+result after unblocking and remains fenced after cleanup. Independent wire tests
+also prove idle EOF detection and that health checks do not consume pending ACKs.
+
+This is an **instance fence**, not durable recovery or a replacement native guard.
+It cannot undo file operations already submitted, immediately invalidate a remote
+client's cached delegation, or prevent unrelated host syscalls after owner death.
+A supervisor/process restart needs durable file-domain/coherence fences and
+reclaim handling before wire handout can safely be enabled. Production `wire:true`
+continues to decline delegations. See
+[monitoring evidence](evidence/pre-m8/nfs-native-health-local.json): 491 independent
+channel checks, 1,087 host protocol checks and, in Linux 6.19, 1,188 actual-owner
+protocol checks plus 1,554 native checks pass under Clang ASan/UBSan. Two real-TCP
+queue checks and all six callback-recovery groups also pass.

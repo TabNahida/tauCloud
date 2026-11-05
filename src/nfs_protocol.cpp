@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <map>
 #include <deque>
+#include <atomic>
 #include <set>
 #include <utf8proc.h>
 namespace tc::nfs_detail {
@@ -126,7 +127,14 @@ json attrs3(reader &r) {
 } // namespace
 struct server::impl {
   config cfg;
-  domain_call call;
+  std::atomic_bool native_fault = false;
+  domain_call domain;
+  json call(std::string target, std::string operation, json body) {
+    require(!native_fault, "delegation_owner_lost");
+    auto result = domain(std::move(target), std::move(operation), std::move(body));
+    require(!native_fault, "delegation_owner_lost");
+    return result;
+  }
   callback_call callback;
   backchannel_send send_backchannel;
   backchannel_close close_backchannel;
@@ -204,7 +212,7 @@ struct server::impl {
     }
   }
   impl(const config &c, domain_call f, callback_call cb, backchannel_send bc, backchannel_close close)
-      : cfg(c), call(std::move(f)), callback(std::move(cb)), send_backchannel(std::move(bc)),
+      : cfg(c), domain(std::move(f)), callback(std::move(cb)), send_backchannel(std::move(bc)),
         close_backchannel(std::move(close)),
         db(c.state / "nfs.db") {
     // Fail startup if an explicitly configured acceptor cannot load its keys.
@@ -809,7 +817,7 @@ uint64_t server::admit_request(std::string connection) {
 }
 uint64_t server::begin_request(std::string connection) { return impl_->begin_request(std::move(connection)); }
 bool server::request_ready(uint64_t id) { return impl_->request_ready(id); }
-void server::poll_native() { impl_->poll_native(); }
+bool server::poll_native() { return impl_->poll_native(); }
 void server::abandon_request(uint64_t id) { impl_->cancel_request(id); }
 void server::enqueue_reply_completion(uint64_t id) { impl_->complete_reply(id); }
 void server::transport_disconnected(const std::string &connection) { impl_->transport_disconnected(connection); }
@@ -818,7 +826,10 @@ void server::cancel_request(uint64_t admission) {
   impl_->drain_native();
 }
 std::string server::dispatch(std::string_view record, std::string connection, uint64_t *completion, uint64_t admission) {
-  return impl_->dispatch(record, std::move(connection), completion, admission);
+  require(!impl_->native_fault, "delegation_owner_lost");
+  auto reply = impl_->dispatch(record, std::move(connection), completion, admission);
+  require(!impl_->native_fault, "delegation_owner_lost");
+  return reply;
 }
 void server::complete_reply(uint64_t completion) {
   impl_->complete_reply(completion);

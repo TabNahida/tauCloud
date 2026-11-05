@@ -1636,6 +1636,11 @@ std::string v4(const identity &who, reader &r) {
         } else if (op == 8) {
           check(!current.empty(), 10020);
           auto it = delegation_key(a.at("state"), sid, who, current, false, 8);
+          retiring_reservation_route(it->second.cookie, true);
+          struct restore_route {
+            impl &self; std::string cookie;
+            ~restore_route() { self.retiring_reservation_route(cookie, false); }
+          } retiring{*this, it->second.cookie};
           auto result = delegation_control(it->second, "return");
           delegation_snapshot(it->second, result);
           check(result.at("state") == "returned", it->second.revoked ? it->second.revoked : 10008);

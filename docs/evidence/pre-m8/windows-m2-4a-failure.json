@@ -1,0 +1,19 @@
+{
+  "status": "failed",
+  "source_commit": "4a9fb7a6a4ecf733a7395dfdc124a2c2bd4093d0",
+  "job": "https://github.com/TabNahida/tauCloud/actions/runs/41942739962/job/126967341743",
+  "log_sha256": "39352161f7f0aefd418f76bb6bd05b8ca588402054f1ee5ff163fe8a325f30c0",
+  "failure": [
+    "2026-11-05T00:46:53.2219035Z lease_expired operation=mkdir path=nested elapsed_ms=4575 after_checks=52",
+    "2026-11-05T00:46:53.9981200Z lease_expired after_checks=52 fixture=\"C:\\\\Users\\\\RUNNER~1\\\\AppData\\\\Local\\\\Temp\\\\tc2-unit-938b4d03af88\""
+  ],
+  "operation": "M2 first mkdir nested after 52 checks",
+  "elapsed_ms": 4575,
+  "signed_grant_ms": 2000,
+  "findings": [
+    "The failing step runs taucloud_m2_tests, not the M5 or native NFS test binary.",
+    "The same job subsequently passes 1087 NFS protocol checks and 578 native/lifecycle checks.",
+    "The exact delay phase is unproven. Cold attachment and scheduling are candidates; no Defender or IO attribution is established.",
+    "Production signed grant validity has not been increased; failure remains unresolved."
+  ]
+}

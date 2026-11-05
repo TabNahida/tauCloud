@@ -25,7 +25,10 @@ struct received_request {
 std::map<uint64_t, received_request> arrivals;
 uint64_t next_arrival = 0;
 void poll_native_locked() {
-  for (auto &[key, route] : reservation_routes) route->pump();
+  for (auto &[key, route] : reservation_routes) {
+    route->pump();
+    if (route->failed && route->published && !route->revoked && !route->retiring) native_fault = true;
+  }
   for (auto &[id, reply] : replies) {
     if (!reply.completed || reply.native_settled || id == current_reply) continue;
     bool done = true;
@@ -42,7 +45,9 @@ void poll_native_locked() {
           route->expires = std::max(route->expires, *reply.completed + int64_t(cfg.nfs_lease_seconds) * 1000);
   }
 }
-void poll_native() { std::lock_guard lock(reply_mutex); poll_native_locked(); }
+bool poll_native() {
+  std::lock_guard lock(reply_mutex); poll_native_locked(); return !native_fault;
+}
 bool wait_native(const std::vector<native_ticket> &tickets) {
   for (;;) {
     bool done = true, success = true;
@@ -77,6 +82,7 @@ uint64_t request_boundary() {
 }
 uint64_t begin_request(std::string bound) {
   std::lock_guard lock(reply_mutex);
+  require(!native_fault, "delegation_owner_lost");
   require(arrivals.size() < 32 && next_arrival != UINT64_MAX, "overloaded");
   auto id = ++next_arrival;
   received_request request{std::move(bound), now()};
@@ -91,6 +97,7 @@ uint64_t begin_request(std::string bound) {
 }
 bool request_ready(uint64_t id) {
   std::lock_guard lock(reply_mutex); poll_native_locked();
+  require(!native_fault, "delegation_owner_lost");
   auto found = arrivals.find(id);
   require(found != arrivals.end(), "cancelled");
   bool ready = true;
@@ -184,12 +191,18 @@ void publish_reservation_route(const std::string &key, uint64_t client, const js
   require(wait_native(tickets), "delegation_owner_lost");
   std::lock_guard lock(reply_mutex);
   require(!route->revoked && !route->failed, "stale_handle");
+  route->published = true;
 }
 void unpublish_reservation_route(const std::string &key) {
   std::lock_guard lock(reply_mutex);
   reservation_routes.erase(key);
   for (auto &[id, arrival] : arrivals) arrival.native.erase(key);
   for (auto &[id, reply] : replies) reply.native.erase(key);
+}
+void retiring_reservation_route(const std::string &key, bool retiring) {
+  std::lock_guard lock(reply_mutex);
+  auto found = reservation_routes.find(key);
+  if (found != reservation_routes.end()) found->second->retiring = retiring;
 }
 void reservation_client_expiry(uint64_t client, int64_t expires) {
   std::lock_guard lock(reply_mutex);

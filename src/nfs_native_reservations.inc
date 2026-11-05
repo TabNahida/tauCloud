@@ -12,7 +12,13 @@ struct reservation_route {
   uint64_t client;
   int64_t expires;
   std::unique_ptr<native_delegation_reservation_channel> channel;
-  bool failed = false, authenticating = true;
+  bool failed = false, authenticating = true, published = false, probing = false, retiring = false;
+  int64_t next_probe = 0;
+  int64_t protected_until = 0, recall_until = 0;
+  static int64_t clock() {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
+  }
   uint32_t revoked = 0;
   std::deque<std::shared_ptr<native_job>> queued;
   std::shared_ptr<native_job> active;
@@ -20,12 +26,20 @@ struct reservation_route {
       : client(c), expires(expiry), channel(std::make_unique<native_delegation_reservation_channel>(
           capability, native_delegation_reservation_channel::mode::nonblocking)) {}
   void lost() noexcept {
+    // A previously acknowledged terminal cutoff is not an owner crash while
+    // protection is owed. Unknown or still-reserved protection remains fatal.
+    if (protected_until && clock() >= protected_until &&
+        (recall_until || (now() >= expires && !active && queued.empty())))
+      revoked = recall_until ? 10087 : 10011;
     failed = true; channel.reset();
     if (active) { active->failure = "delegation_owner_lost"; active->done = true; active.reset(); }
     for (auto &job : queued) { job->failure = "delegation_owner_lost"; job->done = true; }
     queued.clear();
   }
   void observe(const json &snapshot) {
+    next_probe = clock() + 250;
+    protected_until = snapshot.at("protected_until_ms");
+    recall_until = snapshot.at("recall_deadline_ms");
     if (!snapshot.at("held").get<bool>()) revoked = snapshot.at("state") == "expired" ? 10011 : 10087;
   }
   std::shared_ptr<native_job> submit(native_job::kind kind, const std::shared_ptr<native_hold_state> &hold,
@@ -50,13 +64,24 @@ struct reservation_route {
   void pump() noexcept {
     if (failed) return;
     try {
+      if (!channel->alive()) { lost(); return; }
       if (authenticating) {
         auto ack = channel->poll(); if (!ack) return;
         observe(*ack); authenticating = false;
       }
+      if (probing) {
+        auto ack = channel->poll(); if (!ack) return;
+        observe(*ack); probing = false;
+      }
       // Limit work per route, even if every ACK is immediately available.
       for (unsigned budget = 0; budget < 8; ++budget) {
-        if (!active) { if (queued.empty()) return; choose(); }
+        if (!active) {
+          if (queued.empty()) {
+            if (!revoked && clock() >= next_probe) { channel->begin_inspect(); probing = true; }
+            return;
+          }
+          choose();
+        }
         auto &job = *active;
         if (job.step == native_job::phase::start) {
           if (revoked) { job.hold->token = 0; finish(); continue; }

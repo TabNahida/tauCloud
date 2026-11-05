@@ -407,6 +407,18 @@ struct native_delegation_reservation_channel::impl {
   [[noreturn]] void lost() {
     pending.reset(); transport.disconnect(); throw error("delegation_owner_lost");
   }
+  bool alive() {
+    require(nonblocking, "invalid_request");
+    if (transport.control.handle < 0) return false;
+    pollfd readable{transport.control.handle, POLLIN, 0};
+    auto ready = ::poll(&readable, 1, 0);
+    bool expired = pending && owner::clock() >= pending->deadline;
+    bool bad = (ready < 0 && errno != EINTR) ||
+        (readable.revents & (POLLHUP | POLLERR | POLLNVAL)) ||
+        (!pending && (readable.revents & POLLIN));
+    if (expired || bad) { pending.reset(); transport.disconnect(); return false; }
+    return true;
+  }
   std::optional<json> poll() {
     require(transport.control.handle >= 0, "delegation_owner_lost");
     require(pending.has_value(), "invalid_request");
@@ -545,6 +557,14 @@ std::optional<json> native_delegation_reservation_channel::poll() {
 #ifdef __linux__
   std::lock_guard lock(impl_->transport.mutex);
   return impl_->poll();
+#else
+  throw error("not_supported");
+#endif
+}
+bool native_delegation_reservation_channel::alive() {
+#ifdef __linux__
+  std::lock_guard lock(impl_->transport.mutex);
+  return impl_->alive();
 #else
   throw error("not_supported");
 #endif
