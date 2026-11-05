@@ -207,6 +207,16 @@ response and subsequent CB_SEQUENCE
 ([details](docs/nfs-delegations.md#callback-transmission-and-response-deadlines),
 [local evidence](docs/evidence/pre-m8/nfs-delivery-local.json)).
 
+The private Linux owner now supports recovery-capability reconnection after
+primary control loss. It rejects active-primary takeover, forged/promotion
+proofs and expired guards; invalidates old reservation channels/secrets; and
+preserves native protection, IDs and absolute recall/lease deadlines. A persisted
+private capability/ID test recovers the same owner after controller SIGKILL.
+Production journal integration, lost-acquisition reconciliation, descriptor
+restoration, file-domain fencing and protocol reclaim remain required
+([details](docs/nfs-delegations.md#surviving-owner-recovery-capability),
+[local evidence](docs/evidence/pre-m8/nfs-owner-recovery-local.json)).
+
 macOS native SMB remains unstable: the `c243218` backend run passes Linux GCC,
 Clang and Windows jobs plus macOS NFSv3, but macOS SMB fails after an authority
 watchdog disconnect. The replacement transport returns a new FileId while

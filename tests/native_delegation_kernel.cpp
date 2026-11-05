@@ -62,6 +62,137 @@ static void conflict(native_cache_guard &guard, const std::function<int()> &oper
     throw;
   }
 }
+static void owner_recovery_suite(native_file &root, const fs::path &base) {
+  auto denied = [&](const std::function<void()> &action) {
+    bool rejected = false;
+    try { action(); } catch (const error &e) { rejected = std::string_view(e.what()) == "forbidden"; }
+    check(rejected, "recovery_authority_not_isolated");
+  };
+  auto recover = [&](const json &capability) {
+    auto until = std::chrono::steady_clock::now() + 2s;
+    for (;;) {
+      try { return std::make_unique<native_delegation_owner>(capability); }
+      catch (const error &e) {
+        auto code = std::string_view(e.what());
+        if (std::chrono::steady_clock::now() >= until ||
+            (code != "forbidden" && code != "delegation_owner_lost" && code != "delegation_owner_unavailable")) throw;
+        std::this_thread::sleep_for(10ms);
+      }
+    }
+  };
+  { auto f = root.open("recovery", false, true, true); f.write(0, "protected"); }
+  {
+    auto f = root.open("recovery");
+    auto owner = std::make_unique<native_delegation_owner>();
+    auto capability = owner->recovery_capability(); // Can be persisted before acquisition.
+    auto id = owner->acquire(f, 5000, 5000);
+    check(id != 0, "recovery_acquire");
+    auto pid = owner->process_id();
+    auto reserved = owner->reservation_capability(id);
+    auto old_channel = std::make_unique<native_delegation_reservation_channel>(reserved);
+    auto before = owner->recall(id, monotonic_ms() + 5000);
+    denied([&] { native_delegation_owner takeover(capability); });
+    owner.reset();
+    bool disconnected = false;
+    auto until = std::chrono::steady_clock::now() + 2s;
+    while (!disconnected && std::chrono::steady_clock::now() < until) {
+      try { old_channel->inspect(); }
+      catch (const error &e) { disconnected = std::string_view(e.what()) == "delegation_owner_lost"; }
+      if (!disconnected) std::this_thread::sleep_for(5ms);
+    }
+    check(disconnected, "recovery_did_not_fence_old_reservation_channel");
+    auto forged = capability;
+    auto secret = forged.at("capability").get<std::string>(); secret.back() = secret.back() == '0' ? '1' : '0';
+    forged["capability"] = secret;
+    denied([&] { native_delegation_owner bad(forged); });
+    auto promoted = reserved; promoted["type"] = "owner-recovery-v1";
+    denied([&] { native_delegation_owner bad(promoted); });
+    auto restored = recover(capability);
+    auto after = restored->inspect(id);
+    check(restored->process_id() == pid && after.at("state") == "recalling", "recovery_replaced_owner_or_recall");
+    check(after.at("lease_expires_ms") == before.at("lease_expires_ms") &&
+        after.at("recall_deadline_ms") == before.at("recall_deadline_ms"), "recovery_extended_deadline");
+    denied([&] { native_delegation_owner takeover(capability); });
+    denied([&] { native_delegation_reservation_channel stale(reserved); });
+    auto fresh = restored->reservation_capability(id);
+    check(fresh != reserved, "recovery_reused_stale_reservation_secret");
+    native_delegation_reservation_channel channel(fresh);
+    check(channel.inspect().at("held"), "recovered_reservation_channel_failed");
+    check(restored->recovery_capability() == capability, "recovery_endpoint_changed");
+    restored.reset();
+    restored = recover(capability);
+    after = restored->inspect(id);
+    check(after.at("lease_expires_ms") == before.at("lease_expires_ms") &&
+        after.at("recall_deadline_ms") == before.at("recall_deadline_ms"), "repeated_recovery_extended_deadline");
+    int writer = open((base / "recovery").c_str(), O_WRONLY | O_NONBLOCK);
+    check(writer < 0 && errno == EWOULDBLOCK, "recovery_released_native_exclusion");
+    restored->release(id);
+    writer = open((base / "recovery").c_str(), O_WRONLY | O_NONBLOCK);
+    check(writer >= 0, "recovered_owner_cannot_release"); close(writer);
+  }
+  std::cout << "PASS " << base << " OWNER/recovery-auth-single-controller-fixed-deadlines-channel-rotation\n";
+  // Persist the capability/identity, then kill the real controller process.
+  // A replacement process object must reach the same surviving native owner.
+  auto journal = base / "owner-recovery.json";
+  int ready[2]; check(pipe2(ready, O_CLOEXEC) == 0, "recovery_crash_pipe");
+  auto worker = fork(); check(worker >= 0, "recovery_crash_fork");
+  if (!worker) {
+    close(ready[0]);
+    try {
+      auto f = root.open("recovery"); native_delegation_owner owner;
+      auto capability = owner.recovery_capability();
+      write_json(journal, {{"capability", capability}});
+      auto id = owner.acquire(f, 5000, 5000);
+      if (!id) _exit(2);
+      write_json(journal, {{"capability", capability}, {"id", id}, {"pid", owner.process_id()}, {"snapshot", owner.inspect(id)}});
+      char mark = 'R'; if (write(ready[1], &mark, 1) != 1) _exit(3);
+      for (;;) pause();
+    } catch (...) { _exit(4); }
+  }
+  close(ready[1]);
+  pollfd notification{ready[0], POLLIN, 0}; char mark = 0;
+  bool acknowledged = poll(&notification, 1, 3000) > 0 && read(ready[0], &mark, 1) == 1 && mark == 'R';
+  close(ready[0]);
+  check(kill(worker, SIGKILL) == 0, "recovery_crash_signal");
+  int status = 0; check(waitpid(worker, &status, 0) == worker && WIFSIGNALED(status), "recovery_crash_wait");
+  check(acknowledged, "recovery_journal_not_acknowledged");
+  auto saved = read_json(journal);
+  struct stat journal_info{};
+  check(stat(journal.c_str(), &journal_info) == 0 && (journal_info.st_mode & 0777) == 0600, "recovery_journal_not_private");
+  auto restored = recover(saved.at("capability"));
+  auto id = saved.at("id").get<uint64_t>();
+  auto before = restored->inspect(id);
+  check(restored->process_id() == saved.at("pid").get<int64_t>() &&
+      before.at("lease_expires_ms") == saved.at("snapshot").at("lease_expires_ms"), "crash_recovery_replaced_or_renewed_guard");
+  std::this_thread::sleep_for(20ms);
+  auto renewed = restored->renew(id, 5000);
+  check(renewed.at("lease_expires_ms") > before.at("lease_expires_ms"), "recovered_owner_cannot_acknowledge_renewal");
+  int writer = open((base / "recovery").c_str(), O_WRONLY | O_NONBLOCK);
+  check(writer < 0 && errno == EWOULDBLOCK, "crash_recovery_lost_native_guard");
+  restored->release(id);
+  writer = open((base / "recovery").c_str(), O_WRONLY | O_NONBLOCK);
+  check(writer >= 0, "crash_recovery_release_failed"); close(writer);
+  restored.reset(); fs::remove(journal);
+  std::cout << "PASS " << base << " OWNER/persisted-capability-SIGKILL-controller-reattach-renew-release\n";
+  json expired;
+  {
+    auto f = root.open("recovery"); native_delegation_owner owner;
+    expired = owner.recovery_capability();
+    check(owner.acquire(f, 5000, 800) != 0, "recovery_expiry_acquire");
+  }
+  std::this_thread::sleep_for(1000ms);
+  bool rejected = false;
+  try { native_delegation_owner late(expired); }
+  catch (const error &e) {
+    auto code = std::string_view(e.what());
+    rejected = code == "delegation_owner_unavailable" || code == "stale_handle" || code == "delegation_owner_lost";
+  }
+  check(rejected, "recovery_revived_expired_owner");
+  writer = open((base / "recovery").c_str(), O_WRONLY | O_NONBLOCK);
+  check(writer >= 0, "recoverable_orphan_did_not_expire"); close(writer);
+  std::cout << "PASS " << base << " OWNER/recovery-cannot-revive-expired-guards\n";
+}
+
 static bool suite(const fs::path &base, bool mandatory) {
   fs::create_directories(base);
   auto root = native_file::root(base);
@@ -100,6 +231,7 @@ static bool suite(const fs::path &base, bool mandatory) {
     auto writer = root.open("probe", false, false, true);
     check(writer.write(0, "contents") == 8, "destructor_failed_to_release");
   }
+  owner_recovery_suite(root, base);
   int index = 0;
   auto run = [&](const char *name, bool write, const std::function<int(const fs::path &)> &op) {
     auto relative = "file-" + std::to_string(++index);

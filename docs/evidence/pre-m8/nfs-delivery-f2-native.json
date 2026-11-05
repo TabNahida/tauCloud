@@ -1,0 +1,44 @@
+{
+  "status": "passed",
+  "source_commit": "f2e95f454188e419b669ef74fc7c146fbbf564a7",
+  "run_url": "https://github.com/TabNahida/tauCloud/actions/runs/41957522218",
+  "jobs": [
+    {
+      "name": "kernel (clang, debug, y)",
+      "conclusion": "success",
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41957522218/job/127015881797"
+    },
+    {
+      "name": "kernel (gcc, release, n)",
+      "conclusion": "success",
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41957522218/job/127015882228"
+    }
+  ],
+  "artifacts": {
+    "gcc": {
+      "sha256": "22f3ac2784d2dea490d9d5cf9852b313d78354367525961f45614727910e8f52",
+      "mandatory_marker": true,
+      "selected_groups": [
+        "PASS callback delivery starts one response window, bounds unsent lifetime and cancels retired queued frames",
+        "PASS native owner SIGKILL fences new/queued requests and an in-flight file result without waiting for the protocol mutex",
+        "PASS 1470 delegation protocol/native component checks; production handout remains gated",
+        "PASS native delegation 1537 checks"
+      ]
+    },
+    "clang": {
+      "sha256": "8706dd70cc250bab33ec4a5d106bcc4c7b70db3ba2dfeb0842b0fa701c879d17",
+      "mandatory_marker": true,
+      "selected_groups": [
+        "PASS callback delivery starts one response window, bounds unsent lifetime and cancels retired queued frames",
+        "PASS native owner SIGKILL fences new/queued requests and an in-flight file result without waiting for the protocol mutex",
+        "PASS 1458 delegation protocol/native component checks; production handout remains gated",
+        "PASS native delegation 1564 checks"
+      ]
+    }
+  },
+  "limits": [
+    "Native/component regression at f2e95f4 only; the delayed real TCP test runs in the separate metadata workflow.",
+    "These results predate the owner recovery capability change.",
+    "Production handout and full SMB/NFS conformance remain incomplete."
+  ]
+}

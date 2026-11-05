@@ -1,4 +1,4 @@
-// One private owner process per client object, up to 256 descriptor capabilities.
+// Private owner process with one active controller and up to 256 descriptor capabilities.
 // It never accepts a pathname, Internet connection, file credential or data operation.
 struct native_delegation_owner::impl {
   static inline std::atomic_bool entry_registered = false;
@@ -12,11 +12,14 @@ struct native_delegation_owner::impl {
     std::array<char, 32> capability{};
   };
   static_assert(sizeof(packet) == 80);
-  enum { acquire_read = 1, acquire_write, query, renew, recall, release, reserve, complete, cancel, export_capability, bind_channel };
+  enum { acquire_read = 1, acquire_write, query, renew, recall, release, reserve, complete, cancel,
+         export_capability, bind_channel, export_owner, bind_owner };
   static std::array<char, 32> proof(std::string_view secret, std::string_view endpoint, uint64_t id,
-                                     std::string_view nonce, bool server) {
+                                     std::string_view nonce, bool server, bool recovery = false) {
     require(secret.size() == 16 && endpoint.size() == 16 && nonce.size() == 16, "invalid_request");
-    auto message = std::string(server ? "TCD4-server:" : "TCD4-client:") + std::string(endpoint) +
+    auto prefix = recovery ? (server ? "TCD4-owner-server:" : "TCD4-owner-client:") :
+                             (server ? "TCD4-server:" : "TCD4-client:");
+    auto message = std::string(prefix) + std::string(endpoint) +
         std::to_string(id) + ":" + std::string(nonce);
     auto tag = decode_bytes(mac(secret, message).substr(0, 32));
     std::array<char, 32> result{};
@@ -26,6 +29,7 @@ struct native_delegation_owner::impl {
   }
   resource control;
   pid_t child = -1;
+  pid_t recovered_peer = -1;
   std::mutex mutex;
   std::map<uint64_t, std::shared_ptr<resource>> owned;
   static int64_t clock() {
@@ -162,9 +166,24 @@ struct native_delegation_owner::impl {
     std::map<uint64_t, record> records;
     uint64_t next = 0, next_reservation = 0;
     size_t pending = 0;
-    bool connected = true;
+    bool connected = true, recoverable = true;
     resource listener;
     std::string endpoint;
+    std::string recovery_secret;
+    auto listen_for_channels = [&] {
+      if (listener.handle >= 0) return;
+      resource created; created.handle = ::socket(AF_UNIX, SOCK_SEQPACKET | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
+      require(created.handle >= 0, "delegation_owner_io");
+      auto name = decode_bytes(random_hex(16));
+      sockaddr_un address{}; address.sun_family = AF_UNIX;
+      auto encoded = "taucloud-nfs-" + encode_bytes(name);
+      require(encoded.size() + 1 <= sizeof(address.sun_path), "delegation_owner_io");
+      std::memcpy(address.sun_path + 1, encoded.data(), encoded.size());
+      require(::bind(created.handle, reinterpret_cast<sockaddr *>(&address),
+          offsetof(sockaddr_un, sun_path) + 1 + encoded.size()) == 0 && listen(created.handle, 16) == 0,
+          "delegation_owner_io");
+      endpoint = std::move(name); listener.handle = created.handle; created.handle = -1;
+    };
     struct channel {
       std::unique_ptr<resource> socket;
       uint64_t id = 0, serial = 0;
@@ -186,7 +205,12 @@ struct native_delegation_owner::impl {
       }
       channels.erase(found);
     };
-    auto detach = [&] {
+    auto detach = [&](bool allow_recovery = true) {
+      recoverable &= allow_recovery;
+      if (!recoverable) {
+        channels.clear();
+        if (listener.handle >= 0) { ::close(listener.handle); listener.handle = -1; }
+      }
       if (!connected) return;
       connected = false; ::close(socket);
       // EOF cannot prove whether a reply reached its client. Preserve a full
@@ -196,10 +220,16 @@ struct native_delegation_owner::impl {
           (void)token; (void)controller; r.lifetime.complete(clock(), true);
         }
         r.reservations.clear();
+        r.capability.clear(); // Old protocol instances cannot rebind after recovery.
       }
       pending = 0;
-      channels.clear();
-      if (listener.handle >= 0) { ::close(listener.handle); listener.handle = -1; }
+      // Existing reservation channels must observe loss and fence their old
+      // protocol instance. Only unbound handshakes may survive for recovery.
+      std::erase_if(channels, [](const auto &entry) { return entry.second.id != 0; });
+      if (recovery_secret.empty()) {
+        channels.clear();
+        if (listener.handle >= 0) { ::close(listener.handle); listener.handle = -1; }
+      }
     };
     for (;;) {
       bool held = false;
@@ -210,7 +240,7 @@ struct native_delegation_owner::impl {
             r.lifetime.recall(clock());
             // Keep the descriptor, but do not acknowledge further renewals
             // after losing the ability to observe the kernel's protection.
-            detach();
+            detach(false);
           }
           r.lifetime.expire(clock());
           if (!r.lifetime.held()) { r.guard.reset(); r.file = native_file(); }
@@ -226,7 +256,7 @@ struct native_delegation_owner::impl {
       for (const auto &[fd, c] : channels) polling.push_back({fd, POLLIN, 0});
       int ready = poll(polling.data(), polling.size(), 20);
       if (ready <= 0) continue;
-      if (connected && listener.handle >= 0 && polling[1].revents) {
+      if (listener.handle >= 0 && polling[1].revents) {
         // Bounded handshakes cannot starve guard maintenance or primary control.
         for (int count = 0; count < 8; ++count) {
           resource incoming; incoming.handle = accept4(listener.handle, nullptr, nullptr, SOCK_NONBLOCK | SOCK_CLOEXEC);
@@ -241,9 +271,10 @@ struct native_delegation_owner::impl {
         }
       }
       for (size_t index = 0; index < polling.size(); ++index) {
-        if (index == 1 || !polling[index].revents || !connected) continue;
+        if (index == 1 || !polling[index].revents) continue;
         int current = polling[index].fd;
         bool primary = index == 0;
+        if (primary && !connected) continue;
         if (!primary && !channels.contains(current)) continue;
         uint64_t controller = primary ? 0 : channels.at(current).serial;
         auto abandon = [&] { if (primary) detach(); else close_channel(current); };
@@ -252,22 +283,37 @@ struct native_delegation_owner::impl {
         packet response = request;
         response.capability.fill(0);
         unsigned failure = 0;
+        bool adopting = false;
         try {
           auto op = request.op;
-          require(op >= acquire_read && op <= bind_channel, "invalid_request");
-          if (primary) require(op != bind_channel && request.capability == std::array<char, 32>{}, "invalid_request");
+          require(op >= acquire_read && op <= bind_owner, "invalid_request");
+          if (primary) require(op != bind_channel && op != bind_owner &&
+              request.capability == std::array<char, 32>{}, "invalid_request");
           else {
             auto &c = channels.at(current);
             if (!c.id) {
-              require(op == bind_channel, "forbidden");
-              auto found = records.find(request.id);
               std::string capability(request.capability.data(), request.capability.size());
-              require(found != records.end() && found->second.capability.size() == 16, "forbidden");
-              auto expected = proof(found->second.capability, endpoint, request.id,
-                  std::string_view(capability).substr(0, 16), false);
-              require(equal(capability, std::string_view(expected.data(), expected.size())), "forbidden");
-              require(found->second.lifetime.held(), "stale_handle");
-            } else require((op == query || op == reserve || op == complete || op == cancel) &&
+              if (op == bind_owner) {
+                require(!connected && recoverable && !request.id && recovery_secret.size() == 16, "forbidden");
+                auto expected = proof(recovery_secret, endpoint, 0, std::string_view(capability).substr(0, 16), false, true);
+                require(equal(capability, std::string_view(expected.data(), expected.size())), "forbidden");
+                bool live = false;
+                for (auto &[id, r] : records) {
+                  r.lifetime.expire(clock());
+                  if (!r.lifetime.held()) { r.guard.reset(); r.file = native_file(); }
+                  live |= r.lifetime.held();
+                }
+                require(live, "stale_handle");
+              } else {
+                require(connected && op == bind_channel, "forbidden");
+                auto found = records.find(request.id);
+                require(found != records.end() && found->second.capability.size() == 16, "forbidden");
+                auto expected = proof(found->second.capability, endpoint, request.id,
+                    std::string_view(capability).substr(0, 16), false);
+                require(equal(capability, std::string_view(expected.data(), expected.size())), "forbidden");
+                require(found->second.lifetime.held(), "stale_handle");
+              }
+            } else require(connected && (op == query || op == reserve || op == complete || op == cancel) &&
                 request.id == c.id && request.capability == std::array<char, 32>{}, "forbidden");
           }
           bool acquiring = op == acquire_read || op == acquire_write;
@@ -275,7 +321,20 @@ struct native_delegation_owner::impl {
           require(!request.reserved && !(request.native_flags & ~3u) &&
               (acquiring || !request.native_flags), "invalid_request");
           require((op == complete || op == cancel) == (request.reservation != 0), "invalid_request");
-          if (acquiring) {
+          if (op == export_owner || op == bind_owner) {
+            require(!request.id && !request.period && !request.remaining, "invalid_request");
+            if (op == export_owner) {
+              require(primary && recoverable, "forbidden");
+              listen_for_channels();
+              if (recovery_secret.empty()) recovery_secret = decode_bytes(random_hex(16));
+              auto capability = endpoint + recovery_secret;
+              std::copy(capability.begin(), capability.end(), response.capability.begin());
+            } else {
+              response.capability = proof(recovery_secret, endpoint, 0,
+                  std::string_view(request.capability.data(), 16), true, true);
+              adopting = true;
+            }
+          } else if (acquiring) {
             require(!request.id && request.period >= 5000 && request.period <= 3600000 &&
                 request.remaining > clock() && request.remaining <= clock() + request.period, "invalid_request");
             require(records.size() < 256 && next != UINT64_MAX, "operation_limit");
@@ -302,19 +361,7 @@ struct native_delegation_owner::impl {
             if (!r.lifetime.held()) { r.guard.reset(); r.file = native_file(); }
             if (op == export_capability) {
               require(primary && r.lifetime.held(), "stale_handle");
-              if (listener.handle < 0) {
-                resource created; created.handle = ::socket(AF_UNIX, SOCK_SEQPACKET | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
-                require(created.handle >= 0, "delegation_owner_io");
-                auto name = decode_bytes(random_hex(16));
-                sockaddr_un address{}; address.sun_family = AF_UNIX;
-                auto encoded = "taucloud-nfs-" + encode_bytes(name);
-                require(encoded.size() + 1 <= sizeof(address.sun_path), "delegation_owner_io");
-                std::memcpy(address.sun_path + 1, encoded.data(), encoded.size());
-                require(::bind(created.handle, reinterpret_cast<sockaddr *>(&address),
-                    offsetof(sockaddr_un, sun_path) + 1 + encoded.size()) == 0 && listen(created.handle, 16) == 0,
-                    "delegation_owner_io");
-                endpoint = std::move(name); listener.handle = created.handle; created.handle = -1;
-              }
+              listen_for_channels();
               if (r.capability.empty()) r.capability = decode_bytes(random_hex(16));
               auto capability = endpoint + r.capability;
               std::copy(capability.begin(), capability.end(), response.capability.begin());
@@ -369,7 +416,12 @@ struct native_delegation_owner::impl {
               code == "forbidden" ? 6 : 4;
         } catch (...) { failure = 4; }
         response.op |= failure << 16;
-        if (!send(current, response) || (!primary && failure && !channels.at(current).id)) abandon();
+        bool delivered = send(current, response);
+        if (adopting && !failure && delivered) {
+          socket = current; connected = true;
+          channels.at(current).socket->handle = -1;
+          channels.erase(current);
+        } else if (!delivered || (!primary && failure && !channels.at(current).id)) abandon();
       }
     }
   }
@@ -585,10 +637,51 @@ native_delegation_owner::native_delegation_owner() : impl_(std::make_unique<impl
   impl_->start();
 #endif
 }
+native_delegation_owner::native_delegation_owner(const json &capability) : impl_(std::make_unique<impl>()) {
+#ifdef __linux__
+  require(capability.is_object() && capability.contains("type") && capability.at("type") == "owner-recovery-v1" &&
+      capability.contains("capability") && capability.at("capability").is_string(), "invalid_request");
+  auto encoded = capability.at("capability").get<std::string>();
+  require(encoded.size() == 64, "invalid_request");
+  auto value = decode_bytes(encoded);
+  auto endpoint = std::string_view(value).substr(0, 16), secret = std::string_view(value).substr(16);
+  resource socket; socket.handle = ::socket(AF_UNIX, SOCK_SEQPACKET | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
+  require(socket.handle >= 0, "delegation_owner_unavailable");
+  sockaddr_un address{}; address.sun_family = AF_UNIX;
+  auto name = "taucloud-nfs-" + encode_bytes(endpoint);
+  std::memcpy(address.sun_path + 1, name.data(), name.size());
+  require(::connect(socket.handle, reinterpret_cast<sockaddr *>(&address),
+      offsetof(sockaddr_un, sun_path) + 1 + name.size()) == 0, "delegation_owner_unavailable");
+  ucred peer{}; socklen_t length = sizeof(peer);
+  require(getsockopt(socket.handle, SOL_SOCKET, SO_PEERCRED, &peer, &length) == 0 && peer.uid == geteuid(), "forbidden");
+  impl_->control.handle = socket.handle; socket.handle = -1;
+  impl::packet request; request.op = impl::bind_owner;
+  auto nonce = decode_bytes(random_hex(16));
+  request.capability = impl::proof(secret, endpoint, 0, nonce, false, true);
+  auto response = impl_->exchange(request);
+  auto expected = impl::proof(secret, endpoint, 0, nonce, true, true);
+  require(equal(std::string_view(response.capability.data(), response.capability.size()),
+      std::string_view(expected.data(), expected.size())), "forbidden");
+  impl_->recovered_peer = peer.pid;
+#else
+  (void)capability; throw error("not_supported");
+#endif
+}
+json native_delegation_owner::recovery_capability() {
+#ifdef __linux__
+  std::lock_guard lock(impl_->mutex);
+  impl::packet request; request.op = impl::export_owner;
+  auto response = impl_->exchange(request);
+  return {{"type", "owner-recovery-v1"},
+      {"capability", encode_bytes(std::string_view(response.capability.data(), response.capability.size()))}};
+#else
+  throw error("not_supported");
+#endif
+}
 native_delegation_owner::~native_delegation_owner() = default;
 int64_t native_delegation_owner::process_id() const {
 #ifdef __linux__
-  return impl_->child;
+  return impl_->child > 0 ? impl_->child : impl_->recovered_peer;
 #else
   return 0;
 #endif

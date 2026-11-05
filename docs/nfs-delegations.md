@@ -15,8 +15,9 @@ documents open/truncate exclusion. The newer
 [F_SETDELEG](https://man7.org/linux/man-pages/man2/F_GETDELEG.2const.html), introduced
 in Linux 6.19, is now implemented by the native adapter and exercised in an
 isolated Linux 6.19 guest. The development host remains on 6.18.40.1 and correctly
-declines that API. Surviving-owner recovery and production file-authority
-integration are still required before wire handout.
+declines that API. A surviving-owner recovery control primitive is now available
+(see below); durable file-domain/protocol adoption is still required before
+wire handout.
 
 OPEN preserves the client's delegation preference independently of ordinary
 READ/WRITE access. A request without new flags retains the legacy NONE reply.
@@ -270,9 +271,10 @@ both filesystems ([remote evidence](evidence/pre-m8/nfs-owner-domain-3fe-remote.
 
 Ensuring successful network SEQUENCE/callback renewals never outlive owner ACKs,
 recovering state across worker replacement, and durable delegation reclaim remain
-open. The private disconnected owner deliberately cannot be reattached by a new
-worker yet. Simultaneous owner/worker loss and full server restart still require
-recovery/fencing; this test does not prove those cases. Windows owner and native
+open. At that stage the private disconnected owner could not be reattached. The
+recovery capability below now permits control reconnection, but does not restore
+file-domain or protocol ownership. Simultaneous owner/worker loss and full server
+restart still require recovery/fencing; this test does not prove those cases. Windows owner and native
 namespace protection also remain open. Wire handout stays gated.
 
 
@@ -981,3 +983,56 @@ and 1,553 native checks (native scheduling can affect component check counts).
 See [baseline and acceptance](evidence/pre-m8/nfs-delivery-local.json). Durable
 recovery and production delegation handout remain open; this is not full NFS
 conformance. Remote acceptance is pending.
+
+
+The callback delivery implementation at `f2e95f4` passes GCC and Clang Linux 6.19
+native/component regression ([fixed-source evidence](evidence/pre-m8/nfs-delivery-f2-native.json)).
+This workflow does not run the delayed TCP reproduction; its metadata matrix
+remains separate. These results predate owner reconnection below.
+
+## Surviving owner recovery capability
+
+The private Linux owner can now export a separate `owner-recovery-v1` capability,
+including before acquiring a guard. A replacement controller can authenticate
+to the same surviving process after the old primary control channel disconnects.
+A live primary cannot be replaced. Recovery uses independent secret material,
+fresh nonces and domain-separated client/server proofs; a per-delegation
+reservation capability cannot be promoted into control authority. The handshake
+retains the existing fixed 1.5-second IPC timeout and same-UID check. The peer PID
+is diagnostic only; recovery authority comes from the capability proof.
+
+Primary disconnect still conservatively completes outstanding reservations and
+closes their bound channels, so old protocol instances observe owner loss. It
+now also invalidates their reservation secrets. An authenticated replacement
+must export fresh reservation capabilities before establishing new channels.
+Only bounded, unauthenticated handshakes can remain during transition. The
+recovery listener survives detachment only if the primary explicitly exported
+a recovery capability. Loss of native observation disables recovery permanently
+for that owner instance.
+
+Reattachment itself neither reacquires a native guard nor renews a lease. It
+preserves IDs, absolute monotonic expiry and fixed recall cutoffs, including
+repeated controller replacement. Only explicit subsequent renewal can extend
+the lease. Orphan expiry still releases protection and terminates the owner;
+stale capabilities cannot revive it. The existing descriptor-based acquisition
+and authorized inspect/recall/release operations remain available on the newly
+authenticated control channel.
+
+Independent wire tests verify mutual proof, reflection rejection and timeout.
+Real tmpfs/ext4 tests check active-primary refusal, forged and promoted capability
+rejection, old-channel disconnection, secret rotation, unchanged deadlines and
+native writer exclusion through repeated reconnection. Another test writes a
+0600, fsynced capability/ID record, SIGKILLs its real controller, loads that record
+and reconnects to the same owner before explicitly renewing and releasing its
+guard. Expired orphan recovery is separately rejected. See
+[local acceptance](evidence/pre-m8/nfs-owner-recovery-local.json).
+Local ASan/UBSan passes 507 independent channel checks and 1,361 host protocol
+checks; Linux 6.19 passes 1,627 native and 1,464 protocol component checks.
+
+This is the control recovery primitive, not completed file-domain or NFS reclaim.
+Production does not yet persist or consume recovery capabilities. Durable
+acquisition-intent/record reconciliation, native descriptor restoration, fresh
+authority checks, file-domain restart fencing and protocol-state reclaim remain
+required before wire handout. A capability cannot resurrect a dead owner or
+survive a host reboot. Windows equivalents remain open. Remote acceptance is
+pending.

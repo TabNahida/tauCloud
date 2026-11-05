@@ -14,6 +14,11 @@ class native_delegation_owner {
   std::unique_ptr<impl> impl_;
 public:
   native_delegation_owner();
+  // Reattach only after the old primary disconnects. This capability grants
+  // owner control, unlike a delegation's reservation-only capability. Keep it
+  // private; reattachment neither renews leases nor reconstructs protocol state.
+  explicit native_delegation_owner(const json &recovery_capability);
+  json recovery_capability();
   ~native_delegation_owner();
   native_delegation_owner(const native_delegation_owner &) = delete;
   uint64_t acquire(const native_file &, int64_t period_ms, int64_t remaining_ms,

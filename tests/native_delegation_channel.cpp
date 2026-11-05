@@ -35,7 +35,7 @@ struct peer {
   int gate = -1;
   pid_t child = -1;
   json capability;
-  explicit peer(fault scenario) {
+  explicit peer(fault scenario, bool recovery = false) {
     auto endpoint = decode_bytes(random_hex(16)), secret = decode_bytes(random_hex(16));
     int listener = socket(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC, 0);
     check(listener >= 0, "async_listener");
@@ -56,7 +56,7 @@ struct peer {
       auto receive = [&](unsigned op) {
         packet p; pollfd readable{connection, POLLIN, 0};
         if (::poll(&readable, 1, 4000) <= 0 || recv(connection, &p, sizeof(p), 0) != sizeof(p) ||
-            p.magic != 0x54434434 || p.op != op || p.id != 1) _exit(4);
+            p.magic != 0x54434434 || p.op != op || p.id != (op == 13 ? 0 : 1)) _exit(4);
         return p;
       };
       auto release = [&] {
@@ -66,16 +66,20 @@ struct peer {
       auto send = [&](const packet &p) {
         if (::send(connection, &p, sizeof(p), MSG_NOSIGNAL) != sizeof(p)) _exit(6);
       };
-      auto response = receive(11);
+      auto response = receive(recovery ? 13 : 11);
       auto nonce = std::string(response.capability.data(), 16);
-      auto client_tag = decode_bytes(mac(secret, "TCD4-client:" + endpoint + "1:" + nonce).substr(0, 32));
+      auto suffix = endpoint + (recovery ? "0:" : "1:") + nonce;
+      auto client_tag = decode_bytes(mac(secret, (recovery ? "TCD4-owner-client:" : "TCD4-client:") + suffix).substr(0, 32));
       if (std::string(response.capability.data(), 32) != nonce + client_tag) _exit(7);
       if (scenario != fault::reflected) {
-        auto tag = decode_bytes(mac(secret, "TCD4-server:" + endpoint + "1:" + nonce).substr(0, 32));
+        auto tag = decode_bytes(mac(secret, (recovery ? "TCD4-owner-server:" : "TCD4-server:") + suffix).substr(0, 32));
         std::copy(tag.begin(), tag.end(), response.capability.begin() + 16);
       }
       response.period = clock_ms() + 5000;
-      release(); send(response);
+      release();
+      if (recovery && scenario == fault::timeout) { release(); _exit(0); }
+      send(response);
+      if (recovery) _exit(0);
       if (scenario == fault::reflected) _exit(0);
       response = receive(7); release();
       if (scenario == fault::eof) _exit(0);
@@ -122,6 +126,7 @@ struct peer {
     }
     close(listener); close(gates[0]); gate = gates[1];
     capability = {{"id", uint64_t(1)}, {"capability", encode_bytes(endpoint + secret)}};
+    if (recovery) capability["type"] = "owner-recovery-v1";
   }
   void release() { char marker = 'R'; check(write(gate, &marker, 1) == 1, "async_release"); }
   void finish() {
@@ -146,6 +151,19 @@ template<class F> void rejected(F operation, std::string_view expected) {
 }
 int native_delegation_channel_suite() {
   checks = 0;
+  for (auto scenario : {fault::none, fault::reflected, fault::timeout}) {
+    peer server(scenario, true); server.release();
+    auto start = clock_ms();
+    if (scenario == fault::none) { native_delegation_owner restored(server.capability); }
+    else rejected([&] { native_delegation_owner restored(server.capability); },
+                  scenario == fault::reflected ? "forbidden" : "delegation_owner_lost");
+    if (scenario == fault::timeout) {
+      check(clock_ms() - start >= 1400 && clock_ms() - start < 2500, "recovery_handshake_deadline");
+      server.release();
+    }
+    server.finish();
+  }
+  std::cout << "PASS CHANNEL/recovery-mutual-proof-domain-separation-and-fixed-timeout\n";
   for (auto scenario : {fault::none, fault::reflected, fault::wrong_id, fault::wrong_op, fault::zero_token,
        fault::bad_magic, fault::short_record, fault::descriptor, fault::state, fault::count, fault::eof,
        fault::timeout, fault::capacity, fault::wrong_token}) {
