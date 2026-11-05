@@ -161,6 +161,10 @@ At `2ea5305`, the Windows backend and metadata jobs and the Clang backend job
 pass; Windows M2 has 77 checks, Clang M2 has 83, and both M5 runs pass 12,595.
 These failures did not recur in these runs; their historical cause and macOS
 stability are not closed ([job evidence](docs/evidence/pre-m8/smb-cache-io-2ea-platforms.json)).
+The `4a9fb7a` Windows metadata job subsequently reports a failure in
+"Native cache exclusion, cancellation and allocation safety"; its job is still
+running and the detailed failure log remains to be collected
+([job](https://github.com/TabNahida/tauCloud/actions/runs/41942739962/job/126967341743)).
 
 A private, delegation-bound native reservation channel now bypasses the file
 worker's primary queue. It enforces operation/record/token ownership and retains
@@ -186,9 +190,14 @@ The native channel now supports nonblocking mutual authentication and
 reservation/completion ACKs with a fixed deadline and single outstanding request.
 447 independent channel checks pass; Linux 6.19 tmpfs/ext4 SIGSTOP/timeout tests
 preserve native protection, with 1,512 native and 1,105 protocol checks passing
-([evidence](docs/evidence/pre-m8/nfs-channel-nonblocking-local.json)). Integrating
-this primitive into reactor scheduling, owner-loss monitoring, callback priority
-and recovery remain unfinished; production handout is still disabled
+([evidence](docs/evidence/pre-m8/nfs-channel-nonblocking-local.json)).
+The receipt/reply registry now uses bounded per-route queues and nonblocking
+reactor polling, with ordered holds and cleanup priority. Worker waits occur
+outside the registry lock; asynchronous disconnect defers session teardown. A
+real-owner SIGSTOP plus paused-file-renewal test verifies reactor calls remain
+responsive ([details](docs/nfs-delegations.md#reactor-reservation-scheduling)).
+Owner-loss monitoring, callback dispatch priority and recovery remain unfinished;
+production handout is still disabled
 ([details](docs/nfs-delegations.md#independent-reservation-capability-channel)).
 
 The independent NFS native owner now acknowledges bounded request reservations:

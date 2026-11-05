@@ -52,6 +52,15 @@ public:
   // Every token must be dispatched once or cancelled, including submit failure.
   uint64_t admit_request(std::string connection);
   void cancel_request(uint64_t admission);
+  // Reactor variants never wait for native ACKs or the protocol mutex. Drive
+  // poll_native while idle and request_ready before submitting a dispatch.
+  // Every begun request must be dispatched or abandoned, including errors.
+  uint64_t begin_request(std::string connection);
+  bool request_ready(uint64_t admission);
+  void abandon_request(uint64_t admission);
+  void poll_native();
+  void enqueue_reply_completion(uint64_t completion);
+  void transport_disconnected(const std::string &connection);
   // A transport may request a private completion token. A nonzero token pins
   // the client lease until complete_reply or disconnect; it is never on wire.
   // Without a token, the caller treats return from dispatch as delivery.

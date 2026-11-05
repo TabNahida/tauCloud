@@ -15,9 +15,10 @@ std::string dispatch(std::string_view packet, std::string connection_id, uint64_
   struct finish_admission {
     impl &self;
     uint64_t id;
-    ~finish_admission() { self.cancel_request(id); }
+    ~finish_admission() { self.cancel_request(id); self.drain_native(); }
   } admitted{*this, admission};
   std::lock_guard guard(mutex);
+  await_request(admission);
   claim_request(admission, connection_id);
   connection = std::move(connection_id);
   observe_native_revocations();

@@ -456,7 +456,7 @@ The VM delays file-domain observation after a real native write conflict and
 verifies that the imported recall deadline remains anchored to the owner.
 The received-RPC route below extends these acknowledged deadlines across
 admission, execution and reply delivery in component tests. Production handout
-stays disabled pending asynchronous integration and recovery.
+stays disabled pending failure fencing and recovery.
 
 The [fixed-source Actions acceptance](evidence/pre-m8/nfs-native-deadline-d66-remote.json)
 for `d66ff7c` passes 257 host checks and 584 guest checks with the required
@@ -523,8 +523,8 @@ also confirms the earlier owner primitive on Linux 6.19 and native Windows NFSv3
 roundtrips; it does not include the subsequent file-domain integration.
 
 The received-RPC route below now covers admission and transport completion with
-independent owner ACKs. Asynchronous native exchange, failure monitoring,
-production handout, replacement recovery and reclaim remain incomplete.
+independent owner ACKs and asynchronous exchange. Failure monitoring, production
+handout, replacement recovery and reclaim remain incomplete.
 
 ## Independent reservation capability channel
 
@@ -561,8 +561,9 @@ records 927 ASan/UBSan checks and verifies actual tmpfs/ext4 protection,
 raw-packet operation restrictions,
 capability and token binding, duplicate/capacity rejection, per-channel EOF,
 SIGSTOP of the file worker while another process obtains native ACKs, and bounded
-retention after SIGKILL. Received-RPC routing is described below; its asynchronous
-integration and recovery/reclaim remain open, and production handout is disabled.
+retention after SIGKILL. Received-RPC routing and reactor scheduling are described
+below; failure fencing and recovery/reclaim remain open, and production handout
+is disabled.
 
 [Remote acceptance at `5d76595`](evidence/pre-m8/nfs-reservation-channel-5d-remote.json)
 passes the complete GCC release and Clang ASan/UBSan Linux 6.19 workflow. Their
@@ -648,11 +649,11 @@ independent replay tokens, cancellation, invalid SEQUENCE and duplicate completi
 The test-only provider still explicitly removes the production wire gate; these
 tests do not demonstrate production delegation handout.
 
-The owner exchanges are currently synchronous under the receipt/reply registry
-lock. They bypass file IPC and the main protocol mutex, but can still stall the
-transport reactor on a slow/dead native owner. Asynchronous exchange, priority for
-callback/cleanup traffic and prompt owner-loss fencing remain required before
-production handout, alongside worker replacement, restart fences and reclaim.
+Owner exchanges now run through the bounded nonblocking scheduler described
+below. Network admission and completion do not wait for the file worker, the
+protocol mutex or native ACKs. Callback dispatch priority and prompt owner-loss
+fencing still remain required before production handout, alongside worker
+replacement, restart fences and reclaim.
 Local Clang ASan/UBSan acceptance passes 1,087 host protocol checks and, with
 mandatory native protection in Linux 6.19, 1,105 protocol checks plus 997 native
 checks. See [local routing evidence](evidence/pre-m8/nfs-request-routing-local.json).
@@ -686,7 +687,49 @@ the capability-refusing host), then 1,512 native checks plus 1,105 protocol chec
 in the mandatory Linux 6.19 guest
 ([evidence](evidence/pre-m8/nfs-channel-nonblocking-local.json)).
 
-This adds the transport primitive. The receipt/reply registry still uses its
-synchronous adapter; scheduling nonblocking exchanges from the reactor, monitoring
-owner loss between exchanges, callback/cleanup priority and recovery fences remain
-required before production delegation handout.
+The receipt/reply registry now uses this primitive through a bounded scheduler.
+Monitoring owner loss between exchanges, callback dispatch priority and recovery
+fences remain required before production delegation handout.
+
+
+## Reactor reservation scheduling
+
+Each native route serializes at most 96 queued/active reservation, refresh and
+completion jobs over its nonblocking authenticated channel. Refresh confirms
+completion of the old token before reserving the next execution phase. Jobs for
+one hold preserve order; eligible completion/cancellation jobs run before new
+reservations to release capacity. A poll handles at most eight steps per route;
+there are at most 32 protocol delegations. Native timeout and uncertain failures
+close the channel and fail its outstanding jobs, leaving conservative retention
+to the owner. A capacity rejection can fail an initial reserve without disabling
+other holds.
+
+The reactor registers complete RPC records immediately, then yields until all
+eligible native reservations are acknowledged before submitting protocol work.
+It polls channels while otherwise idle. Reply delivery, cancellation and confirmed
+transport loss enqueue cleanup without waiting for ACKs or taking the protocol
+mutex. Session/backchannel teardown is applied subsequently by a protocol worker;
+its pending connection set is bounded, with overflow conservatively invalidating
+all known bindings. Existing synchronous component APIs drive the same queues but
+wait outside the receipt/reply lock.
+
+Publication registers the route before waiting so concurrent arrivals are also
+covered; it refuses handout if the native guard has already become terminal.
+Validated renewal advances protocol state only after the queued refresh ACKs.
+Completed replies keep their client pin until native completion is settled, and
+only acknowledged completions advance route eligibility. Cancellation before
+validation does not renew; reply/arrival tokens remain single use.
+
+The mandatory actual-owner protocol test pauses the native owner with SIGSTOP
+while a protocol worker is blocked inside the file-domain renewal callback. During
+both pauses, reactor admission, reply completion, cancellation, disconnect and
+polling return without waiting. Resumption drains the same jobs, preserves exactly
+the surviving reservations and completes with a full native lease. Separate actual
+TCP tests exercise executor saturation and shared-client lease/replay/restart
+behavior using the production service binaries. The native delegation provider is
+still injected only in the component test; production wire handout remains gated.
+
+Local Clang ASan/UBSan acceptance passes 1,087 host protocol checks, 1,132
+actual-owner protocol checks plus 1,512 native checks in Linux 6.19, two real-TCP
+queue checks, four lease/restart groups and six callback-recovery groups.
+See [scheduler acceptance](evidence/pre-m8/nfs-native-scheduler-local.json).

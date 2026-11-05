@@ -1,71 +1,4 @@
-// Independent native channels never use the file worker's queue or protocol
-// mutex. Native ACK exchanges are bounded; asynchronous reactor integration and
-// owner-loss monitoring remain prerequisites for production wire handout.
-struct reservation_route {
-  uint64_t client;
-  int64_t expires;
-  std::unique_ptr<native_delegation_reservation_channel> channel;
-  bool failed = false;
-  uint32_t revoked = 0;
-  reservation_route(uint64_t c, int64_t expiry, const json &capability)
-      : client(c), expires(expiry), channel(std::make_unique<native_delegation_reservation_channel>(capability)) {}
-  void lost() noexcept { failed = true; channel.reset(); }
-  void observe(const json &snapshot) {
-    if (!snapshot.at("held").get<bool>()) revoked = snapshot.at("state") == "expired" ? 10011 : 10087;
-  }
-};
-struct native_request_hold {
-  std::shared_ptr<reservation_route> route;
-  uint64_t token = 0;
-  explicit native_request_hold(std::shared_ptr<reservation_route> r) : route(std::move(r)) {
-    require(!route->failed, "delegation_owner_lost");
-    try { token = route->channel->reserve().at("reservation").get<uint64_t>(); }
-    catch (const error &e) {
-      if (std::string_view(e.what()) == "stale_handle") {
-        // Autonomous recall can finish between protocol maintenance and record
-        // arrival. Report revocation on the next SEQUENCE, not a transport error.
-        route->observe(route->channel->inspect());
-        if (route->revoked) return;
-      }
-      if (std::string_view(e.what()) != "operation_limit" && std::string_view(e.what()) != "stale_handle")
-        route->lost();
-      throw;
-    } catch (...) { route->lost(); throw; }
-  }
-  native_request_hold(const native_request_hold &) = delete;
-  bool refresh() noexcept {
-    if (route->revoked) return true;
-    if (!token || route->failed) return false;
-    auto claimed = std::exchange(token, 0);
-    try {
-      // ACK a full lease before reserving the next phase of this same request.
-      // Failure cannot advance network expiry. Closing the failed channel
-      // conservatively retains any other uncertain tokens in its owner.
-      auto confirmed = route->channel->complete(claimed, true);
-      route->observe(confirmed);
-      if (route->revoked) return true;
-      token = route->channel->reserve().at("reservation").get<uint64_t>();
-      return true;
-    } catch (const error &e) {
-      if (std::string_view(e.what()) == "stale_handle") {
-        try {
-          route->observe(route->channel->inspect());
-          if (route->revoked) return true;
-        } catch (...) {}
-      }
-      route->lost(); return false;
-    } catch (...) { route->lost(); return false; }
-  }
-  bool finish(bool renew) noexcept {
-    if (!token) return !route->failed;
-    auto claimed = std::exchange(token, 0);
-    if (route->failed) return false;
-    try { route->observe(route->channel->complete(claimed, renew)); }
-    catch (...) { route->lost(); }
-    return !route->failed;
-  }
-  ~native_request_hold() { finish(false); }
-};
+#include "nfs_native_reservations.inc"
 using native_request_holds = std::map<std::string, std::shared_ptr<native_request_hold>>;
 struct pending_reply {
   std::string connection;
@@ -74,6 +7,8 @@ struct pending_reply {
   native_request_holds native;
   bool native_failed = false;
   bool renewal_authorized = false;
+  std::vector<native_ticket> completions;
+  bool native_settled = false;
 };
 mutable std::mutex reply_mutex;
 std::map<uint64_t, pending_reply> replies;
@@ -89,12 +24,58 @@ struct received_request {
 };
 std::map<uint64_t, received_request> arrivals;
 uint64_t next_arrival = 0;
+void poll_native_locked() {
+  for (auto &[key, route] : reservation_routes) route->pump();
+  for (auto &[id, reply] : replies) {
+    if (!reply.completed || reply.native_settled || id == current_reply) continue;
+    bool done = true;
+    for (auto &ticket : reply.completions) {
+      ticket.route->pump();
+      done &= ticket.job->done;
+      reply.native_failed |= ticket.route->failed || !ticket.job->failure.empty();
+    }
+    if (!done) continue;
+    reply.native_settled = true; reply.completions.clear();
+    if (!reply.native_failed)
+      for (auto &[key, route] : reservation_routes)
+        if (route->client == reply.client && !route->failed && !route->revoked)
+          route->expires = std::max(route->expires, *reply.completed + int64_t(cfg.nfs_lease_seconds) * 1000);
+  }
+}
+void poll_native() { std::lock_guard lock(reply_mutex); poll_native_locked(); }
+bool wait_native(const std::vector<native_ticket> &tickets) {
+  for (;;) {
+    bool done = true, success = true;
+    {
+      std::lock_guard lock(reply_mutex);
+      for (const auto &ticket : tickets) {
+        ticket.route->pump();
+        done &= ticket.job->done;
+        success &= !ticket.route->failed && ticket.job->failure.empty();
+      }
+      if (done) return success;
+    }
+    std::this_thread::sleep_for(1ms);
+  }
+}
+void drain_native() {
+  for (;;) {
+    bool done = true;
+    {
+      std::lock_guard lock(reply_mutex); poll_native_locked();
+      for (const auto &[key, route] : reservation_routes)
+        done &= route->queued.empty() && !route->active;
+    }
+    if (done) return;
+    std::this_thread::sleep_for(1ms);
+  }
+}
 uint64_t request_boundary() {
   std::lock_guard lock(reply_mutex);
   require(next_arrival != UINT64_MAX, "overloaded");
   return next_arrival + 1;
 }
-uint64_t admit_request(std::string bound) {
+uint64_t begin_request(std::string bound) {
   std::lock_guard lock(reply_mutex);
   require(arrivals.size() < 32 && next_arrival != UINT64_MAX, "overloaded");
   auto id = ++next_arrival;
@@ -106,6 +87,28 @@ uint64_t admit_request(std::string bound) {
     if (!route->revoked && request.received < route->expires)
       request.native.emplace(key, std::make_shared<native_request_hold>(route));
   arrivals.emplace(id, std::move(request));
+  return id;
+}
+bool request_ready(uint64_t id) {
+  std::lock_guard lock(reply_mutex); poll_native_locked();
+  auto found = arrivals.find(id);
+  require(found != arrivals.end(), "cancelled");
+  bool ready = true;
+  for (const auto &[key, hold] : found->second.native) {
+    const auto &ticket = hold->initial;
+    require(!ticket.route->failed, "delegation_owner_lost");
+    if (!ticket.job->failure.empty()) throw error(ticket.job->failure);
+    ready &= ticket.job->done;
+  }
+  return ready;
+}
+void await_request(uint64_t id) {
+  while (!request_ready(id)) std::this_thread::sleep_for(1ms);
+}
+uint64_t admit_request(std::string bound) {
+  auto id = begin_request(std::move(bound));
+  try { await_request(id); }
+  catch (...) { cancel_request(id); throw; }
   return id;
 }
 void cancel_request(uint64_t id) {
@@ -151,25 +154,36 @@ void bind_reply(uint64_t client) {
 }
 void publish_reservation_route(const std::string &key, uint64_t client, const json &capability) {
   auto route = std::make_shared<reservation_route>(client, client_ids.at(client).expires, capability);
-  std::lock_guard lock(reply_mutex);
-  require(!reservation_routes.contains(key), "invalid_request");
-  require(current_reply && replies.at(current_reply).client == client &&
-      !replies.at(current_reply).completed, "cancelled");
-  try {
-    // Backfill receipts/replies already in flight before publication. No wire
-    // handout is emitted unless every applicable reservation is acknowledged.
-    for (auto &[id, arrival] : arrivals)
-      if (!arrival.claimed && id >= client_ids.at(client).first_arrival && arrival.received < route->expires)
-        arrival.native.emplace(key, std::make_shared<native_request_hold>(route));
-    for (auto &[id, reply] : replies)
-      if (reply.client == client && !reply.completed)
-        reply.native.emplace(key, std::make_shared<native_request_hold>(route));
-    reservation_routes.emplace(key, std::move(route));
-  } catch (...) {
-    for (auto &[id, arrival] : arrivals) arrival.native.erase(key);
-    for (auto &[id, reply] : replies) reply.native.erase(key);
-    throw;
+  std::vector<native_ticket> tickets;
+  {
+    std::lock_guard lock(reply_mutex);
+    require(!reservation_routes.contains(key), "invalid_request");
+    require(current_reply && replies.at(current_reply).client == client &&
+        !replies.at(current_reply).completed, "cancelled");
+    reservation_routes.emplace(key, route);
+    try {
+      for (auto &[id, arrival] : arrivals)
+        if (!arrival.claimed && id >= client_ids.at(client).first_arrival && arrival.received < route->expires) {
+          auto hold = std::make_shared<native_request_hold>(route);
+          tickets.push_back(hold->initial); arrival.native.emplace(key, std::move(hold));
+        }
+      for (auto &[id, reply] : replies)
+        if (reply.client == client && !reply.completed) {
+          auto hold = std::make_shared<native_request_hold>(route);
+          tickets.push_back(hold->initial); reply.native.emplace(key, std::move(hold));
+        }
+    } catch (...) {
+      reservation_routes.erase(key);
+      for (auto &[id, arrival] : arrivals) arrival.native.erase(key);
+      for (auto &[id, reply] : replies) reply.native.erase(key);
+      throw;
+    }
   }
+  // Publishing before waiting also covers records received during the handshake.
+  // Failed ACKs decline handout; callers remove the route and return its guard.
+  require(wait_native(tickets), "delegation_owner_lost");
+  std::lock_guard lock(reply_mutex);
+  require(!route->revoked && !route->failed, "stale_handle");
 }
 void unpublish_reservation_route(const std::string &key) {
   std::lock_guard lock(reply_mutex);
@@ -199,24 +213,32 @@ void observe_native_revocations() {
   }
 }
 void acknowledge_native_renewal() {
+  std::vector<native_ticket> tickets;
+  uint64_t id;
   {
     std::lock_guard lock(reply_mutex);
-    if (!current_reply) return;
-    auto &reply = replies.at(current_reply);
+    id = current_reply; if (!id) return;
+    auto &reply = replies.at(id);
     if (reply.renewal_authorized) return;
-    for (auto &[key, hold] : reply.native) reply.native_failed |= !hold->refresh();
+    for (auto &[key, hold] : reply.native) tickets.push_back(hold->refresh());
+  }
+  auto success = wait_native(tickets);
+  {
+    std::lock_guard lock(reply_mutex);
+    auto &reply = replies.at(id);
+    reply.native_failed |= !success;
     check(!reply.native_failed, 10008);
     reply.renewal_authorized = true;
   }
   observe_native_revocations();
 }
-void finish_native_reply(pending_reply &reply, int64_t time) {
-  for (auto &[key, hold] : reply.native) reply.native_failed |= !hold->finish(true);
+void finish_native_reply(pending_reply &reply, int64_t) {
+  for (auto &[key, hold] : reply.native) {
+    auto ticket = hold->finish(true);
+    if (ticket.job) reply.completions.push_back(std::move(ticket));
+    else reply.native_failed = true;
+  }
   reply.native.clear();
-  if (!reply.native_failed)
-    for (auto &[key, route] : reservation_routes)
-      if (route->client == reply.client && !route->failed && !route->revoked)
-        route->expires = std::max(route->expires, time + int64_t(cfg.nfs_lease_seconds) * 1000);
 }
 bool client_live(uint64_t id) const {
   auto client = client_ids.find(id);
@@ -256,26 +278,69 @@ void complete_connection_replies(const std::string &bound) {
     }
   std::erase_if(arrivals, [&](const auto &a) { return a.second.connection == bound; });
 }
+std::set<std::string> disconnected_transports;
+bool disconnect_all_transports = false;
+void transport_disconnected(const std::string &bound) {
+  complete_connection_replies(bound);
+  std::lock_guard lock(reply_mutex);
+  if (disconnected_transports.size() == 512) {
+    disconnected_transports.clear(); disconnect_all_transports = true;
+  }
+  if (!disconnect_all_transports) disconnected_transports.insert(bound);
+}
+void finish_disconnections() {
+  std::set<std::string> disconnected; bool all;
+  {
+    std::lock_guard lock(reply_mutex);
+    disconnected.swap(disconnected_transports);
+    all = std::exchange(disconnect_all_transports, false);
+  }
+  if (all) {
+    for (const auto &[id, session] : sessions)
+      for (const auto &bound : session.connections) disconnected.insert(bound);
+    for (const auto &[id, session] : sessions)
+      for (const auto &bound : session.back_connections) disconnected.insert(bound);
+    if (close_backchannel) for (const auto &bound : disconnected) close_backchannel(bound);
+  }
+  for (auto &[id, session] : sessions) for (const auto &bound : disconnected) {
+    session.connections.erase(bound); session.back_connections.erase(bound);
+    session.callback_up.erase(bound); session.callback_ready.erase(bound);
+  }
+  std::erase_if(callback_probes, [&](const auto &p) { return all || disconnected.contains(p.second.connection); });
+  for (const auto &bound : disconnected) callback_closing.erase(bound);
+  if (all) callback_closing.clear();
+}
 void finish_replies() {
+  finish_disconnections();
+  std::vector<native_ticket> tickets;
+  {
+    std::lock_guard lock(reply_mutex);
+    for (auto &[id, r] : replies) {
+      if (id == current_reply) continue;
+      if (r.completed) tickets.insert(tickets.end(), r.completions.begin(), r.completions.end());
+      else for (auto &[key, hold] : r.native) {
+        try { tickets.push_back(hold->refresh()); }
+        catch (...) { r.native_failed = true; }
+      }
+    }
+  }
+  wait_native(tickets);
   std::map<uint64_t, int64_t> renewals;
   auto time = now();
   {
-    std::lock_guard lock(reply_mutex);
+    std::lock_guard lock(reply_mutex); poll_native_locked();
     for (auto it = replies.begin(); it != replies.end();) {
-      // Disconnect can race a dispatch before its validated SEQUENCE binds
-      // the pin. Keep that reservation until this dispatch has finished.
       if (it->first == current_reply) { ++it; continue; }
       auto &r = it->second;
-      if (!r.completed)
-        for (auto &[key, hold] : r.native) r.native_failed |= !hold->refresh();
-      if (r.client && r.renewal_authorized && !r.native_failed)
+      for (const auto &[key, hold] : r.native) r.native_failed |= hold->route->failed;
+      if (r.client && r.renewal_authorized && !r.native_failed && (!r.completed || r.native_settled))
         renewals[r.client] = std::max(renewals[r.client], r.completed.value_or(time));
-      if (r.completed) it = replies.erase(it); else ++it;
+      if (r.completed && r.native_settled) it = replies.erase(it); else ++it;
     }
   }
   for (const auto &[id, accepted] : renewals) {
     auto found = client_ids.find(id);
-    if (found == client_ids.end()) continue; // Never resurrect a retired client.
+    if (found == client_ids.end()) continue;
     found->second.expires = std::max(found->second.expires, accepted + int64_t(cfg.nfs_lease_seconds) * 1000);
     reservation_client_expiry(id, found->second.expires);
     if (client_live(id)) renew_delegations(id);

@@ -53,22 +53,22 @@ pace::task<void> write_frames(nfs_runtime &s, std::shared_ptr<nfs_connection> c)
       header.u32(0x80000000u | uint32_t(packet.packet.size()));
       auto timer = s.io->call_after(5s, [c] { c->socket.close(); });
       co_await c->socket.write_all(header.data + packet.packet);
-      s.protocol.complete_reply(current); current = 0;
+      s.protocol.enqueue_reply_completion(current); current = 0;
       c->queued_bytes -= packet.packet.size();
     }
   } catch (...) { c->socket.close(); }
-  s.protocol.complete_reply(current);
+  s.protocol.enqueue_reply_completion(current);
   c->writing = false;
   if (!c->socket.is_open()) {
-    for (const auto &packet : c->output) s.protocol.complete_reply(packet.completion);
+    for (const auto &packet : c->output) s.protocol.enqueue_reply_completion(packet.completion);
     c->output.clear(); c->queued_bytes = 0;
   }
 }
 void enqueue(nfs_runtime &s, const std::shared_ptr<nfs_connection> &c, outgoing_reply packet) {
-  if (!c->socket.is_open() || packet.packet.empty()) { s.protocol.complete_reply(packet.completion); return; }
+  if (!c->socket.is_open() || packet.packet.empty()) { s.protocol.enqueue_reply_completion(packet.completion); return; }
   if (packet.packet.size() > nfs_detail::max_record || c->output.size() >= 16 ||
       c->queued_bytes + packet.packet.size() > 4 * nfs_detail::max_record) {
-    s.protocol.complete_reply(packet.completion);
+    s.protocol.enqueue_reply_completion(packet.completion);
     c->socket.close(); return;
   }
   c->queued_bytes += packet.packet.size();
@@ -94,12 +94,13 @@ pace::task<outgoing_reply> process(nfs_runtime &s, std::string packet, std::stri
   auto p = std::make_shared<pending>();
   // This runs on the transport reactor after record assembly, before either
   // the bounded executor or the protocol mutex can delay authentication.
-  auto admission = s.protocol.admit_request(connection);
+  auto admission = s.protocol.begin_request(connection);
   struct admission_cleanup {
     nfs_detail::server &protocol;
     uint64_t id;
-    ~admission_cleanup() { protocol.cancel_request(id); }
+    ~admission_cleanup() { protocol.abandon_request(id); }
   } admitted{s.protocol, admission};
+  while (!s.protocol.request_ready(admission)) co_await s.io->sleep_for(1ms);
   taucloud::bounded_executor::ticket ticket;
   require(s.pool.submit(
               s.io, nfs_detail::max_record, std::chrono::steady_clock::now() + 5s,
@@ -112,7 +113,7 @@ pace::task<outgoing_reply> process(nfs_runtime &s, std::string packet, std::stri
                 if (r.state != taucloud::bounded_executor::status::completed && !p->failure)
                   p->failure = std::make_exception_ptr(error("cancelled"));
                 p->done = true;
-                if (p->abandoned) s.protocol.complete_reply(p->reply.completion);
+                if (p->abandoned) s.protocol.enqueue_reply_completion(p->reply.completion);
               },
               ticket),
           "overloaded");
@@ -121,12 +122,12 @@ pace::task<outgoing_reply> process(nfs_runtime &s, std::string packet, std::stri
       co_await s.io->sleep_for(1ms);
   } catch (...) {
     p->abandoned = true;
-    if (p->done) s.protocol.complete_reply(p->reply.completion);
+    if (p->done) s.protocol.enqueue_reply_completion(p->reply.completion);
     ticket.cancel();
     throw;
   }
   if (p->failure) {
-    s.protocol.complete_reply(p->reply.completion);
+    s.protocol.enqueue_reply_completion(p->reply.completion);
     std::rethrow_exception(p->failure);
   }
   co_return std::move(p->reply);
@@ -159,15 +160,21 @@ pace::task<void> serve(nfs_runtime &s, pace::tcp::stream stream) {
       }
       auto response = co_await process(s, std::move(record.data), connection);
       active = true;
-      if (response.packet.empty()) { s.protocol.complete_reply(response.completion); continue; }
+      if (response.packet.empty()) { s.protocol.enqueue_reply_completion(response.completion); continue; }
       enqueue(s, c, std::move(response));
     }
   } catch (...) {
   }
   socket.close();
-  s.protocol.disconnect(connection);
+  s.protocol.transport_disconnected(connection);
   s.sockets.erase(connection);
   --s.connections;
+}
+pace::task<void> native_reservations(nfs_runtime &s, std::atomic_bool &stopping) {
+  while (!stopping) {
+    s.protocol.poll_native();
+    co_await s.io->sleep_for(1ms);
+  }
 }
 pace::task<void> accept(nfs_runtime &s, pace::tcp::listener &listener, std::atomic_bool &stopping) {
   try {
@@ -201,7 +208,7 @@ pace::task<void> status_datagrams(nfs_runtime &s, pace::udp::socket &socket,
       if (program != 100024 && program != 100000) continue;
       auto reply = co_await process(s, std::move(packet), "nsm-udp");
       if (reply.packet.size() <= buffer.size()) co_await socket.send_to(reply.packet, datagram.sender);
-      s.protocol.complete_reply(reply.completion); // UDP admission never accepts NFSv4.
+      s.protocol.enqueue_reply_completion(reply.completion); // UDP admission never accepts NFSv4.
     } catch (...) {
       if (!socket.is_open() || stopping) break;
     }
@@ -236,6 +243,7 @@ int nfs(const config &c, const std::string &generation, std::atomic_bool &stoppi
                    throw error("not_supported");
                  });
   write_json(c.state / "nfs.instance.json", info());
+  s.io->spawn(native_reservations(s, stopping));
   s.io->spawn(accept(s, listener, stopping));
   s.io->spawn(status_datagrams(s, status_socket, stopping));
   std::jthread loop([&] {

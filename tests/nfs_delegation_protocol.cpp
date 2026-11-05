@@ -7,6 +7,14 @@
 #include <source_location>
 #include <thread>
 #include <future>
+#ifdef __linux__
+#include <csignal>
+#include <cstring>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#endif
 using namespace tc;
 using namespace tc::nfs_detail;
 int nfs_delegation_protocol_suite(bool require_native = false) {
@@ -50,6 +58,7 @@ int nfs_delegation_protocol_suite(bool require_native = false) {
     std::atomic_bool slow_read_entered = false;
     std::atomic_bool blocked_renewal = false, renewal_entered = false;
     json private_delegation;
+    json reservation_capability;
     bool independent_owner = false;
     std::deque<std::pair<std::string, std::string>> callbacks;
     std::vector<std::string> closes;
@@ -68,6 +77,8 @@ int nfs_delegation_protocol_suite(bool require_native = false) {
         while (blocked_renewal) std::this_thread::sleep_for(std::chrono::milliseconds(1));
       }
       auto result = store->dispatch(op, body, ctx());
+      if (op == "nfs_delegation" && body.value("op", "") == "channel")
+        reservation_capability = result.at("reservation_capability");
       if (op == "nfs_delegation" && body.value("op", "") == "acquire" && result.at("granted")) {
         private_delegation = body; private_delegation["cookie"] = result.at("cookie");
         private_delegation["op"] = "poll";
@@ -240,8 +251,41 @@ int nfs_delegation_protocol_suite(bool require_native = false) {
       while (!renewal_entered && std::chrono::steady_clock::now() < deadline)
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
       ok(renewal_entered);
-      auto queued = protocol->admit_request("queued-during-file-renewal");
+      uint64_t queued;
+#ifdef __linux__
+      // Identify only this fixture's owner through its private socket peer,
+      // then confirm it is our child before sending a process-control signal.
+      auto value = decode_bytes(reservation_capability.at("capability").get<std::string>());
+      int peer_fd = socket(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC, 0); ok(peer_fd >= 0);
+      sockaddr_un address{}; address.sun_family = AF_UNIX;
+      auto name = "taucloud-nfs-" + encode_bytes(std::string_view(value).substr(0, 16));
+      std::memcpy(address.sun_path + 1, name.data(), name.size());
+      auto connected = ::connect(peer_fd, reinterpret_cast<sockaddr *>(&address),
+          offsetof(sockaddr_un, sun_path) + 1 + name.size());
+      ucred peer{}; socklen_t peer_size = sizeof(peer);
+      auto identified = getsockopt(peer_fd, SOL_SOCKET, SO_PEERCRED, &peer, &peer_size);
+      close(peer_fd); ok(connected == 0 && identified == 0 && peer.uid == geteuid() && peer.pid > 1);
+      int owner_status = 0;
+      ok(waitpid(peer.pid, &owner_status, WNOHANG) == 0);
+      ok(kill(peer.pid, SIGSTOP) == 0);
+      struct resume_owner { pid_t pid; ~resume_owner() { if (pid > 0) kill(pid, SIGCONT); } } resume{peer.pid};
+      ok(waitpid(peer.pid, &owner_status, WUNTRACED) == peer.pid && WIFSTOPPED(owner_status));
+      auto began = std::chrono::steady_clock::now();
+      queued = protocol->begin_request("queued-during-file-renewal");
+      auto abandoned = protocol->begin_request("abandoned-during-native-stop");
+      protocol->enqueue_reply_completion(first_reply);
+      protocol->abandon_request(abandoned);
+      protocol->transport_disconnected("unbound-during-native-stop");
+      for (int i = 0; i < 20; ++i) { protocol->poll_native(); ok(!protocol->request_ready(queued)); }
+      ok(std::chrono::steady_clock::now() - began < std::chrono::milliseconds(500));
+      ok(kill(peer.pid, SIGCONT) == 0); resume.pid = -1;
+      while (!protocol->request_ready(queued)) std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      protocol->cancel_request(0); // Synchronous component drain, outside the reactor.
+      std::cout << "PASS reactor admission/completion/cancellation/disconnect stay nonblocking with native owner stopped and file renewal paused\n";
+#else
+      queued = protocol->admit_request("queued-during-file-renewal");
       protocol->complete_reply(first_reply);
+#endif
       ok(snapshot().at("reservations") == 2);
       blocked_renewal = false;
       ok(running.get() == last_response && replay_reply != 0 && replay_reply != first_reply);
