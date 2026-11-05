@@ -1,0 +1,68 @@
+{
+  "status": "passed",
+  "recorded_at": "2026-11-05T04:02:41.934045+00:00",
+  "source_commit": "02d2f2e70f641c9a18319a9472cf242738b8b75f",
+  "run_url": "https://github.com/TabNahida/tauCloud/actions/runs/41963967543",
+  "jobs": [
+    {
+      "name": "kernel (clang, debug, y)",
+      "conclusion": "success",
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41963967543/job/127036544274"
+    },
+    {
+      "name": "kernel (gcc, release, n)",
+      "conclusion": "success",
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41963967543/job/127036544568"
+    }
+  ],
+  "artifacts": {
+    "gcc": {
+      "sha256": "e226820074b706dcbdb135a97b49d59090c84cc9e054fccbb683f99e71638bb0",
+      "mandatory_marker": true,
+      "selected_groups": [
+        "PASS \"/tmp/domain\" FILE-DOMAIN/expired-authority-coherence-retention",
+        "PASS \"/tmp/domain\" FILE-DOMAIN/independent-channel-publication-expiry-completion-EOF-return",
+        "PASS \"/tmp/domain\" FILE-DOMAIN/reservation-binding-retry-completion-capacity-revocation",
+        "PASS \"/tmp/domain\" FILE-DOMAIN/journal-private-recovery-fresh-authority-epoch-and-channel-fencing",
+        "PASS \"/tmp/domain\" FILE-DOMAIN/owner-renew-recall-return-replacement-SIGKILL",
+        "PASS \"/tmp/domain\" FILE-DOMAIN/SIGKILL-intent-acquired-committed-and-return-intent-boundaries",
+        "PASS \"/tmp/domain\" FILE-DOMAIN/corrupt-public-failed-journal-and-unobservable-owner-fencing",
+        "PASS \"/disk/domain\" FILE-DOMAIN/expired-authority-coherence-retention",
+        "PASS \"/disk/domain\" FILE-DOMAIN/independent-channel-publication-expiry-completion-EOF-return",
+        "PASS \"/disk/domain\" FILE-DOMAIN/reservation-binding-retry-completion-capacity-revocation",
+        "PASS \"/disk/domain\" FILE-DOMAIN/journal-private-recovery-fresh-authority-epoch-and-channel-fencing",
+        "PASS \"/disk/domain\" FILE-DOMAIN/owner-renew-recall-return-replacement-SIGKILL",
+        "PASS \"/disk/domain\" FILE-DOMAIN/SIGKILL-intent-acquired-committed-and-return-intent-boundaries",
+        "PASS \"/disk/domain\" FILE-DOMAIN/corrupt-public-failed-journal-and-unobservable-owner-fencing",
+        "PASS 1470 delegation protocol/native component checks; production handout remains gated",
+        "PASS native delegation 1920 checks"
+      ]
+    },
+    "clang": {
+      "sha256": "42ad261bae3abf56a3640d38cb19b5ae3354e1c903837ab399ccd080129fa3ff",
+      "mandatory_marker": true,
+      "selected_groups": [
+        "PASS \"/tmp/domain\" FILE-DOMAIN/expired-authority-coherence-retention",
+        "PASS \"/tmp/domain\" FILE-DOMAIN/independent-channel-publication-expiry-completion-EOF-return",
+        "PASS \"/tmp/domain\" FILE-DOMAIN/reservation-binding-retry-completion-capacity-revocation",
+        "PASS \"/tmp/domain\" FILE-DOMAIN/journal-private-recovery-fresh-authority-epoch-and-channel-fencing",
+        "PASS \"/tmp/domain\" FILE-DOMAIN/owner-renew-recall-return-replacement-SIGKILL",
+        "PASS \"/tmp/domain\" FILE-DOMAIN/SIGKILL-intent-acquired-committed-and-return-intent-boundaries",
+        "PASS \"/tmp/domain\" FILE-DOMAIN/corrupt-public-failed-journal-and-unobservable-owner-fencing",
+        "PASS \"/disk/domain\" FILE-DOMAIN/expired-authority-coherence-retention",
+        "PASS \"/disk/domain\" FILE-DOMAIN/independent-channel-publication-expiry-completion-EOF-return",
+        "PASS \"/disk/domain\" FILE-DOMAIN/reservation-binding-retry-completion-capacity-revocation",
+        "PASS \"/disk/domain\" FILE-DOMAIN/journal-private-recovery-fresh-authority-epoch-and-channel-fencing",
+        "PASS \"/disk/domain\" FILE-DOMAIN/owner-renew-recall-return-replacement-SIGKILL",
+        "PASS \"/disk/domain\" FILE-DOMAIN/SIGKILL-intent-acquired-committed-and-return-intent-boundaries",
+        "PASS \"/disk/domain\" FILE-DOMAIN/corrupt-public-failed-journal-and-unobservable-owner-fencing",
+        "PASS 1458 delegation protocol/native component checks; production handout remains gated",
+        "PASS native delegation 1949 checks"
+      ]
+    }
+  },
+  "limits": [
+    "File-domain journal recovery at 02d2f2e, before client binding adoption was added.",
+    "Private primitives only; production delegation handout and Full SMB/NFS remain incomplete."
+  ]
+}

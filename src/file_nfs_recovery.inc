@@ -98,6 +98,16 @@ void nfs_restore_delegations() {
     require(cookie.size() == 32 && record.at("period_ms").get<int64_t>() >= 5000 &&
         record.at("period_ms").get<int64_t>() <= 3600000 && record.at("status").get<unsigned>() <= 4,
         "delegation_recovery_failed");
+    if (record.contains("adoption")) {
+      const auto &a = record.at("adoption");
+      auto from = a.at("from").get<std::string>(), to = a.at("to").get<std::string>();
+      auto id = a.at("id").get<std::string>();
+      auto generation = a.at("generation").get<uint64_t>();
+      require(!from.empty() && from.size() <= 128 && !to.empty() && to.size() <= 128 && from != to &&
+          record.at("client") == to && a.at("pending").is_boolean() && id.size() == 32 &&
+          id.find_first_not_of("0123456789abcdef") == std::string::npos && generation != UINT64_MAX &&
+          record.at("binding_generation") == generation + 1, "delegation_recovery_failed");
+    }
     pending |= record.at("owner_id").get<uint64_t>() != 0 || record.at("intent").get<bool>();
   }
   std::unique_ptr<native_delegation_owner> owner;
@@ -158,6 +168,12 @@ void nfs_restore_delegations() {
       }
     }
     bool live = !observed.is_null() && observed.at("held").get<bool>();
+    if (live && record.contains("adoption") && record.at("adoption").at("pending").get<bool>()) {
+      // Primary reattachment already fences previous channels. Explicitly
+      // reconcile the intent before exposing the new client binding.
+      observed = owner->fence_reservations(id);
+      live = observed.at("held").get<bool>();
+    }
     if (live) {
       lifetime.synchronize_owner(observed.at("lease_expires_ms"), observed.at("recall_deadline_ms"), observed.at("reservations"));
       recalling = observed.at("recall_deadline_ms").get<int64_t>() != 0;
@@ -168,8 +184,9 @@ void nfs_restore_delegations() {
     restored.emplace(cookie, nfs_delegation_guard{record.at("actor"), record.at("space"), record.at("path"),
         record.at("root"), token, record.at("handle"), record.at("export_id"), record.at("client"),
         std::move(file), nullptr, std::move(lifetime), id, true, gone, recalling,
-        record.at("last_reservation"), {}, live, record.at("space_object")});
+        record.at("last_reservation"), {}, live, record.at("space_object"), record.value("binding_generation", uint64_t(0))});
     record["intent"] = false;
+    if (record.contains("adoption")) record["adoption"]["pending"] = false;
   }
   require(matched.size() == inventory.size(), "delegation_recovery_failed");
   for (const auto &cookie : abandoned) saved["records"].erase(cookie);

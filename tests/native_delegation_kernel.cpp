@@ -837,7 +837,7 @@ static void reservation_channel_suite(const fs::path &base, bool required) {
         "TCD4-server:" + value.substr(0, 16) + std::to_string(id) + ":" + nonce).substr(0, 32));
     check(bound.op == 11 && std::string(bound.capability.data(), bound.capability.size()) == nonce + expected_tag,
         "channel_raw_bind_mutual_proof");
-    for (uint32_t op : {1u, 2u, 4u, 5u, 6u, 10u, 11u, 12u, 13u, 14u, 15u}) {
+    for (uint32_t op : {1u, 2u, 4u, 5u, 6u, 10u, 11u, 12u, 13u, 14u, 15u, 16u}) {
       request = packet(); request.op = op; request.id = id;
       check((exchange(request).op >> 16) == 6, "limited_channel_accepted_privileged_operation");
     }
@@ -866,6 +866,29 @@ static void reservation_channel_suite(const fs::path &base, bool required) {
   check(observed.at("reservations") == 1 && observed.at("lease_expires_ms").get<int64_t>() >= disconnected_at + 5000,
       "channel_eof_stole_sibling_or_dropped_lease");
   second.complete(sibling, false);
+  other_id = owner.acquire(other_file, 5000, 5000);
+  check(other_id != 0, "channel_fence_other_acquire");
+  native_delegation_reservation_channel unaffected(owner.reservation_capability(other_id));
+  auto primary_token = owner.reserve(id).at("reservation").get<uint64_t>();
+  first.reserve();
+  auto cutoff = owner.recall(id, monotonic_ms() + 4000).at("recall_deadline_ms");
+  auto fenced_at = monotonic_ms();
+  observed = owner.fence_reservations(id);
+  check(observed.at("held") && observed.at("reservations") == 0 && observed.at("recall_deadline_ms") == cutoff &&
+      observed.at("lease_expires_ms").get<int64_t>() >= fenced_at + 5000, "channel_fence_lost_retention_or_extended_recall");
+  rejected([&] { first.inspect(); }, "delegation_owner_lost");
+  rejected([&] { second.reserve(); }, "delegation_owner_lost");
+  rejected([&] { owner.complete(id, primary_token, true); }, "stale_handle");
+  rejected([&] { native_delegation_reservation_channel stale(capability); }, "forbidden");
+  auto changed = owner.reservation_capability(id);
+  check(changed != capability && unaffected.inspect().at("held"), "channel_fence_changed_wrong_record");
+  native_delegation_reservation_channel replacement(changed);
+  check(replacement.inspect().at("held"), "channel_fence_replacement_failed");
+  check(owner.fence_reservations(id).at("lease_expires_ms") == observed.at("lease_expires_ms"),
+      "channel_fence_without_pending_reply_renewed");
+  rejected([&] { replacement.inspect(); }, "delegation_owner_lost");
+  owner.release(other_id);
+  std::cout << "PASS " << base << " CHANNEL/primary-only-record-fence-unknown-delivery-and-fixed-recall\n";
   owner.release(id);
   rejected([&] { first.inspect(); }, "delegation_owner_lost");
   rejected([&] { native_delegation_reservation_channel stale(capability); }, "forbidden");
@@ -1014,7 +1037,7 @@ static void file_domain_suite(const fs::path &base) {
   auto fh = nfs("lookup", dir, {{"name", "cached"}}).at("handle").get<std::string>();
   auto control = [&](std::string op, json cookie = "", int remaining = 3000) {
     return json{{"op", op}, {"cookie", cookie}, {"handle", fh}, {"client", client},
-        {"remaining_ms", remaining}, {"grant", grant()}};
+        {"remaining_ms", remaining}, {"grant", grant()}, {"binding_generation", 0}};
   };
   auto call = [&](std::string op, json cookie = "", int remaining = 3000) {
     return store->dispatch("nfs_delegation", control(op, cookie, remaining), ctx());
@@ -1067,10 +1090,13 @@ static void file_domain_suite(const fs::path &base) {
     return store->dispatch("nfs_delegation", request, ctx());
   };
   auto rejected = [&](json request, std::string_view expected) {
-    bool refused = false;
+    std::string observed = "success";
     try { store->dispatch("nfs_delegation", request, ctx()); }
-    catch (const error &e) { refused = std::string_view(e.what()) == expected; }
-    check(refused, "domain_reservation_wrong_error");
+    catch (const error &e) { observed = e.what(); }
+    if (observed != expected)
+      std::cerr << "FILE-DOMAIN error mismatch op=" << request.at("op")
+                << " expected=" << expected << " observed=" << observed << '\n';
+    check(observed == expected, "domain_reservation_wrong_error");
   };
   auto rejected_token = [&](std::string op, uint64_t token, std::string_view expected) {
     auto request = control(op, cookie); request["reservation"] = token; rejected(request, expected);
@@ -1241,13 +1267,18 @@ static void file_domain_suite(const fs::path &base) {
   struct stat journal_stat{};
   check(stat(journal_path.c_str(), &journal_stat) == 0 && (journal_stat.st_mode & 0777) == 0600,
       "domain_journal_not_private");
+  // Journals produced before adoption had no binding generation. Their
+  // original binding is generation zero, without requiring a lease reacquire.
+  journal["body"]["records"][cookie.get<std::string>()].erase("binding_generation");
+  journal["signature"] = mac(signing, journal.at("body").dump()); write_json(journal_path, journal);
   store.reset();
   writer = open((base / "root/space/cached").c_str(), O_WRONLY | O_NONBLOCK);
   check(writer < 0 && errno == EWOULDBLOCK, "domain_destruction_released_lease");
   store = std::make_unique<file_store>(cfg, "file", random_hex(16));
   auto recovered = call("poll", cookie);
   check(recovered.at("requires_revalidation") && !recovered.at("granted") && recovered.at("owner_available") &&
-      recovered.at("lease_expires_ms") == before_recovery.at("lease_expires_ms"), "domain_recovery_changed_or_reauthorized_lease");
+      recovered.at("lease_expires_ms") == before_recovery.at("lease_expires_ms") &&
+      recovered.at("binding_generation") == 0, "domain_recovery_changed_or_reauthorized_lease");
   rejected(control("channel", cookie), "delegation_revalidation_required");
   auto stale_authority = control("renew", cookie);
   stale_authority["grant"]["epoch"] = epoch - 1; stale_authority["grant"].erase("signature");
@@ -1277,6 +1308,79 @@ static void file_domain_suite(const fs::path &base) {
   writer = open((base / "root/space/cached").c_str(), O_WRONLY | O_NONBLOCK);
   check(writer >= 0, "domain_recovered_return_kept_guard"); close(writer);
   std::cout << "PASS " << base << " FILE-DOMAIN/journal-private-recovery-fresh-authority-epoch-and-channel-fencing\n";
+  d = call("acquire", "", 5000); check(d.at("granted"), "domain_adoption_acquire"); cookie = d.at("cookie");
+  old_capability = call("channel", cookie).at("reservation_capability");
+  native_delegation_reservation_channel prior_channel(old_capability);
+  prior_channel.reserve(); reservation("reserve", 100);
+  cutoff = call("recall", cookie).at("recall_deadline_ms");
+  auto prior_client = client, next_client = random_hex(16);
+  auto adoption = control("adopt", cookie, 5000);
+  adoption["next_client"] = next_client; adoption["adoption"] = random_hex(16);
+  for (const auto &[invalid, expected] : std::vector<std::pair<json, std::string>>{
+           {-1, "invalid_request"}, {0.5, "invalid_request"}, {"0", "invalid_request"},
+           {UINT64_MAX, "operation_limit"}, {1, "forbidden"}}) {
+    auto bad = adoption; bad["binding_generation"] = invalid;
+    rejected(bad, expected);
+  }
+  for (auto field : {"client", "next_client", "adoption", "actor", "space_object", "epoch", "expires"}) {
+    auto bad = adoption; std::string name(field);
+    if (name == "client") bad[name] = "unrelated";
+    else if (name == "next_client") bad[name] = client;
+    else if (name == "adoption") bad[name] = "not-an-id";
+    else {
+      if (name == "actor") bad["grant"][name] = "bob";
+      if (name == "space_object") bad["grant"]["space"]["object"] = "replacement";
+      if (name == "epoch") bad["grant"][name] = epoch - 1;
+      if (name == "expires") bad["grant"][name] = now() - 1;
+      bad["grant"].erase("signature"); bad["grant"]["signature"] = mac(signing, bad.at("grant").dump());
+    }
+    rejected(bad, name == "next_client" || name == "adoption" ? "invalid_request" :
+        name == "epoch" ? "policy_revoked" : name == "expires" ? "lease_expired" : "forbidden");
+  }
+  d = store->dispatch("nfs_delegation", adoption, ctx());
+  check(d.at("granted") && !d.at("requires_revalidation") && d.at("reservations") == 0 &&
+      d.at("recall_deadline_ms") == cutoff && d.at("reservation_floor") == 100 &&
+      d.at("binding_generation") == 1, "domain_adoption_changed_protection");
+  old_rejected = false;
+  try { prior_channel.inspect(); } catch (const error &e) { old_rejected = std::string_view(e.what()) == "delegation_owner_lost"; }
+  check(old_rejected, "domain_adoption_kept_old_connected_channel");
+  rejected(control("return", cookie), "forbidden");
+  client = next_client;
+  auto new_capability = call("channel", cookie).at("reservation_capability");
+  native_delegation_reservation_channel adopted_channel(new_capability);
+  auto adoption_expiry = d.at("lease_expires_ms");
+  adoption["grant"] = grant();
+  d = store->dispatch("nfs_delegation", adoption, ctx());
+  check(d.at("lease_expires_ms") == adoption_expiry && adopted_channel.inspect().at("held") &&
+      call("channel", cookie).at("reservation_capability") == new_capability,
+      "domain_adoption_retry_renewed_or_disconnected_new_client");
+  auto wrong_retry = adoption; wrong_retry["adoption"] = random_hex(16);
+  rejected(wrong_retry, "forbidden");
+  rejected_token("complete", 100, "stale_handle"); rejected_token("reserve", 100, "stale_handle");
+  check(reservation("reserve", 101).at("reservations") == 1, "domain_adoption_cannot_reserve_above_floor");
+  reservation("cancel", 101);
+  journal = read_json(journal_path).at("body").at("records").at(cookie.get<std::string>());
+  check(journal.at("client") == client && journal.at("adoption").at("from") == prior_client &&
+      !journal.at("adoption").at("pending").get<bool>(), "domain_adoption_not_durable");
+  writer = open((base / "root/space/cached").c_str(), O_WRONLY | O_NONBLOCK);
+  check(writer < 0 && errno == EWOULDBLOCK, "domain_adoption_released_native_guard");
+  store.reset(); store = std::make_unique<file_store>(cfg, "file", random_hex(16));
+  check(call("poll", cookie).at("requires_revalidation"), "domain_adoption_restart_implicitly_authorized");
+  adoption["grant"] = grant();
+  check(store->dispatch("nfs_delegation", adoption, ctx()).at("granted"), "domain_adoption_retry_after_restart_failed");
+  auto back = control("adopt", cookie, 5000);
+  back["next_client"] = prior_client; back["adoption"] = random_hex(16); back["binding_generation"] = 1;
+  check(store->dispatch("nfs_delegation", back, ctx()).at("binding_generation") == 2,
+      "domain_adoption_generation_not_advanced");
+  client = prior_client; adoption["grant"] = grant();
+  rejected(adoption, "forbidden"); // Same numeric client ID, obsolete binding generation.
+  store.reset(); store = std::make_unique<file_store>(cfg, "file", random_hex(16));
+  check(call("poll", cookie).at("binding_generation") == 2, "domain_adoption_generation_not_durable");
+  rejected(adoption, "forbidden");
+  back["grant"] = grant();
+  check(store->dispatch("nfs_delegation", back, ctx()).at("granted"), "domain_adoption_latest_generation_retry_failed");
+  call("return", cookie); call("forget", cookie); client = prior_client;
+  std::cout << "PASS " << base << " FILE-DOMAIN/client-adoption-authority-idempotency-channel-fence-and-reservation-floor\n";
   store.reset();
   int ready[2]; check(pipe2(ready, O_CLOEXEC) == 0, "domain_crash_pipe");
   auto worker = fork(); check(worker >= 0, "domain_crash_fork");
@@ -1319,7 +1423,8 @@ static void file_domain_suite(const fs::path &base) {
   call("forget", cookie);
   store.reset();
   std::cout << "PASS " << base << " FILE-DOMAIN/owner-renew-recall-return-replacement-SIGKILL\n";
-  for (unsigned point : {1u, 2u, 3u, 4u}) {
+  for (unsigned point : {1u, 2u, 3u, 4u, 5u, 6u, 7u}) {
+    auto adoption_id = random_hex(16);
     worker = fork(); check(worker >= 0, "domain_boundary_fork");
     if (!worker) {
       try {
@@ -1328,6 +1433,14 @@ static void file_domain_suite(const fs::path &base) {
         auto acquired = call("acquire", "", 5000);
         if (!acquired.at("granted")) _exit(2);
         if (point == 4) { test_delegation_crash_point(4); call("return", acquired.at("cookie")); }
+        if (point >= 5) {
+          cookie = acquired.at("cookie"); reservation("reserve", 10);
+          call("recall", cookie);
+          auto request = control("adopt", cookie, 5000);
+          request["next_client"] = "next-" + client; request["adoption"] = adoption_id;
+          test_delegation_crash_point(point);
+          store->dispatch("nfs_delegation", request, ctx());
+        }
         _exit(3); // Every chosen boundary must stop inside the real file domain.
       } catch (...) { _exit(4); }
     }
@@ -1348,28 +1461,60 @@ static void file_domain_suite(const fs::path &base) {
       check(records.begin().value().at("intent").get<bool>() == (point <= 2) &&
           (records.begin().value().at("owner_id").get<uint64_t>() == 0) == (point <= 2),
           "domain_boundary_wrong_journal_phase");
+      if (point >= 5) {
+        check(records.begin().value().at("client") == "next-" + client &&
+            records.begin().value().at("adoption").at("pending").get<bool>() == (point != 7),
+            "domain_adoption_boundary_wrong_phase");
+      }
       check(kill(worker, SIGKILL) == 0 && waitpid(worker, &status, 0) == worker && WIFSIGNALED(status),
           "domain_boundary_kill_failed"); reaped = true;
       store = std::make_unique<file_store>(cfg, "file", random_hex(16));
+      if (point >= 5) {
+        rejected(control("poll", cookie), "forbidden");
+        client = "next-" + client;
+      }
       if (point == 1) rejected(control("poll", cookie), "stale_handle");
       else if (point == 4) {
         check(call("poll", cookie).at("state") == "returned", "domain_release_intent_revived");
         call("forget", cookie);
       } else {
         d = call("poll", cookie);
+        std::cout << "CHECK file-domain crash boundary " << point
+                  << " revalidation=" << d.at("requires_revalidation")
+                  << " owner=" << d.at("owner_available") << " granted=" << d.at("granted")
+                  << " expiry_from_stop_ms=" << d.at("lease_expires_ms").get<int64_t>() - stopped_at
+                  << " reservations=" << d.at("reservations") << '\n';
+        // At boundary 5 the primary still owns an unknown reply. Owner EOF
+        // detection occurs after the stop/kill and conservatively completes it
+        // with a full lease. Other boundaries have no uncompleted reservation.
+        auto expiry_bound = (point == 5 ? monotonic_ms() : stopped_at) + 5000;
         check(d.at("requires_revalidation") && d.at("owner_available") && !d.at("granted") &&
-            d.at("lease_expires_ms").get<int64_t>() <= stopped_at + 5000,
+            d.at("lease_expires_ms").get<int64_t>() <= expiry_bound,
             "domain_boundary_recovery_changed_lease_or_authority");
+        if (point >= 5) {
+          auto fixed_recall = records.begin().value().at("recall_deadline_ms");
+          check(fixed_recall.get<int64_t>() > 0 && d.at("recall_deadline_ms") == fixed_recall &&
+              d.at("protected_until_ms").get<int64_t>() <= fixed_recall.get<int64_t>() &&
+              d.at("reservations") == 0, "domain_adoption_crash_postponed_recall_or_replayed_reservations");
+        }
         writer = open((base / "root/space/cached").c_str(), O_WRONLY | O_NONBLOCK);
         check(writer < 0 && errno == EWOULDBLOCK, "domain_boundary_guard_lost");
+        if (point >= 5) {
+          auto request = control("adopt", cookie, 5000);
+          request["client"] = prior_client; request["next_client"] = client; request["adoption"] = adoption_id;
+          check(store->dispatch("nfs_delegation", request, ctx()).at("granted"), "domain_adoption_boundary_retry_failed");
+          rejected_token("complete", 10, "stale_handle"); rejected_token("reserve", 10, "stale_handle");
+        }
         call("return", cookie); call("forget", cookie);
       }
       writer = open((base / "root/space/cached").c_str(), O_WRONLY | O_NONBLOCK);
       check(writer >= 0, "domain_boundary_cleanup_kept_guard"); close(writer);
       store.reset();
+      client = prior_client;
     } catch (...) { if (!reaped) { kill(worker, SIGKILL); waitpid(worker, nullptr, 0); } throw; }
   }
   std::cout << "PASS " << base << " FILE-DOMAIN/SIGKILL-intent-acquired-committed-and-return-intent-boundaries\n";
+  std::cout << "PASS " << base << " FILE-DOMAIN/SIGKILL-adoption-intent-fenced-and-committed-before-reply\n";
   journal = read_json(journal_path);
   auto corrupted = journal; corrupted["signature"] = std::string(64, '0');
   write_json(journal_path, corrupted);

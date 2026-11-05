@@ -140,6 +140,21 @@ Selected-profile acceptance: [M7 guide](docs/m7.md), [中文](docs/m7.zh-CN.md),
 
 ## Full SMB/NFS compatibility prerequisite (user decision, 2026-10-31)
 
+Windows Backend M7 at `02d2f2e` fails NFS startup during both the session
+negotiation fixture and native NFS fixture. Repeated
+`invalid_configuration_or_io` errors precede readiness timeout; the underlying
+initialization phase is not established. Clang M8 still fails Docker package
+planning with `package_limit`; its GCC and Windows jobs pass. These remain open
+([failure evidence](docs/evidence/pre-m8/remote-02d2-failures.json)).
+
+Private native delegation adoption now transfers a durable client binding while
+fencing old reservation channels, conservatively completing uncertain replies,
+preserving fixed recall and rejecting old reservation tokens. Exact retries do
+not renew or invalidate the replacement client's channels. Protocol-side durable
+adoption coordination and OPEN/WANT_DELEGATION reclaim remain open; production
+handout remains gated ([implementation](docs/nfs-delegations.md#client-binding-adoption-across-protocol-restart),
+[acceptance](docs/evidence/pre-m8/nfs-adoption-local.json)).
+
 The Windows backend job at `4542cec` fails the first M2 `files/begin` upload
 with HTTP 503 `deadline_exceeded`. Its operation phase is not established; this
 predates the file-domain recovery journal changes and remains unresolved

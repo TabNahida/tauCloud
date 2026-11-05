@@ -40,6 +40,10 @@ public:
   // Private same-host capability for a separate controller. It only observes
   // and reserves this delegation; it cannot acquire/release guards or do IO.
   json reservation_capability(uint64_t id);
+  // Fence all previous controllers for one delegation without dropping its
+  // native guard. Unknown deliveries receive conservative completion; an
+  // existing recall deadline is never extended. Primary-only recovery step.
+  json fence_reservations(uint64_t id);
   json complete(uint64_t id, uint64_t reservation, bool renew_lease);
   // Optional original monotonic cutoff prevents IPC delay extending recall.
   json recall(uint64_t id, int64_t deadline_ms = 0);

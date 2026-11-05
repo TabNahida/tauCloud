@@ -96,6 +96,8 @@ json nfs_delegation_snapshot(const std::string &cookie, const nfs_delegation_gua
   }
   return {{"cookie", cookie}, {"granted", lifetime.held() && !d.owner_failed && !d.recovered}, {"state", status},
       {"requires_revalidation", d.recovered},
+      {"reservation_floor", d.last_reservation},
+      {"binding_generation", d.binding_generation},
       {"provider", d.owner_backed ? "independent-owner" : "local-primitive"},
       {"owner_available", d.owner_backed && !d.owner_failed},
       {"reservations", lifetime.reservations()},
@@ -110,12 +112,12 @@ json nfs_delegation_dispatch(const json &body, const call_context &ctx) {
   auto op = body.at("op").get<std::string>();
   require(op == "acquire" || op == "renew" || op == "retain" || op == "poll" || op == "recall" ||
               op == "return" || op == "forget" || op == "reserve" || op == "complete" ||
-              op == "cancel" || op == "channel", "not_supported");
+              op == "cancel" || op == "channel" || op == "adopt", "not_supported");
   // Cleanup operations carry a signed original grant and unguessable cookie.
   // Reservations retain an existing guard; they never grant file-data access.
   // Retain extends coherence protection while starting a fixed recall interval.
   // Cleanup remains possible after policy revocation and short-lived grant expiry.
-  auto g = verify(body.at("grant"), false, op != "acquire" && op != "renew");
+  auto g = verify(body.at("grant"), false, op != "acquire" && op != "renew" && op != "adopt");
   require(g.at("protocol") == "nfs" && g.contains("export"), "forbidden");
   auto space = g.at("space").at("id").get<std::string>();
   auto client = body.at("client").get<std::string>();
@@ -165,7 +167,7 @@ json nfs_delegation_dispatch(const json &body, const call_context &ctx) {
     require(!nfs_recovery.at("records").contains(cookie), "operation_limit");
     nfs_recovery["records"][cookie] = {{"actor", g.at("actor")}, {"space", space}, {"path", o.path},
         {"root", g.at("root").dump()}, {"token", token}, {"handle", handle}, {"export_id", g.at("export").at("uuid")},
-        {"client", client}, {"space_object", g.at("space").at("object")},
+        {"client", client}, {"space_object", g.at("space").at("object")}, {"binding_generation", 0},
         {"owner_id", 0}, {"intent", true}, {"status", 0}, {"recall_deadline_ms", 0},
         {"period_ms", int64_t(cfg.nfs_lease_seconds) * 1000}, {"last_reservation", 0}};
     nfs_checkpoint_delegations();
@@ -212,15 +214,75 @@ json nfs_delegation_dispatch(const json &body, const call_context &ctx) {
   auto it = nfs_delegations.find(cookie);
   require(it != nfs_delegations.end(), "stale_handle");
   auto &d = it->second;
+  bool adoption_retry = false;
+  std::string next_client, adoption;
+  uint64_t generation = 0;
+  if (op == "adopt") {
+    next_client = body.at("next_client").get<std::string>();
+    adoption = body.at("adoption").get<std::string>();
+    require(!next_client.empty() && next_client.size() <= 128 && next_client != client &&
+        adoption.size() == 32 && adoption.find_first_not_of("0123456789abcdef") == std::string::npos,
+        "invalid_request");
+    const auto &value = body.at("binding_generation");
+    require(value.is_number_unsigned() || (value.is_number_integer() && value.get<int64_t>() >= 0),
+        "invalid_request");
+    generation = value.get<uint64_t>();
+    require(generation != UINT64_MAX, "operation_limit");
+    require(d.owner_backed, "not_supported");
+    auto &record = nfs_recovery.at("records").at(cookie);
+    if (record.contains("adoption")) {
+      const auto &prior = record.at("adoption");
+      adoption_retry = d.client == next_client && prior.at("from") == client &&
+          prior.at("to") == next_client && prior.at("id") == adoption &&
+          prior.at("generation") == generation && d.binding_generation == generation + 1;
+    }
+  }
   require(d.actor == g.at("actor").get<std::string>() && d.space == space && d.root == g.at("root").dump() &&
               d.space_object == g.at("space").at("object").get<std::string>() &&
-              d.client == client && d.export_id == g.at("export").at("uuid").get<std::string>() &&
+              ((d.client == client && (op != "adopt" || d.binding_generation == generation)) || adoption_retry) &&
+              d.export_id == g.at("export").at("uuid").get<std::string>() &&
               d.handle == body.at("handle").get<std::string>() &&
               beneath(d.path, g.at("path").get<std::string>()), "forbidden");
   auto time = cache_clock();
   uint64_t reservation = 0;
   json channel;
-  if (op == "channel") {
+  if (op == "adopt") {
+    auto interval = remaining();
+    require(d.lifetime.held(), "stale_handle");
+    require(!d.owner_failed && d.owner_id && nfs_owner, "delegation_owner_lost");
+    auto &s = attach(g, ctx);
+    security_check(s, g, d.file.info(), 1);
+    lease(g, ctx);
+    if (!adoption_retry || d.recovered) {
+      // The signed fresh grant and original binding authorize this transition.
+      // Commit the new binding before invalidating old channels. Any uncertain
+      // transition fences this worker until journal reconciliation at startup.
+      try {
+        auto &record = nfs_recovery.at("records").at(cookie);
+        if (!adoption_retry) {
+          d.client = next_client; d.recovered = true;
+          d.binding_generation = generation + 1;
+          record["client"] = next_client;
+          record["binding_generation"] = d.binding_generation;
+          record["adoption"] = {{"from", client}, {"to", next_client}, {"id", adoption},
+              {"generation", generation}, {"pending", true}};
+          nfs_checkpoint_delegations();
+          delegation_recovery_boundary(5);
+          nfs_delegation_owner_snapshot(d, nfs_owner->fence_reservations(d.owner_id));
+          d.reservations.clear();
+          delegation_recovery_boundary(6);
+        }
+        nfs_delegation_owner_snapshot(d, nfs_owner->renew(d.owner_id, interval));
+        lease(g, ctx);
+        d.recovered = false;
+        record["adoption"]["pending"] = false;
+        nfs_checkpoint_delegations();
+        delegation_recovery_boundary(7);
+      } catch (...) { nfs_recovery_failed = true; throw; }
+    }
+    // An exact completed retry neither rotates new channels nor extends the
+    // lease. The persisted reservation floor survives each client-ID change.
+  } else if (op == "channel") {
     require(d.owner_backed, "not_supported");
     require(d.lifetime.held(), "stale_handle");
     require(!d.recovered, "delegation_revalidation_required");

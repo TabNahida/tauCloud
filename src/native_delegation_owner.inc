@@ -13,7 +13,7 @@ struct native_delegation_owner::impl {
   };
   static_assert(sizeof(packet) == 80);
   enum { acquire_read = 1, acquire_write, query, renew, recall, release, reserve, complete, cancel,
-         export_capability, bind_channel, export_owner, bind_owner, next_record, restore_file };
+         export_capability, bind_channel, export_owner, bind_owner, next_record, restore_file, fence_reservations };
   static std::array<char, 32> proof(std::string_view secret, std::string_view endpoint, uint64_t id,
                                      std::string_view nonce, bool server, bool recovery = false) {
     require(secret.size() == 16 && endpoint.size() == 16 && nonce.size() == 16, "invalid_request");
@@ -291,7 +291,7 @@ struct native_delegation_owner::impl {
         int returned = -1;
         try {
           auto op = request.op;
-          require(op >= acquire_read && op <= restore_file, "invalid_request");
+          require(op >= acquire_read && op <= fence_reservations, "invalid_request");
           if (primary) require(op != bind_channel && op != bind_owner &&
               (op == restore_file || request.capability == std::array<char, 32>{}), "invalid_request");
           else {
@@ -387,6 +387,19 @@ struct native_delegation_owner::impl {
               response.native_flags = (r.file.impl_->private_pin ? 1 : 0) | (r.file.impl_->allow_unlinked ? 2 : 0);
               std::copy(identity.begin(), identity.end(), response.capability.begin());
               returned = r.file.impl_->file->handle;
+            }
+            else if (op == fence_reservations) {
+              require(primary && r.lifetime.held(), "stale_handle");
+              // Invalidate the secret before the next handshake, and close
+              // already bound channels. Their uncertain replies must retain
+              // protection, including tokens allocated on the primary path.
+              r.capability.clear();
+              std::erase_if(channels, [&](const auto &entry) { return entry.second.id == request.id; });
+              for (const auto &[token, controller] : r.reservations) {
+                (void)token; (void)controller;
+                r.lifetime.complete(clock(), true);
+              }
+              pending -= r.reservations.size(); r.reservations.clear();
             }
             else if (op == export_capability) {
               require(primary && r.lifetime.held(), "stale_handle");
@@ -656,6 +669,15 @@ json native_delegation_owner::reservation_capability(uint64_t id) {
   impl::packet request; request.op = impl::export_capability; request.id = id;
   auto response = impl_->exchange(request);
   return {{"id", id}, {"capability", encode_bytes(std::string_view(response.capability.data(), response.capability.size()))}};
+#else
+  (void)id; throw error("not_supported");
+#endif
+}
+json native_delegation_owner::fence_reservations(uint64_t id) {
+#ifdef __linux__
+  std::lock_guard lock(impl_->mutex);
+  impl::packet request; request.op = impl::fence_reservations; request.id = id;
+  return impl::snapshot(impl_->exchange(request));
 #else
   (void)id; throw error("not_supported");
 #endif

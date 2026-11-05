@@ -1,0 +1,38 @@
+{
+  "status": "failed",
+  "recorded_at": "2026-11-05T04:13:50.206772+00:00",
+  "source_commit": "02d2f2e70f641c9a18319a9472cf242738b8b75f",
+  "failures": [
+    {
+      "name": "windows-backend",
+      "job_url": "https://github.com/TabNahida/tauCloud/actions/runs/41963967598/job/127036544309",
+      "conclusion": "failure",
+      "steps": [
+        "Run python scripts/run_m7.py --compiler msvc",
+        "Windows native Client for NFS v3 (TCP, nolock)"
+      ],
+      "log_sha256": "5ffa26eec6ba3965caf57227d12c86399fc40aa509664fc29f49b32181073087",
+      "observations": [
+        "nfs_session_negotiation.py: fixture restart waits for NFS readiness and times out; NFS repeatedly logs invalid_configuration_or_io.",
+        "windows_native_nfs.py: fixture restart also fails before client roundtrip, with the same NFS startup error."
+      ]
+    },
+    {
+      "name": "clang-m8",
+      "job_url": "https://github.com/TabNahida/tauCloud/actions/runs/41963967621/job/127036544818",
+      "conclusion": "failure",
+      "steps": [
+        "Run python scripts/run_m8.py --compiler clang --sanitizers"
+      ],
+      "log_sha256": "240ad0821f5587b06bd35b237fb1ef7e4b781bd20683a8752e8c0ba15cde0783",
+      "observations": [
+        "m8_integration.py line 182: Docker package installation calls plugins/plan and receives HTTP 503 package_limit, reproducing the earlier Clang M8 failure."
+      ]
+    }
+  ],
+  "limits": [
+    "These failures precede the client-binding adoption changes.",
+    "Windows startup logs show invalid_configuration_or_io but do not establish which initialization operation failed.",
+    "Passing native Linux components does not resolve these failures or prove Full SMB/NFS conformance."
+  ]
+}

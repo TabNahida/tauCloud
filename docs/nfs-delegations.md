@@ -1132,6 +1132,59 @@ Linux 6.19 passes 1,940 native and 1,464 protocol component checks. The injected
 write failure initially exposed a filesystem exception outside the domain error
 type; journal failures now consistently report `delegation_recovery_failed`,
 and the full failure/fence/recovery path passes on both filesystems.
-Remote acceptance is pending. The production wire-handout gate remains closed
+GCC release and Clang ASan/UBSan remote Linux 6.19 acceptance both pass at
+`02d2f2e` ([fixed-source evidence](evidence/pre-m8/nfs-domain-02d2-native.json)).
+The production wire-handout gate remains closed
 until protocol-state persistence/reclaim and complete instance fencing are
 integrated and verified. Windows owner recovery remains open.
+
+## Client binding adoption across protocol restart
+
+The private file-domain `adopt` operation transfers an existing native guard
+from an old numeric NFS client ID to a replacement ID. It requires the original
+cookie and binding, a fresh signed grant, the same actor/export/root/space
+incarnation, current ACL access, the expected binding generation, and a 128-bit
+adoption identifier. Expired or
+revoked cleanup grants cannot authorize adoption. This is a prerequisite for
+protocol reclaim; the NFS protocol does not yet call it or advertise production
+delegations.
+
+Before changing native control, adoption durably records its old/new client
+binding and intent. A primary-only owner operation then closes every existing
+reservation channel for that guard and invalidates its old channel secret.
+Primary and secondary outstanding reservations receive conservative completion
+because their replies may already have reached a client. Native exclusion is
+retained throughout, other guards are unaffected, and the original recall cutoff
+never moves. A new fresh-authority renewal is acknowledged before the binding
+commit and successful reply. Any uncertain transition fences the file worker
+until startup reconciliation.
+
+An exact completed adoption retry does not renew the lease or invalidate channels
+already published to the replacement client. A different adoption identifier
+cannot reuse the old binding. A monotonically increasing durable binding
+generation rejects an old transition even if its numeric client ID is reused
+later. After worker restart, pending adoption intents
+finish channel fencing, but the recovered binding still needs fresh authority
+before becoming usable. The primary reservation high-water mark is returned as
+`reservation_floor` and survives both client changes and worker restarts; old
+tokens cannot acknowledge or recreate an operation in the new binding.
+
+The protocol coordinator must persist its matching adoption intent before
+calling this operation and reconcile uncertain replies before publishing a new
+stateid. That coordinator, grace-period retention, durable revocation reporting,
+and wire-level OPEN/WANT_DELEGATION reclaim remain unfinished. RFC 8881
+[Section 10.2.1](https://www.rfc-editor.org/rfc/rfc8881.html#section-10.2.1)
+requires reclaim to return a delegation with its recall indication when the
+server cannot continue granting it; simply discarding that state is insufficient.
+
+Real Linux 6.19 acceptance exercises client binding changes, fresh-authority
+rejection, connected and reconnecting old channels, exact retry behavior,
+reservation replay, client-ID reuse across two transitions/restarts, and SIGKILL after durable adoption intent, after native
+channel fencing, and after commit before the reply. Results are recorded in
+[adoption evidence](evidence/pre-m8/nfs-adoption-local.json).
+Final local Clang ASan/UBSan validation passes 1,554 M7 checks, 585 lifecycle
+checks, and 2,110 native plus 1,464 protocol component checks in Linux 6.19.
+Two corrected test expectations are retained with their failure logs' hashes:
+unknown-reply completion is timed from owner disconnect detection, and negative
+generation errors are selected explicitly rather than inferred through mixed
+signed/unsigned JSON equality. Remote validation of this addition is pending.

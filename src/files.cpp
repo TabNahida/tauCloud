@@ -130,6 +130,7 @@ struct file_store::impl {
     std::map<uint64_t, uint64_t> reservations = {};
     bool recovered = false;
     std::string space_object = "";
+    uint64_t binding_generation = 0;
   };
   // Destroy the owner/control channel before dropping the journal lock.
   std::unique_ptr<file_lock> nfs_recovery_lock;
