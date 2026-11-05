@@ -417,9 +417,9 @@ and duplicate cancellation is harmless.
 
 This implements the receipt-time requirement in
 [RFC 8881 section 8.3](https://www.rfc-editor.org/rfc/rfc8881.html#section-8.3)
-for protocol-owned client/OPEN/lock/session state. Native delegation-owner
-retention across the same interval still needs its own acknowledged reservation;
-this change does not enable production handout.
+for protocol-owned client/OPEN/lock/session state. The native reservation route
+described below now covers the component provider's corresponding interval;
+production handout remains disabled.
 
 Component acceptance covers delayed admission across expiry and maintenance,
 rejected SEQUENCE without renewal, cancelled/late records, exclusion of clients
@@ -454,8 +454,9 @@ they are not persistent restart identifiers or NFS wire timestamps.
 lifecycle checks, 1074 protocol checks and 576 Linux 6.19 VM checks on tmpfs/ext4.
 The VM delays file-domain observation after a real native write conflict and
 verifies that the imported recall deadline remains anchored to the owner.
-Acknowledged reservations across network admission, execution and full reply
-delivery remain separate requirements; production handout stays disabled.
+The received-RPC route below extends these acknowledged deadlines across
+admission, execution and reply delivery in component tests. Production handout
+stays disabled pending asynchronous integration and recovery.
 
 The [fixed-source Actions acceptance](evidence/pre-m8/nfs-native-deadline-d66-remote.json)
 for `d66ff7c` passes 257 host checks and 584 guest checks with the required
@@ -521,10 +522,9 @@ expiry. [Fixed-source remote evidence](evidence/pre-m8/nfs-reservations-d7-remot
 also confirms the earlier owner primitive on Linux 6.19 and native Windows NFSv3
 roundtrips; it does not include the subsequent file-domain integration.
 
-The network admission/transport connection remains incomplete. Its independent
-route must avoid waiting behind the same blocked file worker, cover all client
-delegations and acknowledge protection before network state is extended.
-Production handout, replacement recovery and reclaim remain incomplete.
+The received-RPC route below now covers admission and transport completion with
+independent owner ACKs. Asynchronous native exchange, failure monitoring,
+production handout, replacement recovery and reclaim remain incomplete.
 
 ## Independent reservation capability channel
 
@@ -561,8 +561,8 @@ records 927 ASan/UBSan checks and verifies actual tmpfs/ext4 protection,
 raw-packet operation restrictions,
 capability and token binding, duplicate/capacity rejection, per-channel EOF,
 SIGSTOP of the file worker while another process obtains native ACKs, and bounded
-retention after SIGKILL. Network receipt/reply routing and recovery/reclaim still
-require integration; production handout remains disabled.
+retention after SIGKILL. Received-RPC routing is described below; its asynchronous
+integration and recovery/reclaim remain open, and production handout is disabled.
 
 [Remote acceptance at `5d76595`](evidence/pre-m8/nfs-reservation-channel-5d-remote.json)
 passes the complete GCC release and Clang ASan/UBSan Linux 6.19 workflow. Their
@@ -606,3 +606,53 @@ instrumented PID 1 program. ASan otherwise cannot discover that process's stack
 bounds and can leave stale stack poison after exceptions. SDK-resolved libraries
 are also installed under their SONAMEs in the guest's default loader directory.
 The required remote kernel matrix now covers GCC release and Clang ASan/UBSan.
+
+## Native reservations on received RPCs
+
+The protocol component now publishes each independent owner's private channel
+before emitting a delegation. A complete received RPC obtains native reservations
+before entering the executor or protocol mutex. Until authentication identifies
+its client, the record protects each delegation whose fixed client expiry makes
+that receipt eligible. Successful SEQUENCE binds the matching reservations to
+its reply; other clients' reservations are cancelled. Publication also reserves
+for eligible receipts and replies already in flight. A capacity or ACK failure
+during publication declines the new delegation and cleans up its native guard.
+
+Validated SEQUENCE and callback renewal acknowledge a full native lease and
+reserve the next execution phase before advancing the network lease. Slot state
+is committed only after that confirmation. Failed cached-reply authorization has
+no lease-renewing completion token and preserves the original cache entry for a
+valid retry. This ordering follows the lease and SEQUENCE rules in
+[RFC 8881 section 8.3](https://www.rfc-editor.org/rfc/rfc8881.html#section-8.3) and
+[section 18.46.3](https://www.rfc-editor.org/rfc/rfc8881.html#section-18.46.3).
+
+The native reservation survives execution and delayed transport delivery. Reply
+completion confirms a full native lease independently of the file worker;
+duplicate completion is inert. Cancellation before authentication does not renew.
+Disconnect conservatively completes validated replies, while an executing
+dispatch retains its holds until it finishes. Synchronous component callers treat
+return from dispatch as completion. Explicit return and terminal native snapshots
+remove the route and its outstanding reservations.
+
+Autonomous native recall can finish before the protocol's next file-domain poll.
+The independent channel now imports that terminal state as delegation revocation,
+so subsequent SEQUENCE reports revoked state while ordinary session/OPEN state
+continues. A first VM run exposed an uncaught `stale_handle` at this boundary; the
+corrected route is exercised by the existing recall-deadline protocol checks.
+
+The required Linux 6.19 VM now runs the complete protocol component suite using
+its actual independent native owner, in addition to tmpfs/ext4 native exclusion
+tests. Added cases cover queued receipt past nominal expiry, native admission and
+reply completion while the file-domain renewal callback is deliberately paused,
+independent replay tokens, cancellation, invalid SEQUENCE and duplicate completion.
+The test-only provider still explicitly removes the production wire gate; these
+tests do not demonstrate production delegation handout.
+
+The owner exchanges are currently synchronous under the receipt/reply registry
+lock. They bypass file IPC and the main protocol mutex, but can still stall the
+transport reactor on a slow/dead native owner. Asynchronous exchange, priority for
+callback/cleanup traffic and prompt owner-loss fencing remain required before
+production handout, alongside worker replacement, restart fences and reclaim.
+Local Clang ASan/UBSan acceptance passes 1,087 host protocol checks and, with
+mandatory native protection in Linux 6.19, 1,105 protocol checks plus 997 native
+checks. See [local routing evidence](evidence/pre-m8/nfs-request-routing-local.json).

@@ -29,6 +29,7 @@ void delegation_snapshot(delegation_state &d, const json &snapshot) {
   auto state = snapshot.at("state").get<std::string>();
   d.recalling |= state == "recalling";
   if (state == "revoked" || state == "expired" || state == "returned") {
+    unpublish_reservation_route(d.cookie);
     d.revoked = state == "expired" ? 10011 : 10087;
     remove_recovery(d.recovery);
   }
@@ -44,6 +45,7 @@ void recall_delegation(delegation_state &d) {
   try { delegation_snapshot(d, delegation_control(d, "recall")); }
   catch (const error &e) {
     if (std::string_view(e.what()) == "stale_handle") {
+      unpublish_reservation_route(d.cookie);
       d.revoked = 10087; remove_recovery(d.recovery);
     }
     // Unreachable authority is not proof of release. Keep the state recalled.
@@ -53,6 +55,7 @@ void retire_delegations(uint64_t client) {
   for (auto it = delegations.begin(); it != delegations.end();) {
     if (it->second.client != client) { ++it; continue; }
     auto &d = it->second;
+    unpublish_reservation_route(d.cookie);
     try { delegation_control(d, "return"); delegation_control(d, "forget"); }
     catch (const error &) {} // The authority still owns its bounded lease.
     remove_recovery(d.recovery);
@@ -182,11 +185,21 @@ bool delegation4(writer &body, const identity &who, const std::string &sid,
       {"principal", who.key}, {"handle", fh}, {"type", 1}};
   auto rid = digest(recovery.dump());
   delegation_state d{client, fh, object, who.key, acquired.at("cookie"), worker, rid, who.credential, grant};
+  if (acquired.value("provider", "") == "independent-owner") {
+    try {
+      publish_reservation_route(d.cookie, client, delegation_control(d, "channel").at("reservation_capability"));
+    } catch (...) {
+      unpublish_reservation_route(d.cookie);
+      try { delegation_control(d, "return"); delegation_control(d, "forget"); } catch (...) {}
+      return false;
+    }
+  }
   try {
     statement q(db, "INSERT OR REPLACE INTO recovery VALUES(?,?)");
     q.bind(1, rid); q.bind(2, recovery.dump()); q.row();
     delegations.emplace(stateid, d);
   } catch (...) {
+    unpublish_reservation_route(d.cookie);
     try { delegation_control(d, "return"); delegation_control(d, "forget"); } catch (...) {}
     throw;
   }

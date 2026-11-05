@@ -3,6 +3,7 @@
 #include <taucloud/database.hpp>
 #include <taucloud/gss.hpp>
 #include <taucloud/nfs_ssv.hpp>
+#include <taucloud/native_delegation_owner.hpp>
 #include <algorithm>
 #include <map>
 #include <set>

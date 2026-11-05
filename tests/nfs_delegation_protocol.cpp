@@ -6,10 +6,10 @@
 #include <iostream>
 #include <source_location>
 #include <thread>
+#include <future>
 using namespace tc;
 using namespace tc::nfs_detail;
-int main(int argc, char **argv) {
-  if (auto result = tc::native_delegation_owner::entry(argc, argv); result >= 0) return result;
+int nfs_delegation_protocol_suite(bool require_native = false) {
   int checks = 0;
   auto base = fs::temp_directory_path() / ("tc-nfs-delegation-protocol-" + random_hex(6));
   auto ok = [&](bool value, std::source_location loc = std::source_location::current()) {
@@ -48,6 +48,9 @@ int main(int argc, char **argv) {
     auto native = native_file::root(base / "root");
     bool component_provider = false, authorized = true, slow_read = false;
     std::atomic_bool slow_read_entered = false;
+    std::atomic_bool blocked_renewal = false, renewal_entered = false;
+    json private_delegation;
+    bool independent_owner = false;
     std::deque<std::pair<std::string, std::string>> callbacks;
     std::vector<std::string> closes;
     auto protocol = std::make_unique<server>(cfg, [&](std::string target, std::string op, json body) -> json {
@@ -60,7 +63,16 @@ int main(int argc, char **argv) {
       // is first tested below, then this component fixture supplies its native
       // primitive. This does NOT prove host metadata or crash-safe handout.
       if (component_provider && op == "nfs_delegation") body.erase("wire");
+      if (blocked_renewal && op == "nfs_delegation" && body.value("op", "") == "renew") {
+        renewal_entered = true;
+        while (blocked_renewal) std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      }
       auto result = store->dispatch(op, body, ctx());
+      if (op == "nfs_delegation" && body.value("op", "") == "acquire" && result.at("granted")) {
+        private_delegation = body; private_delegation["cookie"] = result.at("cookie");
+        private_delegation["op"] = "poll";
+        independent_owner = result.at("provider") == "independent-owner";
+      }
       if (slow_read && op == "nfs_file" && body.value("op", "") == "read") {
         slow_read = false;
         slow_read_entered = true;
@@ -204,6 +216,70 @@ int main(int argc, char **argv) {
     auto request = last_request;
     auto replay = protocol->dispatch(request, a.connection);
     ok(replay == last_response);
+    ok(!require_native || independent_owner);
+    if (independent_owner) {
+      auto snapshot = [&] { return store->dispatch("nfs_delegation", private_delegation, ctx()); };
+      auto receipt = protocol->admit_request(a.connection);
+      ok(snapshot().at("reservations") == 1);
+      std::this_thread::sleep_for(std::chrono::milliseconds(5300));
+      auto observed = snapshot();
+      ok(observed.at("granted") && observed.at("reservations") == 1 && observed.at("lease_remaining_ms") == 0);
+      admission = receipt; track_reply = true;
+      send(a, {put(), writer().u32(25).fixed(delegated).u64(0).u32(8)});
+      track_reply = false;
+      auto first_reply = completion;
+      ok(first_reply && snapshot().at("reservations") == 1);
+      auto replay_request = last_request;
+      uint64_t replay_reply = 0;
+      blocked_renewal = true;
+      auto running = std::async(std::launch::async, [&] {
+        return protocol->dispatch(replay_request, a.connection, &replay_reply);
+      });
+      struct unblock { std::atomic_bool &flag; ~unblock() { flag = false; } } release{blocked_renewal};
+      auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(3);
+      while (!renewal_entered && std::chrono::steady_clock::now() < deadline)
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      ok(renewal_entered);
+      auto queued = protocol->admit_request("queued-during-file-renewal");
+      protocol->complete_reply(first_reply);
+      ok(snapshot().at("reservations") == 2);
+      blocked_renewal = false;
+      ok(running.get() == last_response && replay_reply != 0 && replay_reply != first_reply);
+      protocol->cancel_request(queued); protocol->cancel_request(queued);
+      ok(snapshot().at("reservations") == 1);
+      protocol->complete_reply(replay_reply);
+      observed = snapshot();
+      ok(observed.at("reservations") == 0 && observed.at("lease_remaining_ms").get<int64_t>() > 4500);
+      auto expiry = observed.at("lease_expires_ms");
+      protocol->complete_reply(replay_reply);
+      ok(snapshot().at("lease_expires_ms") == expiry);
+      protocol->maintenance();
+      expiry = snapshot().at("lease_expires_ms");
+      admission = protocol->admit_request(a.connection);
+      ok(snapshot().at("reservations") == 1);
+      auto saved_sequence = a.sequence; a.sequence += 10;
+      track_reply = true; completion = 999;
+      send(a, {}, 10063); track_reply = false; a.sequence = saved_sequence;
+      observed = snapshot();
+      ok(completion == 0 && observed.at("reservations") == 0 && observed.at("lease_expires_ms") == expiry);
+      std::cout << "PASS native request routing retains across queued expiry, admits and completes during blocked file RPC, and cancels invalid SEQUENCE without renewal\n";
+    }
+    send(a, {put(), writer().u32(25).fixed(delegated).u64(0).u32(8)});
+    auto denied_replay = last_request;
+    protocol->maintenance(); // Drain the preceding valid reply under valid authority.
+    authorized = false;
+    uint64_t denied_completion = 999;
+    auto denied_response = protocol->dispatch(denied_replay, a.connection, &denied_completion);
+    authorized = true;
+    reader denied_reader(denied_response);
+    denied_reader.u32();
+    ok(denied_reader.u32() == 1 && denied_reader.u32() == 0 && denied_reader.u32() == 0 &&
+        denied_reader.opaque().empty() && denied_reader.u32() == 0 && denied_reader.u32() == 10008);
+    ok(denied_reader.opaque().empty() && denied_reader.u32() == 1 && denied_reader.u32() == 53 &&
+        denied_reader.u32() == 10008 && denied_completion == 0);
+    denied_reader.end();
+    ok(protocol->dispatch(denied_replay, a.connection) == last_response);
+    std::cout << "PASS denied cached SEQUENCE replay has no lease-renewing reply completion token\n";
     // Lease maintenance for Alice must not add her file scope to Bob's empty
     // compound cache entry on a shared AUTH_SYS session.
     a.uid = 1001; send(a, {});
@@ -477,3 +553,9 @@ int main(int argc, char **argv) {
     std::cerr << e.what() << " checks=" << checks << " fixture=" << base << '\n'; return 1;
   }
 }
+#ifndef TAUCLOUD_NATIVE_PROTOCOL_VM
+int main(int argc, char **argv) {
+  if (auto result = tc::native_delegation_owner::entry(argc, argv); result >= 0) return result;
+  return nfs_delegation_protocol_suite();
+}
+#endif

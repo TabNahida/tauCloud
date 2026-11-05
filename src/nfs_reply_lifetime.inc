@@ -1,17 +1,91 @@
-// The I/O thread only records completion under this small lock. It never waits
-// for a file-domain RPC or the main protocol mutex after writing a frame.
+// Independent native channels never use the file worker's queue or protocol
+// mutex. Native ACK exchanges are bounded; asynchronous reactor integration and
+// owner-loss monitoring remain prerequisites for production wire handout.
+struct reservation_route {
+  uint64_t client;
+  int64_t expires;
+  std::unique_ptr<native_delegation_reservation_channel> channel;
+  bool failed = false;
+  uint32_t revoked = 0;
+  reservation_route(uint64_t c, int64_t expiry, const json &capability)
+      : client(c), expires(expiry), channel(std::make_unique<native_delegation_reservation_channel>(capability)) {}
+  void lost() noexcept { failed = true; channel.reset(); }
+  void observe(const json &snapshot) {
+    if (!snapshot.at("held").get<bool>()) revoked = snapshot.at("state") == "expired" ? 10011 : 10087;
+  }
+};
+struct native_request_hold {
+  std::shared_ptr<reservation_route> route;
+  uint64_t token = 0;
+  explicit native_request_hold(std::shared_ptr<reservation_route> r) : route(std::move(r)) {
+    require(!route->failed, "delegation_owner_lost");
+    try { token = route->channel->reserve().at("reservation").get<uint64_t>(); }
+    catch (const error &e) {
+      if (std::string_view(e.what()) == "stale_handle") {
+        // Autonomous recall can finish between protocol maintenance and record
+        // arrival. Report revocation on the next SEQUENCE, not a transport error.
+        route->observe(route->channel->inspect());
+        if (route->revoked) return;
+      }
+      if (std::string_view(e.what()) != "operation_limit" && std::string_view(e.what()) != "stale_handle")
+        route->lost();
+      throw;
+    } catch (...) { route->lost(); throw; }
+  }
+  native_request_hold(const native_request_hold &) = delete;
+  bool refresh() noexcept {
+    if (route->revoked) return true;
+    if (!token || route->failed) return false;
+    auto claimed = std::exchange(token, 0);
+    try {
+      // ACK a full lease before reserving the next phase of this same request.
+      // Failure cannot advance network expiry. Closing the failed channel
+      // conservatively retains any other uncertain tokens in its owner.
+      auto confirmed = route->channel->complete(claimed, true);
+      route->observe(confirmed);
+      if (route->revoked) return true;
+      token = route->channel->reserve().at("reservation").get<uint64_t>();
+      return true;
+    } catch (const error &e) {
+      if (std::string_view(e.what()) == "stale_handle") {
+        try {
+          route->observe(route->channel->inspect());
+          if (route->revoked) return true;
+        } catch (...) {}
+      }
+      route->lost(); return false;
+    } catch (...) { route->lost(); return false; }
+  }
+  bool finish(bool renew) noexcept {
+    if (!token) return !route->failed;
+    auto claimed = std::exchange(token, 0);
+    if (route->failed) return false;
+    try { route->observe(route->channel->complete(claimed, renew)); }
+    catch (...) { route->lost(); }
+    return !route->failed;
+  }
+  ~native_request_hold() { finish(false); }
+};
+using native_request_holds = std::map<std::string, std::shared_ptr<native_request_hold>>;
 struct pending_reply {
   std::string connection;
   uint64_t client = 0;
   std::optional<int64_t> completed;
+  native_request_holds native;
+  bool native_failed = false;
+  bool renewal_authorized = false;
 };
 mutable std::mutex reply_mutex;
 std::map<uint64_t, pending_reply> replies;
 uint64_t next_reply = 0, current_reply = 0;
+uint64_t current_arrival = 0;
+std::map<std::string, std::shared_ptr<reservation_route>> reservation_routes;
 struct received_request {
   std::string connection;
   int64_t received;
   bool claimed = false;
+  native_request_holds native;
+  uint64_t authenticated_client = 0;
 };
 std::map<uint64_t, received_request> arrivals;
 uint64_t next_arrival = 0;
@@ -24,7 +98,14 @@ uint64_t admit_request(std::string bound) {
   std::lock_guard lock(reply_mutex);
   require(arrivals.size() < 32 && next_arrival != UINT64_MAX, "overloaded");
   auto id = ++next_arrival;
-  arrivals.emplace(id, received_request{std::move(bound), now()});
+  received_request request{std::move(bound), now()};
+  // Unauthenticated/encrypted records cannot yet be associated with a client.
+  // Cover each currently eligible delegation, then cancel unrelated holds once
+  // SEQUENCE identifies the client. Late records cannot revive an old lease.
+  for (auto &[key, route] : reservation_routes)
+    if (!route->revoked && request.received < route->expires)
+      request.native.emplace(key, std::make_shared<native_request_hold>(route));
+  arrivals.emplace(id, std::move(request));
   return id;
 }
 void cancel_request(uint64_t id) {
@@ -39,17 +120,103 @@ void claim_request(uint64_t id, const std::string &bound) {
           "cancelled");
   found->second.claimed = true;
 }
-uint64_t reserve_reply() {
+uint64_t reserve_reply(uint64_t admission) {
   std::lock_guard lock(reply_mutex);
   require(replies.size() < 512 && next_reply != UINT64_MAX, "overloaded");
   auto id = ++next_reply;
   replies.emplace(id, pending_reply{connection});
+  current_reply = id; current_arrival = admission;
   return id;
 }
 void bind_reply(uint64_t client) {
   if (!current_reply) return;
   std::lock_guard lock(reply_mutex);
-  replies.at(current_reply).client = client;
+  auto &reply = replies.at(current_reply);
+  check(!reply.client || reply.client == client, 10008);
+  auto arrival = arrivals.find(current_arrival);
+  for (const auto &[key, route] : reservation_routes) {
+    if (route->client != client || route->revoked) continue;
+    check(!route->failed, 10008);
+    if (reply.native.contains(key)) continue;
+    check(arrival != arrivals.end(), 10008);
+    auto node = arrival->second.native.extract(key);
+    check(!node.empty(), 10008);
+    reply.native.insert(std::move(node));
+  }
+  reply.client = client;
+  if (arrival != arrivals.end()) {
+    arrival->second.authenticated_client = client;
+    arrival->second.native.clear();
+  }
+}
+void publish_reservation_route(const std::string &key, uint64_t client, const json &capability) {
+  auto route = std::make_shared<reservation_route>(client, client_ids.at(client).expires, capability);
+  std::lock_guard lock(reply_mutex);
+  require(!reservation_routes.contains(key), "invalid_request");
+  require(current_reply && replies.at(current_reply).client == client &&
+      !replies.at(current_reply).completed, "cancelled");
+  try {
+    // Backfill receipts/replies already in flight before publication. No wire
+    // handout is emitted unless every applicable reservation is acknowledged.
+    for (auto &[id, arrival] : arrivals)
+      if (!arrival.claimed && id >= client_ids.at(client).first_arrival && arrival.received < route->expires)
+        arrival.native.emplace(key, std::make_shared<native_request_hold>(route));
+    for (auto &[id, reply] : replies)
+      if (reply.client == client && !reply.completed)
+        reply.native.emplace(key, std::make_shared<native_request_hold>(route));
+    reservation_routes.emplace(key, std::move(route));
+  } catch (...) {
+    for (auto &[id, arrival] : arrivals) arrival.native.erase(key);
+    for (auto &[id, reply] : replies) reply.native.erase(key);
+    throw;
+  }
+}
+void unpublish_reservation_route(const std::string &key) {
+  std::lock_guard lock(reply_mutex);
+  reservation_routes.erase(key);
+  for (auto &[id, arrival] : arrivals) arrival.native.erase(key);
+  for (auto &[id, reply] : replies) reply.native.erase(key);
+}
+void reservation_client_expiry(uint64_t client, int64_t expires) {
+  std::lock_guard lock(reply_mutex);
+  for (auto &[key, route] : reservation_routes)
+    if (route->client == client && !route->failed && !route->revoked)
+      route->expires = std::max(route->expires, expires);
+}
+void observe_native_revocations() {
+  std::map<std::string, uint32_t> revoked;
+  {
+    std::lock_guard lock(reply_mutex);
+    for (const auto &[key, route] : reservation_routes)
+      if (route->revoked) revoked[key] = route->revoked;
+  }
+  for (const auto &[cookie, status] : revoked) {
+    for (auto &[id, delegation] : delegations) if (delegation.cookie == cookie) {
+      delegation.revoked = status;
+      remove_recovery(delegation.recovery);
+    }
+    unpublish_reservation_route(cookie);
+  }
+}
+void acknowledge_native_renewal() {
+  {
+    std::lock_guard lock(reply_mutex);
+    if (!current_reply) return;
+    auto &reply = replies.at(current_reply);
+    if (reply.renewal_authorized) return;
+    for (auto &[key, hold] : reply.native) reply.native_failed |= !hold->refresh();
+    check(!reply.native_failed, 10008);
+    reply.renewal_authorized = true;
+  }
+  observe_native_revocations();
+}
+void finish_native_reply(pending_reply &reply, int64_t time) {
+  for (auto &[key, hold] : reply.native) reply.native_failed |= !hold->finish(true);
+  reply.native.clear();
+  if (!reply.native_failed)
+    for (auto &[key, route] : reservation_routes)
+      if (route->client == reply.client && !route->failed && !route->revoked)
+        route->expires = std::max(route->expires, time + int64_t(cfg.nfs_lease_seconds) * 1000);
 }
 bool client_live(uint64_t id) const {
   auto client = client_ids.find(id);
@@ -61,7 +228,8 @@ bool client_live(uint64_t id) const {
   // Defer cleanup only for records received before this client's fixed expiry;
   // later unauthenticated traffic cannot extend that eligibility window.
   return std::any_of(arrivals.begin(), arrivals.end(), [&](const auto &a) {
-    return a.first >= client->second.first_arrival && a.second.received < client->second.expires;
+    return (!a.second.authenticated_client || a.second.authenticated_client == id) &&
+        a.first >= client->second.first_arrival && a.second.received < client->second.expires;
   });
 }
 void complete_reply(uint64_t id) {
@@ -70,13 +238,22 @@ void complete_reply(uint64_t id) {
   auto found = replies.find(id);
   // Tokens identify transmissions, not XIDs or session slots. A duplicate
   // completion cannot extend a lease, or complete a later replay's pin.
-  if (found != replies.end() && !found->second.completed) found->second.completed = now();
+  if (found != replies.end() && !found->second.completed) {
+    auto time = now();
+    finish_native_reply(found->second, time);
+    found->second.completed = time;
+  }
 }
 void complete_connection_replies(const std::string &bound) {
   std::lock_guard lock(reply_mutex);
   auto time = now();
   for (auto &[id, r] : replies)
-    if (r.connection == bound && !r.completed) r.completed = time;
+    if (r.connection == bound && !r.completed) {
+      // An executing dispatch may still bind its authenticated client. Its
+      // reservations must survive until dispatch has actually finished.
+      if (id != current_reply) finish_native_reply(r, time);
+      r.completed = time;
+    }
   std::erase_if(arrivals, [&](const auto &a) { return a.second.connection == bound; });
 }
 void finish_replies() {
@@ -88,8 +265,11 @@ void finish_replies() {
       // Disconnect can race a dispatch before its validated SEQUENCE binds
       // the pin. Keep that reservation until this dispatch has finished.
       if (it->first == current_reply) { ++it; continue; }
-      const auto &r = it->second;
-      if (r.client) renewals[r.client] = std::max(renewals[r.client], r.completed.value_or(time));
+      auto &r = it->second;
+      if (!r.completed)
+        for (auto &[key, hold] : r.native) r.native_failed |= !hold->refresh();
+      if (r.client && r.renewal_authorized && !r.native_failed)
+        renewals[r.client] = std::max(renewals[r.client], r.completed.value_or(time));
       if (r.completed) it = replies.erase(it); else ++it;
     }
   }
@@ -97,6 +277,7 @@ void finish_replies() {
     auto found = client_ids.find(id);
     if (found == client_ids.end()) continue; // Never resurrect a retired client.
     found->second.expires = std::max(found->second.expires, accepted + int64_t(cfg.nfs_lease_seconds) * 1000);
+    reservation_client_expiry(id, found->second.expires);
     if (client_live(id)) renew_delegations(id);
   }
 }

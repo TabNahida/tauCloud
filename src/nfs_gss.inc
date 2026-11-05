@@ -20,8 +20,9 @@ std::string dispatch(std::string_view packet, std::string connection_id, uint64_
   std::lock_guard guard(mutex);
   claim_request(admission, connection_id);
   connection = std::move(connection_id);
+  observe_native_revocations();
   finish_replies();
-  current_reply = completion ? reserve_reply() : 0;
+  reserve_reply(admission);
   struct finish_tracking {
     impl &self;
     uint64_t *output;
@@ -29,10 +30,17 @@ std::string dispatch(std::string_view packet, std::string connection_id, uint64_
       std::lock_guard lock(self.reply_mutex);
       auto found = self.replies.find(self.current_reply);
       if (found != self.replies.end()) {
-        if (found->second.client) *output = found->first;
-        else self.replies.erase(found);
+        auto &reply = found->second;
+        if (reply.client && reply.renewal_authorized) {
+          if (!output || reply.completed) {
+            auto time = now();
+            self.finish_native_reply(reply, time);
+            reply.completed = time;
+          }
+          if (output) *output = found->first;
+        } else self.replies.erase(found);
       }
-      self.current_reply = 0;
+      self.current_reply = 0; self.current_arrival = 0;
     }
   } tracking{*this, completion};
   reader r(packet);

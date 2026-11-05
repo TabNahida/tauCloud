@@ -96,7 +96,7 @@ int main(void) {
     (output / 'command.txt').write_text(repr(cmd) + '\n')
     with (output / 'serial.log').open('w') as log:
         try:
-            run = subprocess.run(cmd, stdout=log, stderr=subprocess.STDOUT, timeout=180)
+            run = subprocess.run(cmd, stdout=log, stderr=subprocess.STDOUT, timeout=300)
         except subprocess.TimeoutExpired:
             raise SystemExit('VM timed out; inspect serial.log')
     serial = (output / 'serial.log').read_text(errors='replace')

@@ -152,7 +152,9 @@ RPC while preserving cookie binding, signed grant expiry and recall/watchdog
 fences. Core checks and 159 independent wire groups pass locally; a first-run
 directory-recall authority timeout remains recorded as unresolved stability
 ([evidence](docs/evidence/pre-m8/smb-cache-io-local.json)). Cross-platform and
-native macOS reacceptance of this follow-up remain pending. Earlier `5d76595`
+native macOS reacceptance of this follow-up remain pending. Targeted Windows
+native encrypted SMB/ACL and Linux CIFS Kerberos (2.1, 3.0, 3.0.2, 3.1.1) pass
+at `2ea5305` ([evidence](docs/evidence/pre-m8/smb-cache-io-2ea-native.json)). Earlier `5d76595`
 Windows jobs also report an M2 assertion after 74 checks and an M5 lease expiry;
 test diagnostics now include source lines and grant-processing duration.
 
@@ -167,8 +169,17 @@ The file service now publishes bound capabilities and mirrors owner-confirmed
 reservation counts, deadlines and terminal states without inferring expiry from
 stale local snapshots. Original recall cutoffs survive IPC delay. This integration
 passes 585 host lifecycle and 991 Linux 6.19 ASan/UBSan guest checks
-([evidence](docs/evidence/pre-m8/nfs-channel-domain-local.json)).
-Network receipt/reply integration and recovery remain unfinished
+([evidence](docs/evidence/pre-m8/nfs-channel-domain-local.json)); GCC and Clang
+Linux 6.19 remote acceptance also passes at `d6e71fe`
+([remote evidence](docs/evidence/pre-m8/nfs-channel-domain-d6-remote.json)).
+The protocol component now obtains native reservations at record receipt, binds
+them after validated SEQUENCE and completes them after reply delivery. Native
+ACK precedes network lease/slot advancement; failed replay authorization cannot
+renew. Autonomous native revocation is imported without rejecting ordinary
+session traffic. The Linux 6.19 VM now requires the actual-owner protocol suite
+([details](docs/nfs-delegations.md#native-reservations-on-received-rpcs)).
+Asynchronous native exchange, owner-loss monitoring, callback priority and
+recovery remain unfinished; production handout is still disabled
 ([details](docs/nfs-delegations.md#independent-reservation-capability-channel)).
 
 The independent NFS native owner now acknowledges bounded request reservations:

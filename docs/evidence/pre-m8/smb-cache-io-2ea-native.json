@@ -1,0 +1,119 @@
+{
+  "status": "passed",
+  "source_commit": "2ea53058b15f01a0c0280f5c42edf6051e24e5c3",
+  "windows": {
+    "run": "https://github.com/TabNahida/tauCloud/actions/runs/41938278546",
+    "native_security_sha256": "b1655d61b19c7fbabfd88fc7406ceb91211f9a0df5e9e43ded6d022998732064",
+    "object_id_sha256": "833905f6d247cd6bd813f66b5e73722259867e8e94223ec6e59501728f60398e",
+    "native_security": {
+      "status": "passed",
+      "host": "Windows-2025Server-10.0.26100-SP0",
+      "client": "Windows native SMB redirector",
+      "connection": {
+        "ServerName": "127.0.0.1",
+        "ShareName": "smb",
+        "Dialect": "3.1.1",
+        "Encrypted": true,
+        "Signed": false
+      },
+      "security": "native Get-Acl/Set-Acl, SID roundtrip, deny write and preserve read",
+      "payload_sha256": "631B84027D6B9E52B539C4E8373622D23032DFADC64D60AF87339C9037E4F769"
+    },
+    "object_id": {
+      "status": "passed",
+      "checks": [
+        "210: extended info preserves identity across file/directory metadata-only opens; malformed/unauthorized mutations leave metadata intact; DELETE is idempotent and preserves data",
+        "210: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+        "300: extended info preserves identity across file/directory metadata-only opens; malformed/unauthorized mutations leave metadata intact; DELETE is idempotent and preserves data",
+        "300: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+        "302: extended info preserves identity across file/directory metadata-only opens; malformed/unauthorized mutations leave metadata intact; DELETE is idempotent and preserves data",
+        "302: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+        "311: extended info preserves identity across file/directory metadata-only opens; malformed/unauthorized mutations leave metadata intact; DELETE is idempotent and preserves data",
+        "311: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+        "identifiers survive all-service restart and out-of-band native rename",
+        "delete completes, same-name recreation has a new native incarnation and identifiers follow native filesystem behavior",
+        "read-only share can retrieve existing IDs but cannot create metadata",
+        "revoking share write authority denies mutations through an already-open WRITE_ATTRIBUTES handle without changing its identifier"
+      ],
+      "recorded_at": "2026-11-05T00:09:13.772222+00:00",
+      "native_recreation": {
+        "has_identifier": true,
+        "retained_identifier": true
+      },
+      "server_log": "{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793837353835}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"supervisor\",\"time\":1793837358359}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793837358509}\n{\"code\":\"ok\",\"event\":\"stopped\",\"role\":\"supervisor\",\"time\":1793837379301}\n{\"code\":\"ok\",\"event\":\"started\",\"role\":\"supervisor\",\"time\":1793837379319}\n"
+    }
+  },
+  "linux": {
+    "run": "https://github.com/TabNahida/tauCloud/actions/runs/41938278464",
+    "artifact_sha256": "90a1f1d84a7ffef91e2339ebf232782e6dea168c54ad09b3669e4b191dcc1f11",
+    "checks": [
+      "principal mappings require administrator authority and reject ambiguous duplicate principal bindings",
+      "real Kerberos and SPNEGO negotiate authenticate SMB2.1/3.0/3.0.2/3.1.1; independent client validates signing and AES encryption during write/read/flush/rename/truncate/delete",
+      "AES-256-CCM/GCM derive from the complete 32-byte Kerberos key with independent signed setup, encrypted I/O and renewal checks for Kerberos/SPNEGO",
+      "unmodified Samba smbclient requires Kerberos and verifies 1 MiB signed SMB2.1 and encrypted SMB3.1.1 roundtrips",
+      "unmapped principals, tickets for another acceptor and modified authenticators fail without NTLM or guest fallback",
+      "independent raw Kerberos verifies mutual AP-REP and final SMB2 HMAC; replaying the same AP-REQ on a fresh transport is rejected",
+      "Kerberos without GSS mutual authentication still verifies SMB2 SESSION_SETUP signing and signed file I/O; replay remains rejected",
+      "fresh Kerberos and SPNEGO renew all SMB2/3 dialects with unchanged signing/cipher keys and live file handles",
+      "renewal cannot switch to another Kerberos principal mapped to the same account or revive a revoked mapping token; failures release exclusive opens",
+      "live principal mapping revocation terminates existing file authority and new logins; explicit reenable admits fresh authentication",
+      "atomic cifs keytab rotation admits fresh tickets while existing signed/encrypted sessions remain valid",
+      "ticket lifetime bounds SMB authority; Kerberos is independent of NTLM enrollment and existing mandatory-MIC NTLM authentication still works",
+      "native Linux kernel CIFS uses Kerberos for signed SMB2.1 and encrypted SMB3.0/3.0.2/3.1.1 roundtrips"
+    ],
+    "native": {
+      "status": "passed",
+      "profiles": [
+        {
+          "dialect": "2.1",
+          "security": "krb5",
+          "status": "passed",
+          "checks": [
+            "kernel CIFS Kerberos mount",
+            "mandatory signing",
+            "1 MiB write/fsync/read",
+            "rename/overwrite/truncate/enumerate/delete"
+          ]
+        },
+        {
+          "dialect": "3.0",
+          "security": "krb5",
+          "status": "passed",
+          "checks": [
+            "kernel CIFS Kerberos mount",
+            "required SMB3 encryption",
+            "1 MiB write/fsync/read",
+            "rename/overwrite/truncate/enumerate/delete"
+          ]
+        },
+        {
+          "dialect": "3.02",
+          "security": "krb5",
+          "status": "passed",
+          "checks": [
+            "kernel CIFS Kerberos mount",
+            "required SMB3 encryption",
+            "1 MiB write/fsync/read",
+            "rename/overwrite/truncate/enumerate/delete"
+          ]
+        },
+        {
+          "dialect": "3.1.1",
+          "security": "krb5",
+          "status": "passed",
+          "checks": [
+            "kernel CIFS Kerberos mount",
+            "required SMB3 encryption",
+            "1 MiB write/fsync/read",
+            "rename/overwrite/truncate/enumerate/delete"
+          ]
+        }
+      ]
+    }
+  },
+  "limitations": [
+    "Targeted native workflows passed; the complete backend and metadata matrices were still running when recorded.",
+    "This is not macOS reacceptance or full SMB conformance.",
+    "The earlier local directory-recall timeout remains recorded."
+  ]
+}

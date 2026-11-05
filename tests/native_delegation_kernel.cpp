@@ -970,6 +970,7 @@ static void file_domain_suite(const fs::path &base) {
   store.reset();
   std::cout << "PASS " << base << " FILE-DOMAIN/owner-renew-recall-return-replacement-SIGKILL\n";
 }
+int nfs_delegation_protocol_suite(bool require_native);
 int main(int argc, char **argv) {
   if (auto result = native_delegation_owner::entry(argc, argv); result >= 0) return result;
   bool guest = getpid() == 1;
@@ -993,6 +994,7 @@ int main(int argc, char **argv) {
       owner_suite("/disk/delegation", true);
       reservation_channel_suite("/disk/delegation", true);
       file_domain_suite("/disk/domain");
+      check(nfs_delegation_protocol_suite(true) == 0, "native_protocol_routing");
     } else {
       reservation_channel_authentication_suite();
       base = fs::temp_directory_path() / ("tc-native-delegation-" + random_hex(6));

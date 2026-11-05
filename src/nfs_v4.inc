@@ -87,8 +87,13 @@ std::map<std::string, json> reclaim;
 int64_t grace_end = 0;
 #include "nfs_reply_lifetime.inc"
 void renew_client_lease(uint64_t id) {
+  // Callback renewal also needs the authenticated receipt's native holds.
+  bind_reply(id);
+  auto accepted = now();
+  acknowledge_native_renewal();
   auto &client = client_ids.at(id);
-  client.expires = std::max(client.expires, now() + int64_t(cfg.nfs_lease_seconds) * 1000);
+  client.expires = std::max(client.expires, accepted + int64_t(cfg.nfs_lease_seconds) * 1000);
+  reservation_client_expiry(id, client.expires);
   // RFC 8881 8.3: all sessions belonging to one client share one lease.
   renew_delegations(id);
 }
@@ -1236,14 +1241,17 @@ std::string v4(const identity &who, reader &r) {
           check(!sl.pending && !sl.reply.empty(), 10008);
           bind_reply(s.client);
           replay_authorized(who, sl.authority);
+          renew_client_lease(s.client);
           s.callback_session_seen = true;
           sequence_callback(sid);
-          renew_client_lease(s.client);
           return sl.reply;
         }
         check(seq == sl.seq + 1 && !sl.pending, 10063);
-        compound_client = s.client;
         bind_reply(s.client);
+        // A failed native confirmation cannot advance the slot or publish a
+        // lease renewal for an unsuccessful SEQUENCE (RFC 8881 18.46.3).
+        renew_client_lease(s.client);
+        compound_client = s.client;
         s.callback_session_seen = true;
         sequence_callback(sid);
         sl.seq = seq;
@@ -1253,7 +1261,6 @@ std::string v4(const identity &who, reader &r) {
         sl.pending = true;
         active = &sl;
         recording_authority = &sl.authority;
-        renew_client_lease(s.client);
         body.fixed(decode_bytes(sid))
             .u32(seq)
             .u32(n)
@@ -1668,6 +1675,7 @@ std::string v4(const identity &who, reader &r) {
             check(it->second.revoked != 0, 10037);
             try { delegation_control(it->second, "forget"); }
             catch (const error &e) { if (std::string_view(e.what()) != "stale_handle") throw; }
+            unpublish_reservation_route(it->second.cookie);
             delegations.erase(it);
           } else {
             if ((op == 12 || op == 13) && !delegations.empty())
