@@ -7,6 +7,11 @@
 #include <deque>
 namespace tc {
 namespace {
+bool is_rpc_reply(std::string_view packet) {
+  if (packet.size() < 8) return false;
+  nfs_detail::reader header(packet); header.u32();
+  return header.u32() == 1;
+}
 struct outgoing_reply {
   std::string packet;
   uint64_t completion = 0;
@@ -16,6 +21,7 @@ struct nfs_connection {
   std::deque<outgoing_reply> output;
   size_t queued_bytes = 0;
   unsigned processing = 0;
+  unsigned callback_records = 0;
   bool writing = false;
   explicit nfs_connection(pace::tcp::stream stream) : socket(std::move(stream)) {}
 };
@@ -27,6 +33,7 @@ struct nfs_runtime {
   nfs_detail::server protocol;
   std::atomic<int> connections = 0;
   std::atomic<unsigned> processing = 0;
+  unsigned callback_records = 0; // Only the transport reactor updates counts.
   std::atomic_bool native_fenced = false;
   std::map<std::string, std::shared_ptr<nfs_connection>> sockets;
   void send(std::string connection, std::string packet);
@@ -117,10 +124,7 @@ pace::task<outgoing_reply> process(nfs_runtime &s, std::string packet, std::stri
   while (!s.protocol.request_ready(admission)) co_await s.io->sleep_for(1ms);
   // This header selects bounded scheduling capacity, never authentication.
   // The protocol dispatcher still validates the exact callback and transport.
-  bool callback = false;
-  if (packet.size() >= 8) {
-    nfs_detail::reader header(packet); header.u32(); callback = header.u32() == 1;
-  }
+  bool callback = is_rpc_reply(packet);
   auto &executor = callback ? s.callbacks : s.pool;
   taucloud::bounded_executor::ticket ticket;
   require(executor.submit(
@@ -154,7 +158,8 @@ pace::task<outgoing_reply> process(nfs_runtime &s, std::string packet, std::stri
   co_return std::move(p->reply);
 }
 pace::task<void> process_record(nfs_runtime &s, std::shared_ptr<nfs_connection> c,
-                               std::string packet, std::string connection, uint64_t admission) {
+                               std::string packet, std::string connection, uint64_t admission,
+                               bool callback) {
   outgoing_reply response;
   try {
     response = co_await process(s, std::move(packet), std::move(connection), admission);
@@ -165,6 +170,7 @@ pace::task<void> process_record(nfs_runtime &s, std::shared_ptr<nfs_connection> 
   s.protocol.abandon_request(admission);
   s.protocol.enqueue_reply_completion(response.completion);
   --c->processing; --s.processing;
+  if (callback) { --c->callback_records; --s.callback_records; }
 }
 pace::task<void> serve(nfs_runtime &s, pace::tcp::stream stream) {
   auto c = std::make_shared<nfs_connection>(std::move(stream));
@@ -196,14 +202,19 @@ pace::task<void> serve(nfs_runtime &s, pace::tcp::stream stream) {
       // or a fore-channel reply: callbacks and other slots share this stream.
       // Bound captured packets before scheduling any coroutine. Admission is
       // recorded here, not when the scheduled coroutine eventually runs.
-      require(c->processing < 16 && s.processing < 32, "overloaded");
+      bool callback = is_rpc_reply(record.data);
+      require(callback ? (c->callback_records < 4 && s.callback_records < nfs_detail::max_reply_records)
+                       : (c->processing - c->callback_records < 16 &&
+                          s.processing - s.callback_records < nfs_detail::max_call_records), "overloaded");
       auto admission = s.protocol.begin_request(connection, record.data);
       ++c->processing; ++s.processing;
+      if (callback) { ++c->callback_records; ++s.callback_records; }
       try {
-        s.io->spawn(process_record(s, c, std::move(record.data), connection, admission));
+        s.io->spawn(process_record(s, c, std::move(record.data), connection, admission, callback));
       } catch (...) {
         s.protocol.abandon_request(admission);
         --c->processing; --s.processing;
+        if (callback) { --c->callback_records; --s.callback_records; }
         throw;
       }
       active = true;

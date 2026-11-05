@@ -1,0 +1,247 @@
+{
+  "status": "passed",
+  "source_base": "f702f25102a9f8f2a192a0ccb428b23c1452ae01",
+  "recorded_at": "2026-11-05T02:16:57.024854+00:00",
+  "compiler": "Clang debug ASan/UBSan",
+  "source_sha256": {
+    "include/taucloud/nfs.hpp": "ffd1439f5fc4a4f572fa108d3736c19717f90ef557d323dc87172630566eb486",
+    "src/nfs.cpp": "61693e540ab5e4ee04b3621480066ba075ec5147b0f28853fb49794a8a1f01e5",
+    "src/nfs_reply_lifetime.inc": "2cb2788e1ebfe93329efc4fa8aea015b399a962859c1a6a38012bf1888ef3373",
+    "tests/nfs_admission_queue.py": "a29f9bee04924ae90d771187731f5a570d5b6c60daac60b5efbd80d4085acb3f",
+    "tests/nfs_callback_queue.py": "377de2261a657d1273794bb93665ff4ed206633a341e123475e18135867c0bbf",
+    "tests/nfs_delegation_protocol.cpp": "7388451343155d2727ee1d3b5bfab4af17ce2a69b8dc854cc94a45a1d260c726"
+  },
+  "baseline": {
+    "commit": "f702f25102a9f8f2a192a0ccb428b23c1452ae01",
+    "sha256": "d4b8b578a08a0bb7eccee9dc6368d01541d2d3142890ffc69f12d8b4babfdafd",
+    "checks_before_failure": [
+      "timely CB_SEQUENCE reply survives delayed dispatch without retry or disconnect",
+      "reserved callback capacity accepts a timely CB_SEQUENCE reply while the ordinary executor is demonstrably full"
+    ],
+    "error": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/tests/nfs_callback_queue.py\", line 95, in main\n    pending.result()  # Preserve early transport failures as evidence.\n    ^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/concurrent/futures/_base.py\", line 449, in result\n    return self.__get_result()\n           ^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/concurrent/futures/_base.py\", line 401, in __get_result\n    raise self._exception\n  File \"/usr/lib/python3.12/concurrent/futures/thread.py\", line 58, in run\n    result = self.fn(*self.args, **self.kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/tests/nfs_admission_queue.py\", line 32, in receive_replies\n    marker, = struct.unpack('>I', read(4))\n                                  ^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/tests/nfs_admission_queue.py\", line 25, in read\n    assert part, 'connection closed with outstanding RPCs'\n           ^^^^\nAssertionError: connection closed with outstanding RPCs\n",
+    "scenario": "A blocked READ plus fifteen RPC NULL calls and one timely CB_SEQUENCE reply share one TCP connection."
+  },
+  "results": {
+    "queue": {
+      "sha256": "9731454f0053fcfbf7700468a62031fb88e5148a7fffb08186abfce9c1951e3e",
+      "checks": [
+        "timely CB_SEQUENCE reply survives delayed dispatch without retry or disconnect",
+        "reserved callback capacity accepts a timely CB_SEQUENCE reply while the ordinary executor is demonstrably full",
+        "same-connection CB_SEQUENCE reply survives sixteen outstanding ordinary records and returns all replies",
+        "malformed callback reply cannot validate the path or renew an expired session",
+        "wrong-xid callback reply cannot validate the path or renew an expired session",
+        "wrong-transport callback reply cannot validate the path or renew an expired session",
+        "late callback reply cannot validate the path or renew an expired session"
+      ],
+      "timing_seconds": {
+        "valid": {
+          "sent_after_probe": 3.8007103970157914,
+          "processed_after_probe": 5.547841968014836
+        },
+        "saturated": {
+          "sent_after_probe": 3.801327452994883,
+          "processed_after_probe": 5.553540097957011
+        },
+        "shared-saturated": {
+          "sent_after_probe": 3.800463511957787,
+          "processed_after_probe": 5.563256963971071
+        },
+        "malformed": {
+          "sent_after_probe": 3.800520157965366,
+          "processed_after_probe": 5.552123336994555
+        },
+        "wrong-xid": {
+          "sent_after_probe": 3.800497192016337,
+          "processed_after_probe": 5.549682162003592
+        },
+        "wrong-transport": {
+          "sent_after_probe": 3.800630596000701,
+          "processed_after_probe": 5.550435991957784
+        },
+        "late": {
+          "sent_after_probe": 5.200155120983254,
+          "processed_after_probe": 5.5519625740125775
+        }
+      }
+    },
+    "admission": {
+      "sha256": "5422ba855c31ad42f7880e1379c99bd47c317456b9649c9f3cfc52a37faa989f",
+      "checks": [
+        "complete TCP request reaches the bounded executor before lease expiry and retains OPEN beyond expiry while both workers are occupied",
+        "successful SEQUENCE renews after the delay; queued READ returns original data; suspended file worker was not replaced",
+        "two records on one TCP connection are admitted before expiry while the first waits; failed SEQUENCE cannot renew the following READ",
+        "blocked pipeline overflow closes only its transport, abandons queued admissions and recovers capacity for a fresh authenticated OPEN/READ"
+      ],
+      "timing_seconds": {
+        "queued_send_after_renewal": 4.001513422001153,
+        "completion_after_renewal": 5.534073017013725
+      }
+    },
+    "backchannel": {
+      "sha256": "51edb28636374d7de2b1160cfabcd1ff1064c48d818a6da7b9c2eafa389d8171",
+      "checks": [
+        "CREATE_SESSION binds a bidirectional transport; CB_NULL uses the requested program/version and AUTH_NONE while forechannel RPC stays usable",
+        "probe replies are bound to their exact TCP connection and XID; cross-connection, duplicate and unknown replies cannot change path state",
+        "BACKCHANNEL_CTL changes program and invalidates old probes; malformed matched replies keep path down and idempotent rebinding reprobes it",
+        "cleared callback credentials and destroyed/recreated sessions cannot be validated by a stale probe response",
+        "BIND_CONN_TO_SESSION supports BACK and BACK_OR_BOTH on new transports, rejects invalid directions and changes to existing channel roles",
+        "AUTH_SYS CB_NULL carries the offered timestamp, machine name, UID/GID and supplementary groups exactly",
+        "five-second probe timeout ignores late success; rebind recovers the path without recreating the session",
+        "losing the only callback transport sets CB_PATH_DOWN on a surviving forechannel connection",
+        "CB_NULL success alone does not validate the sequenced backchannel; CB_SEQUENCE success on the wrong transport is ignored",
+        "truncated/trailing XDR and mismatched status/tag/count/op/session/sequence/slot close the transport before exact retry; only a valid success advances the slot",
+        "successful CB_SEQUENCE advances exactly once; BACKCHANNEL_CTL retains the session sequence and ignores old duplicate replies",
+        "BIND and callback program replacement never retry an outstanding CB_COMPOUND on a live transport; its original reply releases the slot without validating the new program",
+        "completion of a callback issued before credential removal advances its slot but cannot resurrect the disabled backchannel",
+        "CB_COMPOUND timeout closes the original transport before retry; stale RPC replies on the replacement cannot complete the unresolved slot",
+        "one callback slot serializes multiple bound paths; transport loss retries the unresolved request on another bound connection",
+        "loss of the only backchannel with an unanswered CB_COMPOUND reports CB_PATH_DOWN_SESSION; binding a replacement clears that flag and preserves the pending sequence",
+        "client-advertised slot growth beyond CREATE_SESSION and shrink back to zero are accepted without allocation or increasing callback concurrency",
+        "destroying and recreating a session starts a distinct callback slot at sequence one; old CB_COMPOUND success cannot validate it",
+        "UINT32_MAX offered callback slots require only slot zero; AUTH_SYS credentials must fit the negotiated complete CB_COMPOUND request size"
+      ]
+    },
+    "gss": {
+      "sha256": "3fc9f9c401405e3c9d83c81ee56b7d688f30a75334fc8db9e062139eab98032f",
+      "checks": [
+        "one context shared across 32 sessions and three TCP paths admits only its 64-entry RPC window; completing the oldest request releases the next authenticated callback",
+        "krb5/krb5i/krb5p CB_NULL, CB_SEQUENCE and CB_NOTIFY_LOCK use real Kerberos, independent RPC counters and exact referring calls; notifications grant no lock",
+        "BACKCHANNEL_CTL rejects unknown handles/invalid services/oversized RPC credentials atomically; existing handles are idempotent and counters never reset",
+        "BACKCHANNEL_CTL adds handles instead of replacing them; empty additions retain GSS, and destruction of another context preserves the live path",
+        "sixteen live callback tuples are bounded; exhaustion preserves the existing channel and duplicate offers consume no extra capacity",
+        "negotiated channel sizes include exact GSS credential, MIC and wrapped-body overhead; exact request limits succeed and one-byte-short channels send no oversized callbacks",
+        "unsigned, bad MIC/ciphertext and wrong authenticated sequences cannot complete callbacks; disconnect/rebind retries exact CB_SEQUENCE plaintext with fresh RPC authentication",
+        "authenticated integrity/privacy DELAY replies retry unchanged slots on live transports; established slot faults report BACKCHANNEL_FAULT through the protected forechannel",
+        "nearly expired and expired contexts set SEQUENCE flags; expiry/destroy removes path authority without AUTH_NONE fallback, and fresh contexts restore it"
+      ]
+    }
+  },
+  "protocol": {
+    "sha256": "9b397f33ac57096ee9cfe75eb8d4986d9f625dae7f3761861037c9501f3bddcc",
+    "groups": [
+      "PASS callback dispatch priority precedes queued ordinary work, bounds bursts and releases on exceptions",
+      "PASS pre-operation authorization refresh retries once with stable mutation identity, fresh authority, revocation and ordinary expiry boundaries",
+      "PASS production file authority declines wire handout without creating a hidden native guard",
+      "PASS slow COMPOUND completion preserves a full client lease after execution",
+      "PASS denied cached SEQUENCE replay has no lease-renewing reply completion token",
+      "PASS named CLAIM_DELEGATE_CUR materializes and replays without self-recall; foreign states, clients, principals and write access are rejected",
+      "PASS distinct delegation state, CLAIM_DELEG_CUR_FH, CLOSE/disconnect independence and client/principal/file/access checks",
+      "PASS WANT replay, typed CB_RECALL, definitive DELAY retry and acknowledgment without premature release",
+      "PASS wrong callback operation preserves the exact slot until confirmed disconnect and replays on a replacement backchannel",
+      "PASS recall deadline survives continued renewals; TEST_STATEID/FREE_STATEID acknowledge revocation while OPEN remains valid",
+      "PASS authority loss renews coherence past the old lease under fixed recall and still permits authenticated return",
+      "PASS validated CB_SEQUENCE renewal keeps an idle sibling session alive beyond its original lease",
+      "PASS session destruction retains client-owned delegation; foreign owner replacement and premature client destruction are refused",
+      "PASS independent reply/replay pins retain OPEN through delayed delivery; duplicate completion cannot extend expiry",
+      "PASS disconnect conservatively ends pending transmission with a full lease and leaves no immortal client pin",
+      "PASS a request received before expiry retains its OPEN across executor delay and maintenance until validated SEQUENCE",
+      "PASS rejected SEQUENCE, cancellation, duplicate cleanup and late arrivals cannot renew expired clients; old arrivals cannot pin future clients",
+      "PASS request admission is bounded, cancellation restores capacity and disconnect invalidates undispatched tokens",
+      "PASS 1186 delegation protocol/native component checks; production handout remains gated"
+    ]
+  },
+  "linux_619_vm": {
+    "sha256": "4fc8ea05ad03fcac1b5607eed0456e0b05a65f060ede04aa138b206adf372f2e",
+    "groups": [
+      "PASS CHANNEL/independent-client-server-proofs-and-client-packet-lifetime",
+      "PASS CHANNEL/nonblocking-handshake-ACK-errors-fixed-timeout 491 checks",
+      "PASS \"/tmp/delegation\" READ/writer",
+      "PASS \"/tmp/delegation\" READ/truncate",
+      "PASS \"/tmp/delegation\" READ/rename",
+      "PASS \"/tmp/delegation\" READ/unlink",
+      "PASS \"/tmp/delegation\" READ/chmod",
+      "PASS \"/tmp/delegation\" READ/utimens",
+      "PASS \"/tmp/delegation\" READ/xattr",
+      "PASS \"/tmp/delegation\" READ/chown",
+      "PASS \"/tmp/delegation\" READ/link",
+      "PASS \"/tmp/delegation\" WRITE/reader",
+      "PASS \"/tmp/delegation\" WRITE/writer",
+      "PASS \"/tmp/delegation\" DIRECTORY/create",
+      "PASS \"/tmp/delegation\" DIRECTORY/unlink",
+      "PASS \"/tmp/delegation\" DIRECTORY/rename",
+      "PASS \"/tmp/delegation\" DIRECTORY/cross-parent-rename",
+      "PASS \"/tmp/delegation\" DIRECTORY/rmdir-after-move",
+      "PASS \"/tmp/delegation\" OWNER/renew-recall-revoke-return",
+      "PASS \"/tmp/delegation\" OWNER/detach-retention-expiry",
+      "PASS \"/tmp/delegation\" OWNER/SIGKILL-worker-retention-expiry",
+      "PASS \"/tmp/delegation\" OWNER/absolute-expiry-and-confirmed-death-cleanup",
+      "PASS \"/tmp/delegation\" OWNER/private-pin-and-unlinked-incarnation",
+      "PASS \"/tmp/delegation\" OWNER/request-reservation-postreply-lease",
+      "PASS \"/tmp/delegation\" OWNER/reservation-capacity-cancellation-and-token-binding",
+      "PASS \"/tmp/delegation\" OWNER/original-recall-cutoff-and-delayed-delivery",
+      "PASS \"/tmp/delegation\" OWNER/reservation-cannot-postpone-native-recall",
+      "PASS \"/tmp/delegation\" OWNER/reservation-worker-death-bounded-full-lease",
+      "PASS \"/tmp/delegation\" CHANNEL/capability-binding-limited-operations-token-ownership-EOF",
+      "PASS \"/tmp/delegation\" CHANNEL/SIGSTOP-file-worker-independent-ACK-and-SIGKILL-retention",
+      "PASS \"/tmp/delegation\" CHANNEL/nonblocking-SIGSTOP-timeout-uncertain-token-native-retention",
+      "PASS \"/tmp/domain\" FILE-DOMAIN/expired-authority-coherence-retention",
+      "PASS \"/tmp/domain\" FILE-DOMAIN/independent-channel-publication-expiry-completion-EOF-return",
+      "PASS \"/tmp/domain\" FILE-DOMAIN/reservation-binding-retry-completion-capacity-revocation",
+      "PASS \"/tmp/domain\" FILE-DOMAIN/owner-renew-recall-return-replacement-SIGKILL",
+      "PASS \"/disk/delegation\" READ/writer",
+      "PASS \"/disk/delegation\" READ/truncate",
+      "PASS \"/disk/delegation\" READ/rename",
+      "PASS \"/disk/delegation\" READ/unlink",
+      "PASS \"/disk/delegation\" READ/chmod",
+      "PASS \"/disk/delegation\" READ/utimens",
+      "PASS \"/disk/delegation\" READ/xattr",
+      "PASS \"/disk/delegation\" READ/chown",
+      "PASS \"/disk/delegation\" READ/link",
+      "PASS \"/disk/delegation\" WRITE/reader",
+      "PASS \"/disk/delegation\" WRITE/writer",
+      "PASS \"/disk/delegation\" DIRECTORY/create",
+      "PASS \"/disk/delegation\" DIRECTORY/unlink",
+      "PASS \"/disk/delegation\" DIRECTORY/rename",
+      "PASS \"/disk/delegation\" DIRECTORY/cross-parent-rename",
+      "PASS \"/disk/delegation\" DIRECTORY/rmdir-after-move",
+      "PASS \"/disk/delegation\" OWNER/renew-recall-revoke-return",
+      "PASS \"/disk/delegation\" OWNER/detach-retention-expiry",
+      "PASS \"/disk/delegation\" OWNER/SIGKILL-worker-retention-expiry",
+      "PASS \"/disk/delegation\" OWNER/absolute-expiry-and-confirmed-death-cleanup",
+      "PASS \"/disk/delegation\" OWNER/private-pin-and-unlinked-incarnation",
+      "PASS \"/disk/delegation\" OWNER/request-reservation-postreply-lease",
+      "PASS \"/disk/delegation\" OWNER/reservation-capacity-cancellation-and-token-binding",
+      "PASS \"/disk/delegation\" OWNER/original-recall-cutoff-and-delayed-delivery",
+      "PASS \"/disk/delegation\" OWNER/reservation-cannot-postpone-native-recall",
+      "PASS \"/disk/delegation\" OWNER/reservation-worker-death-bounded-full-lease",
+      "PASS \"/disk/delegation\" CHANNEL/capability-binding-limited-operations-token-ownership-EOF",
+      "PASS \"/disk/delegation\" CHANNEL/SIGSTOP-file-worker-independent-ACK-and-SIGKILL-retention",
+      "PASS \"/disk/delegation\" CHANNEL/nonblocking-SIGSTOP-timeout-uncertain-token-native-retention",
+      "PASS \"/disk/domain\" FILE-DOMAIN/expired-authority-coherence-retention",
+      "PASS \"/disk/domain\" FILE-DOMAIN/independent-channel-publication-expiry-completion-EOF-return",
+      "PASS \"/disk/domain\" FILE-DOMAIN/reservation-binding-retry-completion-capacity-revocation",
+      "PASS \"/disk/domain\" FILE-DOMAIN/owner-renew-recall-return-replacement-SIGKILL",
+      "PASS callback dispatch priority precedes queued ordinary work, bounds bursts and releases on exceptions",
+      "PASS pre-operation authorization refresh retries once with stable mutation identity, fresh authority, revocation and ordinary expiry boundaries",
+      "PASS production file authority declines wire handout without creating a hidden native guard",
+      "PASS slow COMPOUND completion preserves a full client lease after execution",
+      "PASS reactor admission/completion/cancellation/disconnect stay nonblocking with native owner stopped and file renewal paused",
+      "PASS native request routing retains across queued expiry, admits and completes during blocked file RPC, and cancels invalid SEQUENCE without renewal",
+      "PASS denied cached SEQUENCE replay has no lease-renewing reply completion token",
+      "PASS named CLAIM_DELEGATE_CUR materializes and replays without self-recall; foreign states, clients, principals and write access are rejected",
+      "PASS distinct delegation state, CLAIM_DELEG_CUR_FH, CLOSE/disconnect independence and client/principal/file/access checks",
+      "PASS WANT replay, typed CB_RECALL, definitive DELAY retry and acknowledgment without premature release",
+      "PASS wrong callback operation preserves the exact slot until confirmed disconnect and replays on a replacement backchannel",
+      "PASS recall deadline survives continued renewals; TEST_STATEID/FREE_STATEID acknowledge revocation while OPEN remains valid",
+      "PASS authority loss renews coherence past the old lease under fixed recall and still permits authenticated return",
+      "PASS validated CB_SEQUENCE renewal keeps an idle sibling session alive beyond its original lease",
+      "PASS session destruction retains client-owned delegation; foreign owner replacement and premature client destruction are refused",
+      "PASS independent reply/replay pins retain OPEN through delayed delivery; duplicate completion cannot extend expiry",
+      "PASS disconnect conservatively ends pending transmission with a full lease and leaves no immortal client pin",
+      "PASS a request received before expiry retains its OPEN across executor delay and maintenance until validated SEQUENCE",
+      "PASS rejected SEQUENCE, cancellation, duplicate cleanup and late arrivals cannot renew expired clients; old arrivals cannot pin future clients",
+      "PASS request admission is bounded, cancellation restores capacity and disconnect invalidates undispatched tokens",
+      "PASS native owner SIGKILL fences new/queued requests and an in-flight file result without waiting for the protocol mutex",
+      "PASS 1287 delegation protocol/native component checks; production handout remains gated",
+      "PASS native delegation 1553 checks"
+    ],
+    "mandatory_marker": true
+  },
+  "limits": [
+    "RPC direction selects bounded capacity only, never callback authentication or client renewal.",
+    "Global receipt capacity stays at 32 (24 calls and 8 replies); each TCP connection permits 16 calls and 4 replies.",
+    "There is no fairness guarantee between individual clients.",
+    "Outgoing callback scheduling, durable owner recovery and production delegation handout remain open.",
+    "Remote acceptance for this change is pending."
+  ]
+}

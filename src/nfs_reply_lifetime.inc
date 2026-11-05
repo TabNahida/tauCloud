@@ -84,13 +84,19 @@ uint64_t request_boundary() {
 uint64_t begin_request(std::string bound, std::string_view packet = {}) {
   std::lock_guard lock(reply_mutex);
   require(!native_fault, "delegation_owner_lost");
-  require(arrivals.size() < 32 && next_arrival != UINT64_MAX, "overloaded");
-  auto id = ++next_arrival;
   received_request request{std::move(bound), now()};
   if (packet.size() >= 8) {
     reader header(packet); auto xid = header.u32();
     if (header.u32() == 1) request.response_xid = xid;
   }
+  // Reserve receipt capacity before native ACK waits or executor admission.
+  // A reply header selects a bounded class only; dispatch authenticates it.
+  unsigned same_class = 0;
+  for (const auto &[id, arrival] : arrivals)
+    same_class += arrival.response_xid.has_value() == request.response_xid.has_value();
+  require(same_class < (request.response_xid ? max_reply_records : max_call_records) &&
+          next_arrival != UINT64_MAX, "overloaded");
+  auto id = ++next_arrival;
   // Unauthenticated/encrypted records cannot yet be associated with a client.
   // Cover each currently eligible delegation, then cancel unrelated holds once
   // SEQUENCE identifies the client. Late records cannot revive an old lease.

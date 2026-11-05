@@ -803,8 +803,9 @@ the five-second lease expired. Delaying the first dispatch until after expiry
 made the subsequent READ fail with BADSESSION, even though both records had
 already been sent. The invalid request does not renew the lease.
 
-The corrected runtime captures at most 16 processing records per connection and
-32 globally, in addition to the existing bounded executor and output queues.
+The initial correction captured at most 16 processing records per connection and
+32 globally; the class reservations below now refine these limits, in addition
+to the existing bounded executor and output queues.
 Overflow closes the affected transport and abandons undispatched admissions.
 Replies still use one writer per stream, and native completion tracking remains
 attached to delivery. Shutdown drains processing coroutines before stopping the
@@ -854,7 +855,7 @@ cross-platform matrix remains pending.
 
 Incoming RPC replies now use a separate executor with one worker and eight
 outstanding records. Ordinary RPC calls retain two workers and sixteen records;
-the existing per-connection and global receipt bounds still apply. The RPC
+the per-connection and global receipt bounds described below also apply. The RPC
 direction header selects scheduling capacity only. Unknown XIDs, wrong
 transports, invalid GSS and malformed responses still undergo the same checks.
 Overflow closes the affected transport, and shutdown drains both executors.
@@ -875,7 +876,32 @@ queue cases, 19 backchannel groups, nine real-KDC groups, four ordinary admissio
 groups and 1,185 protocol checks pass locally. Linux 6.19 additionally passes
 1,286 protocol component and 1,555 native checks, including real-owner loss during
 blocked renewal ([evidence](evidence/pre-m8/nfs-priority-local.json)). Remote
-acceptance is pending. Reservation covers executor capacity; shared receipt and
-connection caps can still reject records before scheduling. Admission fairness,
-outgoing callback scheduling, durable recovery and production delegation handout
-remain separate open gates.
+acceptance is pending. This first reservation covered executor capacity only;
+the shared receipt limit correction below extends it before scheduling.
+
+## Reserved callback receipt capacity
+
+A real TCP regression at `f702f25` filled one shared connection with a blocked
+READ and fifteen RPC NULL calls. A valid CB_SEQUENCE response sent before its
+deadline became the seventeenth record and closed the connection before dispatch,
+despite the independent callback executor having free capacity.
+
+Receipt admission now reserves eight of the existing 32 global records for RPC
+replies, leaving 24 for ordinary calls. Each TCP connection allows at most sixteen
+ordinary calls and four replies. Both the captured-coroutine counters and protocol
+arrival map enforce their class limits before native ACK waits. Completion,
+cancellation, disconnect and scheduling failure release their original class.
+The eight-byte RPC header selects capacity only: it never authenticates a reply,
+advances a callback slot or renews client state. Overflow still closes the affected
+transport; a flood of forged reply headers is bounded independently.
+
+The new same-connection regression requires all sixteen ordinary replies and a
+healthy callback path without retry after delayed dispatch. Protocol component
+tests independently fill both classes, reject their overflow and recover after
+cancellation. Local ASan/UBSan passes seven callback queue cases, four ordinary
+admission groups, 19 backchannel groups, nine real-KDC groups and 1,186 protocol
+checks. Linux 6.19 passes 1,287 protocol and 1,553 native checks; native polling
+counts vary with scheduling. Remote acceptance is pending. See
+[baseline and acceptance](evidence/pre-m8/nfs-shared-admission-local.json).
+Outgoing callback scheduling, durable recovery and production delegation handout
+remain open; this change does not establish fairness between individual clients.

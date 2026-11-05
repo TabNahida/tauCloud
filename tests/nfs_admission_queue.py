@@ -17,7 +17,7 @@ from pynfs_acceptance import fixture
 import xdrlib3 as xdr
 
 
-def receive_replies(client, count):
+def receive_replies(client, count, decode=True):
     def read(size):
         data = b''
         while len(data) < size:
@@ -37,7 +37,8 @@ def receive_replies(client, count):
         assert response.unpack_uint() == 1 and response.unpack_uint() == 0
         assert response.unpack_uint() == 0 and response.unpack_bytes() == b''
         assert response.unpack_uint() == 0 and xid not in replies
-        replies[xid] = client.decode4(data[response.get_position():])
+        body = data[response.get_position():]
+        replies[xid] = client.decode4(body) if decode else body
     return replies
 
 

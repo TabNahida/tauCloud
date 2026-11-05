@@ -3,6 +3,8 @@
 #include <string_view>
 namespace tc::nfs_detail {
 constexpr size_t max_record = 256 * 1024;
+constexpr unsigned max_call_records = 24;
+constexpr unsigned max_reply_records = 8;
 struct xdr_error : std::exception {};
 struct reader {
   std::string_view data;

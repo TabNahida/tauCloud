@@ -667,9 +667,16 @@ int nfs_delegation_protocol_suite(bool require_native = false) {
     std::cout << "PASS rejected SEQUENCE, cancellation, duplicate cleanup and late arrivals cannot renew expired clients; old arrivals cannot pin future clients\n";
 
     std::vector<uint64_t> full;
-    for (unsigned i = 0; i < 32; ++i) full.push_back(protocol->admit_request("bounded-arrivals"));
+    for (unsigned i = 0; i < max_call_records; ++i) full.push_back(protocol->admit_request("bounded-arrivals"));
     bool overloaded = false;
     try { protocol->admit_request("over-budget"); }
+    catch (const error &e) { overloaded = std::string_view(e.what()) == "overloaded"; }
+    ok(overloaded);
+    auto reply_hint = writer().u32(123).u32(1).data;
+    for (unsigned i = 0; i < max_reply_records; ++i)
+      full.push_back(protocol->admit_request("reserved-reply-arrivals", reply_hint));
+    overloaded = false;
+    try { protocol->admit_request("over-reply-budget", reply_hint); }
     catch (const error &e) { overloaded = std::string_view(e.what()) == "overloaded"; }
     ok(overloaded);
     for (auto id : full) protocol->cancel_request(id);

@@ -152,8 +152,8 @@ matrices remain pending, and the historical Windows delay phase is still unprove
 [local evidence](docs/evidence/pre-m8/grant-preparation-local.json),
 [targeted remote evidence](docs/evidence/pre-m8/grant-preparation-52-native.json)).
 
-NFS TCP receipt now continues while previous dispatches wait, with 16 processing
-records per connection and 32 globally. A same-connection pre-expiry READ that
+NFS TCP receipt now continues while previous dispatches wait, initially with 16
+records per connection and 32 globally (current class reservations below). A same-connection pre-expiry READ that
 formerly failed with BADSESSION now passes; overflow releases queued admissions
 and permits a fresh OPEN/READ. Four receipt/overflow checks, 19 backchannel, six
 callback-recovery and four lease-lifetime groups pass locally. Bounded incoming
@@ -176,10 +176,18 @@ limit to preserve ordinary progress. A real-TCP saturated ordinary queue still
 accepts valid callbacks; six queue cases, 19 backchannel groups, nine real-KDC
 groups, four ordinary admission groups and 1,185 protocol checks pass locally.
 Linux 6.19 also passes 1,286 protocol component and 1,555 native checks. Remote
-acceptance is pending. Shared admission fairness, outgoing scheduling and durable
+acceptance is pending. Per-client admission fairness, outgoing scheduling and durable
 delegation recovery remain open
 ([details](docs/nfs-delegations.md#bounded-priority-for-callback-responses),
 [local evidence](docs/evidence/pre-m8/nfs-priority-local.json)).
+
+Shared receive admission now reserves eight RPC reply records alongside 24
+ordinary records globally, with sixteen ordinary/four reply records per TCP
+connection. A reproduced seventeenth-record callback disconnect is corrected;
+native ACK waits and captured coroutines obey the same class reservations.
+Authentication and lease advancement remain independent of header classification
+([details](docs/nfs-delegations.md#reserved-callback-receipt-capacity),
+[baseline and acceptance](docs/evidence/pre-m8/nfs-shared-admission-local.json)).
 
 macOS native SMB remains unstable: the `c243218` backend run passes Linux GCC,
 Clang and Windows jobs plus macOS NFSv3, but macOS SMB fails after an authority

@@ -13,7 +13,7 @@ import time
 import traceback
 
 from m7_integration import Client, op
-from nfs_admission_queue import ObservedSocket
+from nfs_admission_queue import ObservedSocket, receive_replies
 from nfs_backchannel_integration import CallbackClient
 from pynfs_acceptance import fixture
 
@@ -38,13 +38,18 @@ def main():
         (f.state / 'config.json').write_text(json.dumps(config))
         f.start()
         report['timing_seconds'] = {}
-        for case in ('valid', 'saturated', 'malformed', 'wrong-xid', 'wrong-transport', 'late'):
+        for case in ('valid', 'saturated', 'shared-saturated', 'malformed', 'wrong-xid', 'wrong-transport', 'late'):
             first_client = len(clients)
             blocker = Client(port); clients.append(blocker); blocker.session()
             state, handle = blocker.open(blocker.root(), ('callback-queue-' + case).encode(), create=True)
             callback = CallbackClient(port); clients.append(callback)
             callback.hold_sequence = True
             callback.establish(); callback.sequence_count(1)
+            if case == 'shared-saturated':
+                blocker = callback
+                reclaimed = callback.compound([op.reclaim_complete(False)])
+                assert reclaimed.status == 0, reclaimed
+                state, handle = callback.open(callback.root(), b'callback-shared', create=True)
             started = time.monotonic()
             identity = f.ctl('status')['file']['identity']
             file_pid = identity['pid']
@@ -52,7 +57,13 @@ def main():
             blocker.sock = ObservedSocket(blocker.sock)
             time.sleep(max(0, started + 3.6 - time.monotonic()))
             os.kill(file_pid, signal.SIGSTOP); stopped = file_pid
-            pending = pool.submit(blocker.compound, [op.putfh(handle), op.read(state, 0, 1)])
+            if case == 'shared-saturated':
+                read_packet = callback.compound([op.putfh(handle), op.read(state, 0, 1)], packet_only=True)
+                packets = [read_packet] + [callback.packet(100003, 4, 0, b'') for _ in range(15)]
+                callback.sock.sendall(b''.join(struct.pack('>I', 0x80000000 | len(p)) + p for p in packets))
+                pending = pool.submit(receive_replies, callback, 16, False)
+            else:
+                pending = pool.submit(blocker.compound, [op.putfh(handle), op.read(state, 0, 1)])
             assert blocker.sock.sent.wait(1)
             time.sleep(.2)
             if case == 'saturated':
@@ -80,10 +91,18 @@ def main():
             sent = time.monotonic() - started
             assert sent >= 5.2 if case == 'late' else sent < 4.8, ('unexpected callback send time', case, sent)
             time.sleep(max(0, started + 5.5 - time.monotonic()))
-            assert not pending.done(), 'file worker fault did not hold dispatch'
+            if pending.done():
+                pending.result()  # Preserve early transport failures as evidence.
+                raise AssertionError('file worker fault did not hold dispatch')
             os.kill(file_pid, signal.SIGCONT); stopped = None
-            pending.result(timeout=12)
-            if case in ('valid', 'saturated'):
+            replies = pending.result(timeout=12)
+            if case == 'shared-saturated':
+                read_xid, = struct.unpack('>I', read_packet[:4])
+                result = callback.decode4(replies.pop(read_xid))
+                assert result.status in (0, 13), result
+                assert result.resarray[0].opsequence.sr_status == 0, result
+                assert len(replies) == 15 and all(body == b'' for body in replies.values())
+            if case in ('valid', 'saturated', 'shared-saturated'):
                 flags = callback.flags()
                 assert not flags & (1 | 512 | 1024), flags
                 assert len(callback.sequences) == 1, 'timely successful callback was retried'
@@ -104,6 +123,7 @@ def main():
             report['timing_seconds'][case] = dict(sent_after_probe=sent, processed_after_probe=time.monotonic() - started)
             report['checks'].append('timely CB_SEQUENCE reply survives delayed dispatch without retry or disconnect' if case == 'valid' else
                 'reserved callback capacity accepts a timely CB_SEQUENCE reply while the ordinary executor is demonstrably full' if case == 'saturated' else
+                'same-connection CB_SEQUENCE reply survives sixteen outstanding ordinary records and returns all replies' if case == 'shared-saturated' else
                 case + ' callback reply cannot validate the path or renew an expired session')
             print('PASS callback queue ' + case, flush=True)
             for c in clients[first_client:]: c.close()
