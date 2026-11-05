@@ -16,6 +16,7 @@ on:
       - 'src/nfs_delegations.inc'
       - 'tests/nfs_lease_lifetime.py'
       - 'tests/nfs_admission_queue.py'
+      - 'tests/nfs_callback_queue.py'
       - 'include/taucloud/nfs_delegation.hpp'
       - 'src/file_nfs_delegation.inc'
       - 'tests/smb_lease_integration.py'
@@ -172,6 +173,9 @@ jobs:
       - name: NFS TCP receipt before expiry while executor workers are occupied
         if: ${{ !cancelled() && steps.compile.outcome == 'success' && runner.os == 'Linux' }}
         run: python tests/nfs_admission_queue.py ${{ matrix.test_options }} --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/nfs-admission-queue.json
+      - name: NFS callback receipt before timeout while dispatch is blocked
+        if: ${{ !cancelled() && steps.compile.outcome == 'success' && runner.os == 'Linux' }}
+        run: python tests/nfs_callback_queue.py ${{ matrix.test_options }} --bin build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }} --output build/acceptance/nfs-callback-queue.json
       - name: SMB shared lease state, wire vectors and break transitions
         if: ${{ !cancelled() && steps.compile.outcome == 'success' }}
         run: ./build/${{ matrix.platform }}/${{ matrix.arch }}/${{ matrix.mode }}/taucloud_smb_lease_tests${{ matrix.suffix }}

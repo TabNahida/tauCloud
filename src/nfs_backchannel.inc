@@ -8,6 +8,7 @@ struct callback_probe {
   std::string gss_handle;
   uint32_t gss_sequence = 0, gss_service = 0;
   bool initializing = false;
+  uint64_t first_arrival = 0;
 };
 std::map<uint32_t, callback_probe> callback_probes;
 std::set<std::string> callback_closing;
@@ -139,6 +140,7 @@ void send_callback_probe(const std::string &id, const std::string &bound, bool c
     call.u32(s.callback_flavor).opaque(s.callback_credential).u32(0).opaque("").fixed(body.data);
   }
   if (call.data.size() > s.callback_request_limit) return;
+  probe.first_arrival = request_boundary();
   if (compound) s.callback_unresolved = true;
   callback_probes.emplace(callback_xid, std::move(probe));
   send_backchannel(bound, std::move(call.data));
@@ -178,7 +180,10 @@ void expire_callback_probes() {
     if (found == sessions.end()) return true;
     auto client = client_ids.find(found->second.client);
     if (client == client_ids.end() || !client_live(found->second.client)) return true;
-    if (probe.deadline > now()) return false;
+    // Receipt only defers timeout until bounded dispatch validates this reply.
+    // It cannot advance a callback slot or renew the client by itself.
+    if (probe.deadline > now() || timely_callback_receipt(item.first, probe.connection,
+        probe.first_arrival, probe.deadline)) return false;
     if (probe.compound) {
       // RFC 8881 2.10.6.2 prohibits retry on a live original transport.
       // Keep the slot occupied until disconnect() confirms that it is gone.
@@ -230,7 +235,8 @@ void callback_reply(uint32_t xid, reader &r) {
   uint32_t operation_status = 0;
   std::string clear;
   try {
-    if (probe.deadline > now() && r.data.size() <= s.callback_response_limit && r.u32() == 0) {
+    if (timely_callback_receipt(xid, connection, probe.first_arrival, probe.deadline, true) &&
+        r.data.size() <= s.callback_response_limit && r.u32() == 0) {
       auto flavor = r.u32();
       auto verifier = r.opaque(400);
       auto accepted = r.u32();

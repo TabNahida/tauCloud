@@ -50,12 +50,14 @@ public:
   // Register a complete received record before waiting in the executor. This
   // preserves still-live state for authentication; it does not renew a lease.
   // Every token must be dispatched once or cancelled, including submit failure.
-  uint64_t admit_request(std::string connection);
+  uint64_t admit_request(std::string connection, std::string_view record = {});
   void cancel_request(uint64_t admission);
   // Reactor variants never wait for native ACKs or the protocol mutex. Drive
   // poll_native while idle and request_ready before submitting a dispatch.
   // Every begun request must be dispatched or abandoned, including errors.
-  uint64_t begin_request(std::string connection);
+  // A supplied record contributes only an untrusted RPC reply header hint;
+  // callback authentication and sequence validation still happen in dispatch.
+  uint64_t begin_request(std::string connection, std::string_view record = {});
   bool request_ready(uint64_t admission);
   void abandon_request(uint64_t admission);
   // False latches native protection loss for this server instance. The reactor

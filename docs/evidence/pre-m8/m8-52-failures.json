@@ -1,0 +1,29 @@
+{
+  "status": "failed",
+  "source_commit": "52b8914dab1509f731c54ea31670302f88038ecb",
+  "run": "https://github.com/TabNahida/tauCloud/actions/runs/41948250876",
+  "results": {
+    "clang": {
+      "job": "https://github.com/TabNahida/tauCloud/actions/runs/41948250876/job/126985708748",
+      "sha256": "b95441d80f290b96b1b4abafecdeb7fe8686ee0c30cd94cad840342ed5effaa9",
+      "errors": [
+        "2026-11-05T01:31:16.5770887Z AssertionError: ('plugins/plan', 503, b'{\"error\":{\"code\":\"package_limit\"}}')"
+      ]
+    },
+    "msvc": {
+      "job": "https://github.com/TabNahida/tauCloud/actions/runs/41948250876/job/126985708955",
+      "sha256": "a0997707d226a8e809c829cee9efba21a37452f1762e6c45188b71e3ebd0d29f",
+      "errors": [
+        "2026-11-05T01:34:13.8774077Z AssertionError: ('disconnect', 'engine_disconnected', 'deadline_exceeded')"
+      ]
+    },
+    "gcc": {
+      "status": "passed"
+    }
+  },
+  "findings": [
+    "Clang fails Docker plugin planning with package_limit after stripping debug data; package sizing needs investigation.",
+    "MSVC expects engine_disconnected from its fake engine but receives deadline_exceeded; the cause is unproven.",
+    "Neither failure trace reports grant_refresh_required or lease_expired. These failures remain unresolved."
+  ]
+}

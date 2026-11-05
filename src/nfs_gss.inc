@@ -11,7 +11,7 @@ void gss_expire() {
 }
 std::string dispatch(std::string_view packet, std::string connection_id, uint64_t *completion, uint64_t admission) {
   if (completion) *completion = 0;
-  if (!admission) admission = admit_request(connection_id);
+  if (!admission) admission = admit_request(connection_id, packet);
   struct finish_admission {
     impl &self;
     uint64_t id;

@@ -824,10 +824,12 @@ struct server::impl {
 server::server(const config &c, domain_call f, callback_call cb, backchannel_send bc, backchannel_close close)
     : impl_(std::make_unique<impl>(c, std::move(f), std::move(cb), std::move(bc), std::move(close))) {}
 server::~server() = default;
-uint64_t server::admit_request(std::string connection) {
-  return impl_->admit_request(std::move(connection));
+uint64_t server::admit_request(std::string connection, std::string_view record) {
+  return impl_->admit_request(std::move(connection), record);
 }
-uint64_t server::begin_request(std::string connection) { return impl_->begin_request(std::move(connection)); }
+uint64_t server::begin_request(std::string connection, std::string_view record) {
+  return impl_->begin_request(std::move(connection), record);
+}
 bool server::request_ready(uint64_t id) { return impl_->request_ready(id); }
 bool server::poll_native() { return impl_->poll_native(); }
 void server::abandon_request(uint64_t id) { impl_->cancel_request(id); }

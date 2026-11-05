@@ -814,6 +814,33 @@ Four queue/pipeline/overflow checks, 19 backchannel groups, six callback-recover
 groups and four lease-lifetime groups pass locally under Clang ASan/UBSan;
 [evidence](evidence/pre-m8/nfs-pipeline-local.json) retains the failing baseline.
 This change does not remove the protocol mutex or provide callback dispatch
-priority. Callback deadlines under executor delay, durable fencing and reclaim
-still require work before production delegation handout. Remote acceptance is
-pending.
+priority. Callback deadlines under executor delay are addressed below; durable
+fencing and reclaim still require work before production delegation handout.
+Remote acceptance is pending.
+
+## Callback response receipt deadlines
+
+A separate real-TCP reproduction at `476e931` demonstrated that a valid
+CB_SEQUENCE response received before the five-second probe timeout could still
+close its connection when file IPC delayed protocol dispatch beyond the timeout.
+Admission now records only the untrusted RPC reply XID alongside connection and
+receipt time. Probe issuance captures an arrival boundary. Timeout maintenance
+defers a probe only while a matching connection/XID record, received after that
+boundary and before the unchanged deadline, remains pending in bounded dispatch.
+
+The dispatcher evaluates the response against its receipt time, then performs
+all existing transport, RPCSEC_GSS, context lifetime, sequence, slot and full-XDR
+checks. A header hint alone cannot advance a slot, validate a callback path or
+renew a client. Cancellation and disconnect remove the pending hint. Unknown
+XIDs, other connections, pre-existing receipts and genuinely late replies cannot
+defer that probe. Invalid matched responses keep their existing failure behavior.
+
+Five delayed-dispatch scenarios pass: timely success, malformed body, wrong XID,
+wrong transport and late arrival. The negatives also verify that the expired
+session cannot be revived. Regression passes 19 backchannel groups, six callback
+recovery groups, nine real-MIT-KDC groups and 1,146 protocol component checks under
+Clang ASan/UBSan. [Evidence](evidence/pre-m8/nfs-callback-queue-local.json) retains
+the failing baseline and test-fixture corrections. The new TCP fault scenarios
+are included in the Linux GCC/Clang Actions matrix. Remote results are pending;
+callback dispatch priority, durable native recovery and production delegation
+handout remain open.

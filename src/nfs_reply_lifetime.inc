@@ -21,6 +21,7 @@ struct received_request {
   bool claimed = false;
   native_request_holds native;
   uint64_t authenticated_client = 0;
+  std::optional<uint32_t> response_xid;
 };
 std::map<uint64_t, received_request> arrivals;
 uint64_t next_arrival = 0;
@@ -80,12 +81,16 @@ uint64_t request_boundary() {
   require(next_arrival != UINT64_MAX, "overloaded");
   return next_arrival + 1;
 }
-uint64_t begin_request(std::string bound) {
+uint64_t begin_request(std::string bound, std::string_view packet = {}) {
   std::lock_guard lock(reply_mutex);
   require(!native_fault, "delegation_owner_lost");
   require(arrivals.size() < 32 && next_arrival != UINT64_MAX, "overloaded");
   auto id = ++next_arrival;
   received_request request{std::move(bound), now()};
+  if (packet.size() >= 8) {
+    reader header(packet); auto xid = header.u32();
+    if (header.u32() == 1) request.response_xid = xid;
+  }
   // Unauthenticated/encrypted records cannot yet be associated with a client.
   // Cover each currently eligible delegation, then cancel unrelated holds once
   // SEQUENCE identifies the client. Late records cannot revive an old lease.
@@ -112,11 +117,20 @@ bool request_ready(uint64_t id) {
 void await_request(uint64_t id) {
   while (!request_ready(id)) std::this_thread::sleep_for(1ms);
 }
-uint64_t admit_request(std::string bound) {
-  auto id = begin_request(std::move(bound));
+uint64_t admit_request(std::string bound, std::string_view packet = {}) {
+  auto id = begin_request(std::move(bound), packet);
   try { await_request(id); }
   catch (...) { cancel_request(id); throw; }
   return id;
+}
+bool timely_callback_receipt(uint32_t xid, const std::string &bound, uint64_t first,
+                             int64_t deadline, bool current_only = false) const {
+  std::lock_guard lock(reply_mutex);
+  return std::any_of(arrivals.begin(), arrivals.end(), [&](const auto &entry) {
+    const auto &[id, request] = entry;
+    return id >= first && request.connection == bound && request.received < deadline &&
+        (current_only ? id == current_arrival : request.response_xid == xid);
+  });
 }
 void cancel_request(uint64_t id) {
   if (!id) return;

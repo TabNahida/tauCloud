@@ -41,4 +41,7 @@ boundary; it does not establish that every Windows timeout has that cause.
 [Local Clang ASan/UBSan evidence](evidence/pre-m8/grant-preparation-local.json)
 records 87 M2, 12,599 M5, 1,550 M7 and 1,146 NFS protocol checks, plus 42 SMB
 lease groups, 15 NFS groups, ten API groups and two NFS admission-queue groups.
-Remote acceptance of this change remains pending.
+Targeted native acceptance at `52b8914` passes Windows SMB/NFS, Linux CIFS
+Kerberos and both Linux 6.19 delegation jobs
+([evidence](evidence/pre-m8/grant-preparation-52-native.json)). Broader matrices
+remain pending; separate M8 package-size/disconnect failures remain recorded.

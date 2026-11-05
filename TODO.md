@@ -145,19 +145,28 @@ SMB/NFS/API obtain fresh authority and retry it at most once, preserving mutatio
 identity; ordinary expiry and revocation remain failures. Deterministic cold
 attachment and NFS retry/revocation tests pass, alongside 87 M2, 12,599 M5,
 1,550 M7 and 1,146 protocol checks. Real TCP/HTTPS regression passes 42 SMB lease,
-15 NFS, ten API and two admission-queue groups. Remote acceptance of this change
-is pending, and the historical Windows delay phase is still unproven
+15 NFS, ten API and two admission-queue groups. Native Windows SMB/NFS, Linux
+CIFS Kerberos and both Linux 6.19 delegation jobs pass at `52b8914`; the broader
+matrices remain pending, and the historical Windows delay phase is still unproven
 ([behavior](docs/file-authorization.md),
-[local evidence](docs/evidence/pre-m8/grant-preparation-local.json)).
+[local evidence](docs/evidence/pre-m8/grant-preparation-local.json),
+[targeted remote evidence](docs/evidence/pre-m8/grant-preparation-52-native.json)).
 
 NFS TCP receipt now continues while previous dispatches wait, with 16 processing
 records per connection and 32 globally. A same-connection pre-expiry READ that
 formerly failed with BADSESSION now passes; overflow releases queued admissions
 and permits a fresh OPEN/READ. Four receipt/overflow checks, 19 backchannel, six
 callback-recovery and four lease-lifetime groups pass locally. Callback dispatch
-priority/deadlines and durable recovery remain open; remote acceptance is pending
+priority and durable recovery remain open; remote acceptance is pending
 ([details](docs/nfs-delegations.md#bounded-concurrent-tcp-record-receipt),
 [baseline and acceptance](docs/evidence/pre-m8/nfs-pipeline-local.json)).
+
+Timely callback replies now retain their original receipt time across delayed
+dispatch. Only a matching, post-probe, pre-deadline RPC hint defers timeout; all
+authentication/sequence checks still precede renewal. Five positive/negative TCP
+fault scenarios, 19 backchannel, six recovery, nine real-KDC groups and 1,146
+protocol checks pass locally. Remote acceptance is pending
+([baseline and acceptance](docs/evidence/pre-m8/nfs-callback-queue-local.json)).
 
 macOS native SMB remains unstable: the `c243218` backend run passes Linux GCC,
 Clang and Windows jobs plus macOS NFSv3, but macOS SMB fails after an authority
@@ -417,6 +426,8 @@ separate unresolved failure ([diagnosis](docs/evidence/pre-m8/m7-0e69-failure-di
 - [ ] Run the expanded unmodified Samba/pynfs suites and native Linux/Windows/macOS matrix; retain every failure/exclusion with an explicit standards-based applicability reason.
 
 ## M8 — Plugins and Docker
+
+- [ ] Resolve the `52b8914` M8 regression failures: Clang Docker plugin planning returns `package_limit`; MSVC's fake-engine disconnect returns `deadline_exceeded` instead of `engine_disconnected`. GCC passes. Causes remain under investigation ([evidence](docs/evidence/pre-m8/m8-52-failures.json)).
 
 - [x] Define manifests, IPC versions, bounded messages and explicit capability grants.
 - [x] Implement worker supervision, health, crash backoff and private configuration/data directories; recover the same verified worker across manager crashes, including startup.

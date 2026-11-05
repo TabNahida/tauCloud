@@ -1,0 +1,182 @@
+{
+  "status": "passed-targeted-acceptance",
+  "source_commit": "52b8914dab1509f731c54ea31670302f88038ecb",
+  "recorded_at": "2026-11-05T01:44:08.314881+00:00",
+  "native": {
+    "windows_smb": {
+      "run": "https://github.com/TabNahida/tauCloud/actions/runs/41948250864",
+      "artifacts": {
+        "windows-native-security.json": {
+          "sha256": "44d677b151973946d8c2de51a444c0d5ca7b33df3dddb38cb80af7a0e4768b86",
+          "status": "passed",
+          "host": "Windows-2025Server-10.0.26100-SP0",
+          "client": "Windows native SMB redirector",
+          "connection": {
+            "ServerName": "127.0.0.1",
+            "ShareName": "smb",
+            "Dialect": "3.1.1",
+            "Encrypted": true,
+            "Signed": false
+          },
+          "security": "native Get-Acl/Set-Acl, SID roundtrip, deny write and preserve read"
+        },
+        "windows-object-id.json": {
+          "sha256": "9fc8730ebda348459482203d002e4ed72628950ff4da95ced5299ab0d35cf26b",
+          "status": "passed",
+          "checks": [
+            "210: extended info preserves identity across file/directory metadata-only opens; malformed/unauthorized mutations leave metadata intact; DELETE is idempotent and preserves data",
+            "210: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+            "300: extended info preserves identity across file/directory metadata-only opens; malformed/unauthorized mutations leave metadata intact; DELETE is idempotent and preserves data",
+            "300: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+            "302: extended info preserves identity across file/directory metadata-only opens; malformed/unauthorized mutations leave metadata intact; DELETE is idempotent and preserves data",
+            "302: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+            "311: extended info preserves identity across file/directory metadata-only opens; malformed/unauthorized mutations leave metadata intact; DELETE is idempotent and preserves data",
+            "311: absent GET, invalid requests without mutation, repeatable IDs, metadata-only handles, rename and directories",
+            "identifiers survive all-service restart and out-of-band native rename",
+            "delete completes, same-name recreation has a new native incarnation and identifiers follow native filesystem behavior",
+            "read-only share can retrieve existing IDs but cannot create metadata",
+            "revoking share write authority denies mutations through an already-open WRITE_ATTRIBUTES handle without changing its identifier"
+          ]
+        }
+      }
+    },
+    "linux_smb": {
+      "run": "https://github.com/TabNahida/tauCloud/actions/runs/41948250837",
+      "artifacts": {
+        "smb-gss.json": {
+          "sha256": "72bc1b5b161a1403d58d14e66e6c3fba4c91be48248d0e72641e1774b7688134",
+          "status": "passed",
+          "checks": [
+            "principal mappings require administrator authority and reject ambiguous duplicate principal bindings",
+            "real Kerberos and SPNEGO negotiate authenticate SMB2.1/3.0/3.0.2/3.1.1; independent client validates signing and AES encryption during write/read/flush/rename/truncate/delete",
+            "AES-256-CCM/GCM derive from the complete 32-byte Kerberos key with independent signed setup, encrypted I/O and renewal checks for Kerberos/SPNEGO",
+            "unmodified Samba smbclient requires Kerberos and verifies 1 MiB signed SMB2.1 and encrypted SMB3.1.1 roundtrips",
+            "unmapped principals, tickets for another acceptor and modified authenticators fail without NTLM or guest fallback",
+            "independent raw Kerberos verifies mutual AP-REP and final SMB2 HMAC; replaying the same AP-REQ on a fresh transport is rejected",
+            "Kerberos without GSS mutual authentication still verifies SMB2 SESSION_SETUP signing and signed file I/O; replay remains rejected",
+            "fresh Kerberos and SPNEGO renew all SMB2/3 dialects with unchanged signing/cipher keys and live file handles",
+            "renewal cannot switch to another Kerberos principal mapped to the same account or revive a revoked mapping token; failures release exclusive opens",
+            "live principal mapping revocation terminates existing file authority and new logins; explicit reenable admits fresh authentication",
+            "atomic cifs keytab rotation admits fresh tickets while existing signed/encrypted sessions remain valid",
+            "ticket lifetime bounds SMB authority; Kerberos is independent of NTLM enrollment and existing mandatory-MIC NTLM authentication still works",
+            "native Linux kernel CIFS uses Kerberos for signed SMB2.1 and encrypted SMB3.0/3.0.2/3.1.1 roundtrips"
+          ],
+          "native": {
+            "status": "passed",
+            "profiles": [
+              {
+                "dialect": "2.1",
+                "security": "krb5",
+                "status": "passed",
+                "checks": [
+                  "kernel CIFS Kerberos mount",
+                  "mandatory signing",
+                  "1 MiB write/fsync/read",
+                  "rename/overwrite/truncate/enumerate/delete"
+                ]
+              },
+              {
+                "dialect": "3.0",
+                "security": "krb5",
+                "status": "passed",
+                "checks": [
+                  "kernel CIFS Kerberos mount",
+                  "required SMB3 encryption",
+                  "1 MiB write/fsync/read",
+                  "rename/overwrite/truncate/enumerate/delete"
+                ]
+              },
+              {
+                "dialect": "3.02",
+                "security": "krb5",
+                "status": "passed",
+                "checks": [
+                  "kernel CIFS Kerberos mount",
+                  "required SMB3 encryption",
+                  "1 MiB write/fsync/read",
+                  "rename/overwrite/truncate/enumerate/delete"
+                ]
+              },
+              {
+                "dialect": "3.1.1",
+                "security": "krb5",
+                "status": "passed",
+                "checks": [
+                  "kernel CIFS Kerberos mount",
+                  "required SMB3 encryption",
+                  "1 MiB write/fsync/read",
+                  "rename/overwrite/truncate/enumerate/delete"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    "windows_nfs": {
+      "run": "https://github.com/TabNahida/tauCloud/actions/runs/41948250882",
+      "artifacts": {
+        "nfs-create.json": {
+          "sha256": "079776398677bc6695efd94deb3f648e85468db6c73d0f2ba4a72773547038ea",
+          "status": "passed",
+          "checks": [
+            "NFSv3 MKDIR accepts zero size hints without attempting to truncate a directory",
+            "required suppattr_exclcreat advertises actual writable creation attributes",
+            "exclusive verifier retry preserves content; mismatched verifier and unsupported exclusive attributes reject without creation",
+            "UNCHECKED ignores nonzero size and mode on existing files; zero size truncates only after share reservations permit it",
+            "CREATE and OPEN return the attributes actually applied"
+          ]
+        },
+        "windows-native-nfs.json": {
+          "sha256": "0b0fc8f27bb369c449bcdd8a82373ef4cf358efb2a56893cd56dd6391b0d7839",
+          "status": "passed",
+          "host": "Windows-2025Server-10.0.26100-SP0",
+          "checks": [
+            "native MOUNT and NFSv3 over TCP",
+            "1 MiB flush and SHA256 readback",
+            "rename, truncate, enumeration and delete"
+          ],
+          "client": "Windows native Client for NFS",
+          "transport": "tcp",
+          "locking": "nolock",
+          "version": 3
+        }
+      }
+    }
+  },
+  "delegation": {
+    "run": "https://github.com/TabNahida/tauCloud/actions/runs/41948250849",
+    "compilers": {
+      "gcc": {
+        "sha256": "907d197d03063e2b6b9f9b4fffed982dc04856b51e848a63c5d35b0118e32175",
+        "mandatory_marker": true,
+        "groups": [
+          "PASS CHANNEL/nonblocking-handshake-ACK-errors-fixed-timeout 491 checks",
+          "PASS pre-operation authorization refresh retries once with stable mutation identity, fresh authority, revocation and ordinary expiry boundaries",
+          "PASS distinct delegation state, CLAIM_DELEG_CUR_FH, CLOSE/disconnect independence and client/principal/file/access checks",
+          "PASS native owner SIGKILL fences new/queued requests and an in-flight file result without waiting for the protocol mutex",
+          "PASS 1253 delegation protocol/native component checks; production handout remains gated",
+          "PASS native delegation 1538 checks"
+        ]
+      },
+      "clang": {
+        "sha256": "8ce31d9bf22b5d00ac60a372506e47cc041e1f32d8bd22694c3015c430b5399f",
+        "mandatory_marker": true,
+        "groups": [
+          "PASS CHANNEL/nonblocking-handshake-ACK-errors-fixed-timeout 491 checks",
+          "PASS pre-operation authorization refresh retries once with stable mutation identity, fresh authority, revocation and ordinary expiry boundaries",
+          "PASS distinct delegation state, CLAIM_DELEG_CUR_FH, CLOSE/disconnect independence and client/principal/file/access checks",
+          "PASS native owner SIGKILL fences new/queued requests and an in-flight file result without waiting for the protocol mutex",
+          "PASS 1241 delegation protocol/native component checks; production handout remains gated",
+          "PASS native delegation 1584 checks"
+        ]
+      }
+    }
+  },
+  "limits": [
+    "This records four passing targeted workflows, not the complete backend/SMB metadata matrices.",
+    "The exact phase of the historical Windows M2 expiry remains unproven.",
+    "Production NFS delegation handout remains gated; native protocol groups use the injected component provider.",
+    "The same commit has unresolved M8 Clang package_limit and MSVC Docker disconnect/deadline failures, recorded separately."
+  ]
+}

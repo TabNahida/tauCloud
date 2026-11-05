@@ -107,7 +107,7 @@ pace::task<outgoing_reply> process(nfs_runtime &s, std::string packet, std::stri
   auto p = std::make_shared<pending>();
   // This runs on the transport reactor after record assembly, before either
   // the bounded executor or the protocol mutex can delay authentication.
-  if (!admission) admission = s.protocol.begin_request(connection);
+  if (!admission) admission = s.protocol.begin_request(connection, packet);
   struct admission_cleanup {
     nfs_detail::server &protocol;
     uint64_t id;
@@ -189,7 +189,7 @@ pace::task<void> serve(nfs_runtime &s, pace::tcp::stream stream) {
       // Bound captured packets before scheduling any coroutine. Admission is
       // recorded here, not when the scheduled coroutine eventually runs.
       require(c->processing < 16 && s.processing < 32, "overloaded");
-      auto admission = s.protocol.begin_request(connection);
+      auto admission = s.protocol.begin_request(connection, record.data);
       ++c->processing; ++s.processing;
       try {
         s.io->spawn(process_record(s, c, std::move(record.data), connection, admission));

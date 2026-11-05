@@ -1,0 +1,144 @@
+{
+  "status": "passed",
+  "source_base": "476e931b05e89abbf2b341cee8e17b9c32f8e3b9",
+  "recorded_at": "2026-11-05T01:43:45.983096+00:00",
+  "compiler": "Clang debug ASan/UBSan",
+  "source_sha256": {
+    "include/taucloud/nfs.hpp": "601d34efa76aefcd56b7784ab80f06ca37a65b380c086447d030eaff9ccf647d",
+    "src/nfs.cpp": "9a852df3d8407065ffd2bd8e267a909f83229f05c72f7e7233c2142054f9eb6f",
+    "src/nfs_backchannel.inc": "d365e576b347ebb2eebd37b8d7a8ba9987804810d64b7e146625178b3540b6bf",
+    "src/nfs_gss.inc": "4c086afc5c0f909804f0379f068676462d1e8ca34e5b5db6e663b180c76540a4",
+    "src/nfs_protocol.cpp": "cc37fe89031da770f47a2625372df18d6247f801a638ab3a9029251f01b87167",
+    "src/nfs_reply_lifetime.inc": "a21fb33f7b02edbdda19d10642764d0ed1ace5d8e02489489b98172522029146",
+    "tests/nfs_callback_queue.py": "e23ee27cc98520e9c4167b56afd448d0a6dd76db7c82ae6caa733f6c772e59f2",
+    ".github/workflows/smb-metadata.yml": "6cd03fb30089fdba240763f6176d639ada2c75d7dba6039fe83d75b560ab2199"
+  },
+  "baseline": {
+    "source_commit": "476e931b05e89abbf2b341cee8e17b9c32f8e3b9",
+    "sha256": "1d59c717f353556d4e4873dbaa48ab58b724008a6197d92e6773bd20673496bb",
+    "error": "Traceback (most recent call last):\n  File \"/media/data1/Project/Network/tauCloud/tests/nfs_callback_queue.py\", line 60, in main\n    flags = callback.flags()\n            ^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/tests/nfs_backchannel_integration.py\", line 124, in flags\n    r = self.compound([op.putrootfh(), op.getfh()])\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/tests/m7_integration.py\", line 67, in compound\n    return self.decode4(self.exchange(packet))\n                        ^^^^^^^^^^^^^^^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/tests/nfs_backchannel_integration.py\", line 86, in exchange\n    marker = struct.unpack('>I', read(4))[0]\n                                 ^^^^^^^\n  File \"/media/data1/Project/Network/tauCloud/tests/nfs_backchannel_integration.py\", line 80, in read\n    part = self.sock.recv(n-len(data)); assert part, 'connection closed'\n                                               ^^^^\nAssertionError: connection closed\n"
+  },
+  "results": {
+    "validated": {
+      "sha256": "199feb5a72e25ad7618d20fd226d6e90e30bb73e7bdb4ce60ba9f50315a9593c",
+      "checks": [
+        "timely CB_SEQUENCE reply survives delayed dispatch without retry or disconnect",
+        "malformed callback reply cannot validate the path or renew an expired session",
+        "wrong-xid callback reply cannot validate the path or renew an expired session",
+        "wrong-transport callback reply cannot validate the path or renew an expired session",
+        "late callback reply cannot validate the path or renew an expired session"
+      ],
+      "timing_seconds": {
+        "valid": {
+          "sent_after_probe": 3.8006535790045746,
+          "processed_after_probe": 5.547782035020646
+        },
+        "malformed": {
+          "sent_after_probe": 3.8005271310103126,
+          "processed_after_probe": 5.5500523400260136
+        },
+        "wrong-xid": {
+          "sent_after_probe": 3.8005639080074616,
+          "processed_after_probe": 5.548796567018144
+        },
+        "wrong-transport": {
+          "sent_after_probe": 3.800580602022819,
+          "processed_after_probe": 5.54949335398851
+        },
+        "late": {
+          "sent_after_probe": 5.200148801959585,
+          "processed_after_probe": 5.554033475986216
+        }
+      }
+    },
+    "backchannel": {
+      "sha256": "51edb28636374d7de2b1160cfabcd1ff1064c48d818a6da7b9c2eafa389d8171",
+      "checks": [
+        "CREATE_SESSION binds a bidirectional transport; CB_NULL uses the requested program/version and AUTH_NONE while forechannel RPC stays usable",
+        "probe replies are bound to their exact TCP connection and XID; cross-connection, duplicate and unknown replies cannot change path state",
+        "BACKCHANNEL_CTL changes program and invalidates old probes; malformed matched replies keep path down and idempotent rebinding reprobes it",
+        "cleared callback credentials and destroyed/recreated sessions cannot be validated by a stale probe response",
+        "BIND_CONN_TO_SESSION supports BACK and BACK_OR_BOTH on new transports, rejects invalid directions and changes to existing channel roles",
+        "AUTH_SYS CB_NULL carries the offered timestamp, machine name, UID/GID and supplementary groups exactly",
+        "five-second probe timeout ignores late success; rebind recovers the path without recreating the session",
+        "losing the only callback transport sets CB_PATH_DOWN on a surviving forechannel connection",
+        "CB_NULL success alone does not validate the sequenced backchannel; CB_SEQUENCE success on the wrong transport is ignored",
+        "truncated/trailing XDR and mismatched status/tag/count/op/session/sequence/slot close the transport before exact retry; only a valid success advances the slot",
+        "successful CB_SEQUENCE advances exactly once; BACKCHANNEL_CTL retains the session sequence and ignores old duplicate replies",
+        "BIND and callback program replacement never retry an outstanding CB_COMPOUND on a live transport; its original reply releases the slot without validating the new program",
+        "completion of a callback issued before credential removal advances its slot but cannot resurrect the disabled backchannel",
+        "CB_COMPOUND timeout closes the original transport before retry; stale RPC replies on the replacement cannot complete the unresolved slot",
+        "one callback slot serializes multiple bound paths; transport loss retries the unresolved request on another bound connection",
+        "loss of the only backchannel with an unanswered CB_COMPOUND reports CB_PATH_DOWN_SESSION; binding a replacement clears that flag and preserves the pending sequence",
+        "client-advertised slot growth beyond CREATE_SESSION and shrink back to zero are accepted without allocation or increasing callback concurrency",
+        "destroying and recreating a session starts a distinct callback slot at sequence one; old CB_COMPOUND success cannot validate it",
+        "UINT32_MAX offered callback slots require only slot zero; AUTH_SYS credentials must fit the negotiated complete CB_COMPOUND request size"
+      ]
+    },
+    "recovery": {
+      "sha256": "acdb1f56e3898d67867a463844d1ffa96631362a0e6125799dc06272fbe7e731",
+      "checks": [
+        "initial CB_SEQUENCE BADSESSION retries exact slot after session-installation race, without requiring forechannel SEQUENCE on a callback-only session",
+        "initial-callback classification is captured when sent, so a forechannel SEQUENCE overtaking its BADSESSION reply cannot create a false permanent fault",
+        "CB_SEQUENCE DELAY retains exact request/slot, retries after backoff on the live connection and leaves ordinary file operations usable",
+        "BADSESSION, BADSLOT, SEQ_MISORDERED and SEQ_FALSE_RETRY report BACKCHANNEL_FAULT without tearing down the shared TCP stream; a new session recovers",
+        "CONN_NOT_BOUND_TO_SESSION withdraws callback readiness; explicit rebind retries the same sequence without marking a permanent session fault",
+        "an error reply with trailing XDR remains invalid and must disconnect before an exact retry"
+      ]
+    },
+    "gss": {
+      "sha256": "3fc9f9c401405e3c9d83c81ee56b7d688f30a75334fc8db9e062139eab98032f",
+      "checks": [
+        "one context shared across 32 sessions and three TCP paths admits only its 64-entry RPC window; completing the oldest request releases the next authenticated callback",
+        "krb5/krb5i/krb5p CB_NULL, CB_SEQUENCE and CB_NOTIFY_LOCK use real Kerberos, independent RPC counters and exact referring calls; notifications grant no lock",
+        "BACKCHANNEL_CTL rejects unknown handles/invalid services/oversized RPC credentials atomically; existing handles are idempotent and counters never reset",
+        "BACKCHANNEL_CTL adds handles instead of replacing them; empty additions retain GSS, and destruction of another context preserves the live path",
+        "sixteen live callback tuples are bounded; exhaustion preserves the existing channel and duplicate offers consume no extra capacity",
+        "negotiated channel sizes include exact GSS credential, MIC and wrapped-body overhead; exact request limits succeed and one-byte-short channels send no oversized callbacks",
+        "unsigned, bad MIC/ciphertext and wrong authenticated sequences cannot complete callbacks; disconnect/rebind retries exact CB_SEQUENCE plaintext with fresh RPC authentication",
+        "authenticated integrity/privacy DELAY replies retry unchanged slots on live transports; established slot faults report BACKCHANNEL_FAULT through the protected forechannel",
+        "nearly expired and expired contexts set SEQUENCE flags; expiry/destroy removes path authority without AUTH_NONE fallback, and fresh contexts restore it"
+      ]
+    }
+  },
+  "protocol": {
+    "sha256": "fd6c89501eaea8ba39bf25e1170c665022b4e16e1c0a11e7b4992cbdc599c649",
+    "groups": [
+      "PASS pre-operation authorization refresh retries once with stable mutation identity, fresh authority, revocation and ordinary expiry boundaries",
+      "PASS production file authority declines wire handout without creating a hidden native guard",
+      "PASS slow COMPOUND completion preserves a full client lease after execution",
+      "PASS denied cached SEQUENCE replay has no lease-renewing reply completion token",
+      "PASS named CLAIM_DELEGATE_CUR materializes and replays without self-recall; foreign states, clients, principals and write access are rejected",
+      "PASS distinct delegation state, CLAIM_DELEG_CUR_FH, CLOSE/disconnect independence and client/principal/file/access checks",
+      "PASS WANT replay, typed CB_RECALL, definitive DELAY retry and acknowledgment without premature release",
+      "PASS wrong callback operation preserves the exact slot until confirmed disconnect and replays on a replacement backchannel",
+      "PASS recall deadline survives continued renewals; TEST_STATEID/FREE_STATEID acknowledge revocation while OPEN remains valid",
+      "PASS authority loss renews coherence past the old lease under fixed recall and still permits authenticated return",
+      "PASS validated CB_SEQUENCE renewal keeps an idle sibling session alive beyond its original lease",
+      "PASS session destruction retains client-owned delegation; foreign owner replacement and premature client destruction are refused",
+      "PASS independent reply/replay pins retain OPEN through delayed delivery; duplicate completion cannot extend expiry",
+      "PASS disconnect conservatively ends pending transmission with a full lease and leaves no immortal client pin",
+      "PASS a request received before expiry retains its OPEN across executor delay and maintenance until validated SEQUENCE",
+      "PASS rejected SEQUENCE, cancellation, duplicate cleanup and late arrivals cannot renew expired clients; old arrivals cannot pin future clients",
+      "PASS request admission is bounded, cancellation restores capacity and disconnect invalidates undispatched tokens",
+      "PASS 1146 delegation protocol/native component checks; production handout remains gated"
+    ]
+  },
+  "fixture_corrections": [
+    {
+      "sha256": "97ac12701fb2eeb137b60a8416398111532a8e1432a3140648f6bb3e0c2399bb",
+      "issue": "The first positive case passed, then a repeated guarded CREATE reused the same filename. Each scenario now has a distinct file."
+    },
+    {
+      "sha256": "3fa4e046a4cc5a13ee88085453bbc1c8069d680405c1cefc9e0d85b2b0d6c773",
+      "issue": "The unknown-XID negative case incorrectly required automatic transport closure after session expiry. Reader teardown is now confirmed before testing the expired session; malformed matched replies still require server closure."
+    }
+  ],
+  "limits": [
+    "Untrusted RPC header hints defer only probe timeout while a bounded request is pending; full callback validation is still required before slot advancement and renewal.",
+    "A candidate must use the exact connection/XID and be received after probe issuance and before the original deadline.",
+    "This does not remove the protocol mutex or implement callback dispatch priority.",
+    "Native protection, durable recovery and production delegation handout remain separately gated.",
+    "Remote acceptance is pending."
+  ]
+}

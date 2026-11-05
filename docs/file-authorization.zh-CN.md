@@ -12,4 +12,4 @@ M2/M5/M7 核心测试在原生根目录打开处注入单次延时，确保初�
 
 此前 Windows M2 的一次 mkdir 耗时 4,575 毫秒，超过两秒授权期限（[失败证据](evidence/pre-m8/windows-m2-4a-failure.json)），但具体延迟阶段尚未确定。本次修复覆盖已复现的冷初始化边界，不能据此认定所有 Windows 超时都具有相同原因。
 
-[本地 Clang ASan/UBSan 证据](evidence/pre-m8/grant-preparation-local.json)记录了 M2 87 项、M5 12,599 项、M7 1,550 项及 NFS 协议 1,146 项检查，以及 SMB 租约 42 组、NFS 15 组、API 10 组和 NFS 排队 2 组真实集成测试。本次改动的远程验收仍待完成。
+[本地 Clang ASan/UBSan 证据](evidence/pre-m8/grant-preparation-local.json)记录了 M2 87 项、M5 12,599 项、M7 1,550 项及 NFS 协议 1,146 项检查，以及 SMB 租约 42 组、NFS 15 组、API 10 组和 NFS 排队 2 组真实集成测试。`52b8914` 已通过原生 Windows SMB/NFS、Linux CIFS Kerberos 及 GCC/Clang Linux 6.19 委托验收（[证据](evidence/pre-m8/grant-preparation-52-native.json)）。更广的矩阵仍在运行；另有 M8 包大小和断连测试失败，已单独记录。
