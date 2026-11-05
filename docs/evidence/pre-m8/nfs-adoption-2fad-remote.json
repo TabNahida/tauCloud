@@ -1,0 +1,60 @@
+{
+  "status": "failure",
+  "recorded_at": "2026-11-05T04:41:27.472625+00:00",
+  "source_commit": "2fad84c5f4b93def3d8ec6151bd25e7d3c7d47a8",
+  "run_url": "https://github.com/TabNahida/tauCloud/actions/runs/41966762000",
+  "jobs": [
+    {
+      "name": "kernel (clang, debug, y)",
+      "conclusion": "failure",
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41966762000/job/127045442668"
+    },
+    {
+      "name": "kernel (gcc, release, n)",
+      "conclusion": "success",
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41966762000/job/127045443033"
+    }
+  ],
+  "artifacts": {
+    "gcc": {
+      "sha256": "a3daf01fd30bd97c7aa4b1e0cb3e17e89992527e65fd91b06cce744fc1b70be8",
+      "mandatory_marker": true,
+      "selected_lines": [
+        "PASS \"/tmp/delegation\" CHANNEL/primary-only-record-fence-unknown-delivery-and-fixed-recall",
+        "PASS \"/tmp/domain\" FILE-DOMAIN/expired-authority-coherence-retention",
+        "PASS \"/tmp/domain\" FILE-DOMAIN/independent-channel-publication-expiry-completion-EOF-return",
+        "PASS \"/tmp/domain\" FILE-DOMAIN/reservation-binding-retry-completion-capacity-revocation",
+        "PASS \"/tmp/domain\" FILE-DOMAIN/journal-private-recovery-fresh-authority-epoch-and-channel-fencing",
+        "PASS \"/tmp/domain\" FILE-DOMAIN/client-adoption-authority-idempotency-channel-fence-and-reservation-floor",
+        "PASS \"/tmp/domain\" FILE-DOMAIN/owner-renew-recall-return-replacement-SIGKILL",
+        "PASS \"/tmp/domain\" FILE-DOMAIN/SIGKILL-intent-acquired-committed-and-return-intent-boundaries",
+        "PASS \"/tmp/domain\" FILE-DOMAIN/SIGKILL-adoption-intent-fenced-and-committed-before-reply",
+        "PASS \"/tmp/domain\" FILE-DOMAIN/corrupt-public-failed-journal-and-unobservable-owner-fencing",
+        "PASS \"/disk/delegation\" CHANNEL/primary-only-record-fence-unknown-delivery-and-fixed-recall",
+        "PASS \"/disk/domain\" FILE-DOMAIN/expired-authority-coherence-retention",
+        "PASS \"/disk/domain\" FILE-DOMAIN/independent-channel-publication-expiry-completion-EOF-return",
+        "PASS \"/disk/domain\" FILE-DOMAIN/reservation-binding-retry-completion-capacity-revocation",
+        "PASS \"/disk/domain\" FILE-DOMAIN/journal-private-recovery-fresh-authority-epoch-and-channel-fencing",
+        "PASS \"/disk/domain\" FILE-DOMAIN/client-adoption-authority-idempotency-channel-fence-and-reservation-floor",
+        "PASS \"/disk/domain\" FILE-DOMAIN/owner-renew-recall-return-replacement-SIGKILL",
+        "PASS \"/disk/domain\" FILE-DOMAIN/SIGKILL-intent-acquired-committed-and-return-intent-boundaries",
+        "PASS \"/disk/domain\" FILE-DOMAIN/SIGKILL-adoption-intent-fenced-and-committed-before-reply",
+        "PASS \"/disk/domain\" FILE-DOMAIN/corrupt-public-failed-journal-and-unobservable-owner-fencing",
+        "PASS 1470 delegation protocol/native component checks; production handout remains gated",
+        "PASS native delegation 2087 checks"
+      ]
+    },
+    "clang": {
+      "sha256": "eb0a44e11fab3c9cfbc27f3344498cfdb033bf9e341df30dba2dba29a36a8111",
+      "mandatory_marker": false,
+      "selected_lines": [
+        "FAIL inventory_live_order"
+      ]
+    }
+  },
+  "analysis": "The Clang job failed inventory_live_order in the pre-existing owner inventory test, before file-domain adoption cases. That test used a 300 ms lease and assumed both records remained live across subsequent IPC calls. The log does not record the returned inventory or exact elapsed time. The corrected fixture pins both records during ordering checks, then cancels only the first reservation without renewal and waits for its acknowledged expiry. GCC passed the whole suite.",
+  "limits": [
+    "Remote acceptance of the corrected inventory fixture and protocol reclaim changes is still required.",
+    "This run does not prove Full SMB/NFS or production delegation readiness."
+  ]
+}

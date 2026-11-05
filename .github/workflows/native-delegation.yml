@@ -19,6 +19,7 @@ on:
       - 'src/nfs_backchannel.inc'
       - 'include/taucloud/runtime/priority_mutex.hpp'
       - 'src/nfs_delegations.inc'
+      - 'src/nfs_delegation_recovery.inc'
       - 'src/nfs_gss.inc'
       - 'src/nfs_v4.inc'
       - 'include/taucloud/files.hpp'

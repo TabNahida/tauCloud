@@ -146,12 +146,21 @@ negotiation fixture and native NFS fixture. Repeated
 initialization phase is not established. Clang M8 still fails Docker package
 planning with `package_limit`; its GCC and Windows jobs pass. These remain open
 ([failure evidence](docs/evidence/pre-m8/remote-02d2-failures.json)).
+The same commit's Clang metadata job also fails both callback-output tests while
+establishing TCP backpressure: the connection is already in FIN_WAIT1 before
+callback assertions. Its GCC/MSVC metadata jobs pass; the closure cause remains
+unresolved and is retained in the same evidence.
 
 Private native delegation adoption now transfers a durable client binding while
 fencing old reservation channels, conservatively completing uncertain replies,
 preserving fixed recall and rejecting old reservation tokens. Exact retries do
-not renew or invalidate the replacement client's channels. Protocol-side durable
-adoption coordination and OPEN/WANT_DELEGATION reclaim remain open; production
+not renew or invalidate the replacement client's channels. Server-restart READ
+adoption coordination and OPEN/WANT_DELEGATION reclaim now use the original
+native binding, fresh authority, forced recall, uncertain-reply recovery, dummy
+OPEN and delegated OPENs during grace
+([implementation](docs/nfs-delegations.md#server-restart-read-delegation-reclaim),
+[local evidence](docs/evidence/pre-m8/nfs-protocol-reclaim-local.json)). Full client/host
+failure recovery and native-client compatibility remain open; production
 handout remains gated ([implementation](docs/nfs-delegations.md#client-binding-adoption-across-protocol-restart),
 [acceptance](docs/evidence/pre-m8/nfs-adoption-local.json)).
 
@@ -166,7 +175,7 @@ capability and acquisition intent precede native acquisition, and result commit
 precedes handout. Startup reconciles owner inventory and retained descriptions,
 requires fresh authorization before channel publication, persists policy epochs
 and fences failed journal writes. Real process-crash boundary acceptance is
-recorded separately; NFS protocol reclaim and full instance fencing remain open
+recorded separately; server-restart READ reclaim is implemented above, while full instance fencing remains open
 ([implementation](docs/nfs-delegations.md#file-domain-journal-and-adoption),
 [local evidence](docs/evidence/pre-m8/nfs-domain-recovery-local.json)).
 
@@ -177,7 +186,7 @@ restoration using the expected native incarnation. Enumeration has one total
 SIGKILL recovery tests cover pre-acquire intent without a committed result ID,
 and retained readonly/write, private-pin, unlinked and directory descriptions.
 Independent wire faults cover descriptor cleanup and enumeration limits.
-File-domain integration follows above; NFS protocol reclaim remains open
+File-domain integration and server-restart READ reclaim follow above; full client/host-loss recovery remains open
 ([details](docs/nfs-delegations.md#recovery-inventory-and-retained-descriptions),
 [local evidence](docs/evidence/pre-m8/nfs-owner-restore-local.json)).
 

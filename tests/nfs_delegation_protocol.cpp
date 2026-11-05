@@ -1,4 +1,5 @@
 #include <taucloud/files.hpp>
+#include <taucloud/database.hpp>
 #include <taucloud/native_delegation_owner.hpp>
 #include <taucloud/nfs.hpp>
 #include <taucloud/nfs_output_queue.hpp>
@@ -186,7 +187,8 @@ int nfs_delegation_protocol_suite(bool require_native = false) {
     std::deque<std::pair<std::string, std::string>> callbacks;
     std::vector<std::string> closes;
     server *network = nullptr;
-    auto protocol = std::make_unique<server>(cfg, [&](std::string target, std::string op, json body) -> json {
+    unsigned adoption_fault = 0;
+    auto domain = [&](std::string target, std::string op, json body) -> json {
       if (target == "identity") {
         ++authorizations;
         require(authorized, "forbidden");
@@ -212,7 +214,16 @@ int nfs_delegation_protocol_suite(bool require_native = false) {
         renewal_entered = true;
         while (blocked_renewal) std::this_thread::sleep_for(std::chrono::milliseconds(1));
       }
+      if (op == "nfs_delegation" && body.value("op", "") == "adopt" && adoption_fault == 1) {
+        adoption_fault = 0; throw error("delegation_recovery_failed");
+      }
       auto result = store->dispatch(op, body, ctx());
+      if (op == "nfs_delegation" && body.value("op", "") == "channel" && adoption_fault == 3) {
+        adoption_fault = 0; throw error("io_error");
+      }
+      if (op == "nfs_delegation" && body.value("op", "") == "adopt" && adoption_fault == 2) {
+        adoption_fault = 0; throw error("io_error");
+      }
       if (op == "nfs_delegation" && body.value("op", "") == "return" && independent_owner)
         ok(network->poll_native()); // Deliberate return closes its owner channel before the file RPC ACK.
       if (op == "nfs_delegation" && body.value("op", "") == "channel")
@@ -228,11 +239,18 @@ int nfs_delegation_protocol_suite(bool require_native = false) {
         std::this_thread::sleep_for(std::chrono::milliseconds(3500));
       }
       return result;
-    }, callback_call{}, [&](auto connection, auto packet, auto delivery) {
-      callbacks.emplace_back(connection, packet); ok(delivery->finish());
-    },
-       [&](auto connection) { closes.push_back(connection); });
-    network = protocol.get();
+    };
+    auto server_cfg = cfg;
+    std::unique_ptr<server> protocol;
+    auto restart_protocol = [&] {
+      protocol.reset(); network = nullptr; callbacks.clear(); closes.clear();
+      protocol = std::make_unique<server>(server_cfg, domain, callback_call{},
+          [&](auto connection, auto packet, auto delivery) {
+            callbacks.emplace_back(connection, packet); ok(delivery->finish());
+          }, [&](auto connection) { closes.push_back(connection); });
+      network = protocol.get();
+    };
+    restart_protocol();
     struct peer { std::string connection, session; uint64_t client = 0; uint32_t sequence = 0, uid = 1000; };
     uint32_t xid = 0, last_flags = 0;
     bool track_reply = false;
@@ -274,16 +292,17 @@ int nfs_delegation_protocol_suite(bool require_native = false) {
       }
       r.end(); return std::string();
     };
-    auto connect = [&](std::string connection) {
-      peer p{connection, ""};
-      auto result = send(p, {writer().u32(42).fixed("12345678").opaque(connection).u32(0).u32(0).u32(0)}, 0, false);
+    auto connect = [&](std::string connection, bool complete = true, uint32_t uid = 1000,
+                       std::string verifier = "12345678") {
+      peer p{connection, "", 0, 0, uid};
+      auto result = send(p, {writer().u32(42).fixed(verifier).opaque(connection).u32(0).u32(0).u32(0)}, 0, false);
       reader r(result); p.client = r.u64(); auto sequence = r.u32();
       writer create;
       create.u32(43).u64(p.client).u32(sequence).u32(2);
       for (int i = 0; i < 2; ++i) create.u32(0).u32(8192).u32(8192).u32(8192).u32(16).u32(4).u32(0);
       create.u32(0x40000004).u32(1).u32(0);
       result = send(p, {create}, 0, false); reader session(result); p.session = session.fixed(16);
-      send(p, {writer().u32(58).boolean(false)});
+      if (complete) send(p, {writer().u32(58).boolean(false)});
       return p;
     };
     struct callback { std::string connection, session, state, file, packet; uint32_t xid, sequence = 0, operation = 0; bool compound; };
@@ -770,6 +789,153 @@ int nfs_delegation_protocol_suite(bool require_native = false) {
     ok(abandoned);
     std::cout << "PASS request admission is bounded, cancellation restores capacity and disconnect invalidates undispatched tokens\n";
 #ifdef __linux__
+    if (require_native) {
+      component_provider = true;
+      auto recovered_file = nfs("create", directory, {{"name", "recovery"}}).at("handle").get<std::string>();
+      nfs("write", recovered_file, {{"offset", 0}, {"data", encode_bytes("reclaimed")}});
+      auto records = [&] {
+        database saved(server_cfg.state / "nfs.db");
+        statement q(saved, "SELECT body FROM recovery WHERE json_extract(body,'$.kind')='delegation'");
+        json result = json::array();
+        while (q.row()) result.push_back(json::parse(q.text(0)));
+        return result;
+      };
+      auto want_reclaim = [&] { return writer().u32(56).u32(0x100).u32(1).u32(1); };
+      auto read_delegation = [&](const std::string &result) {
+        reader r(result); ok(r.u32() == 1); auto id = r.fixed(16);
+        ok(r.boolean() && r.u32() == 1 && r.u32() == 0 && r.u32() == 0x1f01ff && r.opaque() == "EVERYONE@");
+        r.end(); return id;
+      };
+      for (unsigned fault : {0u, 1u, 2u, 3u, 4u, 5u, 6u, 7u, 8u, 9u}) {
+        if (fault == 6) {
+          protocol.reset(); network = nullptr; store.reset();
+          cfg.nfs_lease_seconds = 10; server_cfg.nfs_lease_seconds = 10;
+          store = std::make_unique<file_store>(cfg, "file", random_hex(16));
+        }
+        server_cfg.state = base / ("reclaim-" + std::to_string(fault));
+        secure_directory(server_cfg.state); restart_protocol();
+        auto original = connect("reclaim-owner"); establish_callback();
+        std::string old_state;
+        if (fault == 8)
+          old_state = open_result(send(original, {put(recovered_file), opening(original, 0x101)}), 1).second;
+        else {
+          auto result = send(original, {put(recovered_file), writer().u32(56).u32(0x100).u32(4)});
+          reader initial(result); ok(initial.u32() == 1); old_state = initial.fixed(16);
+        }
+        auto saved = records(); ok(saved.size() == 1);
+        auto binding = saved[0].at("binding");
+        ok(binding.at("generation") == 0 && binding.at("client") == std::to_string(original.client) &&
+            saved[0].at("verifier") == encode_bytes("12345678") && !saved[0].contains("credential"));
+        auto old_capability = reservation_capability;
+        native_delegation_reservation_channel old_channel(old_capability);
+        old_channel.reserve();
+        if (fault == 0 || fault == 6) {
+          protocol.reset(); network = nullptr;
+          store.reset();
+          if (fault == 6) { cfg.nfs_lease_seconds = 5; server_cfg.nfs_lease_seconds = 5; }
+          store = std::make_unique<file_store>(cfg, "file", random_hex(16));
+        }
+        restart_protocol();
+        auto protected_before = store->dispatch("nfs_delegation", private_delegation, ctx());
+        auto cutoff = protected_before.at("recall_deadline_ms");
+        ok(cutoff.get<int64_t>() > 0 && protected_before.at("state") == "recalling");
+        if (fault == 6) ok(protected_before.at("lease_period_ms") == 10000 &&
+            protected_before.at("lease_remaining_ms").get<int64_t>() > 5000);
+        bool blocked = false;
+        try { native.open("space/recovery", false, false, true); }
+        catch (const error &e) { blocked = std::string_view(e.what()) == "locked"; }
+        ok(blocked);
+        if (fault == 3) {
+          auto completed = connect("reclaim-owner", false);
+          send(completed, {put(recovered_file), writer().u32(58).boolean(true)});
+          send(completed, {put(recovered_file), want_reclaim()}, 10033);
+          ok(records().empty());
+          ok(native.open("space/recovery", false, false, true).info().at("size") == 9);
+          std::cout << "PASS per-filesystem RECLAIM_COMPLETE releases unreclaimed native guards before acknowledging completion\n";
+          continue;
+        }
+        if (fault == 4) {
+          std::this_thread::sleep_for(std::chrono::milliseconds(5300)); protocol->maintenance();
+          ok(records().empty());
+          auto expired = connect("reclaim-owner", false);
+          send(expired, {put(recovered_file), want_reclaim()}, 10033);
+          ok(native.open("space/recovery", false, false, true).info().at("size") == 9);
+          std::cout << "PASS grace expiry retires unreclaimed native guards and does not revive expired protection\n";
+          continue;
+        }
+        if (fault == 0) {
+          auto foreign = connect("foreign-owner", false);
+          send(foreign, {put(recovered_file), want_reclaim()}, 10034);
+          auto wrong_verifier = connect("reclaim-owner", false, 1000, "87654321");
+          send(wrong_verifier, {put(recovered_file), want_reclaim()}, 10034);
+        }
+        auto recovering = connect("reclaim-owner", false);
+        if (fault == 0) {
+          authorized = false; send(recovering, {put(recovered_file), want_reclaim()}, 13); authorized = true;
+          ok(records()[0].at("binding").at("generation") == 0);
+        } else if (fault == 1 || fault == 2 || fault == 5 || fault == 9) {
+          if (fault == 9) {
+            {
+              database saved(server_cfg.state / "nfs.db");
+              sql(saved, "CREATE TRIGGER reject_adoption BEFORE INSERT ON recovery "
+                  "WHEN json_type(NEW.body,'$.adoption') IS NOT NULL "
+                  "BEGIN SELECT RAISE(FAIL,'test adoption write failure'); END;");
+            }
+            send(recovering, {put(recovered_file), want_reclaim()}, 5);
+            ok(!records()[0].contains("adoption"));
+            database saved(server_cfg.state / "nfs.db"); sql(saved, "DROP TRIGGER reject_adoption");
+          }
+          adoption_fault = fault == 5 ? 3 : fault == 9 ? 1 : fault;
+          send(recovering, {put(recovered_file), want_reclaim()}, 5);
+          ok(adoption_fault == 0 && records()[0].contains("adoption") == (fault != 5));
+          restart_protocol(); // Recover an intent either before execution or after a lost successful reply.
+          recovering = connect("reclaim-owner", false);
+        }
+        // No CB_NULL/CB_SEQUENCE reply has established this backchannel.
+        std::string reclaimed, reclaimed_open;
+        if (fault == 7 || fault == 8) {
+          auto invalid = writer().u32(18).u32(0).u32(2).u32(0).u64(recovering.client)
+              .opaque("owner").u32(0).u32(1).u32(1);
+          send(recovering, {put(recovered_file), invalid}, 10034);
+          auto claim = writer().u32(18).u32(0).u32(1).u32(0).u64(recovering.client)
+              .opaque("owner").u32(0).u32(1).u32(1);
+          auto result = open_result(send(recovering, {put(recovered_file), claim}), 1, true);
+          reclaimed_open = result.first; reclaimed = result.second;
+        } else reclaimed = read_delegation(send(recovering, {put(recovered_file), want_reclaim()}));
+        ok(reclaimed != old_state && protocol->dispatch(last_request, recovering.connection) == last_response);
+        auto durable = records()[0];
+        ok(!durable.contains("adoption") && durable.at("binding").at("generation") ==
+            ((fault == 1 || fault == 2 || fault == 5 || fault == 9) ? 2 : 1));
+        auto after = private_delegation; after["client"] = durable.at("binding").at("client");
+        auto snapshot = store->dispatch("nfs_delegation", after, ctx());
+        ok(snapshot.at("granted") && snapshot.at("recall_deadline_ms") == cutoff);
+        bool fenced = false;
+        try { old_channel.inspect(); } catch (const error &) { fenced = true; }
+        ok(fenced);
+        ok(read_delegation(send(recovering, {put(recovered_file), want_reclaim()})) == reclaimed);
+        ok(records()[0].at("binding").at("generation") == durable.at("binding").at("generation"));
+        if (fault == 7 || fault == 8) {
+          auto named_open = open_result(send(recovering,
+              {put(directory), named_claim(recovering, reclaimed, "recovery")}), 0).first;
+          auto fh_claim = writer().u32(18).u32(0).u32(1).u32(0).u64(recovering.client)
+              .opaque("fh-owner").u32(0).u32(5).fixed(reclaimed);
+          auto fh_open = open_result(send(recovering, {put(recovered_file), fh_claim}), 0).first;
+          for (const auto &open : {named_open, fh_open, reclaimed_open})
+            send(recovering, {put(recovered_file), writer().u32(4).u32(0).fixed(open)});
+        }
+        auto read = send(recovering, {put(recovered_file), writer().u32(25).fixed(reclaimed).u64(0).u32(9)});
+        reader data(read); ok(data.boolean() && data.opaque() == "reclaimed"); data.end();
+        send(recovering, {put(recovered_file), writer().u32(8).fixed(reclaimed)});
+        ok(records().empty());
+        ok(native.open("space/recovery", false, false, true).info().at("size") == 9);
+        std::cout << "PASS delegation restart reclaim, original incarnation, fresh authority, forced recall and scenario " << fault << '\n';
+      }
+      // The original owner's destructor has a child-reaper thread after file
+      // worker replacement. The later SIGKILL test needs its own fresh child.
+      protocol.reset(); network = nullptr; store.reset();
+      store = std::make_unique<file_store>(cfg, "file", random_hex(16));
+      server_cfg.state = base / "after-reclaim"; secure_directory(server_cfg.state); restart_protocol();
+    }
     if (require_native) {
       component_provider = true;
       callbacks.clear(); closes.clear();

@@ -52,7 +52,8 @@ uint32_t status(std::string_view code) {
       code == "uncertain_write" || code == "locked" || code == "sharing_violation" ||
       code == "cache_break_pending" || code == "grant_refresh_required")
     return 10008;
-  if (code == "io_error" || code == "internal_error" || code == "database_error")
+  if (code == "io_error" || code == "internal_error" || code == "database_error" ||
+      code == "delegation_recovery_failed" || code == "delegation_owner_lost")
     return 5;
   return 22;
 }

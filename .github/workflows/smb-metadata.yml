@@ -14,6 +14,7 @@ on:
       - 'tests/nfs_delegation_native.cpp'
       - 'tests/nfs_delegation_protocol.cpp'
       - 'src/nfs_delegations.inc'
+      - 'src/nfs_delegation_recovery.inc'
       - 'tests/nfs_lease_lifetime.py'
       - 'tests/nfs_admission_queue.py'
       - 'tests/nfs_callback_queue.py'

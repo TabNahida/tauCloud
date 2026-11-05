@@ -21,7 +21,7 @@ auto delegation_key(const std::string &id, const std::string &sid, const identit
 }
 json delegation_control(delegation_state &d, const std::string &op, int64_t remaining = 0) {
   json body = {{"op", op}, {"grant", d.grant}, {"cookie", d.cookie},
-      {"handle", d.fh}, {"client", std::to_string(d.client)}};
+      {"handle", d.fh}, {"client", d.native_client.empty() ? std::to_string(d.client) : d.native_client}};
   if (remaining) body["remaining_ms"] = remaining;
   return call(d.worker, "nfs_delegation", body);
 }
@@ -184,6 +184,10 @@ bool delegation4(writer &body, const identity &who, const std::string &sid,
   json recovery = {{"kind", "delegation"}, {"client", client_ids.at(client).owner},
       {"principal", who.key}, {"handle", fh}, {"type", 1}};
   auto rid = digest(recovery.dump());
+  recovery["verifier"] = client_ids.at(client).verifier;
+  recovery["binding"] = {{"client", std::to_string(client)}, {"generation", acquired.value("binding_generation", uint64_t(0))},
+      {"cookie", acquired.at("cookie")}, {"worker", worker}, {"object", object}, {"grant", grant},
+      {"provider", acquired.value("provider", "")}, {"period_ms", acquired.at("lease_period_ms")}};
   delegation_state d{client, fh, object, who.key, acquired.at("cookie"), worker, rid, who.credential, grant};
   if (acquired.value("provider", "") == "independent-owner") {
     try {

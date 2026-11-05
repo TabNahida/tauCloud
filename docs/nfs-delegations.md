@@ -1146,8 +1146,8 @@ cookie and binding, a fresh signed grant, the same actor/export/root/space
 incarnation, current ACL access, the expected binding generation, and a 128-bit
 adoption identifier. Expired or
 revoked cleanup grants cannot authorize adoption. This is a prerequisite for
-protocol reclaim; the NFS protocol does not yet call it or advertise production
-delegations.
+protocol reclaim. The server-restart coordinator described below now calls it;
+production delegation handout remains gated.
 
 Before changing native control, adoption durably records its old/new client
 binding and intent. A primary-only owner operation then closes every existing
@@ -1171,8 +1171,8 @@ tokens cannot acknowledge or recreate an operation in the new binding.
 
 The protocol coordinator must persist its matching adoption intent before
 calling this operation and reconcile uncertain replies before publishing a new
-stateid. That coordinator, grace-period retention, durable revocation reporting,
-and wire-level OPEN/WANT_DELEGATION reclaim remain unfinished. RFC 8881
+stateid. The implementation below covers server-restart read-delegation reclaim;
+client-restart recovery and complete failure/revocation handling remain open. RFC 8881
 [Section 10.2.1](https://www.rfc-editor.org/rfc/rfc8881.html#section-10.2.1)
 requires reclaim to return a delegation with its recall indication when the
 server cannot continue granting it; simply discarding that state is insufficient.
@@ -1188,3 +1188,66 @@ Two corrected test expectations are retained with their failure logs' hashes:
 unknown-reply completion is timed from owner disconnect detection, and negative
 generation errors are selected explicitly rather than inferred through mixed
 signed/unsigned JSON equality. Remote validation of this addition is pending.
+
+## Server-restart read-delegation reclaim
+
+The NFS recovery database now records the original client owner and verifier,
+principal, filehandle, native object, file worker, cleanup grant, native cookie,
+binding generation and original native lease period before returning a granted
+delegation. It does not store network authentication contexts. The database is
+inside the private state directory and excluded from metadata backups.
+
+Startup reconnects to file-domain records and retains their existing native
+protection while starting recall. Retention uses the original lease period even
+if the configured lease was reduced; it cannot postpone an already fixed recall
+deadline. Missing, expired or legacy records without a recoverable native binding
+cannot create new protection and cannot be silently regranted. Uncertain native
+observation fails startup rather than treating inability to observe as release.
+
+Both WANT_DELEGATION and OPEN with CLAIM_PREVIOUS reclaim a read delegation from
+this durable record. They verify the original client incarnation and principal,
+fresh export authorization and ACL, and the exact native object. OPEN supports a
+previously recorded OPEN or a dummy read OPEN for a delegation with no server
+OPEN. A read delegation cannot recover a write OPEN. Named CLAIM_DELEGATE_CUR
+and CLAIM_DELEG_CUR_FH can materialize additional read OPENs during grace after
+validating the reclaimed delegation.
+
+Before transferring the native binding, the protocol commits an adoption intent.
+A fresh-authority retry settles an unexecuted or uncertain adoption before a new
+transition. Every retry first persists the intent again, so a failed earlier
+SQLite write cannot leave a memory-only intent authorizing native mutation.
+After restart, observing the exact destination generation can settle
+an already executed intent without authorizing data. Binding changes rotate old
+channels; publication of the replacement channel pins the reclaim reply using
+the same native delivery reservations as normal handout. A repeated request or
+session replay does not create another stateid or another binding transition.
+
+The returned delegation always has its recall indication set, including when no
+backchannel has yet been proven. Reclaimed READ and DELEGRETURN use the original
+native incarnation. RECLAIM_COMPLETE releases unclaimed native guards before
+marking the client/filesystem complete; grace expiry also releases these guards
+before discarding recovery records. Cleanup failure leaves recovery pending.
+See RFC 8881 [delegation recovery](https://www.rfc-editor.org/rfc/rfc8881.html#section-10.2.1)
+and [reclaim authorization](https://www.rfc-editor.org/rfc/rfc8881.html#section-8.4.2.1.1).
+
+The native component fixture exercises simultaneous protocol/file-worker restart,
+wrong client/verifier and revoked authorization, failure before adoption, a lost
+successful adoption reply, failure after binding commit before channel publication,
+an actual SQLite intent-write rejection followed by retry, lease reduction,
+WANT/OPEN/dummy reclaim, delegated OPENs during grace, explicit
+completion and grace expiry. It injects the private file provider; these are not
+unmodified native-client or production-handout results. Source-bound results and
+corrected fixture failures are retained in
+[reclaim evidence](evidence/pre-m8/nfs-protocol-reclaim-local.json).
+Final local Clang ASan/UBSan validation passes 1,554 M7 checks and 1,361 host
+protocol checks. The Linux 6.19 VM passes 2,110 native checks on tmpfs/ext4 and
+2,683 protocol component checks, including all ten recovery scenarios. Remote
+validation of this source remains pending.
+
+The earlier `2fad84c` remote matrix passed GCC and failed Clang's pre-existing
+300-millisecond inventory-order assumption. The fixture now pins both records
+for the ordering assertion, cancels one without renewal, then observes expiry
+against its acknowledged deadline ([remote evidence](evidence/pre-m8/nfs-adoption-2fad-remote.json)).
+Full client-restart recovery (including previous-client claims/DELEGPURGE), WRITE
+delegations, complete owner/host-loss coordination, authenticated native-client
+reclaim and Windows native ownership remain open. Production handout stays closed.

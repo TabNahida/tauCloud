@@ -76,6 +76,7 @@ struct delegation_state {
   uint32_t revoked = 0;
   bool recalling = false, callback_done = false;
   int64_t retry_after = 0;
+  std::string native_client;
 };
 std::map<std::string, delegation_state> delegations;
 std::map<uint64_t, client_id> client_ids;
@@ -148,6 +149,7 @@ void start_recovery() {
   if (!reclaim.empty())
     grace_end = now() + int64_t(seconds) * 1000;
   recovery_lease(seconds);
+  retain_recovering_delegations();
 }
 void remove_recovery(const std::string &id) {
   statement q(db, "DELETE FROM recovery WHERE id=?");
@@ -173,8 +175,10 @@ void expire() {
   nlm_expire();
   expire_delegations();
   if (grace_end && now() >= grace_end) {
-    for (auto &[id, b] : reclaim)
+    for (auto &[id, b] : reclaim) {
+      release_recovering_delegation(b);
       remove_recovery(id);
+    }
     reclaim.clear();
     grace_end = 0;
     recovery_lease(cfg.nfs_lease_seconds);
@@ -961,6 +965,7 @@ open_state &state4(const std::string &id, const std::string &sid, const std::str
 }
 #include "nfs_locks.inc"
 #include "nfs_delegations.inc"
+#include "nfs_delegation_recovery.inc"
 void change4(writer &w, uint64_t before, uint64_t after) {
   // External host mutations cannot be serialized with the server's operation.
   w.boolean(false).u64(before).u64(after);
@@ -1503,11 +1508,12 @@ std::string v4(const identity &who, reader &r) {
           check(claim != 6, 10004); // Previous-client recovery needs DELEGPURGE.
           if (claim == 1) {
             check(grace_end && !client.reclaim_complete, 10033);
-            check(false, 10034); // No persisted delegation was granted to reclaim.
+            reclaim_delegation4(body, who, sid, current, m, a.at("delegation"));
+          } else {
+            check(client.reclaim_complete && !grace_end, 10013);
+            if (!delegation4(body, who, sid, current, m, want))
+              no_delegation4(body, want, m.at("directory"));
           }
-          check(client.reclaim_complete && !grace_end, 10013);
-          if (!delegation4(body, who, sid, current, m, want))
-            no_delegation4(body, want, m.at("directory"));
         } else if (op == 18) {
           auto access = a.at("access").get<uint32_t>(), deny = a.at("deny").get<uint32_t>();
           delegation_want(access);
@@ -1518,9 +1524,10 @@ std::string v4(const identity &who, reader &r) {
           check(opens.size() < 1024, 10018);
           auto claim = a.at("claim").get<unsigned>();
           bool recovering = claim == 1;
-          check(recovering || client.reclaim_complete, 10013);
+          bool delegated_recovery = grace_end && (claim == 2 || claim == 5);
+          check(recovering || delegated_recovery || client.reclaim_complete, 10013);
           check(!recovering || !client.reclaim_complete, 10033);
-          check(!grace_end || recovering, 10013);
+          check(!grace_end || recovering || delegated_recovery, 10013);
           check(!recovering || grace_end, 10033);
           check(current != pseudo && !current.empty(), 10020);
           if (a.at("create") == 1) {
@@ -1592,8 +1599,12 @@ std::string v4(const identity &who, reader &r) {
           json durable = {{"client", client.owner}, {"principal", who.key}, {"owner", owner},
                           {"handle", target},       {"access", access},     {"deny", deny}};
           if (recovering) {
-            check(a.at("delegation") == 0 && reclaim.contains(rid) && reclaim.at(rid) == durable,
-                  10034);
+            auto type = a.at("delegation").get<uint32_t>();
+            bool recorded_open = reclaim.contains(rid) && reclaim.at(rid) == durable;
+            // A delegation can outlive every server OPEN. RFC 8881 permits
+            // a dummy OPEN reclaim; its authority is proved by the delegation
+            // record below. A read delegation cannot authorize a write OPEN.
+            check(type == 0 ? recorded_open : type == 1 && access == 1 && !(deny & 1), 10034);
           }
           for (const auto &[id, o] : opens)
             if (o.object == m.at("object").get<std::string>() && id != previous)
@@ -1610,6 +1621,9 @@ std::string v4(const identity &who, reader &r) {
               attrset = {1u << 4};
             }
           }
+          writer recovered_delegation;
+          if (recovering && a.at("delegation") == 1)
+            reclaim_delegation4(recovered_delegation, who, sid, target, m, 1);
           writer state;
           state.u32(1).fixed(decode_bytes(random_hex(12)));
           auto stateid = encode_bytes(state.data);
@@ -1631,7 +1645,8 @@ std::string v4(const identity &who, reader &r) {
           change4(body, parent_before, parent_after);
           body.u32(send_backchannel ? 0x20 : 0); // OPEN4_RESULT_MAY_NOTIFY_LOCK
           put_bitmap(body, attrset);
-          if (recovering || !delegation4(body, who, sid, target, m, delegation_access))
+          if (!recovered_delegation.data.empty()) body.fixed(recovered_delegation.data);
+          else if (recovering || !delegation4(body, who, sid, target, m, delegation_access))
             no_delegation4(body, delegation_access);
         } else if (op == 8) {
           check(!current.empty(), 10020);
@@ -1816,18 +1831,19 @@ std::string v4(const identity &who, reader &r) {
             auto m = meta4(who, current);
             filesystem = m.at("fsid");
             check(!client.reclaim_complete && !client.reclaimed_filesystems.contains(filesystem), 10054);
-            client.reclaimed_filesystems.insert(filesystem);
           } else {
             check(!client.reclaim_complete, 10054);
-            client.reclaim_complete = true;
           }
           for (auto it = reclaim.begin(); it != reclaim.end();)
             if (it->second.at("client") == client.owner && it->second.at("principal") == who.key &&
                 (filesystem.empty() || it->second.at("handle").get<std::string>().substr(4, 16) == filesystem)) {
+              release_recovering_delegation(it->second);
               remove_recovery(it->first);
               it = reclaim.erase(it);
             } else
               ++it;
+          if (a.at("one_fs").get<bool>()) client.reclaimed_filesystems.insert(filesystem);
+          else client.reclaim_complete = true;
         } else
           check(false, a.value("unknown", false) ? 10044 : 10004);
       }

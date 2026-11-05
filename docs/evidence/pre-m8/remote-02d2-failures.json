@@ -28,6 +28,21 @@
       "observations": [
         "m8_integration.py line 182: Docker package installation calls plugins/plan and receives HTTP 503 package_limit, reproducing the earlier Clang M8 failure."
       ]
+    },
+    {
+      "name": "clang-metadata-callback-output",
+      "job_url": "https://github.com/TabNahida/tauCloud/actions/runs/41963967760/job/127036545337",
+      "conclusion": "failure",
+      "steps": [
+        "NFS callback output priority under TCP backpressure",
+        "NFS callback response deadline after delayed transmission"
+      ],
+      "log_sha256": "b0e1fbc6171a31cad97ee20c47d0f6696135caf9adacede4050c6d5d291fe5ff",
+      "observations": [
+        "Both invocations fail in tests/nfs_output_queue.py line 51 while setting up backpressure, before callback behavior assertions.",
+        "queued_bytes observes TCP state 04 (FIN_WAIT1), with 0xB0631 bytes queued. The log does not establish why the service closed the connection.",
+        "GCC and MSVC metadata jobs at this commit pass; this does not resolve the Clang failures."
+      ]
     }
   ],
   "limits": [

@@ -98,6 +98,7 @@ json nfs_delegation_snapshot(const std::string &cookie, const nfs_delegation_gua
       {"requires_revalidation", d.recovered},
       {"reservation_floor", d.last_reservation},
       {"binding_generation", d.binding_generation},
+      {"lease_period_ms", d.lifetime.period()},
       {"provider", d.owner_backed ? "independent-owner" : "local-primitive"},
       {"owner_available", d.owner_backed && !d.owner_failed},
       {"reservations", lifetime.reservations()},
@@ -122,10 +123,11 @@ json nfs_delegation_dispatch(const json &body, const call_context &ctx) {
   auto space = g.at("space").at("id").get<std::string>();
   auto client = body.at("client").get<std::string>();
   require(!client.empty() && client.size() <= 128, "invalid_request");
-  auto remaining = [&] {
+  auto remaining = [&](int64_t maximum = 0) {
     require(body.at("remaining_ms").is_number_integer(), "invalid_request");
     auto value = body.at("remaining_ms").get<int64_t>();
-    require(value > 0 && value <= int64_t(cfg.nfs_lease_seconds) * 1000, "invalid_request");
+    if (!maximum) maximum = int64_t(cfg.nfs_lease_seconds) * 1000;
+    require(value > 0 && value <= maximum, "invalid_request");
     return value;
   };
   if (op == "acquire") {
@@ -339,7 +341,7 @@ json nfs_delegation_dispatch(const json &body, const call_context &ctx) {
       }
     }
   } else if (op == "renew" || op == "retain") {
-    auto interval = remaining();
+    auto interval = remaining(op == "retain" ? d.lifetime.period() : 0);
     require(d.lifetime.held(), "stale_handle");
     if (op == "renew") {
       auto &s = attach(g, ctx);

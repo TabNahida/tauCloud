@@ -21,6 +21,7 @@ public:
   state status() const { return state_; }
   bool held() const { return state_ == state::active || state_ == state::recalling; }
   int64_t expires() const { return expires_; }
+  int64_t period() const { return period_; }
   int64_t recall_until() const { return recall_until_; }
   uint32_t reservations() const { return reservations_; }
   // Acknowledged in-flight work prevents lease expiry, but never recall expiry.

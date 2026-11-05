@@ -178,14 +178,21 @@ static void owner_recovery_suite(native_file &root, const fs::path &base) {
     auto short_file = root.open("recovery");
     auto long_file = root.open("recovery-write");
     native_delegation_owner owner;
-    auto first = owner.acquire(short_file, 5000, 300);
+    auto first = owner.acquire(short_file, 5000, 5000);
+    auto first_pin = owner.reserve(first).at("reservation").get<uint64_t>();
     auto second = owner.acquire(long_file, 5000, 5000);
+    owner.reserve(second);
     check(first && second > first, "inventory_order_fixture");
     auto restored = owner.restore(first, short_file.stable_identity());
     auto inventory = owner.inventory();
     check(inventory.size() == 2 && inventory[0].at("id") == first && inventory[1].at("id") == second,
         "inventory_live_order");
-    std::this_thread::sleep_for(400ms);
+    // Ordering and expiry are separate assertions. Pin both records while
+    // observing order, then cancel only the first pin without renewal. The
+    // old 300 ms lease could legitimately expire during sanitizer/TCG IPC.
+    auto expiry = owner.complete(first, first_pin, false).at("lease_expires_ms").get<int64_t>();
+    auto remaining = expiry - monotonic_ms();
+    if (remaining >= 0) std::this_thread::sleep_for(std::chrono::milliseconds(remaining + 50));
     inventory = owner.inventory();
     check(inventory.size() == 1 && inventory[0].at("id") == second, "inventory_did_not_skip_expired_guard");
     bool stale = false;
