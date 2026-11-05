@@ -70,11 +70,16 @@ pace::task<void> write_frames(nfs_runtime &s, std::shared_ptr<nfs_connection> c)
       nfs_detail::writer header;
       header.u32(0x80000000u | uint32_t(packet.packet.size()));
       auto timeout = delivery ? std::chrono::milliseconds(std::max<int64_t>(0, delivery->queued_until() - now())) : 5s;
-      auto timer = s.io->call_after(timeout, [c] { c->socket.close(); });
+      auto timer = s.io->call_after(timeout, [c] {
+        log("nfs", "transport_write_closed", "deadline_exceeded");
+        c->socket.close();
+      });
       co_await c->socket.write_all(header.data + packet.packet);
       if (delivery) require(delivery->finish(), "callback_send_timeout");
       s.protocol.enqueue_reply_completion(c->output.finish());
     }
+  } catch (const error &e) {
+    log("nfs", "transport_write_closed", e.what()); c->socket.close();
   } catch (...) { c->socket.close(); }
   c->writing = false;
   if (!c->socket.is_open()) {
@@ -86,7 +91,10 @@ void enqueue(nfs_runtime &s, const std::shared_ptr<nfs_connection> &c, outgoing_
   if (!c->socket.is_open() || packet.packet.empty()) { s.protocol.enqueue_reply_completion(packet.completion); return; }
   auto completion = packet.completion;
   try {
-    require(c->output.push(std::move(packet)), "overloaded");
+    if (!c->output.push(std::move(packet))) {
+      log("nfs", "transport_output_closed", "overloaded");
+      throw error("overloaded");
+    }
     completion = 0; // The queue now owns delivery/cancellation accounting.
     if (!c->writing) {
       c->writing = true;
@@ -224,6 +232,8 @@ pace::task<void> serve(nfs_runtime &s, pace::tcp::stream stream) {
       }
       active = true;
     }
+  } catch (const error &e) {
+    log("nfs", "transport_receive_closed", e.what());
   } catch (...) {
   }
   socket.close();

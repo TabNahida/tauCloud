@@ -150,6 +150,13 @@ The same commit's Clang metadata job also fails both callback-output tests while
 establishing TCP backpressure: the connection is already in FIN_WAIT1 before
 callback assertions. Its GCC/MSVC metadata jobs pass; the closure cause remains
 unresolved and is retained in the same evidence.
+The output-pressure fixture's independent receive-overload defect is reproduced
+with a 1.2-second file-worker pause and corrected without changing production
+limits; a no-priority mutation still fails the callback-order assertion
+([local evidence](docs/evidence/pre-m8/nfs-output-pacing-local.json)). At `2fad84c`,
+all Backend jobs and both Linux metadata jobs pass, but Windows metadata fails
+an OPEN after restart and the native lease test with `grant_refresh_required`;
+these remain open ([platform evidence](docs/evidence/pre-m8/nfs-adoption-2fad-platforms.json)).
 
 Private native delegation adoption now transfers a durable client binding while
 fencing old reservation channels, conservatively completing uncertain replies,

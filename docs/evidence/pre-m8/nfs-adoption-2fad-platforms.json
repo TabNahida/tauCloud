@@ -1,0 +1,78 @@
+{
+  "status": "partial_failure",
+  "source_commit": "2fad84c5f4b93def3d8ec6151bd25e7d3c7d47a8",
+  "recorded_at": "2026-11-05T05:04:57.133974+00:00",
+  "runs": [
+    {
+      "name": "backend",
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41966761759",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "windows",
+          "conclusion": "success",
+          "url": "https://github.com/TabNahida/tauCloud/actions/runs/41966761759/job/127045442091",
+          "failed_steps": []
+        },
+        {
+          "name": "linux (clang)",
+          "conclusion": "success",
+          "url": "https://github.com/TabNahida/tauCloud/actions/runs/41966761759/job/127045442524",
+          "failed_steps": []
+        },
+        {
+          "name": "linux (gcc)",
+          "conclusion": "success",
+          "url": "https://github.com/TabNahida/tauCloud/actions/runs/41966761759/job/127045442624",
+          "failed_steps": []
+        },
+        {
+          "name": "macos-clients",
+          "conclusion": "success",
+          "url": "https://github.com/TabNahida/tauCloud/actions/runs/41966761759/job/127058261972",
+          "failed_steps": []
+        }
+      ]
+    },
+    {
+      "name": "metadata",
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41966761974",
+      "conclusion": "failure",
+      "jobs": [
+        {
+          "name": "clang metadata",
+          "conclusion": "success",
+          "url": "https://github.com/TabNahida/tauCloud/actions/runs/41966761974/job/127045442664",
+          "failed_steps": []
+        },
+        {
+          "name": "msvc metadata",
+          "conclusion": "failure",
+          "url": "https://github.com/TabNahida/tauCloud/actions/runs/41966761974/job/127045443049",
+          "failed_steps": [
+            "NFS advertised lease, session expiry and recovery after configuration changes",
+            "SMB shared lease native exclusion and file-domain authority"
+          ]
+        },
+        {
+          "name": "gcc metadata",
+          "conclusion": "success",
+          "url": "https://github.com/TabNahida/tauCloud/actions/runs/41966761974/job/127045443055",
+          "failed_steps": []
+        }
+      ]
+    }
+  ],
+  "windows_metadata_log_sha256": "28ad0e3e226c6791deb52e16d7d9bcd293831c9d16bd8a85cb5ab46f7772710a",
+  "observations": [
+    "Backend GCC, Clang, Windows and macOS-client jobs pass.",
+    "Metadata GCC and Clang pass, including the original fixed-rate callback-output tests. This does not explain their failure at 02d2f2e.",
+    "Windows metadata lease lifetime test passes its first three groups, then OPEN old-lease-recovery returns NFS4ERR_INVAL after restart(9), before testing lease reduction.",
+    "Windows native SMB lease test exits with grant_refresh_required after_checks=0; the failing operation is not identified by this log."
+  ],
+  "limits": [
+    "The Windows metadata failures remain unresolved. Passing backend jobs do not establish their resolution.",
+    "READ delegation protocol reclaim was added after this commit.",
+    "Full SMB/NFS and production delegation handout remain incomplete."
+  ]
+}

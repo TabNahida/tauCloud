@@ -947,6 +947,24 @@ jobs with real native guards ([fixed-source evidence](evidence/pre-m8/nfs-output
 These jobs do not run TCP backpressure; its separate metadata matrix remains
 pending. They also predate the delivery-deadline change below.
 
+The TCP fixture now waits for kernel send-queue progress before issuing more
+READs. Its former fixed 40 ms producer could exhaust receive admission before
+establishing output pressure: pausing the disposable file worker for 1.2 seconds
+reproduces closure on the seventeenth request, with `transport_receive_closed`
+reporting `overloaded` and no queued response bytes. The corrected fixture keeps
+the same plateau, payload, callback-order and response-deadline assertions, and
+passes after the same worker pause. A temporary build that drains ordinary
+responses before callbacks still fails the ordering assertion; the restored
+production build passes. Four admission and 19 backchannel regression groups
+also pass. See [local pacing evidence](evidence/pre-m8/nfs-output-pacing-local.json).
+
+Receive admission, output admission and write deadline closures now have distinct
+log events. Queue budgets and production deadlines are unchanged. The earlier
+Clang `02d2f2e` failure did not log its closure phase, so the controlled local
+reproduction does not establish that remote failure's cause. At `2fad84c`, both
+Linux metadata jobs pass the original fixture, while Windows has separate
+failures ([platform evidence](evidence/pre-m8/nfs-adoption-2fad-platforms.json)).
+
 ## Callback transmission and response deadlines
 
 Each probe now owns a shared delivery ticket. A queued transport holds only a
