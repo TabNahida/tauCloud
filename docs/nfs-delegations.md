@@ -16,8 +16,8 @@ documents open/truncate exclusion. The newer
 in Linux 6.19, is now implemented by the native adapter and exercised in an
 isolated Linux 6.19 guest. The development host remains on 6.18.40.1 and correctly
 declines that API. A surviving-owner recovery control primitive is now available
-(see below); durable file-domain/protocol adoption is still required before
-wire handout.
+(see below). Linux file-domain journal/adoption is implemented below; protocol
+reclaim and complete restart coordination are still required before wire handout.
 
 OPEN preserves the client's delegation preference independently of ordinary
 READ/WRITE access. A request without new flags retains the legacy NONE reply.
@@ -1029,10 +1029,9 @@ guard. Expired orphan recovery is separately rejected. See
 Local ASan/UBSan passes 507 independent channel checks and 1,361 host protocol
 checks; Linux 6.19 passes 1,627 native and 1,464 protocol component checks.
 
-This is the control recovery primitive, not completed file-domain or NFS reclaim.
-Production does not yet persist or consume recovery capabilities. Durable
-acquisition-intent/record reconciliation in the file domain, fresh
-authority checks, file-domain restart fencing and protocol-state reclaim remain
+This stage provides the control recovery primitive. File-domain persistence,
+intent reconciliation and fresh-authority adoption were added in the later
+section below. Full protocol-state reclaim and restart coordination remain
 required before wire handout. A capability cannot resurrect a dead owner or
 survive a host reboot. Windows equivalents remain open. The control reconnection
 implementation at `05eca58` passes GCC and Clang Linux 6.19
@@ -1076,7 +1075,63 @@ checks descriptor cleanup, the 256/257 boundary, nonadvancing cursors and the
 single total timeout. Local Clang ASan/UBSan acceptance passes 570 independent
 channel checks and, on Linux 6.19, 1,805 native plus 1,464 protocol component
 checks. See [acceptance evidence](evidence/pre-m8/nfs-owner-restore-local.json).
-Remote acceptance of this change is pending.
-Production file-domain journal integration, fresh authorization, restart fencing
-and NFS protocol reclaim remain required; this primitive does not enable wire
-handout or establish complete delegation recovery.
+The implementation at `4542cec` passes GCC and Clang Linux 6.19
+[remote native/component acceptance](evidence/pre-m8/nfs-owner-restore-4542-native.json).
+Those results precede the file-domain integration below. This primitive alone
+does not enable wire handout or establish complete delegation recovery.
+
+
+## File-domain journal and adoption
+
+On Linux the file domain now persists its private owner capability and native
+process birth/boot identity before acquiring a guard. A signed, versioned
+`<role>.nfs-delegations.json` file records the cookie, actor/client/export binding,
+root and space incarnation, original file identity, handle, original lease
+period, fixed recall request and primary reservation high-water mark. It uses
+0600 atomic replacement with file and directory fsync, a private writer lock,
+a one-MiB limit and at most 256 records. Metadata backups do not copy it.
+
+An acquisition intent is durable before the native acquire; the acknowledged
+owner ID is committed before returning a granted result. After a worker restart,
+recovery authenticates to the surviving owner and reconciles its inventory.
+An intent without a committed result ID must match exactly one native identity;
+unmatched native guards or ambiguous matches fail startup. Missing uncommitted
+intents are discarded. Existing terminal records remain terminal, and a durable
+return intent is completed before exposing recovered state. Recovery imports
+original native deadlines and descriptors without reopening cached paths or
+renewing leases. It forwards any earlier durable recall cutoff unchanged.
+
+Recovered records report `requires_revalidation:true` and `granted:false` until
+an ordinary renewal verifies a fresh signed grant, the exact actor/client/export,
+root and space identity, current ACL, policy epoch and request lifetime. Only
+then may a new reservation channel be published. Old channels and secrets were
+invalidated at primary disconnect. Old primary tokens are not reconstructed;
+their durable high-water mark rejects replay after revalidation. Cleanup can
+still return protection without reauthorizing data. Ordinary retained-descriptor
+IO continues to require its own current signed grant and file permission check.
+The file domain's observed minimum policy epoch survives restart.
+
+A corrupt, publicly accessible or unobservable-owner journal prevents startup.
+A runtime journal-write failure latches a file-domain fence before subsequent
+IO and does not release a guard whose return intent was not durable. Recovery
+uses boot identity plus process birth, disappearance or terminal state to prove
+owner loss; inability to read process state is not treated as proof of death.
+Dead/expired owners cannot be resurrected. This does not preserve native exclusion
+after owner death or host reboot, nor implement NFS protocol reclaim.
+
+Real Linux 6.19 tmpfs/ext4 acceptance stops and SIGKILLs a process running the
+file-store implementation at four compiled test-only boundaries: durable intent, native acquisition before
+result commit, committed result before reply, and durable return before release.
+Additional cases cover repeated recovery, stale grants and policy epochs,
+space-incarnation substitution, old reservation tokens, channel-secret rotation,
+expired owners, paused owners, malformed/private-mode journals and failed atomic
+journal replacement. The hooks are absent from service builds. See
+[local evidence](evidence/pre-m8/nfs-domain-recovery-local.json).
+Final Clang ASan/UBSan acceptance passes 1,554 M7 and 585 lifecycle checks;
+Linux 6.19 passes 1,940 native and 1,464 protocol component checks. The injected
+write failure initially exposed a filesystem exception outside the domain error
+type; journal failures now consistently report `delegation_recovery_failed`,
+and the full failure/fence/recovery path passes on both filesystems.
+Remote acceptance is pending. The production wire-handout gate remains closed
+until protocol-state persistence/reclaim and complete instance fencing are
+integrated and verified. Windows owner recovery remains open.

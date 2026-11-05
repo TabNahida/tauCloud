@@ -9,7 +9,20 @@
 #include <map>
 #include <set>
 #include <fstream>
+#include <sstream>
+#ifdef TAUCLOUD_TEST_DELEGATION_RECOVERY
+#include <csignal>
+#endif
 namespace tc {
+#ifdef TAUCLOUD_TEST_DELEGATION_RECOVERY
+static std::atomic_uint delegation_crash_point = 0;
+void test_delegation_crash_point(unsigned point) { delegation_crash_point = point; }
+static void delegation_recovery_boundary(unsigned point) {
+  if (delegation_crash_point.compare_exchange_strong(point, 0)) std::raise(SIGSTOP);
+}
+#else
+static void delegation_recovery_boundary(unsigned) {}
+#endif
 namespace {
 std::string lower(std::string value) { return path_fold(value); }
 bool beneath(const std::string &path, const std::string &prefix) {
@@ -115,7 +128,13 @@ struct file_store::impl {
     bool owner_backed = false, owner_failed = false, owner_recalled = false;
     uint64_t last_reservation = 0;
     std::map<uint64_t, uint64_t> reservations = {};
+    bool recovered = false;
+    std::string space_object = "";
   };
+  // Destroy the owner/control channel before dropping the journal lock.
+  std::unique_ptr<file_lock> nfs_recovery_lock;
+  json nfs_recovery;
+  bool nfs_recovery_failed = false;
   std::unique_ptr<native_delegation_owner> nfs_owner;
   std::map<std::string, nfs_delegation_guard> nfs_delegations;
   std::map<std::string, uint32_t> pending_metadata;
@@ -226,6 +245,7 @@ struct file_store::impl {
     while (times.row())
       if (!json::parse(times.text(1)).value("rename_pending", json::object()).empty())
         smb_deferred_times.insert(times.text(0));
+    nfs_restore_delegations();
   }
   void audit(const std::string &actor, const std::string &action, const std::string &resource) {
     statement q(db, "INSERT INTO audit(time,actor,action,resource) VALUES(?,?,?,?)");
@@ -594,6 +614,7 @@ struct file_store::impl {
 #include "file_dav.inc"
 #include "file_smb.inc"
 #include "file_nfs.inc"
+#include "file_nfs_recovery.inc"
 #include "file_nfs_delegation.inc"
   json dispatch(const std::string &op, const json &body, const call_context &ctx) {
     std::lock_guard guard(mutex);
@@ -670,6 +691,7 @@ struct file_store::impl {
       // Policy revocation stops IO immediately, but a delegation still needs
       // its recall/lease interval before native exclusion can be released.
       for (auto &[cookie, d] : nfs_delegations) d.lifetime.recall(cache_clock());
+      nfs_checkpoint_delegations();
       handles.clear();
       locks.clear();
       smb_waiters.clear();

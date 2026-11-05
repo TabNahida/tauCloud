@@ -102,6 +102,10 @@ json inspect_root(const fs::path &path);
 void test_write_budget(int64_t bytes);
 void test_root_delay(int64_t milliseconds);
 #endif
+#ifdef TAUCLOUD_TEST_DELEGATION_RECOVERY
+// Deterministic crash boundaries, linked only into the native acceptance binary.
+void test_delegation_crash_point(unsigned point);
+#endif
 json system_inventory(const call_context &ctx);
 class file_store {
   struct impl;

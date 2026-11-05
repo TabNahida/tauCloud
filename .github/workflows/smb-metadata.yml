@@ -20,6 +20,7 @@ on:
       - 'tests/nfs_output_queue.py'
       - 'include/taucloud/nfs_delegation.hpp'
       - 'src/file_nfs_delegation.inc'
+      - 'src/file_nfs_recovery.inc'
       - 'tests/smb_lease_integration.py'
       - 'src/identity.cpp'
       - 'src/ipc.cpp'

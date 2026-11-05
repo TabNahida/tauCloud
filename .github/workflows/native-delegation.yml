@@ -27,6 +27,7 @@ on:
       - 'src/native_delegation_owner.inc'
       - 'src/files.cpp'
       - 'src/file_nfs_delegation.inc'
+      - 'src/file_nfs_recovery.inc'
       - 'include/taucloud/nfs_delegation.hpp'
       - 'include/taucloud/native_delegation_owner.hpp'
       - 'apps/main.cpp'

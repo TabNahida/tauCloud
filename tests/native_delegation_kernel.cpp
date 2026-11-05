@@ -1231,18 +1231,52 @@ static void file_domain_suite(const fs::path &base) {
       d.at("recall_deadline_ms") == deadline, "domain_revoked_completion_changed_recall");
   call("return", cookie); call("forget", cookie);
   std::cout << "PASS " << base << " FILE-DOMAIN/reservation-binding-retry-completion-capacity-revocation\n";
-  d = call("acquire", "", 1500); check(d.at("granted"), "domain_reacquire_failed"); cookie = d.at("cookie");
+  d = call("acquire", "", 5000); check(d.at("granted"), "domain_reacquire_failed"); cookie = d.at("cookie");
+  auto before_recovery = call("poll", cookie);
+  auto old_capability = call("channel", cookie).at("reservation_capability");
+  auto journal_path = cfg.state / "file.nfs-delegations.json";
+  auto journal = read_json(journal_path);
+  check(journal.at("body").at("records").contains(cookie.get<std::string>()) &&
+      equal(journal.at("signature").get<std::string>(), mac(signing, journal.at("body").dump())), "domain_journal_not_committed");
+  struct stat journal_stat{};
+  check(stat(journal_path.c_str(), &journal_stat) == 0 && (journal_stat.st_mode & 0777) == 0600,
+      "domain_journal_not_private");
   store.reset();
   writer = open((base / "root/space/cached").c_str(), O_WRONLY | O_NONBLOCK);
   check(writer < 0 && errno == EWOULDBLOCK, "domain_destruction_released_lease");
   store = std::make_unique<file_store>(cfg, "file", random_hex(16));
-  bool stale = false;
-  try { call("poll", cookie); } catch (const error &e) { stale = std::string_view(e.what()) == "stale_handle"; }
-  check(stale, "replacement_accepted_old_cookie");
-  limit = std::chrono::steady_clock::now() + 3s;
-  do { std::this_thread::sleep_for(20ms); writer = open((base / "root/space/cached").c_str(), O_WRONLY | O_NONBLOCK); }
-  while (writer < 0 && errno == EWOULDBLOCK && std::chrono::steady_clock::now() < limit);
-  check(writer >= 0, "domain_detached_owner_not_expired"); close(writer);
+  auto recovered = call("poll", cookie);
+  check(recovered.at("requires_revalidation") && !recovered.at("granted") && recovered.at("owner_available") &&
+      recovered.at("lease_expires_ms") == before_recovery.at("lease_expires_ms"), "domain_recovery_changed_or_reauthorized_lease");
+  rejected(control("channel", cookie), "delegation_revalidation_required");
+  auto stale_authority = control("renew", cookie);
+  stale_authority["grant"]["epoch"] = epoch - 1; stale_authority["grant"].erase("signature");
+  stale_authority["grant"]["signature"] = mac(signing, stale_authority.at("grant").dump());
+  rejected(stale_authority, "policy_revoked");
+  for (auto field : {"actor", "space_object"}) {
+    auto foreign = control("renew", cookie);
+    if (std::string_view(field) == "actor") foreign["grant"]["actor"] = "bob";
+    else foreign["grant"]["space"]["object"] = "replaced-space";
+    foreign["grant"].erase("signature"); foreign["grant"]["signature"] = mac(signing, foreign.at("grant").dump());
+    rejected(foreign, "forbidden");
+  }
+  check(nfs("read", fh, {{"offset", 0}, {"count", 4}}).at("data") == encode_bytes("data"),
+      "domain_recovery_did_not_use_retained_descriptor");
+  auto cutoff = call("poll", cookie).at("recall_deadline_ms");
+  d = call("renew", cookie, 5000);
+  check(d.at("granted") && !d.at("requires_revalidation") && d.at("recall_deadline_ms") == cutoff,
+      "domain_fresh_revalidation_failed_or_extended_recall");
+  check(call("channel", cookie).at("reservation_capability") != old_capability, "domain_recovery_reused_channel_secret");
+  bool old_rejected = false;
+  try { native_delegation_reservation_channel old(old_capability); } catch (const error &) { old_rejected = true; }
+  check(old_rejected, "domain_recovery_left_old_channel_authority");
+  store.reset(); store = std::make_unique<file_store>(cfg, "file", random_hex(16));
+  check(call("poll", cookie).at("requires_revalidation") && call("poll", cookie).at("recall_deadline_ms") == cutoff,
+      "domain_second_recovery_changed_recall");
+  call("return", cookie); call("forget", cookie);
+  writer = open((base / "root/space/cached").c_str(), O_WRONLY | O_NONBLOCK);
+  check(writer >= 0, "domain_recovered_return_kept_guard"); close(writer);
+  std::cout << "PASS " << base << " FILE-DOMAIN/journal-private-recovery-fresh-authority-epoch-and-channel-fencing\n";
   store.reset();
   int ready[2]; check(pipe2(ready, O_CLOEXEC) == 0, "domain_crash_pipe");
   auto worker = fork(); check(worker >= 0, "domain_crash_fork");
@@ -1265,15 +1299,138 @@ static void file_domain_suite(const fs::path &base) {
   bool acknowledged = poll(&notification, 1, 5000) > 0 && read(ready[0], &marker, 1) == 1 && marker == 'R';
   close(ready[0]); kill(worker, SIGKILL); int status; waitpid(worker, &status, 0);
   check(acknowledged && WIFSIGNALED(status), "domain_worker_guard_not_acknowledged");
+  journal = read_json(journal_path);
+  check(journal.at("body").at("records").size() == 1, "domain_crash_record_missing");
+  cookie = journal.at("body").at("records").begin().key();
   store = std::make_unique<file_store>(cfg, "file", random_hex(16));
+  d = call("poll", cookie);
+  check(d.at("requires_revalidation") && !d.at("granted") && d.at("reservations") == 0,
+      "domain_crash_reused_old_authority_or_tokens");
+  check(call("renew", cookie, 5000).at("granted"), "domain_crash_fresh_renew_failed");
+  rejected_token("reserve", 1, "stale_handle");
+  check(reservation("reserve", 2).at("reservations") == 1 && reservation("cancel", 2).at("reservations") == 0,
+      "domain_crash_new_reservation_failed");
   writer = open((base / "root/space/cached").c_str(), O_WRONLY | O_NONBLOCK);
   check(writer < 0 && errno == EWOULDBLOCK, "domain_worker_crash_lost_protection");
   auto started = std::chrono::steady_clock::now();
   do { std::this_thread::sleep_for(20ms); writer = open((base / "root/space/cached").c_str(), O_WRONLY | O_NONBLOCK); }
   while (writer < 0 && errno == EWOULDBLOCK && std::chrono::steady_clock::now() - started < 7s);
   check(writer >= 0 && std::chrono::steady_clock::now() - started > 4s, "domain_worker_crash_expiry"); close(writer);
+  call("forget", cookie);
   store.reset();
   std::cout << "PASS " << base << " FILE-DOMAIN/owner-renew-recall-return-replacement-SIGKILL\n";
+  for (unsigned point : {1u, 2u, 3u, 4u}) {
+    worker = fork(); check(worker >= 0, "domain_boundary_fork");
+    if (!worker) {
+      try {
+        store = std::make_unique<file_store>(cfg, "file", random_hex(16));
+        if (point < 4) test_delegation_crash_point(point);
+        auto acquired = call("acquire", "", 5000);
+        if (!acquired.at("granted")) _exit(2);
+        if (point == 4) { test_delegation_crash_point(4); call("return", acquired.at("cookie")); }
+        _exit(3); // Every chosen boundary must stop inside the real file domain.
+      } catch (...) { _exit(4); }
+    }
+    bool stopped = false, reaped = false;
+    try {
+      auto until = monotonic_ms() + 5000;
+      while (monotonic_ms() < until) {
+        auto result = waitpid(worker, &status, WUNTRACED | WNOHANG);
+        if (result == worker) { stopped = WIFSTOPPED(status); reaped = !stopped; break; }
+        std::this_thread::sleep_for(5ms);
+      }
+      check(stopped, "domain_crash_boundary_not_reached");
+      auto stopped_at = monotonic_ms();
+      journal = read_json(journal_path);
+      auto records = journal.at("body").at("records");
+      check(records.size() == 1, "domain_boundary_record_not_durable");
+      cookie = records.begin().key();
+      check(records.begin().value().at("intent").get<bool>() == (point <= 2) &&
+          (records.begin().value().at("owner_id").get<uint64_t>() == 0) == (point <= 2),
+          "domain_boundary_wrong_journal_phase");
+      check(kill(worker, SIGKILL) == 0 && waitpid(worker, &status, 0) == worker && WIFSIGNALED(status),
+          "domain_boundary_kill_failed"); reaped = true;
+      store = std::make_unique<file_store>(cfg, "file", random_hex(16));
+      if (point == 1) rejected(control("poll", cookie), "stale_handle");
+      else if (point == 4) {
+        check(call("poll", cookie).at("state") == "returned", "domain_release_intent_revived");
+        call("forget", cookie);
+      } else {
+        d = call("poll", cookie);
+        check(d.at("requires_revalidation") && d.at("owner_available") && !d.at("granted") &&
+            d.at("lease_expires_ms").get<int64_t>() <= stopped_at + 5000,
+            "domain_boundary_recovery_changed_lease_or_authority");
+        writer = open((base / "root/space/cached").c_str(), O_WRONLY | O_NONBLOCK);
+        check(writer < 0 && errno == EWOULDBLOCK, "domain_boundary_guard_lost");
+        call("return", cookie); call("forget", cookie);
+      }
+      writer = open((base / "root/space/cached").c_str(), O_WRONLY | O_NONBLOCK);
+      check(writer >= 0, "domain_boundary_cleanup_kept_guard"); close(writer);
+      store.reset();
+    } catch (...) { if (!reaped) { kill(worker, SIGKILL); waitpid(worker, nullptr, 0); } throw; }
+  }
+  std::cout << "PASS " << base << " FILE-DOMAIN/SIGKILL-intent-acquired-committed-and-return-intent-boundaries\n";
+  journal = read_json(journal_path);
+  auto corrupted = journal; corrupted["signature"] = std::string(64, '0');
+  write_json(journal_path, corrupted);
+  bool corrupt_rejected = false;
+  try { store = std::make_unique<file_store>(cfg, "file", random_hex(16)); }
+  catch (const error &e) { corrupt_rejected = std::string_view(e.what()) == "delegation_recovery_failed"; }
+  check(corrupt_rejected, "domain_corrupt_journal_not_fenced");
+  write_json(journal_path, journal); check(chmod(journal_path.c_str(), 0644) == 0, "domain_permission_fixture");
+  corrupt_rejected = false;
+  try { store = std::make_unique<file_store>(cfg, "file", random_hex(16)); }
+  catch (const error &e) { corrupt_rejected = std::string_view(e.what()) == "delegation_recovery_failed"; }
+  check(corrupt_rejected, "domain_public_capability_journal_accepted");
+  check(chmod(journal_path.c_str(), 0600) == 0, "domain_permission_restore");
+  store = std::make_unique<file_store>(cfg, "file", random_hex(16));
+  check(read_json(journal_path).at("body").at("records").empty(), "domain_recovery_left_untracked_records");
+  d = call("acquire", "", 300); check(d.at("granted"), "domain_late_restore_acquire"); cookie = d.at("cookie");
+  store.reset(); std::this_thread::sleep_for(500ms);
+  store = std::make_unique<file_store>(cfg, "file", random_hex(16));
+  d = call("poll", cookie);
+  check(!d.at("granted") && !d.at("requires_revalidation") && !d.at("owner_available"), "domain_dead_owner_revived");
+  call("forget", cookie);
+  d = call("acquire", "", 5000); check(d.at("granted"), "domain_stopped_owner_acquire"); cookie = d.at("cookie");
+  journal = read_json(journal_path);
+  auto process = journal.at("body").at("process");
+  auto owner_pid = process.at("pid").get<pid_t>();
+  check(process_info(owner_pid).at("birth") == process.at("birth"), "domain_stopped_owner_identity");
+  check(kill(owner_pid, SIGSTOP) == 0, "domain_stopped_owner_signal");
+  siginfo_t stopped_owner{};
+  check(waitid(P_PID, owner_pid, &stopped_owner, WSTOPPED | WNOWAIT) == 0 && stopped_owner.si_pid == owner_pid,
+      "domain_stopped_owner_not_confirmed");
+  bool paused = true;
+  try {
+    store.reset();
+    bool unavailable = false;
+    try { store = std::make_unique<file_store>(cfg, "file", random_hex(16)); }
+    catch (const error &e) { unavailable = std::string_view(e.what()) == "delegation_recovery_failed"; }
+    check(unavailable && read_json(journal_path) == journal, "domain_unobservable_owner_not_fenced");
+    check(kill(owner_pid, SIGCONT) == 0, "domain_stopped_owner_resume"); paused = false;
+    store = std::make_unique<file_store>(cfg, "file", random_hex(16));
+    check(call("poll", cookie).at("requires_revalidation"), "domain_resumed_owner_not_restored");
+    call("return", cookie); call("forget", cookie);
+  } catch (...) { if (paused) kill(owner_pid, SIGCONT); throw; }
+  d = call("acquire", "", 5000); check(d.at("granted"), "domain_io_failure_acquire"); cookie = d.at("cookie");
+  auto saved_journal = journal_path; saved_journal += ".saved";
+  fs::rename(journal_path, saved_journal); fs::create_directory(journal_path);
+  bool write_failed = false;
+  try { call("return", cookie); } catch (const error &) { write_failed = true; }
+  check(write_failed, "domain_journal_write_failure_not_reported");
+  rejected(control("poll", cookie), "delegation_recovery_failed");
+  bool io_fenced = false;
+  try { nfs("read", fh, {{"offset", 0}, {"count", 4}}); }
+  catch (const error &e) { io_fenced = std::string_view(e.what()) == "delegation_recovery_failed"; }
+  check(io_fenced, "domain_journal_failure_still_served_io");
+  writer = open((base / "root/space/cached").c_str(), O_WRONLY | O_NONBLOCK);
+  check(writer < 0 && errno == EWOULDBLOCK, "domain_failed_return_released_guard");
+  fs::remove(journal_path); fs::rename(saved_journal, journal_path);
+  store.reset(); store = std::make_unique<file_store>(cfg, "file", random_hex(16));
+  check(call("poll", cookie).at("requires_revalidation"), "domain_write_failure_cannot_recover");
+  call("return", cookie); call("forget", cookie);
+  store.reset();
+  std::cout << "PASS " << base << " FILE-DOMAIN/corrupt-public-failed-journal-and-unobservable-owner-fencing\n";
 }
 int nfs_delegation_protocol_suite(bool require_native);
 int native_delegation_channel_suite();

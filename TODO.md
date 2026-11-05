@@ -140,13 +140,29 @@ Selected-profile acceptance: [M7 guide](docs/m7.md), [中文](docs/m7.zh-CN.md),
 
 ## Full SMB/NFS compatibility prerequisite (user decision, 2026-10-31)
 
+The Windows backend job at `4542cec` fails the first M2 `files/begin` upload
+with HTTP 503 `deadline_exceeded`. Its operation phase is not established; this
+predates the file-domain recovery journal changes and remains unresolved
+([failure evidence](docs/evidence/pre-m8/windows-m2-4542-failure.json)).
+
+
+Linux file-domain delegation recovery now uses a private authenticated journal:
+capability and acquisition intent precede native acquisition, and result commit
+precedes handout. Startup reconciles owner inventory and retained descriptions,
+requires fresh authorization before channel publication, persists policy epochs
+and fences failed journal writes. Real process-crash boundary acceptance is
+recorded separately; NFS protocol reclaim and full instance fencing remain open
+([implementation](docs/nfs-delegations.md#file-domain-journal-and-adoption),
+[local evidence](docs/evidence/pre-m8/nfs-domain-recovery-local.json)).
+
+
 Native owner recovery now includes live-record inventory and original-description
 restoration using the expected native incarnation. Enumeration has one total
 1.5-second budget and a 256-record bound; neither operation renews protection.
 SIGKILL recovery tests cover pre-acquire intent without a committed result ID,
 and retained readonly/write, private-pin, unlinked and directory descriptions.
 Independent wire faults cover descriptor cleanup and enumeration limits.
-Production file-domain journal/adoption and NFS reclaim remain open
+File-domain integration follows above; NFS protocol reclaim remains open
 ([details](docs/nfs-delegations.md#recovery-inventory-and-retained-descriptions),
 [local evidence](docs/evidence/pre-m8/nfs-owner-restore-local.json)).
 

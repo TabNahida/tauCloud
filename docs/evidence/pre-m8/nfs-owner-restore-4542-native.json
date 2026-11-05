@@ -1,0 +1,63 @@
+{
+  "status": "passed",
+  "source_commit": "4542cec52920e94730aae06dcb06d10e31ca6613",
+  "run_url": "https://github.com/TabNahida/tauCloud/actions/runs/41961157382",
+  "jobs": [
+    {
+      "name": "kernel (clang, debug, y)",
+      "conclusion": "success",
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41961157382/job/127027581117"
+    },
+    {
+      "name": "kernel (gcc, release, n)",
+      "conclusion": "success",
+      "url": "https://github.com/TabNahida/tauCloud/actions/runs/41961157382/job/127027581439"
+    }
+  ],
+  "artifacts": {
+    "gcc": {
+      "sha256": "a5e20223bf1ab1ae700ee04520e8658435d98e428b77c57ce021294813501e0b",
+      "mandatory_marker": true,
+      "selected_groups": [
+        "PASS CHANNEL/recovery-mutual-proof-domain-separation-and-fixed-timeout",
+        "PASS CHANNEL/recovery-descriptor-validation-cleanup-and-bounded-inventory",
+        "PASS \"/tmp/delegation\" OWNER/recovery-auth-single-controller-fixed-deadlines-channel-rotation",
+        "PASS \"/tmp/delegation\" OWNER/restored-write-description-and-expired-inventory",
+        "PASS \"/tmp/delegation\" OWNER/restored-directory-parent-namespace-exclusion",
+        "PASS \"/tmp/delegation\" OWNER/pre-acquire-intent-SIGKILL-inventory-descriptor-reconciliation",
+        "PASS \"/tmp/delegation\" OWNER/recovery-cannot-revive-expired-guards",
+        "PASS \"/disk/delegation\" OWNER/recovery-auth-single-controller-fixed-deadlines-channel-rotation",
+        "PASS \"/disk/delegation\" OWNER/restored-write-description-and-expired-inventory",
+        "PASS \"/disk/delegation\" OWNER/restored-directory-parent-namespace-exclusion",
+        "PASS \"/disk/delegation\" OWNER/pre-acquire-intent-SIGKILL-inventory-descriptor-reconciliation",
+        "PASS \"/disk/delegation\" OWNER/recovery-cannot-revive-expired-guards",
+        "PASS 1470 delegation protocol/native component checks; production handout remains gated",
+        "PASS native delegation 1785 checks"
+      ]
+    },
+    "clang": {
+      "sha256": "c8f2b08a26f5c71f2f6ce957ab441bc7f0e11ea2c0956028ee1834f35a7eb082",
+      "mandatory_marker": true,
+      "selected_groups": [
+        "PASS CHANNEL/recovery-mutual-proof-domain-separation-and-fixed-timeout",
+        "PASS CHANNEL/recovery-descriptor-validation-cleanup-and-bounded-inventory",
+        "PASS \"/tmp/delegation\" OWNER/recovery-auth-single-controller-fixed-deadlines-channel-rotation",
+        "PASS \"/tmp/delegation\" OWNER/restored-write-description-and-expired-inventory",
+        "PASS \"/tmp/delegation\" OWNER/restored-directory-parent-namespace-exclusion",
+        "PASS \"/tmp/delegation\" OWNER/pre-acquire-intent-SIGKILL-inventory-descriptor-reconciliation",
+        "PASS \"/tmp/delegation\" OWNER/recovery-cannot-revive-expired-guards",
+        "PASS \"/disk/delegation\" OWNER/recovery-auth-single-controller-fixed-deadlines-channel-rotation",
+        "PASS \"/disk/delegation\" OWNER/restored-write-description-and-expired-inventory",
+        "PASS \"/disk/delegation\" OWNER/restored-directory-parent-namespace-exclusion",
+        "PASS \"/disk/delegation\" OWNER/pre-acquire-intent-SIGKILL-inventory-descriptor-reconciliation",
+        "PASS \"/disk/delegation\" OWNER/recovery-cannot-revive-expired-guards",
+        "PASS 1464 delegation protocol/native component checks; production handout remains gated",
+        "PASS native delegation 1811 checks"
+      ]
+    }
+  },
+  "limits": [
+    "Private owner inventory and descriptor restoration at 4542cec; file-domain journal integration was added afterward.",
+    "Production handout and full SMB/NFS conformance remain incomplete."
+  ]
+}

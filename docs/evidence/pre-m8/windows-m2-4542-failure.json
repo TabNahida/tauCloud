@@ -1,0 +1,21 @@
+{
+  "status": "failed",
+  "source_commit": "4542cec52920e94730aae06dcb06d10e31ca6613",
+  "run_url": "https://github.com/TabNahida/tauCloud/actions/runs/41961157349",
+  "job_url": "https://github.com/TabNahida/tauCloud/actions/runs/41961157349/job/127027581256",
+  "job": "windows",
+  "step": "Run python scripts/run_m7.py --compiler msvc",
+  "log_sha256": "3b1a213ceb75071c9633252cd040882f3c0887421782efafb904db78e1b21b1a",
+  "failure": {
+    "test": "tests/m2_integration.py --large-mib 1",
+    "phase": "first put(alice, b'hello'), files/begin",
+    "expected_http_status": 200,
+    "actual_http_status": 503,
+    "error": "deadline_exceeded"
+  },
+  "limits": [
+    "This failure predates the file-domain recovery journal implementation.",
+    "The available service logs only show startup; the operation phase causing the deadline is not established.",
+    "Successful Linux native delegation jobs do not resolve or supersede this Windows backend failure."
+  ]
+}

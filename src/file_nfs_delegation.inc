@@ -23,6 +23,7 @@ bool nfs_delegation_owner_snapshot(nfs_delegation_guard &d, const json &observed
   return terminal;
 }
 void maintain_nfs_delegations() {
+  require(!nfs_recovery_failed, "delegation_recovery_failed");
   auto time = cache_clock();
   for (auto &[cookie, d] : nfs_delegations) {
     if (d.owner_id) {
@@ -33,20 +34,27 @@ void maintain_nfs_delegations() {
           observed_terminal = nfs_delegation_owner_snapshot(d, observed);
           using status = nfs_detail::delegation_lifetime::state;
           if (d.lifetime.status() == status::recalling && !d.owner_recalled) {
+            nfs_checkpoint_delegations();
             auto confirmed = nfs_owner->recall(d.owner_id, d.lifetime.recall_until());
             observed_terminal = nfs_delegation_owner_snapshot(d, confirmed);
             d.owner_recalled = true;
           }
         }
-      } catch (const error &) { d.owner_failed = true; d.lifetime.recall(time); }
+      } catch (const error &) {
+        if (nfs_recovery_failed) throw;
+        d.owner_failed = true; d.lifetime.recall(time);
+        nfs_checkpoint_delegations();
+      }
       if (d.owner_failed) d.lifetime.owner_lost(cache_clock());
       d.lifetime.expire(cache_clock());
       if (!d.lifetime.held()) {
+        nfs_checkpoint_delegations(); // Return/revocation intent before release.
         bool released = observed_terminal;
         try { nfs_owner->release(d.owner_id); released = true; }
         catch (const error &) { d.owner_failed = true; }
         if (released) {
           d.owner_id = 0; d.file = native_file(); d.reservations.clear();
+          d.recovered = false;
           while (d.lifetime.reservations()) d.lifetime.complete(cache_clock(), false);
         }
       }
@@ -70,6 +78,7 @@ void nfs_delegation_conflict(const std::string &space, const std::string &path) 
     d.lifetime.recall(cache_clock());
     pending |= d.lifetime.held();
   }
+  if (pending) nfs_checkpoint_delegations();
   require(!pending, "cache_break_pending");
 }
 json nfs_delegation_snapshot(const std::string &cookie, const nfs_delegation_guard &d) const {
@@ -85,7 +94,8 @@ json nfs_delegation_snapshot(const std::string &cookie, const nfs_delegation_gua
   case state::revoked: status = "revoked"; break;
   case state::expired: status = "expired"; break;
   }
-  return {{"cookie", cookie}, {"granted", lifetime.held() && !d.owner_failed}, {"state", status},
+  return {{"cookie", cookie}, {"granted", lifetime.held() && !d.owner_failed && !d.recovered}, {"state", status},
+      {"requires_revalidation", d.recovered},
       {"provider", d.owner_backed ? "independent-owner" : "local-primitive"},
       {"owner_available", d.owner_backed && !d.owner_failed},
       {"reservations", lifetime.reservations()},
@@ -148,32 +158,53 @@ json nfs_delegation_dispatch(const json &body, const call_context &ctx) {
       if (h.file.info().at("object") == info.at("object")) return {{"granted", false}};
     range_unlocked("", info.at("object"), 0, UINT64_MAX);
     uint64_t owner_id = 0;
+    auto cookie = random_hex(16);
     auto accepted = cache_clock();
 #ifdef __linux__
-    if (!nfs_owner) nfs_owner = std::make_unique<native_delegation_owner>();
-    owner_id = nfs_owner->acquire(o.file, int64_t(cfg.nfs_lease_seconds) * 1000, interval, o.file.writable());
+    nfs_prepare_owner();
+    require(!nfs_recovery.at("records").contains(cookie), "operation_limit");
+    nfs_recovery["records"][cookie] = {{"actor", g.at("actor")}, {"space", space}, {"path", o.path},
+        {"root", g.at("root").dump()}, {"token", token}, {"handle", handle}, {"export_id", g.at("export").at("uuid")},
+        {"client", client}, {"space_object", g.at("space").at("object")},
+        {"owner_id", 0}, {"intent", true}, {"status", 0}, {"recall_deadline_ms", 0},
+        {"period_ms", int64_t(cfg.nfs_lease_seconds) * 1000}, {"last_reservation", 0}};
+    nfs_checkpoint_delegations();
+    delegation_recovery_boundary(1);
+    try { owner_id = nfs_owner->acquire(o.file, int64_t(cfg.nfs_lease_seconds) * 1000, interval, o.file.writable()); }
+    catch (...) { nfs_recovery_failed = true; throw; }
+    delegation_recovery_boundary(2);
+    if (!owner_id) { nfs_recovery["records"].erase(cookie); nfs_checkpoint_delegations(); }
 #endif
     // Legacy primitives remain private component fallbacks only. An uncertain
     // owner call throws above: it must never trigger a second acquisition.
     auto guard = owner_id ? nullptr : o.file.cache_guard(true);
     if (!owner_id && !guard) return {{"granted", false}};
-    std::string cookie;
     bool registered = false;
     try {
       lease(g, ctx);
-      cookie = random_hex(16);
       auto [it, inserted] = nfs_delegations.emplace(cookie, nfs_delegation_guard{
           g.at("actor"), space, o.path, g.at("root").dump(), token, handle,
           g.at("export").at("uuid"), client, std::move(o.file), std::move(guard),
           nfs_detail::delegation_lifetime(accepted, int64_t(cfg.nfs_lease_seconds) * 1000, interval, owner_id != 0),
           owner_id, owner_id != 0});
       require(inserted, "operation_limit");
+      it->second.space_object = g.at("space").at("object");
       registered = true;
+      if (owner_id) {
+        nfs_recovery["records"][cookie]["intent"] = false;
+        nfs_checkpoint_delegations();
+      }
       maintain_nfs_delegations();
+      delegation_recovery_boundary(3);
       return nfs_delegation_snapshot(cookie, it->second);
     } catch (...) {
       if (registered) nfs_delegations.erase(cookie);
-      if (owner_id) { try { nfs_owner->release(owner_id); } catch (...) {} }
+      if (owner_id) {
+        try {
+          nfs_owner->release(owner_id);
+          nfs_recovery["records"].erase(cookie); nfs_checkpoint_delegations();
+        } catch (...) { nfs_recovery_failed = true; }
+      }
       throw;
     }
   }
@@ -182,6 +213,7 @@ json nfs_delegation_dispatch(const json &body, const call_context &ctx) {
   require(it != nfs_delegations.end(), "stale_handle");
   auto &d = it->second;
   require(d.actor == g.at("actor").get<std::string>() && d.space == space && d.root == g.at("root").dump() &&
+              d.space_object == g.at("space").at("object").get<std::string>() &&
               d.client == client && d.export_id == g.at("export").at("uuid").get<std::string>() &&
               d.handle == body.at("handle").get<std::string>() &&
               beneath(d.path, g.at("path").get<std::string>()), "forbidden");
@@ -191,6 +223,7 @@ json nfs_delegation_dispatch(const json &body, const call_context &ctx) {
   if (op == "channel") {
     require(d.owner_backed, "not_supported");
     require(d.lifetime.held(), "stale_handle");
+    require(!d.recovered, "delegation_revalidation_required");
     require(!d.owner_failed && d.owner_id && nfs_owner, "delegation_owner_lost");
     try { channel = nfs_owner->reservation_capability(d.owner_id); }
     catch (const error &e) {
@@ -199,6 +232,7 @@ json nfs_delegation_dispatch(const json &body, const call_context &ctx) {
       throw;
     }
   } else if (op == "reserve" || op == "complete" || op == "cancel") {
+    require(!d.recovered, "delegation_revalidation_required");
     auto value = body.at("reservation");
     require(value.is_number_unsigned() || (value.is_number_integer() && value.get<int64_t>() > 0),
             "invalid_request");
@@ -219,6 +253,7 @@ json nfs_delegation_dispatch(const json &body, const call_context &ctx) {
       auto [entry, inserted] = d.reservations.emplace(reservation, 0);
       require(inserted, "stale_handle");
       d.last_reservation = reservation;
+      nfs_checkpoint_delegations();
       try {
         auto confirmed = nfs_owner->reserve(d.owner_id);
         entry->second = confirmed.at("reservation").get<uint64_t>();
@@ -250,7 +285,7 @@ json nfs_delegation_dispatch(const json &body, const call_context &ctx) {
       lease(g, ctx);
     }
     auto accepted = cache_clock();
-    if (op == "retain") d.lifetime.recall(accepted);
+    if (op == "retain") { d.lifetime.recall(accepted); nfs_checkpoint_delegations(); }
     if (d.owner_id) {
       require(!d.owner_failed, "delegation_owner_lost");
       try {
@@ -263,15 +298,18 @@ json nfs_delegation_dispatch(const json &body, const call_context &ctx) {
         // data grant expires during IPC. That failure cannot authorize IO, but
         // must not discard retention the native owner has already accepted.
         nfs_delegation_owner_snapshot(d, confirmed);
-        if (op == "renew") lease(g, ctx);
+        if (op == "renew") { lease(g, ctx); d.recovered = false; }
       } catch (const error &e) {
         d.owner_failed |= std::string_view(e.what()) == "delegation_owner_lost";
         d.lifetime.recall(accepted);
+        nfs_checkpoint_delegations();
         throw;
       }
     } else require(d.lifetime.renew(accepted, interval), "stale_handle");
-  } else if (op == "recall") d.lifetime.recall(time);
-  else if (op == "return") d.lifetime.returned(time);
+  } else if (op == "recall") { d.lifetime.recall(time); nfs_checkpoint_delegations(); }
+  else if (op == "return") {
+    d.lifetime.returned(time); nfs_checkpoint_delegations(); delegation_recovery_boundary(4);
+  }
   else if (op == "forget") require(!d.lifetime.held(), "locked");
   maintain_nfs_delegations();
   auto result = nfs_delegation_snapshot(cookie, d);
@@ -283,6 +321,7 @@ json nfs_delegation_dispatch(const json &body, const call_context &ctx) {
   if (op == "forget") {
     require(!d.owner_id, "delegation_owner_lost");
     nfs_delegations.erase(it);
+    if (!nfs_recovery.is_null()) { nfs_recovery["records"].erase(cookie); nfs_checkpoint_delegations(); }
   }
   return result;
 }

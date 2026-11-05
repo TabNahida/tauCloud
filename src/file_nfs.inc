@@ -438,9 +438,11 @@ nfs_object nfs_resolve(space_state &s, const json &g, const std::string &encoded
   for (auto &[cookie, d] : nfs_delegations) {
     if (!d.lifetime.held() || d.token != token) continue;
     require(d.space == g.at("space").at("id").get<std::string>() &&
+                d.space_object == g.at("space").at("object").get<std::string>() &&
                 d.root == g.at("root").dump() && beneath(d.path, prefix), "stale_handle");
     if (write) {
       d.lifetime.recall(cache_clock());
+      nfs_checkpoint_delegations();
       throw error("cache_break_pending");
     }
     // Filehandle IO uses the retained incarnation; pathname lookup still
